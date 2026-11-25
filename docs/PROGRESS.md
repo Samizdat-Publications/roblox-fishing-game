@@ -22,8 +22,28 @@
 - A cast aimed at the shore is refused: "That landed on dry ground. Face the water and cast."
 - Hook window raised from 1.6 s to 2 s to be kinder to kids and touch players.
 
+### M3 Real fish habits: done
+- 8 species in `FishData.luau`, each with spots, times, baits, size range, price and its own fight. Unit tests check the key rules.
+- Playtest (one session, fishing through the real remotes with the Studio auto-reel hook):
+  - Dock, dawn, worms: Yellow Perch, Bluegill, Yellow Perch, Bluegill, Pumpkinseed.
+  - Deep hole from the dock end, 10 PM, stinkbait: Channel Catfish three times (2.49, 1.52, 3.96 kg).
+  - Weed bed from the south-west shore, 5:51 AM, minnows: Largemouth Bass three times (0.73, 1.21, 1.70 kg).
+  - Weed bed, dawn, stinkbait: no bite; after 12 s the hint "Nothing wants stinkbait at the weed bed right now. Try another bait, another spot, or another time of day." showed on screen.
+- Night screenshot: dark sky, stars, HUD "10:54 PM Night".
+
+### M4 Money and shop: done
+- Walked to the Fish Buyer and pressed E: "Sold 6 fish for 27 coins." (30 to 57 coins; server log matches).
+- Walked to Bait and Tackle, pressed E, the shop opened; clicked Buy on Stinkbait and Minnows: 57 to 41 to 21 coins, "You have 10" for each.
+- Backspace closed the shop; the B key cycled bait to stinkbait. Equipped bait changed the catch as above.
+- Free worms when broke: covered by unit tests and the cast path; not forced in a playtest.
+
+### M5 Journal and saving: done
+- J opened the Fish Journal: 5 of 8 species found, 12 fish caught; each card shows count, best weight and length, bait and spot, and the habit line after the first catch; uncaught species show "???". The Reel assist button toggled On to Off.
+- Studio API access is on, so the DataStore is live: stopping play logged `saved ProBabyTurtle`; restarting loaded `21 coins, 12 caught`, bag 6 fish (173), Minnows x7.
+- Memory fallback checked earlier in an unsaved place: `DataStore unavailable (...). Using memory only; progress will not save.`
+
 ## What's next
-- M3 real fish habits playtest (night catfish in the deep hole, dawn bass in the weeds), M4 money and shop, M5 journal and saving, M6 controls and polish.
+- M6 controls and polish: touch and gamepad through the whole loop, phone layout in the device emulator, sounds.
 
 ## Waiting on Stewart
 - Optional, speeds up Claude's builds: in Studio, Assistant Settings, MCP Permissions, Connect to the internet, add `localhost:8765` to the HTTP domain allow list.
