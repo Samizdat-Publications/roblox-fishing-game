@@ -1,0 +1,1419 @@
+<title>Liam's Game Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Rubik:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one long workshop on a studded baseplate. A sticky rail of steps on top; each step is a build plate with a brick number. */
+:root{
+  --bg:#E4EAF0; --stud:#D2DBE4; --surface:#FFFFFF; --surface-2:#F2F5F8; --ink:#14202C; --muted:#536273; --line:#CBD5DF;
+  --blue:#1F5FD4; --blue-deep:#16449A; --yellow:#C98F00; --green:#14894F; --red:#D13A2C; --purple:#7346CC; --orange:#D9661A; --pink:#C93A86; --teal:#0F8A8A;
+  --on-brick:#FFFFFF; --soft-blue:#E3ECFC; --soft-green:#DFF3E8; --soft-yellow:#FCF1D2;
+  --map-paper:#E3EFDA; --map-grid:#C8DBBB;
+  --shadow:0 1px 0 rgba(20,32,44,.05), 0 8px 20px -14px rgba(20,32,44,.35);
+  --f-display:"Bungee", "Arial Black", Impact, system-ui, sans-serif;
+  --f-body:"Rubik", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, Consolas, "Courier New", monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E141B; --stud:#17202A; --surface:#17202A; --surface-2:#1E2935; --ink:#E6EDF4; --muted:#93A3B5; --line:#2B3947;
+    --blue:#6B9CFF; --blue-deep:#3F6FD1; --yellow:#FFC93D; --green:#45C887; --red:#FF6E60; --purple:#A784F5; --orange:#FF9A4D; --pink:#F27BB8; --teal:#3FD0CC;
+    --on-brick:#0E141B; --soft-blue:#1B2A44; --soft-green:#16302A; --soft-yellow:#33290F;
+    --shadow:0 1px 0 rgba(0,0,0,.3), 0 10px 24px -16px rgba(0,0,0,.8);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E141B; --stud:#17202A; --surface:#17202A; --surface-2:#1E2935; --ink:#E6EDF4; --muted:#93A3B5; --line:#2B3947;
+  --blue:#6B9CFF; --blue-deep:#3F6FD1; --yellow:#FFC93D; --green:#45C887; --red:#FF6E60; --purple:#A784F5; --orange:#FF9A4D; --pink:#F27BB8; --teal:#3FD0CC;
+  --on-brick:#0E141B; --soft-blue:#1B2A44; --soft-green:#16302A; --soft-yellow:#33290F;
+  --shadow:0 1px 0 rgba(0,0,0,.3), 0 10px 24px -16px rgba(0,0,0,.8);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--bg);
+  background-image:radial-gradient(circle at 12px 12px, var(--stud) 0 5px, transparent 5.6px);
+  background-size:24px 24px;
+  color:var(--ink); font-family:var(--f-body); font-size:15.5px; line-height:1.5;
+}
+body::before{content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top,0px); z-index:10; background:var(--bg)}
+a{color:var(--blue)}
+h1,h2,h3{text-wrap:balance}
+.wrap{max-width:1000px; margin:0 auto; padding-left:max(16px, env(safe-area-inset-left,0px)); padding-right:max(16px, env(safe-area-inset-right,0px))}
+main.wrap{padding-block:18px 72px; display:grid; gap:18px}
+
+/* Masthead */
+.masthead{padding-block:28px 10px}
+.masthead-inner{display:flex; flex-wrap:wrap; gap:20px 32px; align-items:flex-end; justify-content:space-between}
+.logo-bricks{display:flex; gap:6px; margin-bottom:12px}
+.logo-bricks span{width:26px; height:14px; border-radius:3px; position:relative; background:var(--c)}
+.logo-bricks span::before,.logo-bricks span::after{content:""; position:absolute; top:-4px; width:7px; height:4px; border-radius:2px 2px 0 0; background:var(--c)}
+.logo-bricks span::before{left:4px}.logo-bricks span::after{right:4px}
+h1{font-family:var(--f-display); font-weight:400; font-size:clamp(2.2rem, 7vw, 3.6rem); line-height:.95; margin:0; letter-spacing:.01em}
+.intro{max-width:56ch; color:var(--muted); margin:12px 0 0; font-size:1.02rem}
+.crew{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px; flex:1 1 440px; max-width:560px}
+.crew div{background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:10px 12px; box-shadow:var(--shadow); min-width:0}
+.crew b{display:block; font-size:1rem}
+.crew .role{display:block; font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; font-weight:600; color:var(--c)}
+.crew small{display:block; color:var(--muted); font-size:.78rem; line-height:1.35; margin-top:4px}
+
+/* Step rail */
+.rail{position:sticky; top:env(safe-area-inset-top,0px); z-index:6; background:var(--bg); border-bottom:1px solid var(--line)}
+.rail-inner{display:flex; align-items:center; gap:10px; padding-block:8px}
+.rail-steps{display:flex; gap:6px; overflow-x:auto; scrollbar-width:thin; flex:1; min-width:0; padding-block:2px}
+.rail a{display:inline-flex; align-items:center; gap:6px; padding:5px 10px 5px 5px; border-radius:7px; background:var(--surface); border:1px solid var(--line); white-space:nowrap; font-weight:600; font-size:.8rem; color:var(--ink); text-decoration:none}
+.rail a:hover{border-color:var(--blue)}
+.rail a .n{display:grid; place-items:center; min-width:22px; height:22px; padding:0 4px; border-radius:5px; background:var(--surface-2); color:var(--muted); font-family:var(--f-display); font-size:.72rem}
+.rail a.done .n{background:var(--green); color:var(--on-brick)}
+.status{flex:none; display:inline-flex; align-items:center; gap:7px; font-size:.78rem; font-weight:600; color:var(--muted); padding:5px 10px; border-radius:7px; background:var(--surface); border:1px solid var(--line); white-space:nowrap}
+.status::before{content:""; width:8px; height:8px; border-radius:50%; background:var(--muted)}
+.status[data-state="saved"]::before{background:var(--green)}
+.status[data-state="saving"]::before,.status[data-state="pending"]::before{background:var(--yellow)}
+.status[data-state="error"]::before,.status[data-state="readonly"]::before{background:var(--red)}
+.status[data-state="local"]::before{background:var(--orange)}
+
+/* Step plates */
+.step{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow); padding:clamp(16px, 3.2vw, 30px); scroll-margin-top:64px; display:grid; gap:20px; min-width:0}
+.step-head{display:flex; gap:16px; align-items:flex-start}
+.brick{flex:none; width:54px; height:40px; margin-top:9px; border-radius:6px; background:var(--c); color:var(--on-brick); font-family:var(--f-display); font-size:1.15rem; display:grid; place-items:center; position:relative; box-shadow:inset 0 -4px 0 rgba(0,0,0,.18)}
+.brick::before,.brick::after{content:""; position:absolute; top:-7px; width:14px; height:7px; border-radius:4px 4px 0 0; background:var(--c)}
+.brick::before{left:8px}.brick::after{right:8px}
+.brick.wide{width:64px; font-size:.95rem}
+h2{font-family:var(--f-display); font-weight:400; font-size:clamp(1.3rem, 3.4vw, 1.7rem); line-height:1.1; margin:0; letter-spacing:.01em}
+.lede{color:var(--muted); margin:6px 0 0; max-width:64ch}
+h3{font-size:.78rem; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); margin:0; font-weight:700}
+.sub{display:grid; gap:10px; min-width:0; align-content:start}
+.hint{font-size:.85rem; color:var(--muted); margin:0}
+
+/* Form controls */
+label.f{display:grid; gap:5px; font-weight:600; font-size:.86rem; min-width:0}
+input[type=text], input[type=date], textarea, select{
+  width:100%; font:inherit; font-weight:400; font-size:.95rem; padding:10px 12px; border-radius:8px;
+  border:1.5px solid var(--line); background:var(--surface-2); color:var(--ink); min-width:0;
+}
+textarea{resize:vertical; min-height:84px}
+input::placeholder, textarea::placeholder{color:var(--muted); opacity:.75}
+:focus-visible{outline:3px solid var(--blue); outline-offset:2px}
+input:focus, textarea:focus, select:focus{border-color:var(--blue); outline:none; box-shadow:0 0 0 3px var(--soft-blue)}
+.btn{font:600 .88rem var(--f-body); padding:9px 14px; border-radius:8px; border:1.5px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer; box-shadow:0 3px 0 var(--line); transition:transform .06s, box-shadow .06s}
+.btn:hover{border-color:var(--blue)}
+.btn:active{transform:translateY(2px); box-shadow:0 1px 0 var(--line)}
+.btn.primary{background:var(--blue); border-color:var(--blue); color:var(--on-brick); box-shadow:0 3px 0 var(--blue-deep)}
+.btn.primary:active{box-shadow:0 1px 0 var(--blue-deep)}
+.btn.small{padding:6px 10px; font-size:.8rem}
+.btn[disabled]{opacity:.5; cursor:not-allowed}
+.icon-btn{width:34px; height:34px; flex:none; border-radius:7px; border:1.5px solid var(--line); background:var(--surface); color:var(--muted); font-size:1.1rem; line-height:1; cursor:pointer}
+.icon-btn:hover{color:var(--red); border-color:var(--red)}
+.row-actions{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+
+/* Chips */
+.chips{display:flex; flex-wrap:wrap; gap:8px}
+.chip{font:500 .86rem var(--f-body); padding:7px 12px; border-radius:6px; border:1.5px solid var(--line); background:var(--surface-2); color:var(--ink); cursor:pointer}
+.chip:hover{border-color:var(--blue)}
+.chip[aria-pressed="true"]{background:var(--blue); border-color:var(--blue); color:var(--on-brick)}
+.chip.add{border-style:dashed; background:transparent}
+.chip.add::before{content:"+ "; font-weight:700}
+.chip-own{display:inline-flex; align-items:stretch}
+.chip-own .chip{border-top-right-radius:0; border-bottom-right-radius:0}
+.chip-own .x{font:600 .9rem var(--f-body); padding:0 8px; border:1.5px solid var(--line); border-left:0; border-radius:0 6px 6px 0; background:var(--surface-2); color:var(--muted); cursor:pointer}
+.chip-own .x:hover{color:var(--red)}
+.add-own{display:flex; gap:8px; max-width:360px}
+.add-own input{padding:7px 10px; font-size:.86rem}
+
+/* Choice cards (catching style, money style) */
+.choices{display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:10px}
+.choice{text-align:left; font:inherit; color:var(--ink); background:var(--surface-2); border:2px solid var(--line); border-radius:8px; padding:12px; cursor:pointer; display:grid; gap:4px; align-content:start}
+.choice b{font-weight:700; font-size:.95rem}
+.choice small{color:var(--muted); font-size:.82rem; line-height:1.4}
+.choice:hover{border-color:var(--blue)}
+.choice[aria-pressed="true"]{border-color:var(--blue); background:var(--soft-blue); box-shadow:0 0 0 3px color-mix(in srgb, var(--blue) 25%, transparent)}
+
+/* Step 1 */
+.loves{display:grid; gap:10px}
+.love-row{display:grid; grid-template-columns:1fr 1.4fr 1.4fr; gap:8px; align-items:end}
+.love-row .f span{font-size:.78rem; color:var(--muted); font-weight:600}
+
+/* Step 2 money style cards */
+.ideas{display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:14px}
+.idea{border:2px solid var(--line); border-radius:var(--r); overflow:hidden; display:flex; flex-direction:column; background:var(--surface); min-width:0}
+.idea.chosen{border-color:var(--c); box-shadow:0 0 0 3px color-mix(in srgb, var(--c) 25%, transparent)}
+.idea-top{background:var(--c); color:var(--on-brick); padding:12px 14px 10px}
+.idea-top .tag{display:inline-block; font-size:.66rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em; padding:2px 7px; border-radius:4px; background:rgba(0,0,0,.18); margin-bottom:6px}
+.idea-top h3{font-family:var(--f-display); font-weight:400; font-size:1.12rem; color:inherit; text-transform:none; letter-spacing:.01em; margin:0; line-height:1.15}
+.idea-body{padding:12px 14px 14px; display:grid; gap:10px; flex:1; align-content:start}
+.idea-body p{margin:0; font-size:.92rem}
+.idea-body .loopline{font-family:var(--f-mono); font-size:.74rem; color:var(--muted); line-height:1.5}
+.idea-foot{padding:0 14px 14px; display:grid; gap:10px}
+.votes{display:grid; grid-template-columns:repeat(3,1fr); gap:6px}
+.votes .chip{padding:6px 4px; text-align:center; font-size:.8rem}
+.votes .chip[data-value="yes"][aria-pressed="true"]{background:var(--green); border-color:var(--green)}
+.votes .chip[data-value="maybe"][aria-pressed="true"]{background:var(--yellow); border-color:var(--yellow)}
+.votes .chip[data-value="nope"][aria-pressed="true"]{background:var(--red); border-color:var(--red)}
+.idea .choose{width:100%}
+.idea.chosen .choose{background:var(--c); border-color:var(--c); color:var(--on-brick); box-shadow:0 3px 0 rgba(0,0,0,.25)}
+.pond-box{border:1.5px dashed var(--line); border-radius:8px; padding:14px; display:grid; gap:10px}
+.pond-box.dim{opacity:.6}
+
+/* Pitch */
+.pitch-grid{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px}
+.pitch-grid .full{grid-column:1/-1}
+.pitch-card{background:var(--soft-yellow); border:1.5px dashed var(--yellow); border-radius:8px; padding:14px 16px; font-size:1.08rem; line-height:1.6}
+.pitch-card .lbl{display:block; font-size:.7rem; text-transform:uppercase; letter-spacing:.1em; font-weight:700; color:var(--muted); margin-bottom:4px}
+.pitch-card b{font-weight:700}
+.pitch-card .blank{color:var(--muted); letter-spacing:.1em}
+
+/* Loop */
+.loop-inputs{display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:8px}
+.loop-inputs label{display:grid; gap:4px; font-size:.75rem; font-weight:700; color:var(--muted); min-width:0}
+.chain{display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:14px; border-radius:8px; background:var(--surface-2); border:1px solid var(--line); min-height:58px}
+.chain .pill{display:inline-flex; align-items:center; gap:8px; padding:6px 12px 6px 6px; border-radius:7px; background:var(--surface); border:1.5px solid var(--line); font-weight:600; font-size:.9rem}
+.chain .pill i{font-style:normal; display:grid; place-items:center; width:24px; height:24px; border-radius:5px; background:var(--c); color:var(--on-brick); font-family:var(--f-display); font-size:.75rem}
+.chain .arrow{color:var(--muted); font-weight:700}
+.chain .again{font-family:var(--f-display); font-size:.8rem; color:var(--green)}
+.chain .empty{color:var(--muted); font-size:.9rem; border:0; padding:0}
+
+/* Lists */
+.list{display:grid; gap:8px}
+.row{display:grid; gap:8px; align-items:center; border-left:5px solid var(--line); padding-left:8px; border-radius:2px}
+.row-fish{grid-template-columns:1.05fr .75fr 1.3fr 1fr 1.2fr auto}
+.row-places{grid-template-columns:1fr 1.3fr 1.1fr auto}
+.row[data-rarity="Common"]{border-left-color:var(--muted)}
+.row[data-rarity="Uncommon"]{border-left-color:var(--green)}
+.row[data-rarity="Rare"]{border-left-color:var(--blue)}
+.row[data-rarity="Epic"]{border-left-color:var(--purple)}
+.row[data-rarity="Legendary"]{border-left-color:var(--orange)}
+.row[data-rarity="Mythic"]{border-left-color:var(--pink)}
+.list-head{display:grid; gap:8px; padding-left:13px; font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--muted)}
+.list-head.fish{grid-template-columns:1.05fr .75fr 1.3fr 1fr 1.2fr 34px}
+.list-head.places{grid-template-columns:1fr 1.3fr 1.1fr 34px}
+.empty{color:var(--muted); font-size:.9rem; margin:0; padding:12px; border:1.5px dashed var(--line); border-radius:8px}
+.rarity-key{display:flex; flex-wrap:wrap; gap:6px 14px; font-size:.75rem; color:var(--muted)}
+.rarity-key span::before{content:""; display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px; vertical-align:-1px; background:var(--c)}
+
+/* Gear shop */
+.gear{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px}
+.gear-cat{border:1px solid var(--line); border-radius:8px; padding:14px; display:grid; gap:10px; align-content:start; background:var(--surface-2); min-width:0}
+.gear-cat .chip{background:var(--surface)}
+.gear-cat .chip[aria-pressed="true"]{background:var(--blue)}
+.gear-cat header{display:flex; justify-content:space-between; align-items:baseline; gap:8px}
+.gear-cat .tally{font-size:.75rem; color:var(--muted); font-weight:600}
+.gear-cat .hint{font-size:.8rem}
+
+/* Look */
+.look-grid{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:18px}
+.swatches{display:flex; flex-wrap:wrap; gap:8px}
+.swatch{width:40px; height:40px; border-radius:8px; border:2px solid var(--line); cursor:pointer; position:relative; background:var(--sw)}
+.swatch[aria-pressed="true"]{border-color:var(--ink); box-shadow:0 0 0 3px var(--surface), 0 0 0 5px var(--ink)}
+.swatch[aria-pressed="true"]::after{content:"✓"; position:absolute; inset:0; display:grid; place-items:center; font-weight:700; color:#fff; text-shadow:0 1px 2px #000}
+
+/* Friends */
+.range-row{display:flex; align-items:center; gap:14px}
+.range-row input{flex:1; accent-color:var(--blue)}
+.range-row output{font-family:var(--f-display); font-size:1.4rem; min-width:2.4ch; text-align:right}
+.callout{display:grid; grid-template-columns:auto 1fr; gap:12px; align-items:start; padding:12px 14px; border-radius:8px; background:var(--soft-green); border:1px solid color-mix(in srgb, var(--green) 40%, transparent); font-size:.9rem}
+.callout.blue{background:var(--soft-blue); border-color:color-mix(in srgb, var(--blue) 40%, transparent)}
+.callout .k{font-family:var(--f-display); font-size:.72rem; color:var(--green); padding-top:2px; white-space:nowrap}
+.callout.blue .k{color:var(--blue)}
+.callout p{margin:0}
+
+/* Map */
+.map-tools{display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center}
+.tool-group{display:flex; flex-wrap:wrap; gap:6px; align-items:center}
+.tool-group > span{font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; font-weight:700; color:var(--muted); margin-right:2px}
+.pen{width:30px; height:30px; border-radius:50%; border:2px solid var(--line); background:var(--pc); cursor:pointer}
+.pen[aria-pressed="true"]{box-shadow:0 0 0 3px var(--surface), 0 0 0 5px var(--ink)}
+.map-frame{position:relative; border-radius:8px; overflow:hidden; border:2px solid var(--line); background-color:var(--map-paper);
+  background-image:linear-gradient(var(--map-grid) 1px, transparent 1px), linear-gradient(90deg, var(--map-grid) 1px, transparent 1px);
+  background-size:4% 6%; aspect-ratio:3/2; max-width:100%}
+#mapCanvas{display:block; width:100%; height:100%; touch-action:none; cursor:crosshair}
+.label-input{max-width:220px}
+.map-foot{display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between}
+.map-note{font-size:.85rem; color:var(--muted)}
+.map-note.warn{color:var(--orange)}
+.photo-box{display:flex; flex-wrap:wrap; gap:12px; align-items:center}
+.photo-box img{max-width:220px; border-radius:8px; border:1px solid var(--line)}
+.file-btn{position:relative; overflow:hidden}
+.file-btn input{position:absolute; inset:0; opacity:0; cursor:pointer}
+
+/* First version */
+.features{display:grid; gap:6px}
+.feat{display:grid; grid-template-columns:1fr auto auto; gap:10px; align-items:center; padding:6px 6px 6px 12px; border-radius:8px; background:var(--surface-2); border:1px solid var(--line)}
+.feat .name{font-weight:500; font-size:.92rem; min-width:0}
+.seg{display:inline-flex; border:1.5px solid var(--line); border-radius:7px; overflow:hidden}
+.seg button{font:600 .76rem var(--f-body); padding:6px 10px; border:0; background:var(--surface); color:var(--muted); cursor:pointer; border-right:1.5px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[data-value="first"][aria-pressed="true"]{background:var(--green); color:var(--on-brick)}
+.seg button[data-value="later"][aria-pressed="true"]{background:var(--blue); color:var(--on-brick)}
+.seg button[data-value="nope"][aria-pressed="true"]{background:var(--red); color:var(--on-brick)}
+.feat .icon-btn{width:28px; height:28px; font-size:.95rem}
+.feat .spacer{width:28px}
+.count{font-family:var(--f-display); font-size:.95rem}
+.count.over{color:var(--orange)}
+.two{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px}
+
+/* Dad's corner */
+.dad{background:var(--surface-2)}
+.checklist{list-style:none; margin:0; padding:0; display:grid; gap:4px}
+.checklist label{display:grid; grid-template-columns:auto 1fr; gap:10px; align-items:start; padding:8px 10px; border-radius:7px; cursor:pointer; font-size:.92rem}
+.checklist label:hover{background:var(--surface)}
+.checklist input{width:18px; height:18px; margin-top:2px; accent-color:var(--green)}
+.checklist small{display:block; color:var(--muted); font-size:.8rem}
+.checklist input:checked + span{color:var(--muted); text-decoration:line-through; text-decoration-color:var(--green)}
+.progress{height:10px; border-radius:6px; background:var(--line); overflow:hidden}
+.progress span{display:block; height:100%; background:var(--green); width:0; transition:width .3s}
+
+/* Brief */
+.next-steps{margin:0; padding:0; list-style:none; display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px; counter-reset:n}
+.next-steps li{background:var(--surface-2); border:1px solid var(--line); border-radius:8px; padding:12px; font-size:.88rem; counter-increment:n; min-width:0}
+.next-steps li::before{content:counter(n); display:grid; place-items:center; width:26px; height:26px; border-radius:6px; background:var(--c); color:var(--on-brick); font-family:var(--f-display); font-size:.8rem; margin-bottom:8px}
+.say{font-family:var(--f-mono); font-size:.9rem; background:var(--surface-2); border:1.5px solid var(--line); border-radius:8px; padding:10px 12px; display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between}
+.say code{font-family:inherit; overflow-wrap:anywhere}
+pre.brief{margin:0; font-family:var(--f-mono); font-size:.78rem; line-height:1.55; background:var(--surface-2); border:1px solid var(--line); border-radius:8px; padding:14px; max-height:440px; overflow:auto; white-space:pre-wrap; overflow-wrap:anywhere}
+.copied{font-size:.82rem; color:var(--green); font-weight:600}
+footer{color:var(--muted); font-size:.8rem; text-align:center; padding-top:6px}
+
+@media (max-width: 760px){
+  .crew{grid-template-columns:1fr; max-width:none}
+  .love-row{grid-template-columns:1fr; padding-bottom:10px; border-bottom:1px dashed var(--line)}
+  .pitch-grid, .look-grid, .two, .gear{grid-template-columns:1fr}
+  .loop-inputs{grid-template-columns:1fr 1fr}
+  .row-fish, .row-places{grid-template-columns:1fr 1fr}
+  .list-head{display:none}
+  .row .icon-btn{justify-self:end}
+  .next-steps{grid-template-columns:1fr 1fr}
+  .feat{grid-template-columns:1fr auto}
+  .feat .seg{grid-column:1/-1; justify-self:start}
+  .step-head{gap:12px}
+  .brick{width:46px; height:36px; font-size:1rem}
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important; scroll-behavior:auto!important} }
+html{scroll-behavior:smooth}
+</style>
+
+<header class="masthead">
+  <div class="wrap masthead-inner">
+    <div>
+      <div class="logo-bricks" aria-hidden="true">
+        <span style="--c:var(--blue)"></span><span style="--c:var(--yellow)"></span><span style="--c:var(--green)"></span><span style="--c:var(--red)"></span>
+      </div>
+      <h1>Liam's Game Lab</h1>
+      <p class="intro">Plan our Roblox fishing game, in any order. Catch fish, earn money, buy better rods, bait and boats, and unlock new water. It saves by itself; when it's ready, Dad tells Claude to read it and start building.</p>
+    </div>
+    <div class="crew">
+      <div style="--c:var(--blue)"><span class="role">Creative director</span><b>Liam</b><small>Final say on what's fun, names, the look, how hard it is</small></div>
+      <div style="--c:var(--green)"><span class="role">Producer</span><b>Dad</b><small>Accounts, publishing, safety, money</small></div>
+      <div style="--c:var(--orange)"><span class="role">Builder</span><b>Claude</b><small>Code, saving, testing, making it run fast</small></div>
+    </div>
+  </div>
+</header>
+
+<nav class="rail" aria-label="Steps">
+  <div class="wrap rail-inner">
+    <div class="rail-steps" id="railSteps"></div>
+    <span class="status" id="status" data-state="loading" role="status" aria-live="polite">Connecting…</span>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <!-- 1 Games you love -->
+  <section class="step" id="games">
+    <div class="step-head">
+      <div class="brick" style="--c:var(--blue)">1</div>
+      <div><h2>Games you love</h2><p class="lede">Start with what you already play, fishing games or not. What's the best part, and what bugs you about it? This tells Claude what you think is fun.</p></div>
+    </div>
+    <div class="loves" id="loves"></div>
+  </section>
+
+  <!-- 2 Money -->
+  <section class="step" id="money">
+    <div class="step-head">
+      <div class="brick" style="--c:var(--yellow)">2</div>
+      <div><h2>How you make money</h2><p class="lede">Everything in the game runs on coins from fish. Vote on each way, then pick the one we build.</p></div>
+    </div>
+    <div class="ideas" id="styles"></div>
+    <div class="sub">
+      <h3>Selling fish</h3>
+      <div class="chips" data-group="selling"></div>
+    </div>
+    <div class="pond-box" id="pondBox">
+      <div class="sub">
+        <h3>Fish farm options</h3>
+        <p class="hint" id="pondHint">For a game with your own pond. Pick the ones you want.</p>
+        <div class="chips" data-group="pond"></div>
+      </div>
+    </div>
+    <label class="f">Our twist: what makes our fishing game different from the others?<textarea id="money-twist" data-bind="money.twist" maxlength="800" placeholder="Real fishing smarts win: the right bait, spot and time of day matter. A kid who knows fishing beats a kid who just grinds."></textarea></label>
+  </section>
+
+  <!-- 3 Catching -->
+  <section class="step" id="catching">
+    <div class="step-head">
+      <div class="brick" style="--c:var(--green)">3</div>
+      <div><h2>How you catch</h2><p class="lede">This is what you do a thousand times, so it has to feel good. When a fish bites, what do you do?</p></div>
+    </div>
+    <div class="choices" data-group="catching"></div>
+    <div class="sub">
+      <h3>Catching extras</h3>
+      <div class="chips" data-group="catchExtras"></div>
+    </div>
+  </section>
+
+  <!-- 4 Fish -->
+  <section class="step" id="fish">
+    <div class="step-head">
+      <div class="brick" style="--c:var(--red)">4</div>
+      <div><h2>The fish</h2><p class="lede">You're the expert here. Where does each fish live, when does it bite, and what bait does it want? Real details make the game better. Made-up fish are allowed too.</p></div>
+    </div>
+    <div class="sub">
+      <div class="rarity-key" aria-hidden="true">
+        <span style="--c:var(--muted)">Common</span><span style="--c:var(--green)">Uncommon</span><span style="--c:var(--blue)">Rare</span><span style="--c:var(--purple)">Epic</span><span style="--c:var(--orange)">Legendary</span><span style="--c:var(--pink)">Mythic</span>
+      </div>
+      <div class="list-head fish" aria-hidden="true"><span>Fish</span><span>Rarity</span><span>Where and when</span><span>Best bait</span><span>Special</span><span></span></div>
+      <div class="list" id="list-fish"></div>
+      <div class="chips" id="sug-fish"></div>
+      <div class="row-actions"><button type="button" class="btn small" data-add="fish">Add a fish</button></div>
+    </div>
+    <div class="sub">
+      <h3>Special versions</h3>
+      <p class="hint">Any fish can come out special and sell for more, like the mutations in the garden game. Which kinds?</p>
+      <div class="chips" data-group="specials"></div>
+    </div>
+  </section>
+
+  <!-- 5 Gear -->
+  <section class="step" id="gear">
+    <div class="step-head">
+      <div class="brick" style="--c:var(--purple)">5</div>
+      <div><h2>The gear shop</h2><p class="lede">What you save your coins for. Pick what's in the game, cheapest first is best, and add your own.</p></div>
+    </div>
+    <div class="gear" id="gearCats"></div>
+    <div class="sub">
+      <h3>What upgrades make better</h3>
+      <div class="chips" data-group="improves"></div>
+    </div>
+  </section>
+
+  <!-- 6 Places -->
+  <section class="step" id="places">
+    <div class="step-head">
+      <div class="brick" style="--c:var(--orange)">6</div>
+      <div><h2>Places and weather</h2><p class="lede">Where you start, where you want to get to, and what you need to unlock each spot.</p></div>
+    </div>
+    <div class="sub">
+      <div class="list-head places" aria-hidden="true"><span>Place</span><span>What's there</span><span>How you unlock it</span><span></span></div>
+      <div class="list" id="list-places"></div>
+      <div class="chips" id="sug-places"></div>
+      <div class="row-actions"><button type="button" class="btn small" data-add="places">Add a place</button></div>
+    </div>
+    <div class="sub">
+      <h3>Weather and events</h3>
+      <p class="hint">Things that change the fishing for everyone in the server.</p>
+      <div class="chips" data-group="events"></div>
+    </div>
+  </section>
+
+  <!-- 7 Look -->
+  <section class="step" id="look">
+    <div class="step-head">
+      <div class="brick" style="--c:var(--teal)">7</div>
+      <div><h2>Look and sound</h2><p class="lede">How should it look and feel when you walk onto the dock?</p></div>
+    </div>
+    <div class="look-grid">
+      <div class="sub"><h3>Style</h3><div class="chips" data-group="style"></div></div>
+      <div class="sub"><h3>Mood (pick up to 2)</h3><div class="chips" data-group="mood"></div></div>
+      <div class="sub"><h3>Time of day</h3><div class="chips" data-group="time"></div></div>
+      <div class="sub"><h3>Music</h3><div class="chips" data-group="music"></div></div>
+    </div>
+    <div class="sub"><h3>Main colors (pick up to 3)</h3><div class="swatches" id="swatches"></div></div>
+    <label class="f">It should feel like…<input type="text" id="look-feelsLike" data-bind="look.feelsLike" maxlength="140" placeholder="An early morning at the lake when the fog is still on the water"></label>
+  </section>
+
+  <!-- 8 Friends -->
+  <section class="step" id="friends">
+    <div class="step-head">
+      <div class="brick" style="--c:var(--pink)">8</div>
+      <div><h2>Playing together</h2><p class="lede">Fishing with friends, against them, or both?</p></div>
+    </div>
+    <div class="sub"><h3>How people play</h3><div class="chips" data-group="mode"></div></div>
+    <div class="sub">
+      <h3><label for="together-players">Players in one server</label></h3>
+      <div class="range-row"><input type="range" id="together-players" data-bind="together.players" min="1" max="30" step="1" value="8"><output id="together-playersOut" for="together-players">8</output></div>
+    </div>
+    <div class="sub"><h3>Extras</h3><div class="chips" data-group="extras"></div></div>
+    <div class="callout"><span class="k">House rule</span><p>Talking uses Roblox's own chat, which follows each player's parent settings. We won't build our own chat box. Quick buttons, pings and emotes are fine.</p></div>
+  </section>
+
+  <!-- 9 Map -->
+  <section class="step" id="map">
+    <div class="step-head">
+      <div class="brick" style="--c:var(--blue)">9</div>
+      <div><h2>Draw the map</h2><p class="lede">Draw the starting area: the water, the dock, the bait shop, paths, secret spots. Messy is fine. Labels help Claude a lot.</p></div>
+    </div>
+    <div class="map-tools">
+      <div class="tool-group" id="penGroup"><span>Paint</span></div>
+      <div class="tool-group"><span>Size</span>
+        <button type="button" class="chip" data-action="size" data-size="5" aria-pressed="false">Thin</button>
+        <button type="button" class="chip" data-action="size" data-size="12" aria-pressed="true">Medium</button>
+        <button type="button" class="chip" data-action="size" data-size="34" aria-pressed="false">Fat</button>
+      </div>
+      <div class="tool-group"><span>Tool</span>
+        <button type="button" class="chip" data-action="tool" data-tool="pen" aria-pressed="true">Draw</button>
+        <button type="button" class="chip" data-action="tool" data-tool="eraser" aria-pressed="false">Erase</button>
+        <button type="button" class="chip" data-action="tool" data-tool="label" aria-pressed="false">Label</button>
+      </div>
+      <input type="text" class="label-input" id="labelText" placeholder="Label text, then tap the map" maxlength="24" aria-label="Label text" hidden>
+    </div>
+    <div class="map-frame"><canvas id="mapCanvas" width="1200" height="800" aria-label="Map drawing area"></canvas></div>
+    <div class="map-foot">
+      <div class="row-actions">
+        <button type="button" class="btn small" data-action="undo">Undo</button>
+        <button type="button" class="btn small" data-action="clear">Clear</button>
+      </div>
+      <div class="row-actions">
+        <span class="map-note" id="mapNote">Nothing drawn yet.</span>
+        <button type="button" class="btn primary small" data-action="saveMap" id="saveMapBtn">Save map</button>
+      </div>
+    </div>
+    <div class="photo-box">
+      <span class="btn small file-btn" id="photoBtn">Upload a photo of a paper map<input type="file" id="photoInput" accept="image/png,image/jpeg,image/webp,image/gif" aria-label="Upload a photo of a paper map"></span>
+      <span class="map-note" id="photoNote"></span>
+      <img id="photoImg" alt="Photo of Liam's paper map" hidden>
+    </div>
+    <label class="f">Map notes<textarea id="map-notes" data-bind="map.notes" maxlength="1500" placeholder="You spawn on the dock. The bait shop is by the parking lot. The cave only opens at night."></textarea></label>
+  </section>
+
+  <!-- 10 Name it -->
+  <section class="step" id="pitch">
+    <div class="step-head">
+      <div class="brick" style="--c:var(--yellow)">10</div>
+      <div><h2>Name it and say it</h2><p class="lede">Give it a name and say the whole game in one sentence. If you can say it, Claude can build it.</p></div>
+    </div>
+    <div class="pitch-grid">
+      <label class="f full">Game name<input type="text" id="pitch-name" data-bind="pitch.name" maxlength="60" placeholder='Make one up, like "Creek Legends"'></label>
+      <label class="f">You are…<input type="text" id="pitch-youAre" data-bind="pitch.youAre" maxlength="100" placeholder="a kid with a brand new rod"></label>
+      <label class="f">The main thing you do is…<input type="text" id="pitch-youDo" data-bind="pitch.youDo" maxlength="100" placeholder="catch fish nobody has seen"></label>
+      <label class="f">So you can…<input type="text" id="pitch-goal" data-bind="pitch.goal" maxlength="100" placeholder="fill the fish journal"></label>
+      <label class="f">The coolest moment is when…<input type="text" id="pitch-coolest" data-bind="pitch.coolest" maxlength="120" placeholder="a legendary fish hits your line in a storm"></label>
+    </div>
+    <div class="pitch-card" id="pitchCard" aria-live="polite"></div>
+    <div class="sub">
+      <h3>The loop</h3>
+      <p class="hint">What players do over and over. If it's fun with plain gray blocks, the game is fun. Use 3 to 5 steps.</p>
+      <div class="loop-inputs" id="loopInputs"></div>
+      <div class="row-actions"><button type="button" class="btn small" data-action="suggestLoop">Use the suggested steps</button><span class="hint" id="loopHint"></span></div>
+      <div class="chain" id="chain" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- 11 First version -->
+  <section class="step" id="first">
+    <div class="step-head">
+      <div class="brick" style="--c:var(--green)">11</div>
+      <div><h2>The first version</h2><p class="lede">Sort every feature. The first version is the smallest game that's already fun. Everything else comes later, one update at a time.</p></div>
+    </div>
+    <div class="row-actions">
+      <span class="count" id="firstCount">0 things in the first version</span><span class="hint" id="firstHint">Aim for 4 to 6.</span>
+      <button type="button" class="btn small" data-action="claudeFirst">Fill in Claude's suggestion</button>
+    </div>
+    <div class="features" id="features"></div>
+    <div class="row-actions">
+      <input type="text" id="customFeature" placeholder="Add your own feature" maxlength="60" style="max-width:320px" aria-label="Add your own feature">
+      <button type="button" class="btn small" data-action="addFeature">Add</button>
+    </div>
+    <div class="two">
+      <label class="f">Play the first version by…<input type="date" id="goalDate" data-bind="goalDate"></label>
+      <div class="sub" style="align-content:end"><div class="chips"><button type="button" class="chip" data-action="birthday" id="birthdayChip" aria-pressed="false">My 12th birthday (Dec 11)</button></div></div>
+    </div>
+    <div class="two">
+      <label class="f">Anything else Claude should know?<textarea id="notes" data-bind="notes" maxlength="2000" placeholder="Real fishing tricks you know, things you hate in other games, a joke that has to be in it…"></textarea></label>
+      <label class="f">Questions for Claude<textarea id="questions" data-bind="questions" maxlength="2000" placeholder="Can there be boats you drive? Can my friends play it on their phones?"></textarea></label>
+    </div>
+  </section>
+
+  <!-- Dad -->
+  <section class="step dad" id="dad">
+    <div class="step-head">
+      <div class="brick wide" style="--c:var(--muted)">DAD</div>
+      <div><h2>Dad's corner</h2><p class="lede">The grown-up setup, about one evening. Every step is explained in <a href="https://claude.ai/artifact/YER6w7jUX8mfZQUdxi1TyX" target="_blank" rel="noopener">Cowork's setup guide</a>.</p></div>
+    </div>
+    <div class="two">
+      <div class="sub">
+        <h3>Setup checklist</h3>
+        <div class="progress" aria-hidden="true"><span id="setupBar"></span></div>
+        <p class="hint" id="setupCount">0 of 11 done</p>
+        <ul class="checklist" id="checklist"></ul>
+      </div>
+      <div class="sub" style="gap:16px">
+        <div class="sub"><h3>Who owns the game</h3><div class="chips" data-group="owner"></div><p class="hint">Cowork's advice: your account, so settings and any earnings sit with an adult.</p></div>
+        <div class="sub"><h3>Liam has a computer for Studio</h3><div class="chips" data-group="computer"></div><p class="hint">Studio runs on Windows or Mac only. Phones and the PS5 are for playtesting.</p></div>
+        <div class="sub"><h3>Paid items</h3><div class="chips" data-group="paid"></div></div>
+        <div class="callout blue"><span class="k">Who can play</span><p>A new game starts as 16+ only. Liam can always play it as a collaborator. His friends can play once their parent approves the game in Roblox Parental Controls.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Brief -->
+  <section class="step" id="brief">
+    <div class="step-head">
+      <div class="brick wide" style="--c:var(--orange)">GO</div>
+      <div><h2>Send it to Claude</h2><p class="lede">This page saves itself where Claude can read it. When you're ready, say this to Claude. Or copy the brief below and paste it in.</p></div>
+    </div>
+    <div class="say"><code id="sayLine">Read Liam's Game Lab and let's start building.</code><button type="button" class="btn small" data-action="copySay">Copy</button></div>
+    <ol class="next-steps">
+      <li style="--c:var(--green)"><b>Dad sets up.</b> Roblox Studio, Claude connected to it, Liam able to join. One evening.</li>
+      <li style="--c:var(--blue)"><b>Claude builds the loop</b> with plain gray blocks: one pond, a few fish, a shop.</li>
+      <li style="--c:var(--yellow)"><b>Liam plays it</b> and picks the 3 things to change next.</li>
+      <li style="--c:var(--red)"><b>Repeat until it's fun,</b> then add places, boats, and make it look and sound great.</li>
+    </ol>
+    <div class="row-actions"><button type="button" class="btn primary" data-action="copyBrief">Copy the brief</button><span class="copied" id="copiedNote" hidden>Copied</span></div>
+    <pre class="brief" id="briefText" tabindex="0" aria-label="Game brief for Claude"></pre>
+  </section>
+
+  <footer id="footer">Saves automatically.</footer>
+</main>
+
+<script>
+"use strict";
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
+const LS_KEY = "liams-game-lab-v1";
+const RARITIES = ["Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic"];
+
+/* ---------- Content ---------- */
+const STYLES = [
+  { key: "catch", c: "var(--blue)", tag: "Adventure", title: "Catch and sell",
+    line: "Go out on the water, catch wild fish, sell them at the bait shop, buy better gear. You earn while you play.",
+    loop: "cast → catch → sell → upgrade → new water",
+    steps: ["Cast your line", "Catch a fish", "Sell it at the shop", "Buy better gear", "Unlock new water"] },
+  { key: "farm", c: "var(--green)", tag: "Like the garden game", title: "Fish farm",
+    line: "Stock your pond with baby fish. They grow even while you're offline. Come back, harvest, sell, buy better fish and bigger ponds.",
+    loop: "stock → wait → harvest → sell → upgrade",
+    steps: ["Stock your pond", "Wait while they grow", "Harvest the big ones", "Sell them", "Buy better fish and ponds"] },
+  { key: "both", c: "var(--purple)", tag: "Closest to Dad's idea", title: "Catch and farm",
+    line: "Catch wild fish and keep the best ones in your pond to grow and breed. The pond earns while you're away; the lake is where the adventure is.",
+    loop: "catch → stock pond → grow and breed → sell → upgrade",
+    steps: ["Catch wild fish", "Keep the best in your pond", "They grow and breed", "Sell the big ones", "Upgrade gear and unlock water"] }
+];
+const VOTE_LABEL = { yes: "love it", maybe: "maybe", nope: "nope" };
+
+const FISH_SUG = [
+  { name: "Bluegill", rarity: "Common", where: "Any pond, daytime", bait: "Worms", special: "Easy first catch" },
+  { name: "Yellow perch", rarity: "Common", where: "Lakes, daytime", bait: "Minnows", special: "Swims in schools" },
+  { name: "Crappie", rarity: "Common", where: "Brush piles, evening", bait: "Minnows or small jigs", special: "Soft mouth, reel gently" },
+  { name: "Largemouth bass", rarity: "Uncommon", where: "Weeds and logs, dawn and dusk", bait: "Plastic worms, frogs", special: "Jumps when hooked" },
+  { name: "Smallmouth bass", rarity: "Uncommon", where: "Rocky river", bait: "Jigs, crayfish lures", special: "Fights hard for its size" },
+  { name: "Common carp", rarity: "Uncommon", where: "Muddy bottoms", bait: "Corn, dough balls", special: "Huge and heavy" },
+  { name: "Rainbow trout", rarity: "Rare", where: "Cold moving water, mornings", bait: "Spinners", special: "Spooks easily" },
+  { name: "Channel catfish", rarity: "Rare", where: "Deep holes, at night", bait: "Stinkbait", special: "Bites best after dark" },
+  { name: "Walleye", rarity: "Rare", where: "Rocky points, at night", bait: "Minnows, crankbaits", special: "Eyes glow in the dark" },
+  { name: "Northern pike", rarity: "Epic", where: "Weedy bays", bait: "Spoons", special: "Sharp teeth can cut your line" },
+  { name: "Muskie", rarity: "Legendary", where: "Big lake, fall", bait: "Giant lures", special: "The fish of 10,000 casts" },
+  { name: "Lake sturgeon", rarity: "Legendary", where: "Deepest part of the big lake", bait: "Worms on the bottom", special: "Can live over 100 years" },
+  { name: "Storm eel", rarity: "Mythic", where: "Only during thunderstorms", bait: "?", special: "Made-up: glows and zaps" },
+  { name: "Ghost trout", rarity: "Mythic", where: "Secret cave pool, full moon", bait: "?", special: "Made-up: see-through" }
+];
+const PLACE_SUG = [
+  { name: "Home pond", whats: "Bluegill, small bass", unlock: "Start here" },
+  { name: "Creek", whats: "Perch and little trout", unlock: "Catch 10 fish" },
+  { name: "Rocky river", whats: "Smallmouth and rainbow trout", unlock: "Buy waders" },
+  { name: "Big lake", whats: "Big bass, pike, muskie", unlock: "Buy a boat" },
+  { name: "Swamp", whats: "Catfish and gar", unlock: "Fish at night 5 times" },
+  { name: "Frozen lake", whats: "Ice fishing for perch and walleye", unlock: "Buy an ice auger" },
+  { name: "Ocean pier", whats: "Saltwater fish", unlock: "Earn 10,000 coins" },
+  { name: "Secret cave pool", whats: "Mythic fish", unlock: "Find the hidden map" }
+];
+const GEAR_CATS = [
+  { id: "rods", title: "Rods", hint: "Better rods cast farther and handle bigger fish." },
+  { id: "bait", title: "Bait", hint: "Live and natural bait. Each fish likes different bait." },
+  { id: "lures", title: "Lures", hint: "Spinners, spoons and the rest. Some fish only bite lures." },
+  { id: "boats", title: "Boats", hint: "Boats take you to new water." },
+  { id: "gadgets", title: "Gadgets", hint: "Everything else in the tackle box." }
+];
+
+const GROUPS = {
+  selling: { path: "money.selling", multi: true, own: true, opts: ["The shop buys any fish", "Prices change during the day", "Heavier fish sell for more", "Request board (someone wants a catfish today)", "Keep rare fish for a trophy wall"] },
+  pond: { path: "money.pond", multi: true, own: true, opts: ["Fish grow while you're offline", "Feed them to grow faster", "Breed two fish to get babies", "Babies can come out special", "Bigger ponds and tanks", "Auto-feeder", "Visitors pay to see your rare fish"] },
+  catching: { path: "money.catching", kind: "cards", opts: [
+    ["Timing bar", "A marker slides back and forth. Click when it's in the green."],
+    ["Follow the fish", "Keep your box on the fish while it darts around."],
+    ["Tug of war", "Hold to reel. Let go when the line gets too tight, or it snaps."],
+    ["Arrow combo", "Press the arrows the fish shows you, fast."],
+    ["Auto-catch", "Your line catches fish by itself. Upgrades make it faster."]
+  ] },
+  catchExtras: { path: "money.catchExtras", multi: true, own: true, opts: ["Rare fish fight harder", "Your line can snap", "Fish can steal your bait", "Every catch has a weight and length", "Wrong bait means no bites"] },
+  specials: { path: "specials", multi: true, own: true, opts: ["Golden", "Giant", "Tiny", "Albino", "Glowing", "Rainbow", "Frozen", "Electric", "Shiny"] },
+  rods: { path: "gear.rods", multi: true, own: true, opts: ["Stick and string", "Bamboo pole", "Push-button rod", "Spinning rod", "Baitcaster", "Fly rod", "Ice rod", "Deep-sea rod"] },
+  bait: { path: "gear.bait", multi: true, own: true, opts: ["Worms", "Crickets", "Minnows", "Leeches", "Corn", "Dough balls", "Stinkbait", "Shrimp"] },
+  lures: { path: "gear.lures", multi: true, own: true, opts: ["Spinners", "Spoons", "Crankbaits", "Plastic worms", "Jigs", "Topwater frogs", "Poppers", "Flies"] },
+  boats: { path: "gear.boats", multi: true, own: true, opts: ["Inner tube", "Kayak", "Canoe", "Jon boat", "Bass boat", "Pontoon boat", "Fishing trawler"] },
+  gadgets: { path: "gear.gadgets", multi: true, own: true, opts: ["Landing net", "Bigger cooler", "Tackle box", "Fish finder", "Headlamp (night fishing)", "Ice auger", "Waders", "Lucky hat"] },
+  improves: { path: "improves", multi: true, opts: ["Cast farther", "Reel faster", "Line won't snap", "Better luck (rarer fish)", "Bigger fish", "Carry more fish", "Reach new water"] },
+  events: { path: "events", multi: true, own: true, opts: ["Rain (more bites)", "Thunderstorm (storm fish)", "Fog", "Night", "Full moon", "Heat wave (fish go deep)", "Feeding frenzy", "Fishing tournament", "Winter freeze (ice fishing)", "Meteor shower"] },
+  style: { path: "look.style", opts: ["Blocky classic", "Smooth and detailed", "Cartoony", "Low-poly", "Realistic-ish"] },
+  mood: { path: "look.mood", multi: true, max: 2, opts: ["Chill", "Exciting", "Funny", "Mysterious", "A little spooky"] },
+  time: { path: "look.time", opts: ["Sunny day", "Sunset", "Night", "Day and night cycle"] },
+  music: { path: "look.music", opts: ["Calm", "Upbeat", "Adventure", "No music"] },
+  mode: { path: "together.mode", opts: ["Mostly solo", "Together (co-op)", "Against each other", "Both"] },
+  extras: { path: "together.extras", multi: true, own: true, opts: ["Trading fish", "Biggest-fish leaderboard", "Fishing tournaments", "Ride in a friend's boat", "Visit friends' ponds", "Crews", "Daily rewards", "Quests"] },
+  owner: { path: "decisions.owner", opts: ["My account", "A Roblox group I own", "Liam's account"] },
+  computer: { path: "decisions.computer", opts: ["Yes", "Only at my house", "Not yet"] },
+  paid: { path: "decisions.paid", opts: ["None for now", "Cosmetic only, later", "Decide later"] },
+  colors: { path: "look.colors", multi: true, max: 3, opts: [] }
+};
+
+const SWATCHES = [
+  ["Lake blue", "#2F7FD8"], ["Pine green", "#2E8B57"], ["Sunset orange", "#F28C28"], ["Sand", "#E9CF8E"], ["Mud brown", "#7A4E2D"],
+  ["Night purple", "#4B3A8C"], ["Ice white", "#EAF4FA"], ["Lava red", "#D93A2B"], ["Neon green", "#5BEA4B"], ["Storm gray", "#6B7785"]
+];
+const PENS = [
+  ["Water", "#3D8BE0"], ["Grass", "#3FA34D"], ["Sand", "#E5C77F"], ["Dirt", "#8A5A33"], ["Rock", "#8C96A0"],
+  ["Important", "#E0392B"], ["Ink", "#1C232B"], ["White", "#FFFFFF"]
+];
+
+const FEATURES = ["Cast and catch minigame", "Fish with rarities", "Sell fish for coins", "Rod and bait shop", "Progress saves when you leave",
+  "Your own fish pond", "Fish grow while you're offline", "Breeding fish", "Special fish (golden, giant…)", "Bait that matters",
+  "Day and night (night-only fish)", "Weather events", "Fish journal (collect them all)", "Boats", "New places to unlock",
+  "Trophy wall or aquarium", "Trading fish", "Biggest-fish leaderboard", "Fishing tournaments", "Quests from the bait shop owner", "Fishing with friends"];
+const CLAUDE_FIRST = { catch: ["Cast and catch minigame", "Fish with rarities", "Sell fish for coins", "Rod and bait shop", "Progress saves when you leave", "Bait that matters"],
+  farm: ["Your own fish pond", "Fish grow while you're offline", "Fish with rarities", "Sell fish for coins", "Rod and bait shop", "Progress saves when you leave"],
+  both: ["Cast and catch minigame", "Fish with rarities", "Sell fish for coins", "Rod and bait shop", "Your own fish pond", "Progress saves when you leave"] };
+
+const SETUP = [
+  ["studio", "Roblox Studio installed on your PC", "Free from create.roblox.com. Unity and Unreal aren't used for Roblox games."],
+  ["acct", "Your Roblox account is age-checked, with 2-Step Verification on"],
+  ["parent", "Linked as Liam's parent", "On his account: Settings, Parental Controls, Add Parent"],
+  ["collab", "Liam's Parental Controls: Live collaboration in Studio set to All age groups", "So he can join your Team Create sessions"],
+  ["liamstudio", "Roblox Studio on Liam's computer, and he's age-checked and signed in"],
+  ["mcp", "Studio MCP server on, connected to Claude Code", "Assistant, the ... menu, Manage MCP Servers, Enable, then Quick connect"],
+  ["sync", "Script Sync turned on", "File, Beta Features. Claude can walk you through it"],
+  ["repo", "Project repo created", "Claude does this"],
+  ["tools", "Luau helper tools installed", "Rokit, Selene, StyLua. Claude installs them"],
+  ["checks", "Roblox's four connection checks pass", "Claude runs them"],
+  ["teamcreate", "Liam joins a Team Create session with you"]
+];
+
+/* ---------- State ---------- */
+const DEFAULT_STATE = () => ({
+  v: 2, updatedAt: "",
+  loves: [{ game: "", best: "", annoying: "" }, { game: "", best: "", annoying: "" }, { game: "", best: "", annoying: "" }],
+  money: { style: "", votes: { catch: "", farm: "", both: "" }, selling: [], pond: [], twist: "", catching: "", catchExtras: [] },
+  fish: [], specials: [],
+  gear: { rods: [], bait: [], lures: [], boats: [], gadgets: [] }, improves: [],
+  places: [], events: [],
+  custom: {},
+  look: { style: "", mood: [], time: "", music: "", colors: [], feelsLike: "" },
+  together: { mode: "", players: 8, extras: [] },
+  map: { assetId: "", photoId: "", savedAt: "", notes: "" },
+  pitch: { name: "", youAre: "", youDo: "", goal: "", coolest: "" },
+  loop: ["", "", "", "", ""],
+  features: {}, customFeatures: [],
+  goalDate: "", notes: "", questions: "",
+  setup: {}, decisions: { owner: "", computer: "", paid: "" }
+});
+
+const isObj = (x) => x && typeof x === "object" && !Array.isArray(x);
+function mergeDeep(base, over) {
+  if (!isObj(over)) return base;
+  for (const k of Object.keys(over)) {
+    if (isObj(base[k]) && isObj(over[k])) mergeDeep(base[k], over[k]);
+    else if (over[k] !== undefined && over[k] !== null) base[k] = over[k];
+  }
+  return base;
+}
+const clone = (x) => JSON.parse(JSON.stringify(x));
+const arr = (x) => (Array.isArray(x) ? x : []);
+function normalize(s) {
+  // Carry over fish typed into the first version of this page.
+  if (!arr(s.fish).length && arr(s.stuff).length) s.fish = s.stuff.map((r) => ({ name: r.name || "", rarity: r.rarity || "", where: r.where || "", bait: "", special: r.special || "" }));
+  for (const k of ["stuff", "upgrades", "votes", "ownIdea", "chosen"]) delete s[k];
+  s.loves = arr(s.loves).slice(0, 3); while (s.loves.length < 3) s.loves.push({ game: "", best: "", annoying: "" });
+  s.loop = arr(s.loop).slice(0, 5); while (s.loop.length < 5) s.loop.push("");
+  for (const k of ["fish", "places", "specials", "improves", "events", "customFeatures"]) s[k] = arr(s[k]);
+  for (const k of ["selling", "pond", "catchExtras"]) s.money[k] = arr(s.money[k]);
+  for (const c of GEAR_CATS) s.gear[c.id] = arr(s.gear[c.id]);
+  for (const k of ["mood", "colors"]) s.look[k] = arr(s.look[k]);
+  s.together.extras = arr(s.together.extras);
+  if (typeof s.together.players !== "number") s.together.players = 8;
+  if (!isObj(s.custom)) s.custom = {};
+  if (!isObj(s.features)) s.features = {};
+  return s;
+}
+function loadLocal() { try { const raw = localStorage.getItem(LS_KEY); return raw ? JSON.parse(raw) : null; } catch (_) { return null; } }
+function saveLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (_) {} }
+
+let state = normalize(mergeDeep(DEFAULT_STATE(), loadLocal() || {}));
+
+function getPath(obj, path) { return path.split(".").reduce((o, k) => (o == null ? undefined : o[k]), obj); }
+function setPath(obj, path, val) {
+  const keys = path.split("."); let o = obj;
+  for (let i = 0; i < keys.length - 1; i++) { if (o[keys[i]] == null) o[keys[i]] = {}; o = o[keys[i]]; }
+  o[keys[keys.length - 1]] = val;
+}
+const has = (s) => typeof s === "string" && s.trim().length > 0;
+const styleObj = () => STYLES.find((x) => x.key === state.money.style);
+
+/* ---------- Saving ---------- */
+let planRef = null, assets = null, dbSettled = false, saveTimer = null, saving = false, again = false, readOnly = false;
+const STATUS_TEXT = {
+  loading: "Connecting…", slow: "Still connecting…", saved: "Saved", pending: "Saving soon…", saving: "Saving…",
+  local: "Saving on this device only", readonly: "View only", error: "Couldn't save. Keep going, it will retry."
+};
+function setStatus(s) {
+  const st = $("#status"); st.dataset.state = s; st.textContent = STATUS_TEXT[s] || s;
+  const f = $("#footer");
+  if (s === "saved") f.textContent = "Saved for Claude at " + new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) + ".";
+  else if (s === "local") f.textContent = "Saving in this browser only. Use Copy the brief to send it to Claude.";
+  else if (s === "readonly") f.textContent = "You can look but not change this page.";
+}
+function changed() {
+  state.updatedAt = new Date().toISOString();
+  saveLocal();
+  renderDerived();
+  if (!dbSettled) return;
+  if (!planRef) { setStatus("local"); return; }
+  if (readOnly) return;
+  setStatus("pending");
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(flush, 900);
+}
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+async function flush() {
+  if (!planRef || readOnly) return;
+  if (saving) { again = true; return; }
+  saving = true; setStatus("saving");
+  try {
+    await planRef.set(clone(state));
+    setStatus("saved");
+  } catch (e) {
+    const code = e && e.code;
+    if (code === "invalid_argument") { readOnly = true; setStatus("readonly"); }
+    else if (code === "unavailable") {
+      await sleep(1000 + Math.random() * 1000);
+      try { await planRef.set(clone(state)); setStatus("saved"); } catch (_) { setStatus("error"); }
+    } else setStatus("error");
+  } finally {
+    saving = false;
+    if (again) { again = false; flush(); }
+  }
+}
+async function flushNow() { clearTimeout(saveTimer); await flush(); }
+
+/* ---------- Builders ---------- */
+function el(tag, attrs = {}, text) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") n.className = v;
+    else if (k === "style") n.setAttribute("style", v);
+    else if (k.startsWith("data-") || k.startsWith("aria-") || ["type", "id", "for", "placeholder", "maxlength", "title", "role"].includes(k)) n.setAttribute(k, v);
+    else n[k] = v;
+  }
+  if (text != null) n.textContent = text;
+  return n;
+}
+
+function buildLoves() {
+  const host = $("#loves");
+  const ph = [["Game you play a lot", "What's the best part?", "What bugs you about it?"], ["A fishing game you've tried", "Best part", "What bugs you"], ["One more (optional)", "Best part", "What bugs you"]];
+  state.loves.forEach((_, i) => {
+    const row = el("div", { class: "love-row" });
+    const mk = (key, label, p, max) => {
+      const l = el("label", { class: "f" });
+      l.append(el("span", {}, label), el("input", { type: "text", id: `loves-${i}-${key}`, "data-bind": `loves.${i}.${key}`, placeholder: p, maxlength: String(max) }));
+      return l;
+    };
+    row.append(mk("game", "Game", ph[i][0], 60), mk("best", "Best part", ph[i][1], 160), mk("annoying", "What bugs you", ph[i][2], 160));
+    host.append(row);
+  });
+}
+
+function buildStyles() {
+  const host = $("#styles");
+  for (const s of STYLES) {
+    const card = el("article", { class: "idea", style: `--c:${s.c}`, "data-style": s.key });
+    const top = el("div", { class: "idea-top" });
+    top.append(el("span", { class: "tag" }, s.tag), el("h3", {}, s.title));
+    const body = el("div", { class: "idea-body" });
+    body.append(el("p", {}, s.line), el("p", { class: "loopline" }, "Loop: " + s.loop));
+    const foot = el("div", { class: "idea-foot" });
+    const votes = el("div", { class: "votes", role: "group", "aria-label": "Vote on " + s.title });
+    for (const [v, label] of [["yes", "Love it"], ["maybe", "Maybe"], ["nope", "Nope"]]) {
+      votes.append(el("button", { type: "button", class: "chip", "data-vote": s.key, "data-value": v, "aria-pressed": "false" }, label));
+    }
+    foot.append(votes, el("button", { type: "button", class: "btn choose", "data-choose": s.key }, "Pick this one"));
+    card.append(top, body, foot);
+    host.append(card);
+  }
+}
+
+function buildGear() {
+  const host = $("#gearCats");
+  for (const c of GEAR_CATS) {
+    const box = el("div", { class: "gear-cat" });
+    const head = el("header");
+    head.append(el("h3", {}, c.title), el("span", { class: "tally", id: "tally-" + c.id }, ""));
+    box.append(head, el("p", { class: "hint" }, c.hint), el("div", { class: "chips", "data-group": c.id }));
+    host.append(box);
+  }
+}
+
+function buildLoopInputs() {
+  const host = $("#loopInputs");
+  for (let i = 0; i < 5; i++) {
+    const l = el("label", { for: `loop-${i}` }, `Step ${i + 1}`);
+    l.append(el("input", { type: "text", id: `loop-${i}`, "data-bind": `loop.${i}`, maxlength: "40" }));
+    host.append(l);
+  }
+}
+
+function buildGroups() {
+  for (const host of $$("[data-group]")) {
+    const gid = host.dataset.group, g = GROUPS[gid];
+    if (g && g.own) {
+      const row = el("div", { class: "add-own" });
+      row.append(
+        el("input", { type: "text", id: "own-" + gid, placeholder: "Add your own", maxlength: "40", "aria-label": "Add your own", "data-own": gid }),
+        el("button", { type: "button", class: "btn small", "data-action": "addOwn", "data-gid": gid }, "Add")
+      );
+      host.after(row);
+    }
+    renderGroup(host);
+  }
+  const sw = $("#swatches");
+  for (const [name, hex] of SWATCHES) {
+    sw.append(el("button", { type: "button", class: "swatch", style: `--sw:${hex}`, "data-multi": "colors", "data-value": name, "aria-pressed": "false", "aria-label": name, title: name }));
+  }
+}
+function renderGroup(host) {
+  const gid = host.dataset.group, g = GROUPS[gid];
+  host.textContent = "";
+  if (g.kind === "cards") {
+    for (const [t, d] of g.opts) {
+      const b = el("button", { type: "button", class: "choice", "data-chip": gid, "data-value": t, "aria-pressed": "false" });
+      b.append(el("b", {}, t), el("small", {}, d));
+      host.append(b);
+    }
+    return;
+  }
+  const attr = g.multi ? "data-multi" : "data-chip";
+  for (const opt of g.opts) host.append(el("button", { type: "button", class: "chip", [attr]: gid, "data-value": opt, "aria-pressed": "false" }, opt));
+  for (const opt of arr(state.custom[gid])) {
+    const wrapEl = el("span", { class: "chip-own" });
+    wrapEl.append(
+      el("button", { type: "button", class: "chip", [attr]: gid, "data-value": opt, "aria-pressed": "false" }, opt),
+      el("button", { type: "button", class: "x", "data-action": "removeOwn", "data-gid": gid, "data-value": opt, "aria-label": "Remove " + opt }, "×")
+    );
+    host.append(wrapEl);
+  }
+}
+
+function buildChecklist() {
+  const host = $("#checklist");
+  for (const [key, label, small] of SETUP) {
+    const li = el("li"), l = el("label");
+    const span = el("span", {}, label);
+    if (small) span.append(el("small", {}, small));
+    l.append(el("input", { type: "checkbox", id: "setup-" + key, "data-setup": key }), span);
+    li.append(l); host.append(li);
+  }
+}
+
+/* ---------- Lists ---------- */
+const LIST_FIELDS = {
+  fish: [["name", "Fish", 40], ["rarity", null, 0], ["where", "Where and when", 80], ["bait", "Best bait", 60], ["special", "What makes it special", 80]],
+  places: [["name", "Place", 40], ["whats", "What's there", 80], ["unlock", "How you unlock it", 60]]
+};
+const SUGS = { fish: FISH_SUG, places: PLACE_SUG };
+const EMPTY_TEXT = {
+  fish: "No fish yet. Tap a suggestion below to start, then change anything that's wrong.",
+  places: "No places yet. Where do players start, and where do they want to go next?"
+};
+function renderList(kind) {
+  const host = $("#list-" + kind); host.textContent = "";
+  const rows = state[kind];
+  if (!rows.length) host.append(el("p", { class: "empty" }, EMPTY_TEXT[kind]));
+  rows.forEach((row, i) => {
+    const r = el("div", { class: "row row-" + kind });
+    if (kind === "fish") r.dataset.rarity = row.rarity || "";
+    for (const [k, ph, max] of LIST_FIELDS[kind]) {
+      let input;
+      if (k === "rarity") {
+        input = el("select", { "aria-label": "Rarity" });
+        input.append(el("option", { value: "" }, "Rarity"));
+        for (const rr of RARITIES) { const o = el("option", {}, rr); o.value = rr; input.append(o); }
+      } else input = el("input", { type: "text", placeholder: ph, maxlength: String(max), "aria-label": ph });
+      input.id = `${kind}-${i}-${k}`;
+      input.dataset.bind = `${kind}.${i}.${k}`;
+      input.value = row[k] || "";
+      r.append(input);
+    }
+    r.append(el("button", { type: "button", class: "icon-btn", "data-remove": kind, "data-index": String(i), "aria-label": "Remove" }, "×"));
+    host.append(r);
+  });
+  renderSuggestions(kind);
+}
+function renderSuggestions(kind) {
+  const host = $("#sug-" + kind); host.textContent = "";
+  const taken = new Set(state[kind].map((r) => (r.name || "").trim().toLowerCase()));
+  SUGS[kind].forEach((s, i) => {
+    if (taken.has(s.name.toLowerCase())) return;
+    host.append(el("button", { type: "button", class: "chip add", "data-suggest": kind, "data-index": String(i) }, s.name));
+  });
+}
+
+/* ---------- Features ---------- */
+const featureLabels = () => [...FEATURES, ...state.customFeatures];
+function renderFeatures() {
+  const host = $("#features"); host.textContent = "";
+  for (const label of featureLabels()) {
+    const isCustom = !FEATURES.includes(label);
+    const row = el("div", { class: "feat" });
+    row.append(el("span", { class: "name" }, label));
+    const seg = el("div", { class: "seg", role: "group", "aria-label": label });
+    for (const [v, t] of [["first", "First version"], ["later", "Later"], ["nope", "Nope"]]) {
+      seg.append(el("button", { type: "button", "data-feature": label, "data-value": v, "aria-pressed": String(state.features[label] === v) }, t));
+    }
+    row.append(seg);
+    if (isCustom) row.append(el("button", { type: "button", class: "icon-btn", "data-action": "removeFeature", "data-value": label, "aria-label": "Remove " + label }, "×"));
+    else row.append(el("span", { class: "spacer" }));
+    host.append(row);
+  }
+  renderFeatureCount();
+}
+function renderFeatureCount() {
+  const n = featureLabels().filter((f) => state.features[f] === "first").length;
+  const c = $("#firstCount");
+  c.textContent = n + (n === 1 ? " thing" : " things") + " in the first version";
+  c.classList.toggle("over", n > 7);
+  $("#firstHint").textContent = n > 7 ? "That's a lot for a first version. Try to keep it to 6 or fewer." : "Aim for 4 to 6.";
+}
+
+/* ---------- Derived views ---------- */
+function renderPressed() {
+  for (const b of $$("[data-chip]")) b.setAttribute("aria-pressed", String(getPath(state, GROUPS[b.dataset.chip].path) === b.dataset.value));
+  for (const b of $$("[data-multi]")) b.setAttribute("aria-pressed", String(arr(getPath(state, GROUPS[b.dataset.multi].path)).includes(b.dataset.value)));
+  for (const b of $$("[data-vote]")) b.setAttribute("aria-pressed", String(state.money.votes[b.dataset.vote] === b.dataset.value));
+  for (const card of $$("[data-style]")) {
+    const chosen = card.dataset.style === state.money.style;
+    card.classList.toggle("chosen", chosen);
+    $(".choose", card).textContent = chosen ? "We're building this" : "Pick this one";
+  }
+  for (const cb of $$("[data-setup]")) cb.checked = !!state.setup[cb.dataset.setup];
+  $("#birthdayChip").setAttribute("aria-pressed", String(state.goalDate === "2026-12-11"));
+  const pondOn = state.money.style === "farm" || state.money.style === "both";
+  $("#pondBox").classList.toggle("dim", state.money.style === "catch");
+  $("#pondHint").textContent = state.money.style === "catch" ? "Catch and sell has no pond, so you can skip these. Pick them anyway if you want a pond later." : (pondOn ? "Your game has a pond. Pick what it can do." : "For a game with your own pond. Pick the ones you want.");
+  for (const c of GEAR_CATS) { const n = state.gear[c.id].length; $("#tally-" + c.id).textContent = n ? n + " picked" : ""; }
+}
+function fillBound() {
+  for (const inp of $$("[data-bind]")) {
+    const v = getPath(state, inp.dataset.bind);
+    if (inp.type === "range") { inp.value = String(v ?? 8); const out = document.getElementById(inp.id + "Out"); if (out) out.textContent = inp.value; }
+    else if (document.activeElement !== inp) inp.value = v == null ? "" : String(v);
+  }
+}
+function renderPitch() {
+  const p = state.pitch, card = $("#pitchCard"); card.textContent = "";
+  card.append(el("span", { class: "lbl" }, "Your pitch"));
+  const part = (v) => (has(v) ? el("b", {}, v.trim()) : el("span", { class: "blank" }, "______"));
+  card.append("In ", part(p.name), ", you are ", part(p.youAre), ". The main thing you do is ", part(p.youDo), ", so you can ", part(p.goal), ". The coolest moment is when ", part(p.coolest), ".");
+}
+function pitchText() {
+  const p = state.pitch, f = (v) => (has(v) ? v.trim() : "____");
+  return `In ${f(p.name)}, you are ${f(p.youAre)}. The main thing you do is ${f(p.youDo)}, so you can ${f(p.goal)}. The coolest moment is when ${f(p.coolest)}.`;
+}
+const BRICKS = ["var(--blue)", "var(--yellow)", "var(--green)", "var(--red)", "var(--purple)"];
+function renderLoopHints() {
+  const s = styleObj() || STYLES[0];
+  s.steps.forEach((t, i) => { $("#loop-" + i).placeholder = t; });
+  $("#loopHint").textContent = styleObj() ? "" : "Pick how you make money in step 2 and the suggestion matches it.";
+}
+function renderChain() {
+  const host = $("#chain"); host.textContent = "";
+  const steps = state.loop.filter(has);
+  if (!steps.length) { host.append(el("span", { class: "empty" }, "Your loop shows up here as you type the steps.")); return; }
+  steps.forEach((s, i) => {
+    if (i) host.append(el("span", { class: "arrow", "aria-hidden": "true" }, "→"));
+    const pill = el("span", { class: "pill" });
+    pill.append(el("i", { style: `--c:${BRICKS[i % BRICKS.length]}` }, String(i + 1)), document.createTextNode(s.trim()));
+    host.append(pill);
+  });
+  host.append(el("span", { class: "arrow", "aria-hidden": "true" }, "→"), el("span", { class: "again" }, "and again!"));
+}
+
+const gearCount = () => GEAR_CATS.reduce((n, c) => n + state.gear[c.id].length, 0);
+const STEPS = [
+  { id: "games", n: "1", label: "Games", done: () => state.loves.some((l) => has(l.game)) },
+  { id: "money", n: "2", label: "Money", done: () => !!state.money.style },
+  { id: "catching", n: "3", label: "Catching", done: () => !!state.money.catching },
+  { id: "fish", n: "4", label: "Fish", done: () => state.fish.filter((r) => has(r.name)).length >= 4 },
+  { id: "gear", n: "5", label: "Gear", done: () => gearCount() >= 6 },
+  { id: "places", n: "6", label: "Places", done: () => state.places.filter((r) => has(r.name)).length >= 3 },
+  { id: "look", n: "7", label: "Look", done: () => has(state.look.style) && state.look.mood.length > 0 },
+  { id: "friends", n: "8", label: "Friends", done: () => has(state.together.mode) },
+  { id: "map", n: "9", label: "Map", done: () => !!(state.map.assetId || state.map.photoId) },
+  { id: "pitch", n: "10", label: "Name it", done: () => has(state.pitch.name) && state.loop.filter(has).length >= 3 },
+  { id: "first", n: "11", label: "First version", done: () => featureLabels().filter((f) => state.features[f] === "first").length >= 3 },
+  { id: "dad", n: "D", label: "Dad", done: () => SETUP.every(([k]) => state.setup[k]) },
+  { id: "brief", n: "GO", label: "Send", done: () => false }
+];
+function buildRail() {
+  const host = $("#railSteps");
+  for (const s of STEPS) {
+    const a = el("a", { href: "#" + s.id, id: "rail-" + s.id });
+    a.append(el("span", { class: "n" }, s.n), document.createTextNode(s.label));
+    host.append(a);
+  }
+}
+function renderRail() {
+  for (const s of STEPS) $("#rail-" + s.id).classList.toggle("done", s.done());
+  const n = SETUP.filter(([k]) => state.setup[k]).length;
+  $("#setupCount").textContent = `${n} of ${SETUP.length} done`;
+  $("#setupBar").style.width = (n / SETUP.length) * 100 + "%";
+}
+
+/* ---------- Brief ---------- */
+const cell = (s) => (s || "").replace(/\|/g, "/").replace(/\n/g, " ").trim();
+const list = (a) => (a.length ? a.join(", ") : "(none picked)");
+function fmtDate(iso) {
+  if (!iso) return "not yet";
+  const d = new Date(iso);
+  return isNaN(d) ? iso : d.toLocaleString([], { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+}
+function buildBrief() {
+  const s = state, m = s.money, st = styleObj(), L = [];
+  L.push(`# Game brief: ${has(s.pitch.name) ? s.pitch.name.trim() : "Liam's fishing game"}`, `A Roblox fishing game. From Liam's Game Lab, last change ${fmtDate(s.updatedAt)}.`, "");
+  L.push("## Crew", "- Liam: creative director. Final say on what's fun, names, the look and difficulty.", "- Dad: producer. Accounts, publishing, safety, money, schedule.", "- Claude: builder. Systems, saving, tests, performance.", "");
+  L.push("## Games Liam loves");
+  const loves = s.loves.filter((l) => has(l.game));
+  if (!loves.length) L.push("(not filled in yet)");
+  for (const l of loves) L.push(`- ${l.game.trim()}. Best part: ${has(l.best) ? l.best.trim() : "?"}. What bugs him: ${has(l.annoying) ? l.annoying.trim() : "?"}.`);
+  L.push("", "## How you make money", `- Picked: ${st ? st.title + " (" + st.loop + ")" : "(not picked yet)"}`);
+  L.push("- Votes: " + STYLES.map((x) => `${x.title}: ${VOTE_LABEL[m.votes[x.key]] || "no vote"}`).join("; "));
+  L.push(`- Selling: ${list(m.selling)}`, `- Fish farm options: ${list(m.pond)}`);
+  if (has(m.twist)) L.push(`- Our twist: ${m.twist.trim()}`);
+  L.push("", "## How you catch", `- Minigame: ${m.catching || "(not picked yet)"}`, `- Extras: ${list(m.catchExtras)}`);
+  L.push("", "## Fish");
+  const fish = s.fish.filter((r) => has(r.name));
+  if (!fish.length) L.push("(none yet)");
+  else { L.push("| Fish | Rarity | Where and when | Best bait | Special |", "|---|---|---|---|---|"); for (const r of fish) L.push(`| ${cell(r.name)} | ${cell(r.rarity) || "?"} | ${cell(r.where)} | ${cell(r.bait)} | ${cell(r.special)} |`); }
+  L.push("", `Special versions: ${list(s.specials)}`);
+  L.push("", "## Gear shop");
+  for (const c of GEAR_CATS) L.push(`- ${c.title}: ${list(s.gear[c.id])}`);
+  L.push(`- Upgrades make better: ${list(s.improves)}`);
+  L.push("", "## Places to unlock");
+  const pl = s.places.filter((r) => has(r.name));
+  if (!pl.length) L.push("(none yet)"); else pl.forEach((r, i) => L.push(`${i + 1}. ${r.name.trim()}: ${has(r.whats) ? r.whats.trim() : "?"} (unlock: ${has(r.unlock) ? r.unlock.trim() : "?"})`));
+  L.push("", `Weather and events: ${list(s.events)}`);
+  const lk = s.look;
+  L.push("", "## Look and sound", `- Style: ${lk.style || "?"}`, `- Mood: ${list(lk.mood)}`, `- Time of day: ${lk.time || "?"}`, `- Music: ${lk.music || "?"}`,
+    `- Colors: ${lk.colors.map((n) => { const sw = SWATCHES.find((x) => x[0] === n); return sw ? `${n} ${sw[1]}` : n; }).join(", ") || "?"}`,
+    `- Feels like: ${has(lk.feelsLike) ? lk.feelsLike.trim() : "?"}`);
+  const t = s.together;
+  L.push("", "## Playing together", `- How: ${t.mode || "?"}`, `- Players per server: ${t.players}`, `- Extras: ${list(t.extras)}`, "- House rule: Roblox's own chat only, no custom chat. Quick buttons, pings and emotes are fine.");
+  L.push("", "## Map");
+  L.push(s.map.assetId ? `- Drawing saved (asset ${s.map.assetId}, at /_blob/${s.map.assetId}), last saved ${fmtDate(s.map.savedAt)}` : "- No drawing saved yet");
+  if (s.map.photoId) L.push(`- Photo of a paper map (asset ${s.map.photoId})`);
+  if (has(s.map.notes)) L.push(`- Notes: ${s.map.notes.trim()}`);
+  L.push("", "## Pitch", pitchText(), "", "## Core loop");
+  const steps = s.loop.filter(has);
+  if (!steps.length) L.push("(not filled in yet)"); else steps.forEach((x, i) => L.push(`${i + 1}. ${x.trim()}`));
+  const labels = featureLabels(), by = (v) => labels.filter((f) => s.features[f] === v);
+  L.push("", "## First version", `- First version: ${by("first").join("; ") || "(none sorted yet)"}`, `- Later: ${by("later").join("; ") || "-"}`, `- Nope: ${by("nope").join("; ") || "-"}`);
+  const unsorted = labels.filter((f) => !s.features[f]);
+  if (unsorted.length) L.push(`- Not sorted yet: ${unsorted.join("; ")}`);
+  L.push(`- Play the first version by: ${s.goalDate || "(no date)"}`);
+  if (has(s.notes)) L.push("", "## Notes from Liam", s.notes.trim());
+  if (has(s.questions)) L.push("", "## Questions for Claude", s.questions.trim());
+  const todo = SETUP.filter(([k]) => !s.setup[k]);
+  L.push("", "## Setup status (Dad)", `- ${SETUP.length - todo.length} of ${SETUP.length} done.${todo.length ? " Still to do: " + todo.map((x) => x[1]).join("; ") + "." : ""}`,
+    `- Owner: ${s.decisions.owner || "?"}. Liam's computer: ${s.decisions.computer || "?"}. Paid items: ${s.decisions.paid || "?"}.`);
+  return L.join("\n");
+}
+
+function renderDerived() { renderPitch(); renderChain(); renderRail(); renderFeatureCount(); renderPressed(); $("#briefText").textContent = buildBrief(); }
+function renderAll() {
+  for (const k of ["fish", "places"]) renderList(k);
+  for (const host of $$("[data-group]")) renderGroup(host);
+  renderFeatures(); renderLoopHints(); fillBound(); renderDerived(); renderMapImages();
+}
+
+/* ---------- Events ---------- */
+document.addEventListener("input", (e) => {
+  const inp = e.target.closest && e.target.closest("[data-bind]");
+  if (!inp) return;
+  const v = inp.type === "range" ? Number(inp.value) : inp.value;
+  setPath(state, inp.dataset.bind, v);
+  if (inp.type === "range") { const out = document.getElementById(inp.id + "Out"); if (out) out.textContent = String(v); }
+  if (/^fish\.\d+\.rarity$/.test(inp.dataset.bind)) inp.closest(".row").dataset.rarity = v;
+  if (/^(fish|places)\.\d+\.name$/.test(inp.dataset.bind)) renderSuggestions(inp.dataset.bind.split(".")[0]);
+  changed();
+});
+document.addEventListener("change", (e) => {
+  const cb = e.target.closest && e.target.closest("[data-setup]");
+  if (!cb) return;
+  state.setup[cb.dataset.setup] = cb.checked;
+  changed();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter") return;
+  const own = e.target.closest && e.target.closest("[data-own]");
+  if (own) { e.preventDefault(); addOwn(own.dataset.own); }
+  else if (e.target.id === "customFeature") { e.preventDefault(); actions.addFeature(); }
+});
+
+function addOwn(gid) {
+  const inp = $("#own-" + gid), v = inp.value.trim(), g = GROUPS[gid];
+  if (!v) { inp.focus(); return; }
+  const custom = arr(state.custom[gid]).slice();
+  if (!g.opts.includes(v) && !custom.includes(v)) custom.push(v);
+  state.custom[gid] = custom;
+  const sel = arr(getPath(state, g.path)).slice();
+  if (!sel.includes(v)) sel.push(v);
+  setPath(state, g.path, sel);
+  inp.value = "";
+  renderGroup($(`[data-group="${gid}"]`));
+  changed();
+}
+
+const actions = {
+  addOwn(t) { addOwn(t.dataset.gid); },
+  removeOwn(t) {
+    const gid = t.dataset.gid, v = t.dataset.value, g = GROUPS[gid];
+    state.custom[gid] = arr(state.custom[gid]).filter((x) => x !== v);
+    setPath(state, g.path, arr(getPath(state, g.path)).filter((x) => x !== v));
+    renderGroup($(`[data-group="${gid}"]`)); changed();
+  },
+  suggestLoop() { state.loop = (styleObj() || STYLES[0]).steps.slice(0, 5); for (const inp of $$('[data-bind^="loop."]')) inp.value = getPath(state, inp.dataset.bind) || ""; changed(); },
+  claudeFirst() {
+    const pick = CLAUDE_FIRST[state.money.style] || CLAUDE_FIRST.catch;
+    for (const f of FEATURES) if (!state.features[f]) state.features[f] = pick.includes(f) ? "first" : "later";
+    renderFeatures(); changed();
+  },
+  addFeature() {
+    const inp = $("#customFeature"), v = inp.value.trim();
+    if (!v) { inp.focus(); return; }
+    if (!featureLabels().includes(v)) state.customFeatures.push(v);
+    state.features[v] = state.features[v] || "first";
+    inp.value = ""; renderFeatures(); changed();
+  },
+  removeFeature(t) {
+    const label = t.dataset.value;
+    state.customFeatures = state.customFeatures.filter((x) => x !== label); delete state.features[label];
+    renderFeatures(); changed();
+  },
+  birthday() { state.goalDate = state.goalDate === "2026-12-11" ? "" : "2026-12-11"; $("#goalDate").value = state.goalDate; changed(); },
+  async copyBrief() { await copyText(buildBrief(), $("#briefText")); },
+  async copySay() { await copyText($("#sayLine").textContent, $("#sayLine")); },
+  tool(t) { setTool(t.dataset.tool); },
+  color(t) { penColor = t.dataset.color; for (const b of $$("[data-action=color]")) b.setAttribute("aria-pressed", String(b === t)); if (tool !== "pen") setTool("pen"); },
+  size(t) { penSize = Number(t.dataset.size); for (const b of $$("[data-action=size]")) b.setAttribute("aria-pressed", String(b === t)); },
+  undo() { const img = undoStack.pop(); if (img) { ctx.putImageData(img, 0, 0); markMapDirty(); } },
+  clear(t) {
+    if (t.dataset.armed !== "1") {
+      t.dataset.armed = "1"; t.textContent = "Tap again to clear";
+      setTimeout(() => { t.dataset.armed = ""; t.textContent = "Clear"; }, 3000);
+      return;
+    }
+    t.dataset.armed = ""; t.textContent = "Clear";
+    pushUndo(); ctx.clearRect(0, 0, canvas.width, canvas.height); markMapDirty();
+  },
+  saveMap() { saveMap(); }
+};
+
+document.addEventListener("click", (e) => {
+  const t = e.target.closest && e.target.closest("button");
+  if (!t) return;
+  const d = t.dataset;
+  if (d.vote) {
+    state.money.votes[d.vote] = state.money.votes[d.vote] === d.value ? "" : d.value; changed();
+  } else if (d.choose) {
+    state.money.style = d.choose; renderLoopHints(); changed();
+  } else if (d.chip) {
+    const p = GROUPS[d.chip].path;
+    setPath(state, p, getPath(state, p) === d.value ? "" : d.value); changed();
+  } else if (d.multi) {
+    const g = GROUPS[d.multi], a = arr(getPath(state, g.path)).slice(), i = a.indexOf(d.value);
+    if (i >= 0) a.splice(i, 1); else { a.push(d.value); while (g.max && a.length > g.max) a.shift(); }
+    setPath(state, g.path, a); changed();
+  } else if (d.add) {
+    state[d.add].push(Object.fromEntries(LIST_FIELDS[d.add].map(([k]) => [k, ""])));
+    renderList(d.add); changed();
+    const last = $(`#${d.add}-${state[d.add].length - 1}-name`); if (last) last.focus();
+  } else if (d.remove) {
+    state[d.remove].splice(Number(d.index), 1); renderList(d.remove); changed();
+  } else if (d.suggest) {
+    const s = SUGS[d.suggest][Number(d.index)];
+    if (s) { state[d.suggest].push(Object.assign({}, s)); renderList(d.suggest); changed(); }
+  } else if (d.feature) {
+    state.features[d.feature] = state.features[d.feature] === d.value ? "" : d.value;
+    for (const b of $$("button[data-feature]")) if (b.dataset.feature === d.feature) b.setAttribute("aria-pressed", String(state.features[d.feature] === b.dataset.value));
+    changed();
+  } else if (d.action && actions[d.action]) {
+    actions[d.action](t);
+  }
+});
+
+async function copyText(text, fallbackEl) {
+  const note = $("#copiedNote");
+  try { await navigator.clipboard.writeText(text); note.textContent = "Copied"; }
+  catch (_) {
+    const r = document.createRange(); r.selectNodeContents(fallbackEl);
+    const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    note.textContent = "Selected. Press Ctrl+C to copy.";
+  }
+  note.hidden = false; clearTimeout(copyText.t); copyText.t = setTimeout(() => { note.hidden = true; }, 2500);
+}
+
+/* ---------- Map ---------- */
+const canvas = $("#mapCanvas"), ctx = canvas.getContext("2d");
+let tool = "pen", penColor = PENS[0][1], penSize = 12, drawing = false, lastPt = null, mapDirty = false, mapHasInk = false, loadedMapId = "";
+const undoStack = [];
+(function buildPens() {
+  const g = $("#penGroup");
+  PENS.forEach(([name, hex], i) => g.append(el("button", { type: "button", class: "pen", style: `--pc:${hex}`, "data-action": "color", "data-color": hex, "aria-pressed": String(i === 0), "aria-label": name, title: name })));
+})();
+function setTool(t) {
+  tool = t;
+  for (const b of $$("[data-action=tool]")) b.setAttribute("aria-pressed", String(b.dataset.tool === t));
+  $("#labelText").hidden = t !== "label";
+  if (t === "label") $("#labelText").focus();
+}
+function pushUndo() { try { undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height)); if (undoStack.length > 25) undoStack.shift(); } catch (_) {} }
+function ptFrom(e) { const r = canvas.getBoundingClientRect(); return { x: (e.clientX - r.left) * canvas.width / r.width, y: (e.clientY - r.top) * canvas.height / r.height }; }
+function strokeSetup() {
+  ctx.globalCompositeOperation = tool === "eraser" ? "destination-out" : "source-over";
+  ctx.strokeStyle = penColor; ctx.fillStyle = penColor;
+  ctx.lineWidth = tool === "eraser" ? penSize * 2.2 : penSize;
+  ctx.lineCap = "round"; ctx.lineJoin = "round";
+}
+canvas.addEventListener("pointerdown", (e) => {
+  e.preventDefault(); pushUndo();
+  const p = ptFrom(e);
+  if (tool === "label") { placeLabel(p); return; }
+  drawing = true; lastPt = p; canvas.setPointerCapture(e.pointerId);
+  strokeSetup(); ctx.beginPath(); ctx.arc(p.x, p.y, ctx.lineWidth / 2, 0, Math.PI * 2); ctx.fill();
+});
+canvas.addEventListener("pointermove", (e) => {
+  if (!drawing) return;
+  const p = ptFrom(e);
+  strokeSetup(); ctx.beginPath(); ctx.moveTo(lastPt.x, lastPt.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+  lastPt = p;
+});
+for (const ev of ["pointerup", "pointercancel"]) canvas.addEventListener(ev, () => { if (drawing) { drawing = false; markMapDirty(); } });
+function placeLabel(p) {
+  const text = $("#labelText").value.trim();
+  if (!text) { undoStack.pop(); $("#labelText").focus(); $("#mapNote").textContent = "Type the label text first, then tap the map."; return; }
+  ctx.globalCompositeOperation = "source-over";
+  ctx.font = "600 34px Rubik, system-ui, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.lineWidth = 7; ctx.strokeStyle = "#FFFFFF"; ctx.strokeText(text, p.x, p.y);
+  ctx.fillStyle = "#1C232B"; ctx.fillText(text, p.x, p.y);
+  markMapDirty();
+}
+function markMapDirty() {
+  mapDirty = true; mapHasInk = true;
+  $("#mapNote").className = "map-note warn";
+  $("#mapNote").textContent = assets ? "Not saved yet." : "Drawing works here, but saving needs Dad's account.";
+}
+function paintPaper(c, w, h) {
+  const cs = getComputedStyle(document.documentElement);
+  c.fillStyle = cs.getPropertyValue("--map-paper").trim() || "#E3EFDA"; c.fillRect(0, 0, w, h);
+  c.strokeStyle = cs.getPropertyValue("--map-grid").trim() || "#C8DBBB"; c.lineWidth = 1;
+  for (let x = 0; x <= w; x += w / 25) { c.beginPath(); c.moveTo(x + 0.5, 0); c.lineTo(x + 0.5, h); c.stroke(); }
+  for (let y = 0; y <= h; y += h / 16.6667) { c.beginPath(); c.moveTo(0, y + 0.5); c.lineTo(w, y + 0.5); c.stroke(); }
+}
+async function saveMap() {
+  if (!assets) return;
+  const btn = $("#saveMapBtn"); btn.disabled = true; btn.textContent = "Saving…";
+  try {
+    const off = document.createElement("canvas"); off.width = canvas.width; off.height = canvas.height;
+    const o = off.getContext("2d"); paintPaper(o, off.width, off.height); o.drawImage(canvas, 0, 0);
+    const blob = await new Promise((res) => off.toBlob(res, "image/png"));
+    if (!blob) throw { code: "invalid_request" };
+    const result = await assets.upload(blob, { type: "image/png" });
+    const old = state.map.assetId;
+    state.map.assetId = result.id; state.map.savedAt = new Date().toISOString(); loadedMapId = result.id;
+    changed(); await flushNow();
+    if (old && old !== result.id) assets.delete(old).catch(() => {});
+    mapDirty = false;
+    $("#mapNote").className = "map-note"; $("#mapNote").textContent = "Map saved for Claude.";
+  } catch (e) {
+    $("#mapNote").className = "map-note warn";
+    $("#mapNote").textContent = e && e.code === "rate_limited" ? "Too many saves at once. Wait a moment and try again." : "Couldn't save the map. Try again in a moment.";
+  } finally { btn.disabled = false; btn.textContent = "Save map"; }
+}
+function renderMapImages() {
+  const id = state.map.assetId;
+  if (id && id !== loadedMapId && !mapDirty) {
+    const img = new Image();
+    img.onload = () => { ctx.globalCompositeOperation = "source-over"; ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); loadedMapId = id; mapHasInk = true; $("#mapNote").className = "map-note"; $("#mapNote").textContent = "Saved map loaded. Keep drawing, then save again."; };
+    img.onerror = () => { $("#mapNote").textContent = "The saved map couldn't load here."; };
+    img.src = "/_blob/" + id;
+  }
+  const pid = state.map.photoId, pimg = $("#photoImg");
+  if (pid) { pimg.hidden = false; if (pimg.dataset.id !== pid) { pimg.dataset.id = pid; pimg.src = "/_blob/" + pid; } }
+  else pimg.hidden = true;
+}
+function renderMapAvailability() {
+  const ok = !!assets;
+  $("#saveMapBtn").hidden = !ok;
+  $("#photoBtn").hidden = !ok;
+  if (!ok) { $("#mapNote").textContent = "You can draw here. Saving the map works when Dad opens this page in Claude."; $("#photoNote").textContent = ""; }
+  else if (!mapHasInk) { $("#mapNote").className = "map-note"; $("#mapNote").textContent = "Nothing drawn yet."; }
+}
+$("#photoImg").addEventListener("error", () => { $("#photoImg").hidden = true; $("#photoNote").textContent = "The saved photo couldn't load here."; });
+$("#photoInput").addEventListener("change", async (e) => {
+  const file = e.target.files && e.target.files[0]; e.target.value = "";
+  if (!file || !assets) return;
+  if (!["image/png", "image/jpeg", "image/webp", "image/gif"].includes(file.type)) { $("#photoNote").textContent = "Use a JPG or PNG photo."; return; }
+  $("#photoNote").textContent = "Uploading…";
+  try {
+    const r = await assets.upload(file, { type: file.type });
+    const old = state.map.photoId; state.map.photoId = r.id;
+    changed(); await flushNow();
+    if (old && old !== r.id) assets.delete(old).catch(() => {});
+    $("#photoNote").textContent = "Photo saved."; renderMapImages();
+  } catch (err) {
+    $("#photoNote").textContent = err && err.code === "too_large" ? "That photo is too big. Try a smaller one." : "Couldn't upload the photo. Try again.";
+  }
+});
+
+/* ---------- Boot ---------- */
+buildRail(); buildLoves(); buildStyles(); buildGear(); buildLoopInputs(); buildGroups(); buildChecklist();
+renderAll();
+setStatus("loading");
+renderMapAvailability();
+
+(async () => {
+  const C = window.claude;
+  if (!C || typeof C.use !== "function") { dbSettled = true; setStatus("local"); return; }
+  const slow = setTimeout(() => { if (!dbSettled) setStatus("slow"); }, 10000);
+  let dbNs = null;
+  try {
+    const both = await Promise.all([C.use("db").catch(() => null), C.use("assets").catch(() => null)]);
+    dbNs = both[0]; assets = both[1];
+  } catch (_) {}
+  renderMapAvailability();
+  if (!dbNs) { clearTimeout(slow); dbSettled = true; setStatus("local"); return; }
+  const ref = dbNs.doc("plan/main");
+  try {
+    const snap = await ref.get();
+    clearTimeout(slow);
+    planRef = ref; dbSettled = true;
+    if (snap.exists) {
+      const remote = clone(snap.data() || {});
+      if (!state.updatedAt || (remote.updatedAt && remote.updatedAt >= state.updatedAt)) {
+        state = normalize(mergeDeep(DEFAULT_STATE(), remote));
+        saveLocal(); renderAll(); setStatus("saved");
+      } else flush();
+    } else if (state.updatedAt) flush();
+    else setStatus("saved");
+  } catch (e) {
+    clearTimeout(slow); dbSettled = true; setStatus("local");
+  }
+})();
+</script>
