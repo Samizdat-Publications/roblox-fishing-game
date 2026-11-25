@@ -1,0 +1,75 @@
+--!strict
+-- Gives every character a gray-box fishing rod with a "RodTip" attachment for the line.
+local Players = game:GetService("Players")
+
+local RodService = {}
+
+local function giveRod(character: Model)
+	local hand = character:WaitForChild("RightHand", 5) or character:FindFirstChild("Right Arm")
+	if not hand or not hand:IsA("BasePart") then
+		return
+	end
+	local old = character:FindFirstChild("Rod")
+	if old then
+		old:Destroy()
+	end
+	local rod = Instance.new("Part")
+	rod.Name = "Rod"
+	rod.Size = Vector3.new(0.18, 0.18, 6)
+	rod.Color = Color3.fromRGB(70, 60, 50)
+	rod.Material = Enum.Material.SmoothPlastic
+	rod.CanCollide = false
+	rod.CanQuery = false
+	rod.CanTouch = false
+	rod.Massless = true
+	rod.CFrame = hand.CFrame * CFrame.Angles(math.rad(40), 0, 0) * CFrame.new(0, 0, -2.6)
+	local weld = Instance.new("WeldConstraint")
+	weld.Part0 = hand
+	weld.Part1 = rod
+	weld.Parent = rod
+	local tip = Instance.new("Attachment")
+	tip.Name = "RodTip"
+	tip.Position = Vector3.new(0, 0, -3)
+	tip.Parent = rod
+	local reel = Instance.new("Part")
+	reel.Name = "Reel"
+	reel.Size = Vector3.new(0.5, 0.5, 0.5)
+	reel.Color = Color3.fromRGB(150, 150, 155)
+	reel.CanCollide = false
+	reel.CanQuery = false
+	reel.CanTouch = false
+	reel.Massless = true
+	reel.CFrame = rod.CFrame * CFrame.new(0, -0.3, 2)
+	local w2 = Instance.new("WeldConstraint")
+	w2.Part0 = rod
+	w2.Part1 = reel
+	w2.Parent = reel
+	reel.Parent = rod
+	rod.Parent = character
+end
+
+function RodService.tip(player: Player): Attachment?
+	local c = player.Character
+	local rod = c and c:FindFirstChild("Rod")
+	return rod and rod:FindFirstChild("RodTip") :: Attachment?
+end
+
+function RodService.start()
+	local function hook(player: Player)
+		player.CharacterAppearanceLoaded:Connect(function(c)
+			giveRod(c)
+		end)
+		player.CharacterAdded:Connect(function(c)
+			task.defer(giveRod, c)
+		end)
+		if player.Character then
+			task.defer(giveRod, player.Character)
+		end
+	end
+	Players.PlayerAdded:Connect(hook)
+	for _, p in Players:GetPlayers() do
+		hook(p)
+	end
+end
+
+return RodService
