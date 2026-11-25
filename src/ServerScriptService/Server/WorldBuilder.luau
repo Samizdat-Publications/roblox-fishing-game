@@ -16,7 +16,7 @@ local ZONES = {
 	{ name = "Dock", center = Vector3.new(0, 0, 57), size = Vector3.new(30, 10, 46) },
 	{ name = "WeedBed", center = Vector3.new(-78, 0, 38), size = Vector3.new(56, 10, 64) },
 	{ name = "Logs", center = Vector3.new(78, 0, 42), size = Vector3.new(56, 10, 60) },
-	{ name = "DeepHole", center = Vector3.new(0, 0, -25), size = Vector3.new(60, 10, 50) },
+	{ name = "DeepHole", center = Vector3.new(0, 0, -22), size = Vector3.new(60, 10, 56) },
 }
 
 local COLORS = {
@@ -113,9 +113,15 @@ function WorldBuilder.build(): Model
 	if old then
 		old:Destroy()
 	end
+	-- Clear the template's baseplate and any spawn pads so everyone starts on the dock.
 	local baseplate = workspace:FindFirstChild("Baseplate")
 	if baseplate then
 		baseplate:Destroy()
+	end
+	for _, d in workspace:GetDescendants() do
+		if d:IsA("SpawnLocation") then
+			d:Destroy()
+		end
 	end
 
 	local lake = Instance.new("Model")

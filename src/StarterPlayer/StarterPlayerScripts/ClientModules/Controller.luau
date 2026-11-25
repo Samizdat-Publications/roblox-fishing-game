@@ -44,6 +44,12 @@ local function setState(s: string)
 	state = s
 end
 
+-- Studio-only test hook: when the server sets DebugAutoFish on the player, the client presses
+-- the Fish button on a bite and reels perfectly, through the same handler as real input.
+local function autoFish(): boolean
+	return RunService:IsStudio() and game:GetService("Players").LocalPlayer:GetAttribute("DebugAutoFish") == true
+end
+
 local function idleStatus()
 	UI.status("Face the water. Hold " .. UI.inputName() .. " and let go to cast.")
 end
@@ -245,9 +251,10 @@ function Controller.start()
 			UI.showPower(chargePower())
 		elseif state == "Casting" and os.clock() > castTimeout then
 			goIdle()
+		elseif state == "Bite" and autoFish() then
+			onFish("Fish", Enum.UserInputState.Begin, (nil :: any))
 		elseif state == "Fighting" and fight then
-			-- Studio-only test hook: a server-set attribute lets automated playtests reel.
-			if RunService:IsStudio() and game:GetService("Players").LocalPlayer:GetAttribute("DebugAutoReel") then
+			if autoFish() then
 				holding = fight.zonePos < fight.fishPos
 			end
 			local result = FightModel.step(fight, math.min(dt, 0.1), holding)

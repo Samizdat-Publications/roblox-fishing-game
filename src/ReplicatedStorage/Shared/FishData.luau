@@ -147,7 +147,7 @@ local list: { Species } = {
 		maxCm = 110,
 		weightCoef = 7.3e-6,
 		basePrice = 60,
-		fight = { zone = 0.22, speed = 1.8, dart = 1.2, range = 0.8, sink = 0.2, heavy = 0.3, gain = 0.20, loss = 0.24 },
+		fight = { zone = 0.24, speed = 1.5, dart = 1.2, range = 0.8, sink = 0.2, heavy = 0.3, gain = 0.20, loss = 0.20 },
 		habit = "Rare hunter on the weed edge and open water by day. Chases spinners.",
 		fightNote = "Wild, fast runs.",
 	},

@@ -29,7 +29,7 @@ return function(t, Shared)
 	end)
 
 	t.test("wrong combo gives no bite", function()
-		local w = FishLogic.biteWeights("Logs", "Day", "Stinkbait")
+		local w = FishLogic.biteWeights("DeepHole", "Day", "Cricket")
 		t.eq(#w, 0, "weights")
 		t.eq(FishLogic.biteDelay(w, Random.new(1)), nil, "delay")
 	end)

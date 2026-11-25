@@ -91,7 +91,7 @@ Shared spot names: `Dock`, `WeedBed`, `Logs`, `DeepHole`, `OpenWater`. Periods: 
 
 Species (habit, spots, periods, baits): Bluegill (Dock, WeedBed; Day; Worm, Cricket), Pumpkinseed (WeedBed, Dock; Day, Dawn; Cricket, Worm), Yellow Perch (OpenWater, Dock; Dawn, Day; Minnow, Worm), Black Crappie (Logs, Dock; Dusk, Night; Minnow), Largemouth Bass (WeedBed, Logs; Dawn, Dusk; PlasticWorm, Spinner, Minnow), Channel Catfish (DeepHole; Night, Dusk; Stinkbait, Worm), Common Carp (OpenWater, DeepHole; Day; Worm, Stinkbait), Northern Pike (WeedBed, OpenWater; Day, Dawn; Spinner, Minnow; rare).
 
-- [ ] Spec asserts: `periodFromClock(6)=="Dawn"`, `12=="Day"`, `18.5=="Dusk"`, `23=="Night"`, `2=="Night"`; top of `biteWeights("Dock","Day","Worm")` is Bluegill; top of `("DeepHole","Night","Stinkbait")` is Channel Catfish; top of `("WeedBed","Dawn","PlasticWorm")` is Largemouth Bass; `("Dock","Day","Stinkbait")` has no Bass; `biteWeights("Logs","Day","Stinkbait")` is empty and `biteDelay` of it is nil; 200 `rollSize` draws stay inside min and max; `priceFor` grows with weight; `isOnWater` false for a point 5 studs past the edge.
+- [ ] Spec asserts: `periodFromClock(6)=="Dawn"`, `12=="Day"`, `18.5=="Dusk"`, `23=="Night"`, `2=="Night"`; top of `biteWeights("Dock","Day","Worm")` is Bluegill; top of `("DeepHole","Night","Stinkbait")` is Channel Catfish; top of `("WeedBed","Dawn","PlasticWorm")` is Largemouth Bass; `("Dock","Day","Stinkbait")` has no Bass; `biteWeights("DeepHole","Day","Cricket")` is empty and `biteDelay` of it is nil; 200 `rollSize` draws stay inside min and max; `priceFor` grows with weight; `isOnWater` false for a point 5 studs past the edge.
 - [ ] Implement, run via TestRunner in Edit, all pass. Commit.
 
 ### Task 3 (M2 core): FightModel
