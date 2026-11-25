@@ -42,8 +42,24 @@
 - Studio API access is on, so the DataStore is live: stopping play logged `saved ProBabyTurtle`; restarting loaded `21 coins, 12 caught`, bag 6 fish (173), Minnows x7.
 - Memory fallback checked earlier in an unsaved place: `DataStore unavailable (...). Using memory only; progress will not save.`
 
-## What's next
-- M6 controls and polish: touch and gamepad through the whole loop, phone layout in the device emulator, sounds.
+### M6 Controls and polish: done
+- Phone (Device Simulator, Samsung Galaxy A06, 705 x 338, the smallest phone in the list): the first pass found the Roblox touch button tiny (45 px) and sitting on the jump button, the fight panel overlapping the top bar, its help text cut off, and the journal taller than the screen. Fixed: a big 110 px Fish button left of jump (hold and release like a mouse), fight panel moved left of center and shortened, side buttons hidden during a fight, panels shrink to fit. Second pass: touch hold and release cast ("Waiting for a bite at the dock..."), touch hold lifted the catch zone, journal fits, fight panel clears the top bar (y 39 vs 37), status says "Hold the Fish button".
+- Gamepad (key codes through the input tool, plus the Xbox One screen in the simulator): D-pad right cycled bait, R2 hold and release cast, R2 press reeled back in, Y opened the journal, B closed it; on the console screen the hint reads "Hold R2 and let go to cast" and the Journal button shows (Y).
+- Keyboard and mouse regression after the changes: mouse cast, fight, Pumpkinseed landed, no errors in the log. 23 unit tests pass; Studio matches `src/` (checksums all match).
+- Sounds: cast, splash, bite, catch and click use Roblox's built-in sounds; all five load.
+- The game is locked to landscape (fishing plays sideways).
+- Studio reset to the default viewport after testing.
+
+## What works now
+A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shore, wait for a bite, hook it, fight it on the bar, land it, sell at the Fish Buyer, buy bait at Bait and Tackle, and fill the journal. Eight species follow real habits (spot, time of day, bait), the day runs 16 minutes, and progress saves to Roblox.
+
+## What's left (next version, after Stewart and Liam playtest)
+- Tuning from real play: bite times, fight difficulty, prices, how dark night is.
+- Visible fish and nicer water, a better rod pose (the rod points almost straight up), names on the stands' prompts.
+- Later versions from `DESIGN.md`: home pond, better rods and a boat, a second fishing spot, weather, co-op, art pass.
+- The test save on Stewart's account has 21 coins and 14 fish from Claude's playtests. Ask Claude to wipe it if you want a fresh start.
 
 ## Waiting on Stewart
+- Playtest it: open Fishing Game in Studio and press Play (F5).
 - Optional, speeds up Claude's builds: in Studio, Assistant Settings, MCP Permissions, Connect to the internet, add `localhost:8765` to the HTTP domain allow list.
+- Done already: the place is saved to Roblox and Studio API access is on.

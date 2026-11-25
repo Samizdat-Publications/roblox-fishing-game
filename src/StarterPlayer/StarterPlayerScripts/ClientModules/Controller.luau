@@ -176,6 +176,12 @@ function Controller.start()
 	end
 
 	UI.init({
+		fishDown = function()
+			onFish("Fish", Enum.UserInputState.Begin, (nil :: any))
+		end,
+		fishUp = function()
+			onFish("Fish", Enum.UserInputState.End, (nil :: any))
+		end,
 		cycleBait = cycleBait,
 		toggleJournal = function()
 			UI.toggleJournal()
@@ -211,10 +217,8 @@ function Controller.start()
 		end
 	end)
 
-	-- Main action on mouse, F key, gamepad R2 and an on-screen touch button.
-	ContextActionService:BindAction("Fish", onFish, true, Enum.UserInputType.MouseButton1, Enum.KeyCode.F, Enum.KeyCode.ButtonR2)
-	ContextActionService:SetTitle("Fish", "Fish")
-	ContextActionService:SetPosition("Fish", UDim2.new(1, -170, 1, -170))
+	-- Main action on mouse, F key and gamepad R2. Touch uses the big Fish button in the UI.
+	ContextActionService:BindAction("Fish", onFish, false, Enum.UserInputType.MouseButton1, Enum.KeyCode.F, Enum.KeyCode.ButtonR2)
 
 	ContextActionService:BindAction("Journal", function(_, st)
 		if st == Enum.UserInputState.Begin then

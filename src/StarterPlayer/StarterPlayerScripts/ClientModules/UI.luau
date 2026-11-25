@@ -136,7 +136,9 @@ function UI.init(cbs: { [string]: (...any) -> () })
 	gui.Name = "FishingUI"
 	gui.ResetOnSpawn = false
 	gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-	gui.Parent = player:WaitForChild("PlayerGui")
+	local playerGui = player:WaitForChild("PlayerGui") :: PlayerGui
+	playerGui.ScreenOrientation = Enum.ScreenOrientation.LandscapeSensor -- a fishing game plays sideways
+	gui.Parent = playerGui
 
 	local scale = Instance.new("UIScale")
 	scale.Parent = gui
@@ -146,9 +148,17 @@ function UI.init(cbs: { [string]: (...any) -> () })
 			local v = cam.ViewportSize
 			scale.Scale = math.clamp(math.min(v.X / 1280, v.Y / 720) * 1.15, 0.72, 1.25)
 		end
+		-- Panels shrink to fit short phone screens (heights are in scaled units).
+		local h = gui.AbsoluteSize.Y / scale.Scale
+		for _, panel in { refs.shop, refs.journal } do
+			if panel then
+				panel.Size = UDim2.fromOffset(640, math.min(470, h - 70))
+			end
+		end
 	end
-	rescale()
+	refs.rescale = rescale
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(rescale)
+	gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(rescale)
 
 	-- Top bar: coins, clock, bag. Sits below Roblox's top buttons.
 	local top = frame(gui, "TopBar", UDim2.fromOffset(560, 44), UDim2.new(0.5, -280, 0, 8))
@@ -186,23 +196,24 @@ function UI.init(cbs: { [string]: (...any) -> () })
 	refs.bite.TextStrokeTransparency = 0
 	refs.bite.Visible = false
 
-	-- Fight bar (right side)
-	local fight = frame(gui, "Fight", UDim2.fromOffset(150, 380), UDim2.new(1, -190, 0.5, -190), C.panel, 0.2)
+	-- Fight bar: left of center, so a thumb on the touch Fish button never covers it,
+	-- and short enough to clear the top bar on small phones.
+	local fight = frame(gui, "Fight", UDim2.fromOffset(150, 320), UDim2.new(0.5, -260, 0.5, -140), C.panel, 0.2)
 	corner(fight)
 	fight.Visible = false
 	refs.fightNote = label(fight, "Note", "", UDim2.fromOffset(150, 40), UDim2.fromOffset(0, 2), 15, C.dim)
-	local track = frame(fight, "Track", UDim2.fromOffset(56, 300), UDim2.fromOffset(20, 50), Color3.fromRGB(20, 60, 90), 0)
+	local track = frame(fight, "Track", UDim2.fromOffset(56, 236), UDim2.fromOffset(20, 46), Color3.fromRGB(20, 60, 90), 0)
 	corner(track, 6)
 	refs.zone = frame(track, "Zone", UDim2.new(1, 0, 0.3, 0), UDim2.fromScale(0, 0.5), C.green, 0.35)
 	corner(refs.zone, 6)
 	refs.fishMark = frame(track, "FishMark", UDim2.new(1, 8, 0, 14), UDim2.fromScale(0, 0.5), C.fish, 0)
 	refs.fishMark.Position = UDim2.new(0, -4, 0.5, 0)
 	corner(refs.fishMark, 7)
-	local prog = frame(fight, "Progress", UDim2.fromOffset(22, 300), UDim2.fromOffset(100, 50), Color3.fromRGB(40, 40, 40), 0)
+	local prog = frame(fight, "Progress", UDim2.fromOffset(22, 236), UDim2.fromOffset(100, 46), Color3.fromRGB(40, 40, 40), 0)
 	corner(prog, 6)
 	refs.progFill = frame(prog, "Fill", UDim2.fromScale(1, 0.35), UDim2.fromScale(0, 0.65), C.gold, 0)
 	corner(refs.progFill, 6)
-	refs.fightHelp = label(fight, "Help", "Hold to reel", UDim2.fromOffset(150, 26), UDim2.fromOffset(0, 352), 15, C.text)
+	refs.fightHelp = label(fight, "Help", "Hold to reel in", UDim2.fromOffset(150, 26), UDim2.fromOffset(0, 288), 15, C.text)
 	refs.fight = fight
 
 	-- Toasts (top center, under the bar)
@@ -229,8 +240,48 @@ function UI.init(cbs: { [string]: (...any) -> () })
 	refs.cardNote = label(card, "Note", "", UDim2.new(1, 0, 0, 70), UDim2.fromOffset(0, 100), 16, C.dim)
 	refs.card = card
 
+	-- Big touch Fish button, left of Roblox's jump button. Hold and release like a mouse button.
+	if UserInputService.TouchEnabled then
+		local fishBtn = Instance.new("TextButton")
+		fishBtn.Name = "TouchFish"
+		fishBtn.AnchorPoint = Vector2.new(1, 1)
+		fishBtn.Position = UDim2.new(1, -150, 1, -20)
+		fishBtn.Size = UDim2.fromOffset(110, 110)
+		fishBtn.BackgroundColor3 = C.blue
+		fishBtn.BackgroundTransparency = 0.1
+		fishBtn.Text = "Fish"
+		fishBtn.TextColor3 = C.text
+		fishBtn.TextSize = 28
+		fishBtn.Font = Enum.Font.GothamBlack
+		fishBtn.AutoButtonColor = true
+		corner(fishBtn, 55)
+		local held: InputObject? = nil
+		fishBtn.InputBegan:Connect(function(input)
+			if held or not (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1) then
+				return
+			end
+			held = input
+			if callbacks.fishDown then
+				callbacks.fishDown()
+			end
+			local conn: RBXScriptConnection
+			conn = input:GetPropertyChangedSignal("UserInputState"):Connect(function()
+				if input.UserInputState == Enum.UserInputState.End or input.UserInputState == Enum.UserInputState.Cancel then
+					conn:Disconnect()
+					held = nil
+					if callbacks.fishUp then
+						callbacks.fishUp()
+					end
+				end
+			end)
+		end)
+		fishBtn.Parent = gui
+		refs.touchFish = fishBtn
+	end
+
 	UI.buildShop()
 	UI.buildJournal()
+	rescale()
 end
 
 function UI.setClock(clock: number)
@@ -251,6 +302,9 @@ end
 
 function UI.status(text: string)
 	refs.status.Text = text
+	-- Keep the key hint on the Journal button right for the current device.
+	local name = UI.inputName()
+	refs.journalBtn.Text = if name == "R2" then "Journal (Y)" elseif name == "click" then "Journal (J)" else "Journal"
 end
 
 function UI.showPower(p: number?)
@@ -273,12 +327,15 @@ end
 function UI.showFight(s: any?, note: string?)
 	if not s then
 		refs.fight.Visible = false
+		refs.baitBtn.Visible = true
+		refs.journalBtn.Visible = true
 		return
 	end
 	refs.fight.Visible = true
+	refs.baitBtn.Visible = false
+	refs.journalBtn.Visible = false
 	if note then
 		refs.fightNote.Text = note
-		refs.fightHelp.Text = "Hold " .. (if UI.inputName() == "click" then "mouse" else UI.inputName()) .. " to reel"
 	end
 	refs.zone.Size = UDim2.new(1, 0, s.zoneSize, 0)
 	refs.zone.Position = UDim2.new(0, 0, 1 - s.zonePos - s.zoneSize / 2, 0)
@@ -340,7 +397,8 @@ end
 -- Panels
 
 local function panelShell(name: string, title: string): (Frame, ScrollingFrame)
-	local p = frame(gui, name, UDim2.fromOffset(640, 470), UDim2.new(0.5, -320, 0.5, -225), C.panel, 0.03)
+	local p = frame(gui, name, UDim2.fromOffset(640, 470), UDim2.new(0.5, 0, 0.5, 24), C.panel, 0.03)
+	p.AnchorPoint = Vector2.new(0.5, 0.5)
 	corner(p, 14)
 	p.Visible = false
 	label(p, "Title", title, UDim2.new(1, -120, 0, 44), UDim2.fromOffset(16, 6), 24, C.gold, Enum.Font.GothamBlack).TextXAlignment = Enum.TextXAlignment.Left
