@@ -2,7 +2,7 @@
   "project": "Fishing Game",
   "pitch": "A Roblox fishing game where real fishing knowledge matters: the right bait, spot and time of day decide what bites.",
   "status": "in-development",
-  "updated": "2026-11-26T13:30:00",
+  "updated": "2026-11-26T16:30:00",
   "entries": [
     {
       "id": "start",
@@ -360,6 +360,34 @@
         {
           "src": "stills/2026-11-26-models-bluegill-on-line.jpg",
           "caption": "A bluegill as it hangs on the line"
+        }
+      ]
+    },
+    {
+      "id": "all-models",
+      "tag": "Art",
+      "date": "2026-11-26",
+      "time": "16:30",
+      "commit": "",
+      "title": "The whole lake in our own models",
+      "summary": "The rest of the art is in: a Fish Buyer stand, a stone rim for the home pond, mossy logs half sunk in the water, a red and white buoy over the deep hole, reed clumps and lily pads in the weed bed, leafy trees round the lake, pines and rocks along Cedar Creek, a new bobber, and every fish hangs on the line as itself. While checking, the whole lake turned out to have been knocked 55 studs sideways and 10 up in Studio, away from its own water; it is back in place. Walking, casting, selling and the pond all work as before.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-26-all-models-overview.jpg",
+          "caption": "The lake with every model in"
+        },
+        {
+          "src": "stills/2026-11-26-all-models-bobber-bite.jpg",
+          "caption": "Night at the deep hole: a catfish pulls the new bobber under, the new buoy behind"
+        },
+        {
+          "src": "stills/2026-11-26-all-models-creek.jpg",
+          "caption": "Pines and rocks along Cedar Creek"
+        },
+        {
+          "src": "stills/2026-11-26-all-models-logs.jpg",
+          "caption": "Mossy logs in the east shallows"
         }
       ]
     }

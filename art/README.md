@@ -41,21 +41,50 @@ Duet's chunky low-poly, flat-colour, vertex-coloured look is the house style for
 
 (That's Blender's default install folder; adjust if yours differs. Unverified on Stewart's PC.) One model: the same with `art\scripts\dock.py`; one fish: add `-- Walleye` at the end of the line for `fish.py`. In the cloud it ran as plain Python with `pip install bpy==5.1.2` (plus Pillow for the small previews and the contact sheet). `ART_SAMPLES` sets render quality (48 by default). Each run writes `models/<Name>.glb`, `models/<Name>.fbx`, `previews/<Name>.png` (1024 px) and updates `models/manifest.json` (sizes, triangles, what it replaces). `scripts/contact_sheet.py` rebuilds the sheet.
 
-## Importing (done for the first three on 2026-11-26)
+## Importing (all 32 done on 2026-11-26)
 
 What works, learned on the first import:
 
 1. **Convert the colours first:** `python art/scripts/roblox_colors.py <Name>` writes `art/models/roblox/<Name>.glb`. Blender exports vertex colours in linear light and Roblox shows them as display colours, so an unconverted model comes in far too dark (the first bluegill was nearly black). Upload the converted copy, never the one in `art/models/`.
 2. **Upload through Open Cloud** (Studio MCP `open_cloud_invoke`, `POST /assets/v1/assets`, assetType Model) from `art/models/roblox/`; the repo folder is an approved upload folder. Record the asset id in the table below. Each upload is a permanent asset, so upload once.
-3. **Insert it into `ServerStorage.Art`** (the package stays there). Roblox keeps the size exactly (1 stud = 1 Blender unit) and the pivot at the bottom centre, but gives the model a random turn on insert, and **the head or front points along -X in Roblox** (Blender's +X). `PivotTo` an exact CFrame to place it.
+3. **Insert it into `ServerStorage.Art`** (`InsertService:LoadAsset(id)` from `execute_luau` in Edit loads many at once, as plain models with their pivot square). Roblox keeps the size exactly (1 stud = 1 Blender unit) and the pivot at the bottom centre, but gives the model a random turn on insert, and **the head or front points along -X in Roblox** (Blender's +X). `PivotTo` an exact CFrame to place it.
 4. **Place it from code:** add an entry to `ART` in `src/ServerScriptService/Server/WorldBuilder.luau` (its CFrame and the gray-box parts it hides), then run `WorldBuilder.dress(workspace.Lake)` in Edit. The gray-box parts stay as invisible collision and cast-check shapes; the models are anchored with `CanCollide`, `CanQuery` and `CanTouch` off, so walking, casting, prompts and zones work exactly as before.
 5. **Fish** need no placing: a species with a model in `ServerStorage.Art` (named by its id, like `Bluegill`) hangs on the line when caught, stretched to the catch's length (`FishingService` `artFish`).
 
 | Model | Roblox asset id | In the game |
 |---|---|---|
-| Dock | 92795692386476 | `Lake.Art.Dock`, turned 180 degrees so the lamp end is out in the lake; deck top at y = 1.5 |
-| BaitShopStand | 128962467669158 | `Lake.Art.BaitShopStand` at (18, 1, 96.5), open front to the lake |
-| Bluegill | 109571493310355 | On the line when a bluegill is landed |
+| Dock | 92795692386476 | `Lake.Art`, turned 180 degrees so the lamp end is out in the lake; deck top at y = 1.5 |
+| BaitShopStand | 128962467669158 | `Lake.Art` at (18, 1, 96.5), open front to the lake |
+| FishBuyerStand | 106188034402949 | `Lake.Art` at (-18, 1, 96.5) |
+| PondRim | 85562437402898 | `Lake.Art` round the home pond at (50, 1, 106) |
+| Log1 | 89531819976790 | Over gray-box logs 1 and 4 |
+| Log2 | 99209213624189 | Over gray-box logs 2 and 5 |
+| Log3 | 92896234828500 | Over gray-box log 3 |
+| Buoy | 101773810678352 | Floating in the deep hole at (0, -0.6, -25) |
+| Reeds | 109116103967365 | 18 clumps over the weed bed (replace the weed sticks) |
+| LilyPads | 85183031227808 | 7 on the water round the weed bed |
+| PineTall | 101345558596198 | On creek trunks 1, 3, 5, 7 |
+| PineShort | 93282291561721 | On creek trunks 2, 4, 6, 8 |
+| LeafyTree | 98200740872322 | 7 on the lake shore |
+| RockLarge | 91170341972863 | Fitted to creek boulders 1, 2, 4 |
+| RockMedium | 140479691148163 | Fitted to creek boulders 3, 5 |
+| RockSmall | 110035479332491 | Fitted to the 14 creek pebbles |
+| Bobber | 138136046417846 | The bobber on every cast (`FishingService` `makeBobber`) |
+| WillowRod | 105973286899843 | In ServerStorage only (rods in hand still the gray box) |
+| FiberglassRod | 105439165015959 | In ServerStorage only |
+| GraphiteRod | 112794029818185 | In ServerStorage only |
+| JonBoat | 73308698165043 | In ServerStorage only, for the boat plan |
+| Bluegill | 109571493310355 | On the line when one is landed |
+| Pumpkinseed | 94171834310429 | On the line when one is landed |
+| YellowPerch | 89203301171747 | On the line when one is landed |
+| BlackCrappie | 114088207962110 | On the line when one is landed |
+| LargemouthBass | 125320665780187 | On the line when one is landed |
+| ChannelCatfish | 86511242177797 | On the line when one is landed |
+| CommonCarp | 102551350734293 | On the line when one is landed |
+| NorthernPike | 87034965888840 | On the line when one is landed |
+| RainbowTrout | 118820630960923 | On the line when one is landed |
+| SmallmouthBass | 134271966681380 | On the line when one is landed |
+| Walleye | 86662257400132 | On the line when one is landed |
 | Bluegill (first try) | 123238298956061 | Not used: uploaded before the colour fix, too dark |
 
 ## The models

@@ -173,6 +173,13 @@ Nothing below has been seen in Studio. All of it is on the branch `claude/overni
 - Still to do in L0: the 29 model imports another session is doing.
 - Found: the repo folder `C:\Users\stewa\Documents\Claude\Roblox` is checked out on an old commit of the PR #2 branch with main's newer files untracked, and another session works in it. L0 work was done in a separate worktree and pushed to main. Put the folder back on main when no other session is using it: everything in it is either already on main or older than main.
 
+## 2026-11-26: All the art models in the game
+
+- The other 29 models are uploaded (ids in `art/README.md`) and in `ServerStorage.Art`; 69 copies dress the world: the Fish Buyer stand, the stone pond rim, five logs, the buoy, 18 reed clumps and 7 lily pads at the weed bed, 7 leafy trees on the shore, 8 pines and 19 rocks at the creek, plus the dock and Bait and Tackle from before. The bobber on every cast is the new model, and every species hangs on the line as its own model, sized to the catch. The rods and the boat are uploaded but not placed yet (the rods in hand are still the gray box).
+- `WorldBuilder.dress` now takes many places per model: an exact spot, a spot scattered with a fixed seed, or fitted over a gray-box part (centred or standing on it, optionally scaled to its width).
+- **Found and fixed:** the whole gray-box Lake had been moved by 6 studs west, 10 up and 55 north (most likely an accidental drag in Studio while it was selected), away from its terrain water and from the fixed coordinates the fishing code uses. It is back where the code expects it (ground top at y = 1); logged in `DECISIONS.md`.
+- Verified in a playtest: spawn feet on the deck (1.50), a night cast from the dock end showed the new bobber pulled under by a catfish bite, the catfish hung as its model (6.8 studs), selling at the new Fish Buyer paid out (5 fish, 110 coins), the pond panel opened at the new rim, and the riffle gave a rainbow trout that hung as its model. 73 tests pass in Studio and with Lune; checksums match.
+
 ## What works now
 A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shore, wait for a bite, hook it, fight it on the bar (hold or click anywhere), land it, sell at the Fish Buyer, buy bait at Bait and Tackle, fill the journal, raise fish in your home pond, buy better rods, and unlock Cedar Creek. Eleven species follow real habits (spot, time of day, bait), fish shadows show where they're active, the day runs 16 minutes, and progress saves to Roblox.
 

@@ -435,18 +435,109 @@ end
 -- (uploaded from art/models/roblox/). The gray-box parts stay as invisible collision and
 -- cast-check shapes, so walking, casting, prompts and zones work exactly as before; the
 -- models never collide, never block a raycast and never fire touches.
-local ART = {
+--
+-- Each place is one of:
+--   { cframe = CFrame }                    the model's pivot (bottom centre) goes there
+--   { over = "Path.To.Part", anchor = "center" | "bottom", fit = true? }
+--       centred on that gray-box part (or standing on its bottom face), turned like it,
+--       and with fit, scaled so the model is as wide as the part.
+type Place = { cframe: CFrame?, over: string?, anchor: string?, fit: boolean? }
+type ArtEntry = { name: string, places: { Place }, hide: { string }?, ghost: { string }? }
+
+local function at(x: number, y: number, z: number, yaw: number?): Place
+	return { cframe = CFrame.new(x, y, z) * CFrame.Angles(0, yaw or 0, 0) }
+end
+
+-- count places spread over a rectangle, each with a random turn (same every rebuild).
+local function scatter(count: number, seed: number, cx: number, cz: number, hx: number, hz: number, y: number): { Place }
+	local rng = Random.new(seed)
+	local out = {}
+	for _ = 1, count do
+		table.insert(out, at(cx + rng:NextNumber(-hx, hx), y, cz + rng:NextNumber(-hz, hz), rng:NextNumber(0, 2 * math.pi)))
+	end
+	return out
+end
+
+local function over(paths: { string }, anchor: string, fit: boolean?): { Place }
+	local out = {}
+	for _, path in paths do
+		table.insert(out, { over = path, anchor = anchor, fit = fit })
+	end
+	return out
+end
+
+-- { "CedarCreek.Trunk1", "CedarCreek.Trunk3", ... }
+local function paths(prefix: string, numbers: { number }): { string }
+	local out = {}
+	for _, n in numbers do
+		table.insert(out, prefix .. n)
+	end
+	return out
+end
+
+local function join(a: { string }, b: { string }): { string }
+	local out = table.clone(a)
+	for _, v in b do
+		table.insert(out, v)
+	end
+	return out
+end
+
+local TALL_PINES = { 1, 3, 5, 7 }
+local SHORT_PINES = { 2, 4, 6, 8 }
+local PEBBLES = paths("CedarCreek.Pebble", { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 })
+local BIG_BOULDERS = paths("CedarCreek.Boulder", { 1, 2, 4 })
+local SMALL_BOULDERS = paths("CedarCreek.Boulder", { 3, 5 })
+
+local ART: { ArtEntry } = {
 	{
 		name = "Dock",
-		cframe = CFrame.new(0, -7.5, 57.65) * CFrame.Angles(0, math.pi, 0), -- deck top at y = 1.5
+		places = { { cframe = CFrame.new(0, -7.5, 57.65) * CFrame.Angles(0, math.pi, 0) } }, -- deck top at y = 1.5
 		hide = { "Dock", "Lamps.Post1", "Lamps.Post2", "Lamps.Bulb1", "Lamps.Bulb2", "DockSpawn" },
 		-- The spawn pad sits 0.4 above the deck; players drop onto the new deck instead.
 		ghost = { "DockSpawn" },
 	},
 	{
 		name = "BaitShopStand",
-		cframe = CFrame.new(18, 1, 96.5), -- open front faces the lake
+		places = { at(18, 1, 96.5) }, -- open front faces the lake
 		hide = { "ShopStand.Counter", "ShopStand.PostL", "ShopStand.PostR", "ShopStand.Roof" },
+	},
+	{
+		name = "FishBuyerStand",
+		places = { at(-18, 1, 96.5) },
+		hide = { "SellStand.Counter", "SellStand.PostL", "SellStand.PostR", "SellStand.Roof" },
+	},
+	{
+		name = "PondRim",
+		places = { at(50, 1, 106) },
+		hide = { "HomePond.RimN", "HomePond.RimS", "HomePond.RimW", "HomePond.RimE" },
+	},
+	{ name = "Log1", places = over({ "Logs.Log1", "Logs.Log4" }, "center"), hide = { "Logs.Log1", "Logs.Log4" } },
+	{ name = "Log2", places = over({ "Logs.Log2", "Logs.Log5" }, "center"), hide = { "Logs.Log2", "Logs.Log5" } },
+	{ name = "Log3", places = over({ "Logs.Log3" }, "center"), hide = { "Logs.Log3" } },
+	{ name = "Buoy", places = { at(0, -0.6, -25) }, hide = { "DeepHoleBuoy" } }, -- floats in the deep hole
+	-- Reed clumps replace the weed sticks; lily pads lie on the water round the bed.
+	{ name = "Reeds", places = scatter(18, 31, -78, 38, 24, 27, -1.2), hide = { "WeedBed" } },
+	{ name = "LilyPads", places = scatter(7, 32, -70, 38, 30, 30, -0.35) },
+	-- Creek: tall and short pines on the gray-box trunks (they replace trunk and crown),
+	-- and rocks fitted to each stone. The boulders stay solid, so wading still bumps into them.
+	{
+		name = "PineTall",
+		places = over(paths("CedarCreek.Trunk", TALL_PINES), "bottom"),
+		hide = join(paths("CedarCreek.Trunk", TALL_PINES), paths("CedarCreek.Crown", TALL_PINES)),
+	},
+	{
+		name = "PineShort",
+		places = over(paths("CedarCreek.Trunk", SHORT_PINES), "bottom"),
+		hide = join(paths("CedarCreek.Trunk", SHORT_PINES), paths("CedarCreek.Crown", SHORT_PINES)),
+	},
+	{ name = "RockLarge", places = over(BIG_BOULDERS, "center", true), hide = BIG_BOULDERS },
+	{ name = "RockMedium", places = over(SMALL_BOULDERS, "center", true), hide = SMALL_BOULDERS },
+	{ name = "RockSmall", places = over(PEBBLES, "center", true), hide = PEBBLES },
+	-- Leafy trees on the lake shore, clear of the paths, stands and pond.
+	{
+		name = "LeafyTree",
+		places = { at(-62, 1, 104, 0.4), at(-95, 1, 96, 2.1), at(88, 1, 100, 1.2), at(122, 1, 30, 3.0), at(-124, 1, -20, 0.8), at(70, 1, -96, 2.6), at(-50, 1, -98, 4.0) },
 	},
 }
 
@@ -471,8 +562,48 @@ local function hideParts(inst: Instance)
 	end
 end
 
+local function prepare(source: Model): Model
+	local m = source:Clone()
+	for _, d in m:GetDescendants() do
+		if d:IsA("PackageLink") then
+			d:Destroy() -- a plain copy in the world; the package stays in ServerStorage
+		elseif d:IsA("BasePart") then
+			d.Anchored = true
+			d.CanCollide = false
+			d.CanQuery = false
+			d.CanTouch = false
+		end
+	end
+	return m
+end
+
+-- Puts one copy where the place says. Returns false if its gray-box part is missing.
+local function put(m: Model, place: Place, lake: Model): boolean
+	if place.cframe then
+		m:PivotTo(place.cframe)
+		return true
+	end
+	local part = find(lake, place.over :: string)
+	if not (part and part:IsA("BasePart")) then
+		return false
+	end
+	local main = m:FindFirstChildWhichIsA("MeshPart", true)
+	if place.fit and main then
+		m:ScaleTo(m:GetScale() * part.Size.X / main.Size.X)
+	end
+	local height = if main then main.Size.Y else 0
+	if place.anchor == "bottom" then
+		-- Stand it upright on the part's bottom face (the trunks are upright).
+		m:PivotTo(CFrame.new(part.Position - Vector3.new(0, part.Size.Y / 2, 0)) * part.CFrame.Rotation)
+	else
+		-- Centre it on the part, turned like the part (the pivot is the model's bottom centre).
+		m:PivotTo(part.CFrame * CFrame.new(0, -height / 2, 0))
+	end
+	return true
+end
+
 -- Places every model found in ServerStorage.Art and hides the gray box it replaces.
--- Safe to run again: it rebuilds Lake.Art from scratch. Returns how many were placed.
+-- Safe to run again: it rebuilds Lake.Art from scratch. Returns how many copies were placed.
 function WorldBuilder.dress(lake: Model): number
 	local art = game:GetService("ServerStorage"):FindFirstChild("Art")
 	local folder = lake:FindFirstChild("Art")
@@ -488,32 +619,27 @@ function WorldBuilder.dress(lake: Model): number
 	for _, entry in ART do
 		local source = art:FindFirstChild(entry.name)
 		if source and source:IsA("Model") then
-			local m = source:Clone()
-			for _, d in m:GetDescendants() do
-				if d:IsA("PackageLink") then
-					d:Destroy() -- a plain copy in the world; the package stays in ServerStorage
-				elseif d:IsA("BasePart") then
-					d.Anchored = true
-					d.CanCollide = false
-					d.CanQuery = false
-					d.CanTouch = false
+			for _, place in entry.places do
+				local m = prepare(source)
+				if put(m, place, lake) then
+					m.Parent = folder
+					placed += 1
+				else
+					m:Destroy()
 				end
 			end
-			m:PivotTo(entry.cframe)
-			m.Parent = folder
-			for _, path in entry.hide do
+			for _, path in entry.hide or {} do
 				local node = find(lake, path)
 				if node then
 					hideParts(node)
 				end
 			end
-			for _, path in (entry :: any).ghost or {} do
+			for _, path in entry.ghost or {} do
 				local node = find(lake, path)
 				if node and node:IsA("BasePart") then
 					node.CanCollide = false
 				end
 			end
-			placed += 1
 		end
 	end
 	folder.Parent = lake
