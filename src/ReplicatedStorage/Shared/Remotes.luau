@@ -12,6 +12,7 @@ local EVENTS = {
 	"SetAssist", -- client: (on: boolean)
 	"EquipRod", -- client: (rodId: string)
 	"ChooseBoat", -- client: (boatId: string), which owned boat waits at your slip
+	"BoatInput", -- client: (throttle: number, steer: number), the helm's controls, ~10 a second
 	"FishingEvent", -- server: (kind: string, payload: table)
 	"State", -- server: (snapshot: table)
 	"Toast", -- server: (text: string)

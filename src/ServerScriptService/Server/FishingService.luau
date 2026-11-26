@@ -526,6 +526,28 @@ function FishingService.start()
 			sessions[player] = nil
 		end
 	end)
+	-- Fishing from a boat: twice a second, a line that the boat ran away from comes free.
+	-- UNVERIFIED in Studio (2026-11-26).
+	task.spawn(function()
+		while true do
+			task.wait(0.5)
+			for player, s in sessions do
+				if s.land and (s.phase == "Waiting" or s.phase == "Bite" or s.phase == "Fighting") then
+					local ok, msg = BoatService.lineCheck(player, s.land)
+					if not ok then
+						local fighting = s.phase == "Fighting"
+						cleanup(s)
+						if fighting then
+							send(player, "Escaped", { text = msg or "The line came free." })
+						else
+							send(player, "Hint", { text = msg or "The line came free." })
+							send(player, "Reset")
+						end
+					end
+				end
+			end
+		end
+	end)
 	Players.PlayerAdded:Connect(function(player)
 		player.CharacterRemoving:Connect(function()
 			local s = sessions[player]

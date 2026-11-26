@@ -217,6 +217,12 @@ local function makeMovers(hull: BasePart): Movers
 	return { lv = lv, ao = ao, ap = ap }
 end
 
+-- The helm's controls, sent by the driver's client. A VehicleSeat only copies its Throttle and
+-- Steer to the server when the driver's client owns the boat's physics, and here the server
+-- does, so the client sends them itself. UNVERIFIED in Studio (2026-11-26).
+local inputs: { [Player]: { throttle: number, steer: number, at: number } } = {}
+local INPUT_FRESH = 0.5 -- seconds; older input counts as letting go
+
 local function occupantPlayer(s: BasePart?): Player?
 	local occ = s and (s :: any).Occupant :: Humanoid?
 	return if occ then Players:GetPlayerFromCharacter(occ.Parent) else nil
@@ -260,12 +266,38 @@ local function moveTo(boat: Boat, cf: CFrame)
 	stop(boat)
 end
 
--- Back to the slip, tied up (anchored) and empty.
+-- Stand whoever is aboard on the dock beside the boat's slip (never left in open water).
+local function landRiders(boat: Boat, riders: { Player })
+	for i, r in riders do
+		local root = r.Character and r.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if root then
+			root.CFrame = CFrame.new(2, 4.5, BoatRules.SLIP_ZS[boat.slip] + (i - 1) * 2)
+			pcall(function()
+				root:SetNetworkOwner(r) -- walking again: their own client moves them
+			end)
+		end
+	end
+end
+
+local function ridersOf(boat: Boat): { Player }
+	local out = {}
+	for _, s in { boat.helm, boat.nav } do
+		local p = occupantPlayer(s :: any)
+		if p then
+			table.insert(out, p)
+		end
+	end
+	return out
+end
+
+-- Back to the slip, tied up (anchored) and empty; anyone aboard goes to the dock.
 local function returnToSlip(boat: Boat)
+	local riders = ridersOf(boat)
 	unseat(boat.helm)
 	unseat(boat.nav)
 	boat.hull.Anchored = true
 	moveTo(boat, BoatRules.slipCFrame(boat.slip, boat.id))
+	landRiders(boat, riders)
 	boat.lastGood = boat.hull.Position
 	boat.docked = true
 	boat.emptyFor = 0
@@ -286,8 +318,10 @@ end
 local function despawn(player: Player)
 	local boat = boats[player]
 	if boat then
+		local riders = ridersOf(boat)
 		unseat(boat.helm)
 		unseat(boat.nav)
+		landRiders(boat, riders)
 		boat.model:Destroy()
 		boats[player] = nil
 	end
@@ -315,7 +349,7 @@ end
 
 function spawnFor(player: Player)
 	local data = PlayerData.get(player)
-	if not data then
+	if not data or not player.Parent then
 		return
 	end
 	local id = data.boat
@@ -385,21 +419,27 @@ function spawnFor(player: Player)
 		if who ~= player or occupantPlayer(helm) ~= player or not boat.tiePrompt.Enabled then
 			return
 		end
-		local riders = { who, occupantPlayer(nav) }
-		returnToSlip(boat)
-		-- Stand everyone who was aboard on the dock beside the slip.
-		for i, r in riders do
-			local root = r and r.Character and r.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
-			if root then
-				root.CFrame = CFrame.new(2, 4.5, BoatRules.SLIP_ZS[slip] + (i - 1) * 2)
-			end
-		end
+		returnToSlip(boat) -- stands everyone who was aboard on the dock beside the slip
 	end)
 
 	local function onSeatChanged(s: BasePart, prompt: ProximityPrompt?, ownerOnly: boolean)
 		local died: RBXScriptConnection? = nil
+		local last: Humanoid? = nil
 		(s :: any):GetPropertyChangedSignal("Occupant"):Connect(function()
 			local occ = (s :: any).Occupant :: Humanoid?
+			-- Whoever just got up walks on their own again: hand their character back to them.
+			if last and last ~= occ then
+				local leaver = Players:GetPlayerFromCharacter(last.Parent)
+				local root = last.Parent and last.Parent:FindFirstChild("HumanoidRootPart") :: BasePart?
+				if leaver and root then
+					task.defer(function()
+						pcall(function()
+							root:SetNetworkOwner(leaver)
+						end)
+					end)
+				end
+			end
+			last = occ
 			if died then
 				died:Disconnect() -- only the current occupant's death counts
 				died = nil
@@ -466,10 +506,16 @@ local function step(dt: number)
 		local n = aboard(boat)
 		local throttle, steer = 0, 0
 		if boat.helm.Occupant then
-			throttle, steer = boat.helm.ThrottleFloat, boat.helm.SteerFloat
-			-- Fallback if the float inputs don't reach the server: the whole-number ones.
-			if throttle == 0 and steer == 0 then
-				throttle, steer = boat.helm.Throttle, boat.helm.Steer
+			local driver = occupantPlayer(boat.helm)
+			local inp = driver and inputs[driver]
+			if inp and os.clock() - inp.at < INPUT_FRESH then
+				throttle, steer = inp.throttle, inp.steer
+			else
+				-- Fallback (e.g. a solo Studio test, where the seat's own values may arrive).
+				throttle, steer = boat.helm.ThrottleFloat, boat.helm.SteerFloat
+				if throttle == 0 and steer == 0 then
+					throttle, steer = boat.helm.Throttle, boat.helm.Steer
+				end
 			end
 		end
 		local okCrew, crewMsg = BoatLogic.canDrive(boat.id, n)
@@ -568,7 +614,34 @@ end
 -- Extra casting rules on the water (BoatRules.castCheck with this player's seat).
 function BoatService.castCheck(player: Player, landing: Vector3): (boolean, string?)
 	local id, speed = BoatService.seatedIn(player)
-	return BoatRules.castCheck(landing, id, speed)
+	local ok, msg = BoatRules.castCheck(landing, id, speed)
+	if ok and id and BoatRules.inBlueWater(landing) then
+		-- Blue water takes the full crew aboard, casting into it from the buoy line too.
+		local _, _, aboardNow = BoatService.crewOf(player)
+		local b = BoatData.byId[id]
+		if b and aboardNow < b.crew then
+			return false, "Blue water takes a full crew. Bring a friend as navigator."
+		end
+	end
+	return ok, msg
+end
+
+-- While a line is in from a boat: is it still fine? A boat that speeds up or runs far from
+-- the bobber loses the line. UNVERIFIED in Studio (2026-11-26).
+BoatService.MAX_LINE = 60
+function BoatService.lineCheck(player: Player, bobber: Vector3): (boolean, string?)
+	local id, speed = BoatService.seatedIn(player)
+	if not id then
+		return true, nil
+	end
+	if not BoatLogic.canCast(speed, id) then
+		return false, "The boat moved off and the line came free. Stop the boat to fish."
+	end
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if root and (Vector3.new(root.Position.X, 0, root.Position.Z) - Vector3.new(bobber.X, 0, bobber.Z)).Magnitude > BoatService.MAX_LINE then
+		return false, "The boat drifted too far and the line came free."
+	end
+	return true, nil
 end
 
 function BoatService.start()
@@ -592,6 +665,14 @@ function BoatService.start()
 		end
 		return ok, msg
 	end
+
+	-- The helm's controls from the driver's client: numbers only, clamped, newest wins.
+	Remotes.event("BoatInput").OnServerEvent:Connect(function(player: Player, throttle: any, steer: any)
+		if type(throttle) ~= "number" or type(steer) ~= "number" or throttle ~= throttle or steer ~= steer then
+			return
+		end
+		inputs[player] = { throttle = math.clamp(throttle, -1, 1), steer = math.clamp(steer, -1, 1), at = os.clock() }
+	end)
 
 	Remotes.event("ChooseBoat").OnServerEvent:Connect(function(player: Player, boatId: any)
 		local data = PlayerData.get(player)
@@ -635,6 +716,7 @@ function BoatService.start()
 	Players.PlayerRemoving:Connect(function(p)
 		despawn(p)
 		lastHint[p] = nil
+		inputs[p] = nil
 		task.defer(fillWaiting) -- after the leaving player is gone, so their boat isn't rebuilt
 	end)
 	RunService.Heartbeat:Connect(step)

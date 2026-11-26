@@ -3,6 +3,7 @@
 -- (the server refuses them anyway), so a player only ever sees prompts they can use.
 -- UNVERIFIED in Studio: written 2026-11-26 in the cloud.
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Rarity = require(Shared.Rarity)
@@ -94,8 +95,40 @@ local function fishFinder()
 	end)
 end
 
+-- At the helm, send the seat's controls to the server about ten times a second (the server
+-- drives the boat and owns its physics, so the seat's own values don't reach it). Roblox's
+-- vehicle controls fill ThrottleFloat and SteerFloat from keyboard, thumbstick and gamepad.
+local SEND_EVERY = 0.1
+local function sendInput()
+	local input = Remotes.event("BoatInput")
+	local timer, wasAtHelm = 0, false
+	RunService.Heartbeat:Connect(function(dt)
+		timer += dt
+		if timer < SEND_EVERY then
+			return
+		end
+		timer = 0
+		local char = Players.LocalPlayer.Character
+		local hum = char and char:FindFirstChildOfClass("Humanoid")
+		local seat = hum and hum.SeatPart
+		local atHelm = seat ~= nil and seat:IsA("VehicleSeat") and seat.Name == "Helm"
+		if atHelm then
+			local s = seat :: VehicleSeat
+			local throttle, steer = s.ThrottleFloat, s.SteerFloat
+			if throttle == 0 and steer == 0 then
+				throttle, steer = s.Throttle, s.Steer
+			end
+			input:FireServer(throttle, steer)
+		elseif wasAtHelm then
+			input:FireServer(0, 0) -- let go when leaving the helm
+		end
+		wasAtHelm = atHelm
+	end)
+end
+
 function BoatClient.start()
 	task.spawn(fishFinder)
+	task.spawn(sendInput)
 	workspace.DescendantAdded:Connect(function(d)
 		if d:IsA("ProximityPrompt") then
 			task.defer(watch, d)
