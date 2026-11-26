@@ -242,6 +242,11 @@ local function onFishingEvent(kind: string, payload: any)
 		end
 		UI.status("") -- the reel prompt says what to do; keeps small screens clear
 		UI.showFight(fight, payload.note, holding())
+		if payload.sizeClass == "monster" then
+			UI.toast("Something HUGE is on the line!", Color3.fromRGB(240, 75, 125))
+		elseif payload.sizeClass == "trophy" then
+			UI.toast("This one feels big!", Color3.fromRGB(250, 175, 40))
+		end
 	elseif kind == "Caught" then
 		play("catch")
 		UI.catchCard(payload)

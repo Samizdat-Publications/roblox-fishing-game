@@ -1,0 +1,187 @@
+{
+  "note": "Prompts for the next sounds (written overnight 2026-11-26 in the cloud, none generated yet): the Big Lake, boats, trophies and monsters, feeding frenzies, weather and small UI sounds. Same pipeline as sounds.json: tools/audio/eleven.py batch audio/sounds-next.json, rank with Hydrogen, keep the best, record in README.md.",
+  "sounds": [
+    {
+      "id": "amb-biglake",
+      "kind": "sfx",
+      "variants": 2,
+      "seconds": 30,
+      "loop": true,
+      "prompt": "Seamless ambience on a wide misty northern lake: open air, slow rolling waves slapping a small boat hull, distant gulls, a cool steady breeze, vast and calm, no music, no voices"
+    },
+    {
+      "id": "amb-bluewater",
+      "kind": "sfx",
+      "variants": 2,
+      "seconds": 30,
+      "loop": true,
+      "prompt": "Seamless ambience far out on deep open water: heavier swells lifting a boat, wind across a wide lake, a low hollow resonance below, lonely and a little ominous, no birds, no music, no voices"
+    },
+    {
+      "id": "motor-dinghy-idle",
+      "kind": "sfx",
+      "variants": 2,
+      "seconds": 4,
+      "loop": true,
+      "prompt": "A tiny outboard motor on a small inflatable boat idling, soft sputtering two-stroke putter, close, seamless loop"
+    },
+    {
+      "id": "motor-dinghy-run",
+      "kind": "sfx",
+      "variants": 2,
+      "seconds": 4,
+      "loop": true,
+      "prompt": "A tiny outboard motor on an inflatable boat at full throttle, buzzing two-stroke whine with water rushing past the rubber tubes, seamless loop"
+    },
+    {
+      "id": "motor-deepv-run",
+      "kind": "sfx",
+      "variants": 2,
+      "seconds": 4,
+      "loop": true,
+      "prompt": "A powerful outboard engine on a fishing boat cruising, deep steady roar with hull slapping waves, seamless loop"
+    },
+    {
+      "id": "boat-bump",
+      "kind": "sfx",
+      "variants": 2,
+      "seconds": 1,
+      "prompt": "A rubber boat bumping softly against a wooden dock post, a hollow thud and a little water slosh"
+    },
+    {
+      "id": "buoy-bell",
+      "kind": "sfx",
+      "variants": 2,
+      "seconds": 3,
+      "prompt": "A distant channel buoy bell clanging slowly as it rocks on the waves, lonely and echoing across open water"
+    },
+    {
+      "id": "cast-whoosh",
+      "kind": "sfx",
+      "variants": 2,
+      "seconds": 1,
+      "prompt": "A fishing rod whipping through the air on a cast, a thin line whoosh and a reel zipping out"
+    },
+    {
+      "id": "bobber-plop",
+      "kind": "sfx",
+      "variants": 2,
+      "seconds": 0.8,
+      "prompt": "A small fishing bobber landing on calm water with a light plop and tiny ripples"
+    },
+    {
+      "id": "line-snap",
+      "kind": "sfx",
+      "variants": 2,
+      "seconds": 1,
+      "prompt": "A taut fishing line snapping with a sharp ping, then a slack whip and a disappointed splash"
+    },
+    {
+      "id": "sell-coins",
+      "kind": "sfx",
+      "variants": 2,
+      "seconds": 1.2,
+      "prompt": "A cheerful handful of coins dropping onto a wooden counter, a bright little cash jingle"
+    },
+    {
+      "id": "journal-page",
+      "kind": "sfx",
+      "variants": 2,
+      "seconds": 1,
+      "prompt": "A thick paper journal page turning, soft and satisfying"
+    },
+    {
+      "id": "goal-complete",
+      "kind": "sfx",
+      "variants": 2,
+      "seconds": 1.5,
+      "prompt": "A warm friendly achievement chime, three rising bell notes with a soft sparkle, short"
+    },
+    {
+      "id": "pond-splash",
+      "kind": "sfx",
+      "variants": 2,
+      "seconds": 1,
+      "prompt": "A fish released into a small garden pond, a gentle splash and a happy little swirl of water"
+    },
+    {
+      "id": "sting-trophy",
+      "kind": "sfx",
+      "variants": 2,
+      "seconds": 2.5,
+      "prompt": "A big bold reward hit: a punchy drum and brass stab with a crowd-like cheer swell, exciting, short, no words"
+    },
+    {
+      "id": "sting-monster",
+      "kind": "sfx",
+      "variants": 2,
+      "seconds": 4,
+      "prompt": "An enormous cinematic reveal: deep booming drum hit, roaring low brass and a choir surge, something legendary pulled from the deep, awe and triumph, no words"
+    },
+    {
+      "id": "server-horn",
+      "kind": "sfx",
+      "variants": 2,
+      "seconds": 2.5,
+      "prompt": "A deep foghorn blast across a lake, followed by a small bell, announcing something huge, short"
+    },
+    {
+      "id": "frenzy-boil",
+      "kind": "sfx",
+      "variants": 2,
+      "seconds": 6,
+      "loop": true,
+      "prompt": "A school of fish feeding frantically at the surface of a lake, water boiling and splashing everywhere with gulls diving and crying above, energetic, seamless loop"
+    },
+    {
+      "id": "rain-on-water",
+      "kind": "sfx",
+      "variants": 2,
+      "seconds": 30,
+      "loop": true,
+      "prompt": "Seamless steady light rain falling on a calm lake and a wooden dock, soft hiss and patter, calm, no thunder, no music"
+    },
+    {
+      "id": "thunder-far",
+      "kind": "sfx",
+      "variants": 2,
+      "seconds": 5,
+      "prompt": "A long low rumble of distant thunder rolling across a lake, deep and slow"
+    },
+    {
+      "id": "wind-gust",
+      "kind": "sfx",
+      "variants": 2,
+      "seconds": 3,
+      "prompt": "A sudden gust of wind sweeping through pine trees and across water, rising and fading"
+    },
+    {
+      "id": "breach-huge",
+      "kind": "sfx",
+      "variants": 2,
+      "seconds": 2.5,
+      "prompt": "A huge fish leaping clear of the water and crashing back down with a massive heavy splash and spray"
+    },
+    {
+      "id": "theme-biglake",
+      "kind": "music",
+      "variants": 1,
+      "seconds": 60,
+      "prompt": "Wide, airy instrumental for a misty big lake: slow swelling strings, soft french horn, gentle piano notes, a sense of distance and adventure, sparse, loopable"
+    },
+    {
+      "id": "tension-bluewater",
+      "kind": "music",
+      "variants": 1,
+      "seconds": 45,
+      "prompt": "Deep, suspenseful instrumental for open deep water: low cello drones, slow heartbeat percussion, distant horn, rising unease without melody, loopable, restrained"
+    },
+    {
+      "id": "frenzy-burst",
+      "kind": "music",
+      "variants": 1,
+      "seconds": 20,
+      "prompt": "A short energetic upbeat instrumental burst: fast acoustic guitar strumming, hand claps and a bright fiddle, a happy rush, ends cleanly"
+    }
+  ]
+}

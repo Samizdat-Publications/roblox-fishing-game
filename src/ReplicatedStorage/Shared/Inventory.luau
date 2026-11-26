@@ -16,6 +16,7 @@ export type Fish = {
 	spot: string,
 	period: string,
 	at: number,
+	sizeClass: string?, -- "trophy" or "monster"; nil for a normal catch (see Rarity.sizeClassOf)
 }
 
 export type Data = {

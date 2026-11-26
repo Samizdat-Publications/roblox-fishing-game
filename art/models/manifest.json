@@ -47,6 +47,42 @@
     "replaces": "the ball Bobber and its Top from FishingService.makeBobber",
     "notes": "0.8 studs across like the gray box; the base is the line eye."
   },
+  "Bowfin": {
+    "name": "Bowfin",
+    "studs": [
+      6.28,
+      1.36,
+      0.85
+    ],
+    "triangles": 908,
+    "parts": 11,
+    "replaces": "FishShadows blobs and the catch held on the line (FishingService.showCatch)",
+    "notes": "Built at the species' average length, 65.0 cm = 5.42 studs (1 stud = 12 cm). Scale by caught cm / average cm. Head along +X."
+  },
+  "BrookTrout": {
+    "name": "BrookTrout",
+    "studs": [
+      2.8,
+      0.81,
+      0.36
+    ],
+    "triangles": 916,
+    "parts": 12,
+    "replaces": "FishShadows blobs and the catch held on the line (FishingService.showCatch)",
+    "notes": "Built at the species' average length, 29.0 cm = 2.42 studs (1 stud = 12 cm). Scale by caught cm / average cm. Head along +X."
+  },
+  "BrownTrout": {
+    "name": "BrownTrout",
+    "studs": [
+      5.56,
+      1.6,
+      0.75
+    ],
+    "triangles": 916,
+    "parts": 12,
+    "replaces": "FishShadows blobs and the catch held on the line (FishingService.showCatch)",
+    "notes": "Built at the species' average length, 57.5 cm = 4.79 studs (1 stud = 12 cm). Scale by caught cm / average cm. Head along +X."
+  },
   "Buoy": {
     "name": "Buoy",
     "studs": [
@@ -58,6 +94,18 @@
     "parts": 7,
     "replaces": "Workspace.Lake.DeepHoleBuoy",
     "notes": "Base at the water line minus about 0.6 so it floats."
+  },
+  "Burbot": {
+    "name": "Burbot",
+    "studs": [
+      5.61,
+      0.84,
+      0.66
+    ],
+    "triangles": 932,
+    "parts": 13,
+    "replaces": "FishShadows blobs and the catch held on the line (FishingService.showCatch)",
+    "notes": "Built at the species' average length, 57.5 cm = 4.79 studs (1 stud = 12 cm). Scale by caught cm / average cm. Head along +X."
   },
   "ChannelCatfish": {
     "name": "ChannelCatfish",
@@ -82,6 +130,18 @@
     "parts": 13,
     "replaces": "FishShadows blobs and the catch held on the line (FishingService.showCatch)",
     "notes": "Built at the species' average length, 57.5 cm = 4.79 studs (1 stud = 12 cm). Scale by caught cm / average cm. Head along +X."
+  },
+  "CreekChub": {
+    "name": "CreekChub",
+    "studs": [
+      1.69,
+      0.45,
+      0.2
+    ],
+    "triangles": 908,
+    "parts": 11,
+    "replaces": "FishShadows blobs and the catch held on the line (FishingService.showCatch)",
+    "notes": "Built at the species' average length, 17.5 cm = 1.46 studs (1 stud = 12 cm). Scale by caught cm / average cm. Head along +X."
   },
   "Dock": {
     "name": "Dock",
@@ -119,6 +179,18 @@
     "replaces": "Workspace.Lake.SellStand (Counter, PostL, PostR, Roof); keep the SellPrompt and sign on an invisible counter part",
     "notes": "Open front faces the lake. Base sits on the ground (y = 1)."
   },
+  "FreshwaterDrum": {
+    "name": "FreshwaterDrum",
+    "studs": [
+      4.11,
+      1.97,
+      0.8
+    ],
+    "triangles": 924,
+    "parts": 11,
+    "replaces": "FishShadows blobs and the catch held on the line (FishingService.showCatch)",
+    "notes": "Built at the species' average length, 42.5 cm = 3.54 studs (1 stud = 12 cm). Scale by caught cm / average cm. Head along +X."
+  },
   "GraphiteRod": {
     "name": "GraphiteRod",
     "studs": [
@@ -142,6 +214,42 @@
     "parts": 28,
     "replaces": "Nothing yet: the boat from the boat plan (gray box in Task 2, this model after)",
     "notes": "Hull 14 x 6 studs; floor at about 0.35 studs above the base. Bow toward -Z."
+  },
+  "LakeSturgeon": {
+    "name": "LakeSturgeon",
+    "studs": [
+      14.74,
+      1.84,
+      1.99
+    ],
+    "triangles": 956,
+    "parts": 15,
+    "replaces": "FishShadows blobs and the catch held on the line (FishingService.showCatch)",
+    "notes": "Built at the species' average length, 135.0 cm = 11.25 studs (1 stud = 12 cm). Scale by caught cm / average cm. Head along +X."
+  },
+  "LakeTrout": {
+    "name": "LakeTrout",
+    "studs": [
+      6.28,
+      1.51,
+      0.8
+    ],
+    "triangles": 916,
+    "parts": 12,
+    "replaces": "FishShadows blobs and the catch held on the line (FishingService.showCatch)",
+    "notes": "Built at the species' average length, 65.0 cm = 5.42 studs (1 stud = 12 cm). Scale by caught cm / average cm. Head along +X."
+  },
+  "LakeWhitefish": {
+    "name": "LakeWhitefish",
+    "studs": [
+      3.97,
+      1.41,
+      0.56
+    ],
+    "triangles": 916,
+    "parts": 12,
+    "replaces": "FishShadows blobs and the catch held on the line (FishingService.showCatch)",
+    "notes": "Built at the species' average length, 45.0 cm = 3.75 studs (1 stud = 12 cm). Scale by caught cm / average cm. Head along +X."
   },
   "LargemouthBass": {
     "name": "LargemouthBass",
@@ -214,6 +322,18 @@
     "parts": 15,
     "replaces": "Workspace.Lake.Logs.Log1 to Log5 (mix the variants)",
     "notes": "Lies along X. The gray box sinks logs 0.4 to 1.6 studs; keep that."
+  },
+  "Muskellunge": {
+    "name": "Muskellunge",
+    "studs": [
+      10.77,
+      1.83,
+      1.07
+    ],
+    "triangles": 908,
+    "parts": 11,
+    "replaces": "FishShadows blobs and the catch held on the line (FishingService.showCatch)",
+    "notes": "Built at the species' average length, 95.0 cm = 7.92 studs (1 stud = 12 cm). Scale by caught cm / average cm. Head along +X."
   },
   "NorthernPike": {
     "name": "NorthernPike",
@@ -299,6 +419,18 @@
     "replaces": "Workspace.Lake.WeedBed Weed sticks (scatter clumps over the weed bed)",
     "notes": "Base at the water line; about 7 studs tall."
   },
+  "RockBass": {
+    "name": "RockBass",
+    "studs": [
+      2.17,
+      1.14,
+      0.45
+    ],
+    "triangles": 924,
+    "parts": 11,
+    "replaces": "FishShadows blobs and the catch held on the line (FishingService.showCatch)",
+    "notes": "Built at the species' average length, 22.5 cm = 1.88 studs (1 stud = 12 cm). Scale by caught cm / average cm. Head along +X."
+  },
   "RockLarge": {
     "name": "RockLarge",
     "studs": [
@@ -358,6 +490,18 @@
     "parts": 11,
     "replaces": "FishShadows blobs and the catch held on the line (FishingService.showCatch)",
     "notes": "Built at the species' average length, 52.5 cm = 4.38 studs (1 stud = 12 cm). Scale by caught cm / average cm. Head along +X."
+  },
+  "WhiteBass": {
+    "name": "WhiteBass",
+    "studs": [
+      2.9,
+      1.19,
+      0.47
+    ],
+    "triangles": 924,
+    "parts": 11,
+    "replaces": "FishShadows blobs and the catch held on the line (FishingService.showCatch)",
+    "notes": "Built at the species' average length, 30.0 cm = 2.50 studs (1 stud = 12 cm). Scale by caught cm / average cm. Head along +X."
   },
   "WillowRod": {
     "name": "WillowRod",

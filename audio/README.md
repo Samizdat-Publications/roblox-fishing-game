@@ -40,3 +40,7 @@ Note on step 3: Hydrogen picked the first variant in 19 of 27 groups, which may 
 | `theme-lake` | music | 60 |  | Calm, warm acoustic fingerpicked guitar and soft piano, peaceful lakeside morning, slow tempo, gentle and nostalgic, instrumental, sparse, loopable | `final/theme-lake.mp3` | pending |
 | `theme-creek` | music | 60 |  | Light, flowing instrumental with plucked mandolin, soft flute and gentle strings, a sunlit forest stream, playful but calm, sparse, loopable | `final/theme-creek.mp3` | pending |
 | `tension-fight` | music | 45 |  | Tense, driving instrumental fight layer: low pulsing strings, steady soft percussion, rising suspense without melody, loopable, cinematic but restrained | `final/tension-fight.mp3` | pending |
+
+## Next sounds (prompts only, not generated yet)
+
+`audio/sounds-next.json` holds 25 more prompts written overnight on 2026-11-26: ambience for the Big Lake and the blue water, the dinghy and Deep-V motors, cast, plop and line-snap effects, coin, journal, goal and pond sounds, trophy and monster stingers with a server-wide foghorn, a feeding frenzy loop, rain, thunder and wind for weather, a huge breach splash, and three music pieces (Big Lake theme, blue-water tension, frenzy burst). Generate them with the same pipeline when those features land.

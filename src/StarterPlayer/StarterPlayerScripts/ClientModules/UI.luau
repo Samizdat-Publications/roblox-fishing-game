@@ -12,6 +12,7 @@ local FishData = require(Shared.FishData)
 local BaitData = require(Shared.BaitData)
 local RodData = require(Shared.RodData)
 local FishLogic = require(Shared.FishLogic)
+local Rarity = require(Shared.Rarity)
 
 local UI = {}
 
@@ -260,6 +261,10 @@ function UI.init(cbs: { [string]: (...any) -> () })
 	refs.cardBody = label(card, "Body", "", UDim2.new(1, 0, 0, 60), UDim2.fromOffset(0, 38), 19, C.text)
 	refs.cardNote = label(card, "Note", "", UDim2.new(1, 0, 0, 70), UDim2.fromOffset(0, 100), 16, C.dim)
 	refs.card = card
+	refs.cardStroke = Instance.new("UIStroke")
+	refs.cardStroke.Thickness = 3
+	refs.cardStroke.Transparency = 0.1
+	refs.cardStroke.Parent = card
 
 	-- Big touch Fish button, left of Roblox's jump button. Hold and release like a mouse button.
 	if UserInputService.TouchEnabled then
@@ -452,8 +457,16 @@ end
 
 function UI.catchCard(payload: any)
 	local f = payload.fish
-	refs.cardTitle.Text = (if payload.first then "New species! " else "") .. f.name
-	refs.cardBody.Text = string.format("%.1f cm, %.2f kg. Worth %d coins.%s", f.cm, f.kg, f.price, if payload.best then "\nPersonal best!" else "")
+	-- Rarity: the tier colour on the title and border, and a banner for trophies and monsters.
+	-- UNVERIFIED in Studio (rarity plan Task 3, 2026-11-26).
+	local tier = payload.tier or Rarity.of(FishData.byId[f.id])
+	local color = Rarity.colorAt(tier, os.clock())
+	local class = Rarity.sizeClassOf(f)
+	local banner = if class == "monster" then "MONSTER! " elseif class == "trophy" then "TROPHY! " else ""
+	refs.cardTitle.Text = banner .. (if payload.first then "New species! " else "") .. f.name
+	refs.cardTitle.TextColor3 = color
+	refs.cardStroke.Color = color
+	refs.cardBody.Text = string.format("%s. %.1f cm, %.2f kg. Worth %d coins.%s", (Rarity.byId[tier] or Rarity.byId.Common).name, f.cm, f.kg, f.price, if payload.best then "\nPersonal best!" else "")
 	refs.cardNote.Text = if payload.first then ("Journal: " .. payload.habit) else ("Caught at " .. (FishLogic.SPOT_NAMES[f.spot] or f.spot) .. " on " .. ((BaitData.byId[f.bait] and BaitData.byId[f.bait].name) or f.bait) .. ".")
 	refs.card.Visible = true
 	local token = os.clock()
@@ -627,11 +640,13 @@ function UI.refreshJournal()
 		local count = st.counts[s.id] or 0
 		if best then
 			kinds += 1
-			c.name.Text = s.name
+			c.name.Text = s.name .. "  (" .. Rarity.of(s) .. ")"
+			c.name.TextColor3 = Rarity.colorAt(Rarity.of(s), 0)
 			c.stats.Text = string.format("Caught %d. Best: %.2f kg, %.1f cm\non %s at %s", count, best.kg, best.cm, (BaitData.byId[best.bait] and BaitData.byId[best.bait].name or best.bait), FishLogic.SPOT_NAMES[best.spot] or best.spot)
 			c.habit.Text = s.habit
 		else
 			c.name.Text = "???"
+			c.name.TextColor3 = C.text
 			c.stats.Text = "Not caught yet."
 			c.habit.Text = ""
 		end

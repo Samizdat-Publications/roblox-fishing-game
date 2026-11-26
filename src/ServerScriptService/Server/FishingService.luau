@@ -3,6 +3,7 @@
 -- its size and price, and checks the client's fight result before paying out.
 local Players = game:GetService("Players")
 local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
@@ -13,6 +14,7 @@ local FishLogic = require(Shared.FishLogic)
 local FightModel = require(Shared.FightModel)
 local Inventory = require(Shared.Inventory)
 local RodData = require(Shared.RodData)
+local Rarity = require(Shared.Rarity)
 local Remotes = require(Shared.Remotes)
 
 local Server = script.Parent
@@ -35,6 +37,7 @@ type Session = {
 	species: string?,
 	fightStart: number,
 	minSecs: number,
+	catch: { cm: number, kg: number, class: string }?, -- rolled at the hook (rarity plan Task 2)
 }
 
 local sessions: { [Player]: Session } = {}
@@ -291,14 +294,27 @@ local function onHook(player: Player)
 	PlayerData.changed(player)
 	s.phase = "Fighting"
 	s.fightStart = os.clock()
-	s.minSecs = FightModel.minSeconds(species.fight, data.assist)
+	-- Size class first (server random only), so trophies and monsters fight harder.
+	-- UNVERIFIED in Studio (rarity plan Task 2, 2026-11-26).
+	local cm, kg, class = FishLogic.rollCatch(species, rng)
+	local forced = if RunService:IsStudio() then player:GetAttribute("DebugSizeClass") else nil
+	if forced == "trophy" or forced == "monster" then
+		class = forced
+		cm = species.maxCm * (if forced == "monster" then 1.35 else 1.0)
+		kg = math.floor(species.weightCoef * cm ^ 3 * 100 + 0.5) / 100
+	end
+	s.catch = { cm = cm, kg = kg, class = class }
+	local profile = FishLogic.fightFor(species.fight, class)
+	s.minSecs = FightModel.minSeconds(profile, data.assist)
 	setBobberY(s, -1)
 	local token = s.token
 	send(player, "Hooked", {
-		fight = RodData.applyFight(species.fight, data.rod),
+		fight = RodData.applyFight(profile, data.rod),
 		assist = data.assist,
 		seed = rng:NextInteger(1, 1e6),
 		note = species.fightNote,
+		sizeClass = class,
+		tier = Rarity.of(species),
 	})
 	task.delay(Config.FIGHT_MAX_SECONDS, function()
 		if s.token == token and s.phase == "Fighting" then
@@ -380,7 +396,14 @@ local function onFightResult(player: Player, won: any)
 		cleanup(s)
 		return
 	end
-	local cm, kg = FishLogic.rollSize(species, rng)
+	local rolled = s.catch
+	local cm, kg, class = 0, 0, "normal"
+	if rolled then
+		cm, kg, class = rolled.cm, rolled.kg, rolled.class
+	else
+		cm, kg = FishLogic.rollSize(species, rng)
+	end
+	s.catch = nil
 	local fish: Inventory.Fish = {
 		id = species.id,
 		name = species.name,
@@ -391,11 +414,17 @@ local function onFightResult(player: Player, won: any)
 		spot = s.spot or "OpenWater",
 		period = s.period or "Day",
 		at = os.time(),
+		sizeClass = if class ~= "normal" then class else nil,
 	}
 	local first = (data.journal.counts[species.id] or 0) == 0
 	local best = Inventory.recordCatch(data, fish)
 	print(string.format("[Fishing] %s caught %s %.1f cm %.2f kg worth %d at %s (%s, %s)", player.Name, fish.name, cm, kg, fish.price, fish.spot, fish.period, fish.bait))
-	send(player, "Caught", { fish = fish, best = best, first = first, habit = species.habit })
+	send(player, "Caught", { fish = fish, best = best, first = first, habit = species.habit, tier = Rarity.of(species), sizeClass = class })
+	if class == "monster" then
+		for _, p in Players:GetPlayers() do
+			toast(p, string.format("%s landed a MONSTER %s: %.0f cm, %.1f kg!", player.DisplayName, species.name, cm, kg))
+		end
+	end
 	cleanup(s)
 	showCatch(player, species, cm)
 	PlayerData.changed(player)

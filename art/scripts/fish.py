@@ -1,8 +1,8 @@
-"""The 11 fish in FishData.luau, each with its real colours and markings, at true relative
+"""Every fish in FishData.luau and BigLakeFishData.luau, each with its real colours and markings, at true relative
 size: 1 stud = 12 cm (the same scale the catch on the line uses), built at the species'
 average length. Head points along +X (Roblox +X), back up.
 
-Usage:  python art/scripts/fish.py              (all 11)
+Usage:  python art/scripts/fish.py              (all of them)
         python art/scripts/fish.py Walleye      (one)
 """
 
@@ -231,6 +231,83 @@ def species(sid):
                 return (85, 75, 40)  # dark saddles
             return base
         return dict(cm=52.5, depth=0.21, width=0.15, fin=(150, 135, 80), paint=p, eye_iris=(215, 215, 200), eye_ring=(70, 70, 60), eye_size=1.15, spiky=True, white_tail_tip=True)
+    # Added overnight 2026-11-26 (second run): the nine new species and the Big Lake three.
+    if sid == "Bowfin":
+        def p(c, n, u, v):
+            if (u + 0.62) ** 2 + ((v - 0.1) * 0.8) ** 2 < 0.012:
+                return (20, 25, 15)  # eyespot near the tail
+            base = mix((205, 210, 160), (95, 110, 60), smooth(-0.6, 0.0, v))
+            if math.sin(u * 19 + v * 6) > 0.75:
+                base = mix(base, (60, 70, 35), 0.5)  # mottling
+            return base
+        return dict(cm=65, depth=0.2, width=0.16, fin=(80, 100, 55), paint=p, dorsal=(0.1, -0.72, 0.3), fork=0.05)
+    if sid == "LakeSturgeon":
+        def p(c, n, u, v):
+            base = mix((215, 210, 200), (100, 95, 85), smooth(-0.5, 0.1, v))
+            for row in (0.85, 0.35, -0.3):
+                if abs(v - row) < 0.07 and math.sin(u * 24) > 0.3:
+                    return (190, 185, 165)  # rows of bony scutes
+            return base
+        return dict(cm=135, depth=0.14, width=0.16, fin=(95, 90, 80), paint=p, snout=1.3, flat_head=0.3, barbels=True, short_barbels=False, fork=0.5, dorsal=(-0.45, -0.7, 0.3))
+    if sid == "CreekChub":
+        def p(c, n, u, v):
+            if abs(v - 0.02) < 0.09 and u < 0.85:
+                return (50, 55, 50)  # dark side stripe
+            return mix((225, 220, 200), (125, 120, 90), smooth(-0.4, 0.5, v))
+        return dict(cm=17.5, depth=0.22, width=0.14, fin=(150, 140, 110), paint=p, fork=0.6)
+    if sid == "RockBass":
+        base = lambda c, n, u, v: mix((200, 170, 110), (100, 80, 45), smooth(-0.4, 0.7, v))
+        return dict(cm=22.5, depth=0.45, width=0.17, fin=(110, 85, 50), paint=spots(45, (45, 35, 20), base, -0.6, 0.9, 0.07), spiky=True, eye_iris=(190, 30, 30))
+    if sid == "BrookTrout":
+        def p(c, n, u, v):
+            if v < -0.45:
+                return (225, 120, 50)  # orange belly
+            if v > 0.3 and math.sin(u * 22) * math.sin(v * 14) > 0.35:
+                return (190, 190, 130)  # pale worm marks on the back
+            if -0.3 < v < 0.25 and math.sin(u * 17 + 2) > 0.9 and math.sin(v * 13) > 0.6:
+                return (210, 40, 40)  # red spots
+            return mix((105, 120, 90), (55, 70, 55), smooth(-0.2, 0.7, v))
+        return dict(cm=29, depth=0.24, width=0.15, fin=(190, 95, 50), paint=p, adipose=True, fork=0.25, white_tail_tip=False)
+    if sid == "BrownTrout":
+        def p(c, n, u, v):
+            if -0.25 < v < 0.2 and math.sin(u * 15 + 1) > 0.88 and math.sin(v * 11) > 0.5:
+                return (200, 60, 40)  # red spots
+            base = mix((240, 215, 140), (150, 110, 55), smooth(-0.6, 0.2, v))
+            if v > -0.2 and math.sin(u * 21) * math.sin(v * 17) > 0.6:
+                return (40, 30, 20)  # black spots
+            return base
+        return dict(cm=57.5, depth=0.24, width=0.16, fin=(150, 115, 65), paint=p, adipose=True, fork=0.2)
+    if sid == "WhiteBass":
+        def p(c, n, u, v):
+            base = mix((240, 240, 240), (150, 160, 175), smooth(-0.3, 0.8, v))
+            for row in (0.45, 0.2, -0.05):
+                if abs(v - row) < 0.035:
+                    return mix(base, (70, 75, 85), 0.7)  # thin dark stripes
+            return base
+        return dict(cm=30, depth=0.35, width=0.14, fin=(170, 175, 185), paint=p, spiky=True, fork=0.7)
+    if sid == "LakeTrout":
+        base = lambda c, n, u, v: mix((225, 225, 215), (85, 100, 90), smooth(-0.5, 0.2, v))
+        return dict(cm=65, depth=0.2, width=0.15, fin=(90, 105, 95), paint=spots(70, (215, 215, 195), base, -0.4, 0.95, 0.055), adipose=True, fork=0.95)
+    if sid == "Muskellunge":
+        def p(c, n, u, v):
+            base = mix((225, 225, 195), (150, 140, 90), smooth(-0.6, 0.3, v))
+            if v > -0.45 and math.sin(u * 20) > 0.55:
+                return (85, 80, 50)  # dark vertical bars
+            return base
+        return dict(cm=95, depth=0.16, width=0.13, fin=(160, 110, 70), paint=p, snout=1.4, dorsal=(-0.45, -0.75, 0.6), flat_head=0.3)
+    if sid == "LakeWhitefish":
+        base = lambda c, n, u, v: mix((240, 240, 235), (125, 135, 140), smooth(0.0, 0.9, v))
+        return dict(cm=45, depth=0.27, width=0.14, fin=(180, 180, 175), paint=base, snout=0.8, adipose=True, fork=0.8)
+    if sid == "FreshwaterDrum":
+        base = lambda c, n, u, v: mix((225, 225, 220), (85, 95, 120), smooth(-0.4, 0.6, v))
+        return dict(cm=42.5, depth=0.42, width=0.15, fin=(150, 155, 160), paint=base, spiky=True, fork=0.05, dorsal=(0.3, -0.6, 0.35))
+    if sid == "Burbot":
+        def p(c, n, u, v):
+            base = mix((210, 195, 140), (120, 105, 60), smooth(-0.5, 0.2, v))
+            if math.sin(u * 23 + v * 9) * math.sin(v * 15 - u * 5) > 0.35:
+                return (60, 50, 30)  # mottling
+            return base
+        return dict(cm=57.5, depth=0.15, width=0.14, fin=(110, 95, 55), paint=p, dorsal=(-0.05, -0.85, 0.2), fork=0.05, barbels=True, short_barbels=True)
     raise KeyError(sid)
 
 
@@ -265,7 +342,9 @@ def build_fish(sid):
 if __name__ == "__main__":
     args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else sys.argv[1:]
     ids = [a for a in args if not a.startswith("-") and not a.endswith(".py")] or ["Bluegill", "Pumpkinseed", "YellowPerch", "BlackCrappie", "LargemouthBass", "ChannelCatfish",
-                           "CommonCarp", "NorthernPike", "RainbowTrout", "SmallmouthBass", "Walleye"]
+                           "CommonCarp", "NorthernPike", "RainbowTrout", "SmallmouthBass", "Walleye",
+                           "Bowfin", "LakeSturgeon", "CreekChub", "RockBass", "BrookTrout", "BrownTrout",
+                           "WhiteBass", "LakeTrout", "Muskellunge", "LakeWhitefish", "FreshwaterDrum", "Burbot"]
     for sid in ids:
         L = build_fish(sid)
         finish(sid, replaces="FishShadows blobs and the catch held on the line (FishingService.showCatch)",
