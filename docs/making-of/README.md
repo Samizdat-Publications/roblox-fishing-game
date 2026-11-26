@@ -4,6 +4,21 @@ A Roblox fishing game where real fishing knowledge matters: the right bait, spot
 
 Newest first. The live page with before and after sliders is `docs/making-of/index.html` (published as a Claude artifact).
 
+## Next: Cedar Creek
+
+2026-11-25 20:20 · commit `cb022b1`
+
+A stream west of the lake behind a tall fence. A 250 coin Creek Pass opens the gate. Its riffle, rocks and deep pool each hold a new fish: rainbow trout at dawn, smallmouth bass by day, walleye after dark. In the playtest the gate blocked the way until the pass was bought, then three trout, three walleye (up to 70 cm and 72 coins) and two smallmouth came out of the creek. The first look found the riffle's water missing; it was too thin for Roblox terrain and now fills properly.
+
+**The west side before and after Cedar Creek**
+
+| Before | After |
+|---|---|
+| ![before](stills/2026-11-25-creek-before.jpg) | ![after](stills/2026-11-25-creek-after.jpg) |
+
+![The riffle and the rocks, looking upstream](stills/2026-11-25-creek-riffle.jpg)
+*The riffle and the rocks, looking upstream*
+
 ## Next: Better rods
 
 2026-11-25 19:55 · commit `dc2dd04`
