@@ -143,6 +143,30 @@
     "replaces": "FishShadows blobs and the catch held on the line (FishingService.showCatch)",
     "notes": "Built at the species' average length, 17.5 cm = 1.46 studs (1 stud = 12 cm). Scale by caught cm / average cm. Head along +X."
   },
+  "DeepV": {
+    "name": "DeepV",
+    "studs": [
+      7.19,
+      4.14,
+      17.75
+    ],
+    "triangles": 548,
+    "parts": 29,
+    "replaces": "The gray-box boat BoatService builds (boat plan Task 2)",
+    "notes": "16 x 7 stud hull; bow toward -Z. Helm seat behind the console, navigator seat up front."
+  },
+  "Dinghy": {
+    "name": "Dinghy",
+    "studs": [
+      3.96,
+      2.12,
+      8.57
+    ],
+    "triangles": 708,
+    "parts": 21,
+    "replaces": "The gray-box boat BoatService builds (boat plan Task 2)",
+    "notes": "8 x 4 stud inflatable; bow toward -Z. Tubes about 1.2 studs high."
+  },
   "Dock": {
     "name": "Dock",
     "studs": [

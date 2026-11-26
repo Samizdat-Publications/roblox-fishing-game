@@ -12,7 +12,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-SCRIPTS = ["dock", "fish_buyer", "bait_shop", "pond_rim", "logs", "buoy", "reeds", "trees", "rocks", "fish", "rods", "boat"]
+SCRIPTS = ["dock", "fish_buyer", "bait_shop", "pond_rim", "logs", "buoy", "reeds", "trees", "rocks", "fish", "rods", "boat", "boats"]
 
 for name in SCRIPTS:
     print(f"== {name}", flush=True)

@@ -7,12 +7,14 @@ return function(t, Shared)
 	local FightModel = require(Shared.FightModel)
 
 	local function allSpecies()
-		local out = {}
-		for _, s in FishData.list do
-			table.insert(out, s)
-		end
-		for _, s in BigLake.list do
-			table.insert(out, s)
+		local out, seen = {}, {}
+		for _, list in { FishData.list, BigLake.list } do
+			for _, s in list do
+				if not seen[s.id] then
+					seen[s.id] = true
+					table.insert(out, s)
+				end
+			end
 		end
 		return out
 	end

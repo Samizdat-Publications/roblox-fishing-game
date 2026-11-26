@@ -13,6 +13,7 @@ local BaitData = require(Shared.BaitData)
 local RodData = require(Shared.RodData)
 local FishLogic = require(Shared.FishLogic)
 local Rarity = require(Shared.Rarity)
+local BoatData = require(Shared.BoatData)
 
 local UI = {}
 
@@ -596,6 +597,37 @@ function UI.buildShop()
 		end)
 		refs.rodRows[r.id] = btn
 	end
+	-- Boats: bought once; the chosen one waits at your slip by the dock. UNVERIFIED in Studio.
+	local boatHeader = label(scroll, "BoatsHeader", "Boats", UDim2.new(1, -10, 0, 30), UDim2.new(), 20, C.gold, Enum.Font.GothamBlack)
+	boatHeader.TextXAlignment = Enum.TextXAlignment.Left
+	boatHeader.LayoutOrder = 200
+	refs.boatRows = {}
+	for i, b in BoatData.list do
+		local row = frame(scroll, "Boat_" .. b.id, UDim2.new(1, -10, 0, 84), UDim2.new(), C.panel2, 0.1)
+		row.LayoutOrder = 200 + i
+		corner(row, 10)
+		local swatch = frame(row, "Swatch", UDim2.fromOffset(6, 64), UDim2.fromOffset(6, 10), b.color, 0)
+		corner(swatch, 3)
+		local title = b.name .. (if b.crew > 1 then " (for two players)" else "")
+		label(row, "Name", title, UDim2.fromOffset(320, 28), UDim2.fromOffset(18, 6), 20, C.text, Enum.Font.GothamBold).TextXAlignment = Enum.TextXAlignment.Left
+		local blurb = label(row, "Blurb", b.blurb, UDim2.fromOffset(330, 48), UDim2.fromOffset(18, 32), 14, C.dim)
+		blurb.TextXAlignment = Enum.TextXAlignment.Left
+		blurb.TextYAlignment = Enum.TextYAlignment.Top
+		local btn = button(row, "Buy", "", UDim2.fromOffset(150, 50), UDim2.new(1, -162, 0, 17), C.blue, function()
+			local st = lastState
+			if not st then
+				return
+			end
+			if st.boats and st.boats[b.id] then
+				if callbacks.chooseBoat then
+					callbacks.chooseBoat(b.id)
+				end
+			elseif callbacks.buyBoat then
+				callbacks.buyBoat(b.id)
+			end
+		end)
+		refs.boatRows[b.id] = btn
+	end
 	refs.shopHint = label(p, "Hint", "", UDim2.new(1, -24, 0, 40), UDim2.new(0, 12, 1, -48), 15, C.dim)
 	refs.shop = p
 end
@@ -631,6 +663,22 @@ function UI.refreshShop()
 		else
 			btn.Text = r.price .. " coins"
 			btn.BackgroundColor3 = if s.coins >= r.price then C.blue else C.panel
+		end
+	end
+	for _, b in BoatData.list do
+		local btn = refs.boatRows and refs.boatRows[b.id]
+		if btn then
+			local owned = s.boats and s.boats[b.id]
+			if s.boat == b.id then
+				btn.Text = "At your slip"
+				btn.BackgroundColor3 = C.panel
+			elseif owned then
+				btn.Text = "Use this boat"
+				btn.BackgroundColor3 = C.green
+			else
+				btn.Text = b.price .. " coins"
+				btn.BackgroundColor3 = if s.coins >= b.price then C.blue else C.panel
+			end
 		end
 	end
 	refs.shopHint.Text = string.format("You have %d coins. The right bait beats the expensive bait.", s.coins)

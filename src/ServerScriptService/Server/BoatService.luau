@@ -278,7 +278,7 @@ local function returnToSlip(boat: Boat)
 	boat.tiePrompt.Enabled = false
 end
 
-local function cast(boat: Boat)
+local function castOff(boat: Boat)
 	-- Leave the slip: unanchor, and keep the server as the physics owner (fully authoritative).
 	if boat.docked then
 		boat.docked = false
@@ -366,7 +366,7 @@ function spawnFor(player: Player)
 		end
 		local hum = who.Character and who.Character:FindFirstChildOfClass("Humanoid")
 		if hum and hum.Health > 0 and not hum.Sit then
-			cast(boat)
+			castOff(boat)
 			helm:Sit(hum)
 		end
 	end)
@@ -377,7 +377,7 @@ function spawnFor(player: Player)
 			end
 			local hum = who.Character and who.Character:FindFirstChildOfClass("Humanoid")
 			if hum and hum.Health > 0 and not hum.Sit then
-				cast(boat)
+				castOff(boat)
 				nav:Sit(hum)
 			end
 		end)
@@ -415,7 +415,7 @@ function spawnFor(player: Player)
 				end
 				return
 			end
-			cast(boat)
+			castOff(boat)
 			boat.emptyFor = 0
 			-- Dying or resetting at the helm sends the boat home.
 			local died
@@ -452,7 +452,6 @@ local function step(dt: number)
 		if boat.docked or not boat.hull.Parent then
 			continue
 		end
-		local b = BoatData.byId[boat.id]
 		local n = aboard(boat)
 		local throttle, steer = 0, 0
 		if boat.helm.Occupant then
@@ -510,7 +509,6 @@ local function step(dt: number)
 		else
 			boat.emptyFor = 0
 		end
-		local _ = b
 	end
 end
 

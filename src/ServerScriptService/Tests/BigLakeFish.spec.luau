@@ -1,5 +1,5 @@
--- UNVERIFIED in Studio: written overnight 2026-11-26. Checks the Big Lake fish data on its
--- own (they are not in FishData.list yet, so FishLogic.biteWeights can't see them).
+-- UNVERIFIED in Studio: written overnight 2026-11-26. Checks the Big Lake fish data and
+-- that FishData now carries them (so FishLogic.biteWeights sees them), once each.
 return function(t, Shared)
 	local BigLake = require(Shared.BigLakeFishData)
 	local FishData = require(Shared.FishData)
@@ -12,9 +12,6 @@ return function(t, Shared)
 	local function top(spot, period, bait)
 		local all = {}
 		for _, s in FishData.list do
-			table.insert(all, s)
-		end
-		for _, s in BigLake.list do
 			table.insert(all, s)
 		end
 		local best, bestW = nil, 0
@@ -44,7 +41,7 @@ return function(t, Shared)
 
 	t.test("ids are new, baits exist, sizes and fights are sane", function()
 		for _, s in BigLake.list do
-			t.eq(FishData.byId[s.id], nil, "clashes with " .. s.id)
+			t.ok(FishData.byId[s.id] == s, "in FishData once: " .. s.id)
 			for bait in s.baits do
 				t.ok(BaitData.byId[bait] ~= nil, s.id .. " unknown bait " .. bait)
 			end
@@ -54,6 +51,14 @@ return function(t, Shared)
 			for spot in s.spots do
 				t.ok(BigLake.spotNames[spot] ~= nil, s.id .. " unnamed spot " .. spot)
 			end
+		end
+	end)
+
+	t.test("no id appears twice in FishData", function()
+		local seen = {}
+		for _, s in FishData.list do
+			t.ok(not seen[s.id], "twice: " .. s.id)
+			seen[s.id] = true
 		end
 	end)
 

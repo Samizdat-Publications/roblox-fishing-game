@@ -16,6 +16,9 @@ FishLogic.SPOT_NAMES = {
 	Riffle = "the riffle",
 	Rocks = "the creek rocks",
 	Pool = "the deep pool",
+	Basin = "the open basin", -- the Big Lake (boat plan Task 5)
+	IslandPoint = "the island point",
+	DropOff = "the blue-water drop-off",
 }
 
 export type Weight = { id: string, w: number }

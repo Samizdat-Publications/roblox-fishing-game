@@ -22,6 +22,8 @@ local PlayerData = require(Server.PlayerData)
 local WorldBuilder = require(Server.WorldBuilder)
 local RodService = require(Server.RodService)
 local GoalService = require(Server.GoalService)
+local BoatService = require(Server.BoatService)
+local BoatRules = require(Shared.BoatRules)
 
 local FishingService = {}
 
@@ -45,6 +47,13 @@ local sessions: { [Player]: Session } = {}
 local rng = Random.new()
 local zones = WorldBuilder.zones()
 local waters = WorldBuilder.waters()
+-- The channel and the Big Lake (boat-only water). UNVERIFIED in Studio, 2026-11-26.
+for _, z in BoatRules.ZONES do
+	table.insert(zones, z)
+end
+for _, b in BoatRules.extraCastWaters() do
+	table.insert(waters, b)
+end
 
 local fishingEvent: RemoteEvent
 local toastEvent: RemoteEvent
@@ -260,6 +269,11 @@ local function onCast(player: Player, dir: any, power: any)
 	landing = Vector3.new(landing.X, 0.3, landing.Z)
 	if not FishLogic.isOnWaterAny(landing, waters) then
 		send(player, "Hint", { text = "That landed on dry ground. Face the water and cast." })
+		return
+	end
+	local boatOk, boatMsg = BoatService.castCheck(player, landing)
+	if not boatOk then
+		send(player, "Hint", { text = boatMsg or "You can't cast there from here." })
 		return
 	end
 	if FishLogic.CREEK_SPOTS[FishLogic.spotAt(landing, zones)] and not data.creekPass then

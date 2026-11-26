@@ -351,6 +351,18 @@ function Controller.start()
 				play("catch")
 			end
 		end,
+		buyBoat = function(boatId: string) -- UNVERIFIED in Studio (2026-11-26)
+			local ok, msg = Remotes.func("BuyBoat"):InvokeServer(boatId)
+			UI.toast(msg, if ok then Color3.fromRGB(120, 220, 130) else Color3.fromRGB(240, 120, 110))
+			UI.shopHint(msg)
+			if ok then
+				play("catch")
+			end
+		end,
+		chooseBoat = function(boatId: string)
+			Remotes.event("ChooseBoat"):FireServer(boatId)
+			play("click")
+		end,
 		equipRod = function(rodId: string)
 			Remotes.event("EquipRod"):FireServer(rodId)
 			play("click")

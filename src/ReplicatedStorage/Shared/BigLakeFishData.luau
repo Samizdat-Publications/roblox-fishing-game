@@ -1,14 +1,11 @@
 --!strict
 -- The Big Lake's fish, reached only by boat. Same shape as FishData entries.
--- UNVERIFIED: written overnight 2026-11-26 without Studio. Kept out of FishData.list on
--- purpose so the journal doesn't show three fish nobody can catch yet; the boat plan
--- (docs/superpowers/plans/2026-11-26-boat.md, Task 5) appends these to FishData.list once
--- the Big Lake's zones exist. The basin and island point are dinghy water; the drop-off is
--- in the blue water, reachable only on the two-person Deep-V boat.
-local Shared = script.Parent
-local FishData = require(Shared.FishData)
-
-local list: { FishData.Species } = {
+-- UNVERIFIED: written overnight 2026-11-26 without Studio. FishData appends these to its
+-- list now that the Big Lake exists in code (BoatWorld, BoatRules). The basin and island
+-- point are dinghy water; the drop-off is in the blue water, reachable only on the
+-- two-person Deep-V boat.
+-- No require of FishData here: FishData appends this list, so requiring it back would loop.
+local list: { any } = {
 	{
 		id = "WhiteBass",
 		tier = "Uncommon",
@@ -126,7 +123,7 @@ local spotNames = {
 	IslandPoint = "the island point",
 }
 
-local byId: { [string]: FishData.Species } = {}
+local byId: { [string]: any } = {}
 for _, s in list do
 	byId[s.id] = s
 end

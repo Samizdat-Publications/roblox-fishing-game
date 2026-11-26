@@ -98,5 +98,7 @@ The table is generated from `models/manifest.json`. Sizes are studs as X x Y (up
 | [GraphiteRod](previews/GraphiteRod.png) | 0.67 x 1.06 x 7.2 | 604 | the gray-box rod part from RodService (Graphite) | 7.2 studs long along Z, tip toward -Z (as RodService points it). Put the RodTip attachment at the tip. |
 | [Bobber](previews/Bobber.png) | 0.84 x 1.38 x 0.84 | 304 | the ball Bobber and its Top from FishingService.makeBobber | 0.8 studs across like the gray box; the base is the line eye. |
 | [JonBoat](previews/JonBoat.png) | 6.05 x 3.6 x 14.8 | 392 | Nothing yet: the boat from the boat plan (gray box in Task 2, this model after) | Hull 14 x 6 studs; floor at about 0.35 studs above the base. Bow toward -Z. |
+| [Dinghy](previews/Dinghy.png) | 3.96 x 2.12 x 8.57 | 708 | The gray-box boat BoatService builds (boat plan Task 2) | 8 x 4 stud inflatable; bow toward -Z. Tubes about 1.2 studs high. |
+| [DeepV](previews/DeepV.png) | 7.19 x 4.14 x 17.75 | 548 | The gray-box boat BoatService builds (boat plan Task 2) | 16 x 7 stud hull; bow toward -Z. Helm seat behind the console, navigator seat up front. |
 
 Total: 32 models. Every one is a single mesh well under the 20,000 triangle limit; the biggest is the dock at 1372.

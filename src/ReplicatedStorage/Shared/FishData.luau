@@ -347,6 +347,12 @@ local list: { Species } = {
 	},
 }
 
+-- The Big Lake's fish, reached by boat (boat plan Task 5, UNVERIFIED in Studio 2026-11-26).
+-- They live in their own file; the drop-off ones only bite in blue water (Deep-V only).
+for _, s in require(script.Parent.BigLakeFishData).list do
+	table.insert(list, s)
+end
+
 local byId: { [string]: Species } = {}
 for _, s in list do
 	byId[s.id] = s
