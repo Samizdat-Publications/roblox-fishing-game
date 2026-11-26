@@ -1,0 +1,585 @@
+<title>Fishing Game Next Leg</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Figtree:wght@400;600;700&display=swap">
+<style>
+/* Layout: one reading column, a fishing line down the left of the milestones with a bobber at each stop. */
+:root {
+  --bg: #eaf1ef;
+  --surface: #f8fbfa;
+  --ink: #14302e;
+  --muted: #4a6562;
+  --line: #c2d2ce;
+  --soft: #dbe7e3;
+  --water: #1f6673;
+  --on-water: #f3fbfa;
+  --bobber: #cf3d29;
+  --amber: #a86a12;
+  --font-display: "Fredoka", "Trebuchet MS", "Segoe UI", sans-serif;
+  --font-body: "Figtree", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f2024; --surface: #162c31; --ink: #e3efec; --muted: #9bb5b0; --line: #2c474c;
+    --soft: #1e393e; --water: #77bdc8; --on-water: #0c1c20; --bobber: #f26b55; --amber: #e3ad52;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f2024; --surface: #162c31; --ink: #e3efec; --muted: #9bb5b0; --line: #2c474c;
+  --soft: #1e393e; --water: #77bdc8; --on-water: #0c1c20; --bobber: #f26b55; --amber: #e3ad52;
+  color-scheme: dark;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+.page {
+  max-width: 54rem;
+  margin: 0 auto;
+  padding-block: 2.5rem 4rem;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.15; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(2rem, 6vw, 3.1rem); letter-spacing: -0.01em; }
+h2 { font-size: 1.65rem; }
+h3 { font-size: 1.2rem; }
+p { margin: 0; max-width: 65ch; }
+ul, ol { margin: 0; padding-left: 1.15rem; display: flex; flex-direction: column; gap: 0.3rem; max-width: 68ch; }
+a { color: var(--water); text-underline-offset: 3px; }
+a:focus-visible { outline: 2px solid var(--bobber); outline-offset: 3px; border-radius: 3px; }
+.eyebrow { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--water); }
+.muted { color: var(--muted); }
+.stack { display: flex; flex-direction: column; gap: 1rem; }
+.stack-lg { display: flex; flex-direction: column; gap: 1.5rem; }
+
+/* header */
+.lede { font-size: 1.15rem; max-width: 60ch; }
+.decided { display: grid; grid-template-columns: repeat(auto-fit, minmax(11.5rem, 1fr)); gap: 0.75rem 1.5rem; border-top: 2px solid var(--ink); padding-top: 1rem; }
+.decided div { min-width: 0; }
+.decided dt { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.decided dd { margin: 0.15rem 0 0; }
+dl { margin: 0; }
+
+/* three week bar */
+.weeks { display: grid; grid-template-columns: 2fr 2fr 3fr 3fr 2fr 4fr 2fr 3fr; gap: 3px; }
+.weeks div { background: var(--soft); padding: 0.45rem 0.25rem; text-align: center; min-width: 0; border-radius: 3px; }
+.weeks div.core { background: var(--water); color: var(--on-water); }
+.weeks b { display: block; font-family: var(--font-display); font-weight: 600; font-size: 1rem; }
+.weeks span { display: block; font-size: 0.72rem; font-variant-numeric: tabular-nums; opacity: 0.85; }
+.key { display: flex; flex-wrap: wrap; gap: 0.4rem 1.25rem; font-size: 0.88rem; color: var(--muted); }
+.key i { display: inline-block; width: 0.8rem; height: 0.8rem; border-radius: 2px; margin-right: 0.4rem; vertical-align: -1px; background: var(--soft); }
+.key i.core { background: var(--water); }
+@media (max-width: 560px) { .weeks span { display: none; } }
+
+/* findings */
+.findings { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1.5rem; }
+.findings > div { min-width: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+
+/* milestones on the line */
+.stops { list-style: none; padding: 0; max-width: none; gap: 0; position: relative; }
+.stops::before { content: ""; position: absolute; left: 10px; top: 6px; bottom: 6px; width: 2px; background: var(--line); }
+.stop { position: relative; padding: 0 0 2.25rem 2.5rem; display: flex; flex-direction: column; gap: 0.75rem; }
+.stop:last-child { padding-bottom: 0; }
+.stop::before {
+  content: ""; position: absolute; left: 0; top: 3px; width: 22px; height: 22px; border-radius: 50%;
+  box-sizing: border-box; border: 2px solid var(--ink);
+  background: linear-gradient(to bottom, var(--bobber) 0 50%, var(--surface) 50% 100%);
+}
+.stop header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.9rem; }
+.code { font-family: var(--font-display); font-weight: 600; color: var(--bobber); }
+.dates { font-size: 0.9rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.gets { font-size: 1.05rem; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem 2rem; }
+.cols > div { min-width: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.label { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
+.cols ul { font-size: 0.95rem; }
+.small { font-size: 0.93rem; }
+
+/* rarity chips */
+.tiers { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; font-size: 0.9rem; }
+.tiers span { display: inline-flex; align-items: center; gap: 0.4rem; }
+.tiers i { width: 0.85rem; height: 0.85rem; border-radius: 50%; border: 1px solid var(--ink); display: inline-block; }
+
+/* figures and tables */
+figure { margin: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+.scroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+.scroll svg { display: block; width: 100%; min-width: 640px; height: auto; }
+figcaption { font-size: 0.9rem; color: var(--muted); max-width: 65ch; }
+.dg { color: var(--ink); }
+.dg text { font-family: var(--font-body); font-size: 12.5px; fill: currentColor; stroke: none; }
+.dg .st { stroke: currentColor; fill: none; stroke-width: 1.5; }
+.dg .land { fill: var(--soft); stroke: none; }
+.dg .wood { fill: var(--soft); stroke: currentColor; stroke-width: 1.5; }
+.dg .acc { stroke: var(--bobber); fill: none; stroke-width: 3; }
+.dg .accfill { fill: var(--bobber); stroke: none; }
+.dg .amb { fill: var(--amber); fill-opacity: 0.3; stroke: var(--amber); stroke-width: 1.5; }
+.dg .ambring { stroke: var(--amber); fill: none; stroke-width: 2.5; }
+.dg .dash { stroke: currentColor; fill: none; stroke-width: 1.2; stroke-dasharray: 5 5; opacity: 0.75; }
+.dg .ink { fill: currentColor; stroke: none; }
+.dg .shade { fill: currentColor; fill-opacity: 0.34; stroke: none; }
+.dg .faint { fill: currentColor; fill-opacity: 0.16; stroke: none; }
+.dg .none { fill: var(--surface); stroke: currentColor; stroke-width: 1.5; }
+
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 34rem; font-size: 0.95rem; }
+th, td { text-align: left; vertical-align: top; padding: 0.55rem 0.9rem 0.55rem 0; border-bottom: 1px solid var(--line); }
+th { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); border-bottom: 2px solid var(--ink); }
+td:first-child { font-weight: 600; white-space: nowrap; }
+
+.grades { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 1rem 1.5rem; }
+.grades > div { min-width: 0; border-top: 3px solid var(--line); padding-top: 0.6rem; display: flex; flex-direction: column; gap: 0.25rem; }
+.grades > div.best { border-top-color: var(--bobber); }
+.grades b { font-family: var(--font-display); font-weight: 600; font-size: 1.1rem; }
+
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 2rem 2.5rem; }
+.two > div { min-width: 0; display: flex; flex-direction: column; gap: 0.75rem; }
+.note { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 1rem 1.15rem; }
+footer { border-top: 1px solid var(--line); padding-top: 1rem; font-size: 0.88rem; color: var(--muted); }
+footer p { max-width: none; overflow-wrap: anywhere; }
+</style>
+
+<div class="page">
+
+  <header class="stack-lg">
+    <div class="stack">
+      <p class="eyebrow">Fishing Game plan, 11/27/2026 to 12/17/2026</p>
+      <h1>The next three weeks at the lake</h1>
+      <p class="lede">Eight steps. Each one ends with Liam playing it and saying what was best, what was annoying and what should change. The cast, the bait and the wait come first, because that is the part you do a thousand times.</p>
+    </div>
+    <dl class="decided">
+      <div><dt>Liam</dt><dd>Plays along the way and steers. No reveal date.</dd></div>
+      <div><dt>Who plays</dt><dd>Stewart and Liam. Nothing gets published.</dd></div>
+      <div><dt>Spending</dt><dd>No Robux. Sound, critic and model tools keep running as now.</dd></div>
+      <div><dt>Rating</dt><dd>Voice chat off. Aim for Minimal or Mild.</dd></div>
+    </dl>
+    <div class="stack">
+      <div class="weeks" role="img" aria-label="Three week bar: L0 two days, L1 two days, L2 three days, L3 three days, L4 two days, L5 four days, L6 two days, L7 three days">
+        <div><b>L0</b><span>11/27</span></div>
+        <div><b>L1</b><span>11/29</span></div>
+        <div class="core"><b>L2</b><span>12/01</span></div>
+        <div class="core"><b>L3</b><span>12/04</span></div>
+        <div class="core"><b>L4</b><span>12/07</span></div>
+        <div class="core"><b>L5</b><span>12/09</span></div>
+        <div><b>L6</b><span>12/13</span></div>
+        <div><b>L7</b><span>12/15</span></div>
+      </div>
+      <p class="key"><span><i class="core"></i>The core: these four do not slip</span><span><i></i>Can move if the leg runs long</span></p>
+    </div>
+  </header>
+
+  <section class="stack-lg">
+    <h2>What the review found</h2>
+    <div class="findings">
+      <div>
+        <h3>A lot is written and has never been played</h3>
+        <p class="small">An overnight cloud run left 5,350 new lines waiting: rarity, 15 new fish, weather, feeding frenzies, daily goals, two boats and a second lake. It passes 135 tests but nobody has seen it run. So those parts get switched on one at a time and proven, they do not get built again.</p>
+      </div>
+      <div>
+        <h3>The picture needs light and water more than props</h3>
+        <p class="small">The new dock looks good. Around it are swimming-pool blue water, a flat empty horizon, a square shoreline and plain light. Those four fill about nine tenths of every screenshot, so they are what will move the look score from 3 to 7.</p>
+      </div>
+      <div>
+        <h3>The cast gives nothing back</h3>
+        <p class="small">You hold, let go and hope. Nothing shows where it will land, and anywhere in a spot is as good as anywhere else. While you wait, the bobber is a red dot about 10 pixels wide. You cannot be tense about something you cannot see.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="stack-lg">
+    <div class="stack">
+      <h2>The eight steps</h2>
+      <p class="muted">The full checklists live in the plan file. These are the checks that matter most.</p>
+    </div>
+    <ol class="stops">
+
+      <li class="stop">
+        <header><span class="code">L0</span><h3>Steady ground</h3><span class="dates">11/27 to 11/28</span></header>
+        <p class="gets">Nothing new to play. The game as it is, with all 29 models in, and the tools that let every later step be measured.</p>
+        <div class="cols">
+          <div><span class="label">Done when a playtest shows</span>
+            <ul>
+              <li>One command takes the same 12 pictures every time: lake and creek at dawn, noon, golden hour and night.</li>
+              <li>A fresh look score on those pictures, and a frame-rate number for PC and phone.</li>
+              <li>Cast, bite, fight and sell still work on mouse, touch and gamepad.</li>
+            </ul>
+          </div>
+          <div><span class="label">Built by</span><p class="small">Sonnet for imports and checks, Opus for the picture tools, Fable reads the first sheet.</p>
+            <span class="label">Watch out for</span><p class="small">The project folder is parked on an old branch. It goes back on main before anything is built.</p>
+          </div>
+        </div>
+      </li>
+
+      <li class="stop">
+        <header><span class="code">L1</span><h3>Rare fish</h3><span class="dates">11/29 to 11/30</span></header>
+        <p class="gets">26 fish in seven colours of rarity. About 2 catches in 100 are a Trophy and about 2 in 1,000 are a Monster, with a banner and a message to the whole server.</p>
+        <p class="tiers" aria-label="The seven rarity tiers">
+          <span><i style="background:rgb(175,180,185)"></i>Common</span>
+          <span><i style="background:rgb(95,200,110)"></i>Uncommon</span>
+          <span><i style="background:rgb(80,150,240)"></i>Rare</span>
+          <span><i style="background:rgb(170,95,235)"></i>Epic</span>
+          <span><i style="background:rgb(250,175,40)"></i>Legendary</span>
+          <span><i style="background:rgb(240,75,125)"></i>Mythic</span>
+          <span><i style="background:conic-gradient(#f05a5a,#f0c84a,#5ad27a,#4aa0f0,#b45af0,#f05a5a)"></i>Godlike</span>
+        </p>
+        <div class="cols">
+          <div><span class="label">Done when a playtest shows</span>
+            <ul>
+              <li>All 135 tests pass inside Studio and an old save loads with everything in it.</li>
+              <li>A forced Trophy and a forced Monster: the warning at the hook, a harder fight you can still win, the banner, the journal count.</li>
+              <li>A Lake Sturgeon (Legendary) caught at the deep hole the real way.</li>
+              <li>Liam can tell rare from common by colour without being told.</li>
+            </ul>
+          </div>
+          <div><span class="label">Built by</span><p class="small">Already written. Fable runs the Studio session, Opus fixes what it finds, Sonnet uploads the 17 new models.</p>
+            <span class="label">Watch out for</span><p class="small">Expect a day of small fixes. Anything that fights back for half a day gets switched off and we move on.</p>
+          </div>
+        </div>
+      </li>
+
+      <li class="stop">
+        <header><span class="code">L2</span><h3>The cast</h3><span class="dates">12/01 to 12/03</span></header>
+        <p class="gets">A ring on the water shows where the bobber will land. Hold and it slides out, let go and it drops right there. Fish rise, logs snag, and where you put it matters.</p>
+        <div class="cols">
+          <div><span class="label">Done when a playtest shows</span>
+            <ul>
+              <li>20 casts in a row land within 1.5 studs of the ring.</li>
+              <li>Hitting a small circle at short, middle and long range 8 times in 10 with a mouse, 6 in 10 on a phone or gamepad.</li>
+              <li>A cast on a rise gets a bite in under 4 seconds.</li>
+              <li>Landing on a log snags. A lure is never lost.</li>
+              <li>Liam hits a rise within 5 tries with no coaching.</li>
+            </ul>
+          </div>
+          <div><span class="label">Built by</span><p class="small">Fable sets the feel and judges it by eye. Two Opus builders, one on the rules and one on the ring, arc and swing.</p>
+            <span class="label">Watch out for</span><p class="small">Mouse, touch and gamepad all have to feel right. The creek is only 12 studs wide and must stay fishable.</p>
+          </div>
+        </div>
+      </li>
+
+      <li class="stop">
+        <header><span class="code">L3</span><h3>Bait the hook</h3><span class="dates">12/04 to 12/06</span></header>
+        <p class="gets">A close-up bait bench. Thread the worm, lip-hook the minnow, pack the stinkbait, tie the knot. Each one is how you really do it, and a good job makes the fishing better.</p>
+        <div class="cols">
+          <div><span class="label">Done when a playtest shows</span>
+            <ul>
+              <li>All six baits can be done Perfect on mouse, touch and gamepad.</li>
+              <li>Once learned, a Perfect worm takes 4 seconds or less.</li>
+              <li>Skipping it plays exactly like the game does today.</li>
+              <li>The server refuses a faked Perfect.</li>
+              <li>After 15 minutes, Liam has used the bench more often than he skipped it.</li>
+            </ul>
+          </div>
+          <div><span class="label">Built by</span><p class="small">Fable designs each recipe and builds the seven small models. Opus builds the bench and the rules.</p>
+            <span class="label">Watch out for</span><p class="small">It could turn into a chore. That is why skipping is free and the 15 minute count is part of done.</p>
+          </div>
+        </div>
+      </li>
+
+      <li class="stop">
+        <header><span class="code">L4</span><h3>The wait</h3><span class="dates">12/07 to 12/08</span></header>
+        <p class="gets">The camera leans in on a bigger bobber. A shadow the size of the fish swims up to your bait. Tap to twitch it. Everything goes quiet just before a big one hits.</p>
+        <div class="cols">
+          <div><span class="label">Done when a playtest shows</span>
+            <ul>
+              <li>The critic scores suspense 7 or better on a clip of three waits. It was 6.</li>
+              <li>The shadow's size matched the fish in 10 of 10 catches.</li>
+              <li>Twitching brings bites a little sooner. Spamming it scares the fish.</li>
+              <li>Liam calls big or small before the strike and is right 4 times in 5.</li>
+            </ul>
+          </div>
+          <div><span class="label">Built by</span><p class="small">Fable for camera, timing and sound. Opus builds it. Sonnet makes and uploads the new sounds.</p>
+            <span class="label">Watch out for</span><p class="small">A camera that takes over is annoying. It moves gently and hands control back the moment you look around.</p>
+          </div>
+        </div>
+      </li>
+
+      <li class="stop">
+        <header><span class="code">L5</span><h3>Postcard lake</h3><span class="dates">12/09 to 12/12</span></header>
+        <p class="gets">Golden hour that glows, mist at dawn, dark pine-lake water, hills on the horizon and a real shoreline with reeds and lily pads. Fireflies at night.</p>
+        <div class="cols">
+          <div><span class="label">Done when a playtest shows</span>
+            <ul>
+              <li>The critic scores the lake 7 out of 10 or better on the 12 pictures and a golden-hour walk.</li>
+              <li>The phone never drops under 30 frames a second.</li>
+              <li>Every fishing spot still works exactly as before.</li>
+              <li>Stewart and Liam can each name a time of day they would screenshot.</li>
+            </ul>
+          </div>
+          <div><span class="label">Built by</span><p class="small">Fable does the look work itself and reads every picture. Opus builds the shoreline. The creek follows if time allows.</p>
+            <span class="label">Watch out for</span><p class="small">Roblox has one water setting for the whole world, so lake and creek water have to change on your own screen as you walk. Checked on day one.</p>
+          </div>
+        </div>
+      </li>
+
+      <li class="stop">
+        <header><span class="code">L6</span><h3>Living lake</h3><span class="dates">12/13 to 12/14</span></header>
+        <p class="gets">Fog, wind and storms that change what bites. Three Mythic fish that only show in the right weather. Feeding frenzies with gulls diving. Three goals a day and a small tackle box from the shopkeeper.</p>
+        <div class="cols">
+          <div><span class="label">Done when a playtest shows</span>
+            <ul>
+              <li>A Golden Trout caught at the riffle on a foggy dawn.</li>
+              <li>A frenzy at the dock: the water boils and bites come back to back for a minute.</li>
+              <li>A goal pays once, survives leaving and coming back, and changes the next day.</li>
+              <li>One tackle box per real day. No streak counter anywhere.</li>
+            </ul>
+          </div>
+          <div><span class="label">Built by</span><p class="small">Mostly written already. Opus adds the chalkboard and the tackle box. Fable judges how each weather looks.</p>
+            <span class="label">Watch out for</span><p class="small">Goals, frenzies and gifts together could make coins too easy. The money simulator runs after every step.</p>
+          </div>
+        </div>
+      </li>
+
+      <li class="stop">
+        <header><span class="code">L7</span><h3>The dinghy and the Big Lake</h3><span class="dates">12/15 to 12/17</span></header>
+        <p class="gets">Your own inflatable boat for 1,200 coins, a channel north to a second, bigger lake, and three new fish out there. If it goes well, the two-seat boat that only moves with both of you aboard.</p>
+        <div class="cols">
+          <div><span class="label">Done when a playtest shows</span>
+            <ul>
+              <li>Driving works on keyboard, phone and gamepad at about 12 studs a second.</li>
+              <li>You can only cast when the boat is nearly stopped, and swimmers cannot fish out there.</li>
+              <li>Liam drives out and catches a white bass by himself.</li>
+              <li>Two-seat boat: it will not move alone, and a blue-water catch lands in both journals.</li>
+            </ul>
+          </div>
+          <div><span class="label">Built by</span><p class="small">Written already. Opus fixes, Fable judges how driving feels.</p>
+            <span class="label">Watch out for</span><p class="small">Boats are the hardest thing here to get feeling right, so this step is the most likely to run over.</p>
+          </div>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section class="stack-lg">
+    <div class="stack">
+      <h2>The new cast</h2>
+      <p>Aiming stays where the camera looks and it is still one button. What changes is that you watch the water instead of guessing.</p>
+    </div>
+    <figure>
+      <div class="scroll">
+        <svg class="dg" viewBox="0 0 720 360" role="img" aria-label="Top view of a cast from the dock. A ring slides out and back along the aim line while you hold. Landing near a rise or at the edge of a log is good. Landing on the log snags.">
+          <defs>
+            <marker id="ah1" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 Z" class="ink"/></marker>
+          </defs>
+          <rect x="0" y="320" width="720" height="40" class="land"/>
+          <text x="24" y="345">shore</text>
+          <rect x="345" y="236" width="30" height="90" class="wood"/>
+          <rect x="325" y="222" width="70" height="22" class="wood"/>
+          <text x="384" y="296">dock</text>
+          <circle cx="360" cy="224" r="6" class="ink"/>
+          <text x="404" y="232">you</text>
+
+          <line x1="360" y1="224" x2="560" y2="104" class="dash"/>
+          <line x1="394" y1="181" x2="470" y2="135" class="st" marker-start="url(#ah1)" marker-end="url(#ah1)"/>
+          <text x="380" y="166" text-anchor="end">ring slides out and back while you hold</text>
+
+          <g transform="translate(590 92) rotate(-25)">
+            <ellipse cx="0" cy="0" rx="100" ry="42" class="dash"/>
+            <rect x="-70" y="-11" width="140" height="22" rx="11" class="amb"/>
+          </g>
+          <text x="590" y="24" text-anchor="middle">log: land on it and you snag</text>
+          <line x1="648" y1="158" x2="626" y2="127" class="st"/>
+          <text x="632" y="174" text-anchor="middle">cover edge: bites come sooner</text>
+
+          <circle cx="560" cy="104" r="9" class="ambring"/>
+          <circle cx="504" cy="138" r="15" class="acc"/>
+          <circle cx="504" cy="138" r="3" class="accfill"/>
+          <text x="498" y="184" text-anchor="middle">your ring: let go here</text>
+
+          <circle cx="150" cy="90" r="8" class="st"/>
+          <circle cx="150" cy="90" r="16" class="st" opacity="0.6"/>
+          <circle cx="150" cy="90" r="24" class="st" opacity="0.3"/>
+          <text x="150" y="136" text-anchor="middle">a rise: land close, quickly</text>
+        </svg>
+      </div>
+      <figcaption>The red ring is where the bobber will land. Let go at the edge of the cover and bites come sooner. Hold too long and the ring turns amber on the log.</figcaption>
+    </figure>
+    <ul>
+      <li><strong>What you see is what you get.</strong> No random scatter. The ring and the landing match.</li>
+      <li><strong>Rises.</strong> Now and then a fish dimples the surface. Land close, quickly, and it bites fast. Both players see the same rises.</li>
+      <li><strong>Cover.</strong> Fish hold beside weeds, logs, dock posts and boulders. Bass, crappie and pike most of all.</li>
+      <li><strong>Snags.</strong> Land on the log and you are stuck. Wiggle free and you might lose a worm. The amber ring warns you first.</li>
+      <li><strong>Lures have jobs.</strong> A spinner is heavy and casts farther. A well-rigged plastic worm slides through cover without snagging.</li>
+    </ul>
+  </section>
+
+  <section class="stack-lg">
+    <div class="stack">
+      <h2>The bait bench</h2>
+      <p>It comes up only when your hook is empty: after a fish takes your bait, or when you switch. A missed bite keeps your bait. A lure is tied once and stays tied.</p>
+    </div>
+    <div class="grades">
+      <div><b>Okay</b><span class="small">What you get by skipping. Exactly how the game plays today.</span></div>
+      <div><b>Good</b><span class="small">Bites come 10 percent sooner. The fight starts a little ahead.</span></div>
+      <div class="best"><b>Perfect</b><span class="small">Bites come 20 percent sooner, the fight starts at half way, and live bait has an even chance of lasting a second fish.</span></div>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Bait</th><th>What you do</th><th>The real tip it teaches</th></tr></thead>
+        <tbody>
+          <tr><td>Worm</td><td>Three taps as it slides past the point, the bend and the shank</td><td>Thread it on two or three times and leave the tail wiggling</td></tr>
+          <tr><td>Cricket</td><td>One careful tap on the collar</td><td>Hook it under the collar behind the head so it stays lively</td></tr>
+          <tr><td>Minnow</td><td>Line up on a wiggling target, then a gentle push</td><td>Up through both lips so it swims naturally</td></tr>
+          <tr><td>Stinkbait</td><td>Hold to pack it, let go in the band</td><td>Pack it firm, or it flies off on the cast</td></tr>
+          <tr><td>Spinner</td><td>Tap five wraps in rhythm, then pull tight</td><td>Five wraps, through the loop, pull it snug</td></tr>
+          <tr><td>Plastic worm</td><td>In at the head, slide, bury the point</td><td>Hide the point and it will not snag</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted">A good bait job never changes which fish bite or how rare they are. The journal gets a Tackle Box page with your best grade for each bait.</p>
+  </section>
+
+  <section class="stack-lg">
+    <div class="stack">
+      <h2>The wait</h2>
+      <p>Waiting is tense when you can see something coming and are not sure what it will do.</p>
+    </div>
+    <figure>
+      <div class="scroll">
+        <svg class="dg" viewBox="0 0 720 250" role="img" aria-label="Side view under the water. A fish shadow swims in toward the bait under the bobber. A second, smaller shadow turns and leaves.">
+          <defs>
+            <marker id="ah2" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 Z" class="ink"/></marker>
+          </defs>
+          <line x1="0" y1="70" x2="720" y2="70" class="st"/>
+          <text x="24" y="92">water line</text>
+          <line x1="60" y1="14" x2="220" y2="58" class="st"/>
+          <text x="84" y="46">your line</text>
+          <line x1="220" y1="46" x2="220" y2="58" class="st"/>
+          <circle cx="220" cy="70" r="12" class="none"/>
+          <path d="M208,70 A12,12 0 0 1 232,70 Z" class="accfill"/>
+          <path d="M196,60 q-6,10 0,20" class="st"/>
+          <path d="M244,60 q6,10 0,20" class="st"/>
+          <text x="254" y="52">tap to twitch</text>
+          <line x1="220" y1="82" x2="220" y2="168" class="st"/>
+          <path d="M220,168 q0,16 -11,13" class="st"/>
+          <circle cx="210" cy="184" r="4" class="ink"/>
+          <text x="232" y="190">bait</text>
+
+          <ellipse cx="480" cy="178" rx="48" ry="15" class="shade"/>
+          <polygon points="526,178 552,164 552,192" class="shade"/>
+          <line x1="424" y1="180" x2="250" y2="184" class="st" marker-end="url(#ah2)"/>
+          <text x="338" y="170" text-anchor="middle">swims in, circles, noses it</text>
+          <text x="490" y="218" text-anchor="middle">a shadow the size of the fish</text>
+
+          <ellipse cx="610" cy="118" rx="26" ry="8" class="faint"/>
+          <polygon points="584,118 570,110 570,126" class="faint"/>
+          <line x1="642" y1="116" x2="696" y2="106" class="st" marker-end="url(#ah2)"/>
+          <text x="624" y="98" text-anchor="middle">some look and leave</text>
+        </svg>
+      </div>
+      <figcaption>The server picks the fish a few seconds before the bite, so the shadow you see is the fish you get. A twitch can turn a looker into a biter. Three twitches in a row scare it off.</figcaption>
+    </figure>
+    <ul>
+      <li>The camera eases in on a bigger bobber, and hands back the moment you look around.</li>
+      <li>The lake goes quiet just before a strike. A heavy or rare fish gets a low swell first.</li>
+      <li>Long waits get small events: a rise somewhere else, a dragonfly on the bobber, a turtle, a far-off jump.</li>
+      <li>Once in a long while a huge shadow goes by and does not bite.</li>
+    </ul>
+  </section>
+
+  <section class="stack-lg">
+    <div class="stack">
+      <h2>Coming back tomorrow</h2>
+      <p>Come back because something is waiting or something is different. Never because you would lose something. No streaks, no countdowns, nothing for sale.</p>
+    </div>
+    <div class="two">
+      <div>
+        <h3>In this plan</h3>
+        <ul>
+          <li>Your pond grew while you were away, and a card shows what happened.</li>
+          <li>Three goals a day, the same for everyone.</li>
+          <li>A chalkboard at the bait shop: today's forecast, a fish of the day, and a rumour about a Legendary.</li>
+          <li>One forecast for every server, so "storm tonight" is something you can plan around together.</li>
+          <li>A small tackle box from the shopkeeper once a day. Miss a week and nothing is lost.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Left out on purpose</h3>
+        <ul>
+          <li>Streaks and anything that punishes a missed day.</li>
+          <li>Roblox badges and cross-server records. They wait until the game is public.</li>
+          <li>Anything that sells luck. Rare fish come from the right spot, bait, time and weather.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="two">
+    <div class="note">
+      <h3>Liam, creative director</h3>
+      <ol>
+        <li>Name the game.</li>
+        <li>Design the Godlike fish: its name, its look, its legend and where it hides. There are none yet.</li>
+        <li>Snags: funny or annoying?</li>
+        <li>The bait bench: best recipe, worst recipe, and every fish or only when you feel like it?</li>
+        <li>Which fish should live in the blue water?</li>
+        <li>Pick the lake's mood from the photo board.</li>
+        <li>Fill in the <a href="https://claude.ai/artifact/NmeUgo27TRphk6aFtejiWJ">Game Lab</a>. Your answers outrank this plan.</li>
+      </ol>
+    </div>
+    <div class="note">
+      <h3>Stewart</h3>
+      <ol>
+        <li>In Studio: File, Experience Settings, Communication, turn Enable Voice Chat off.</li>
+        <li>In Creator Dashboard: Fishing Game, Publish settings, Content ratings. Redo the questionnaire and check it comes out Minimal or Mild.</li>
+        <li>Open the place once on your own phone in L0 and again in L5.</li>
+        <li>Before L7: give Liam's Roblox account access to the place for the two-seat boat.</li>
+        <li>Watch each Liam session and ask three things: best moment, most annoying moment, what would you change.</li>
+      </ol>
+      <p class="small muted">Used unless you say otherwise: dinghy stays 1,200 coins, the catch card shows inches and pounds, and overnight cloud runs continue on small branches, one at a time.</p>
+    </div>
+  </section>
+
+  <section class="stack-lg">
+    <h2>Who builds what</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Who</th><th>Does</th></tr></thead>
+        <tbody>
+          <tr><td>Fable 5.2</td><td>Designs each step, sets how it should feel, judges every picture and sound, checks Liam's notes, puts the work together.</td></tr>
+          <tr><td>Opus builders</td><td>Build a designed step and prove it with the named test or picture. An Opus verifier checks each step with fresh eyes.</td></tr>
+          <tr><td>Sonnet</td><td>Uploads, sound batches, test runs, money simulator runs, the making-of.</td></tr>
+          <tr><td>Haiku</td><td>Quick lookups: does Roblox do this, where is that.</td></tr>
+          <tr><td>Gemini critics</td><td>Score every look, sound and playtest step. The scores steer. Eyes decide.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted">There is one Studio, so only one session drives it at a time. Code gets written side by side and tested outside Studio.</p>
+  </section>
+
+  <section class="two">
+    <div>
+      <h3>What could go wrong</h3>
+      <ul>
+        <li>5,350 unplayed lines landing at once. Each feature has its own switch.</li>
+        <li>The bait bench becoming a chore. Skipping costs nothing, and Liam's 15 minutes decide.</li>
+        <li>Coins getting too easy. One budget for the whole plan: an expert earns no more than 15 percent over today.</li>
+        <li>The new look slowing phones down. Measured before and after.</li>
+        <li>Old saves. Tested at every step that changes them.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>If time runs short</h3>
+      <p>These slip, in this order:</p>
+      <ol>
+        <li>The trophy wall by the pond</li>
+        <li>The creek's beauty pass</li>
+        <li>The two-seat boat session</li>
+        <li>The two lure recipes at the bait bench</li>
+        <li>The small events during long waits</li>
+      </ol>
+      <p>The cast, the bait bench, the wait and the lake's beauty pass stay.</p>
+    </div>
+  </section>
+
+  <footer class="stack">
+    <p>Written 11/26/2026 in a planning-only session. Nothing was built, committed or changed in Studio. The full plan, with every check, is at C:\Users\stewa\Documents\Claude\Roblox\docs\superpowers\plans\2026-11-26-next-leg.md</p>
+    <p>See also the <a href="https://claude.ai/artifact/HNbZAtLhoHCoeMQ6pNVWQd">making-of page</a>.</p>
+  </footer>
+</div>

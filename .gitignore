@@ -24,3 +24,6 @@ __pycache__/
 
 # Generated sound variants (keep only the winners in audio/final)
 audio/variants/
+
+# Harness runs (shots, sheets, critic JSON); copy keepers into docs/
+artifacts/

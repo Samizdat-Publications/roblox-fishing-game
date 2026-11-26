@@ -27,6 +27,8 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Run the specs
         run: lune run tools/test/run.luau
+      - name: No em dashes in reader-facing text
+        run: python3 tools/lint.py
       - name: Economy simulation still runs
         run: python3 tools/econ/sim.py --quick --only current > /dev/null
 

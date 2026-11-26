@@ -1,6 +1,6 @@
 # Fishing Game (Roblox)
 
-Stewart's Roblox fishing game, built by Claude through Roblox Studio's MCP server. Liam (his son, 11) joins later as creative director. Read these first, in order: `docs/PROGRESS.md` (where things stand), `docs/DESIGN.md` (approved design), `docs/PLAN.md` (milestones), `docs/RESEARCH.md` (context only).
+Stewart's Roblox fishing game, built by Claude through Roblox Studio's MCP server. Liam (his son, 11) joins later as creative director. Read these first, in order: `docs/PROGRESS.md` (where things stand), `docs/superpowers/plans/2026-11-26-next-leg.md` (the current leg, L0 to L7), `docs/DIRECTION.md` (wins over DESIGN), `docs/DESIGN.md` (approved design), `docs/ROUTING.md` (who does what), `docs/RESEARCH.md` (context only).
 
 ## How we work here
 
@@ -8,6 +8,7 @@ Stewart's Roblox fishing game, built by Claude through Roblox Studio's MCP serve
 - Studio access: the `Roblox_Studio` MCP server (Claude Code local config for this folder). Every tool takes a `studio_id`; get it from `list_roblox_studios`. If the tools are missing, Stewart must open Studio with the place, and the server must be on (Assistant, ..., Manage MCP Servers).
 - Source of truth for code: `src/` in this repo, mirroring Studio services (`src/ServerScriptService`, `src/ReplicatedStorage`, `src/StarterPlayer/StarterPlayerScripts`, `src/StarterGui`). Push changes into Studio with the MCP tools; never leave a script edited only in Studio. Save the place (`save_place`, with a note) after each milestone.
 - World geometry lives in Studio (the place). Build gray-box geometry from a script in `src/` (or a builder module) where practical so it can be rebuilt.
+- Before every commit to main run the gate: `python tools/check.py` (specs, lint, economy run). Look steps use the fixed shots in `tools/shots/` (`shots.py` explains the loop).
 - Verify every milestone in a real playtest: `start_stop_play`, `character_navigation`, input tools, `screen_capture`, `get_console_output`. No "done" without that evidence. Log it in `docs/PROGRESS.md`.
 - Commit at each milestone with a clear message; push to `origin` (private GitHub repo Samizdat-Publications/roblox-fishing-game). Never commit `.claude/data/` or `.claude/settings.local.json`.
 - Notable design calls go in `docs/DECISIONS.md` (date, call, why).
