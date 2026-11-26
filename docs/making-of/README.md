@@ -4,6 +4,21 @@ A Roblox fishing game where real fishing knowledge matters: the right bait, spot
 
 Newest first. The live page with before and after sliders is `docs/making-of/index.html` (published as a Claude artifact).
 
+## Art preview: Our own models, first set (Blender previews)
+
+2026-11-26 01:50
+
+An art preview, not yet in the game. Thirty-two low-poly models built by script in Blender overnight: the dock, both market stands, the pond's stone rim, logs, a buoy, reeds, lily pads, pines, a leafy tree, rocks, all eleven fish in their real colours and at true relative size, the three rods with reels, the bobber, and a Jon boat for the boat to come. Each is one mesh with baked colours, sized in studs to drop onto the gray box it replaces. These are renders from Blender; they still need to be imported and checked in Studio.
+
+![All 32 models (Blender renders, not in the game yet)](stills/2026-11-26-art-contact-sheet.jpg)
+*All 32 models (Blender renders, not in the game yet)*
+
+![Bluegill, with its dark ear flap and orange belly](stills/2026-11-26-art-bluegill.jpg)
+*Bluegill, with its dark ear flap and orange belly*
+
+![The new dock, the same size as the gray-box one](stills/2026-11-26-art-dock.jpg)
+*The new dock, the same size as the gray-box one*
+
 ## Next: Cedar Creek
 
 2026-11-25 20:20 · commit `cb022b1`

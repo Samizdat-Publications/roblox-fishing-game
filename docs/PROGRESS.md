@@ -103,6 +103,34 @@ Plan: `docs/superpowers/plans/2026-11-25-rods-and-creek.md`.
 - Verified: 42 unit tests pass (new: each creek fish tops its spot, none of them bite anywhere in the lake, creek water counts as water and its banks don't). Playtest: walking at the closed gate stopped at it and pathfinding found no route; holding E with 141 coins said "A Creek Pass costs 250 coins. You have 141."; after selling, holding E paid 250 (254 to 4) and the gate went see-through; walked in. Riffle at 6:12 AM on crickets: three rainbow trout (37.2, 35.8, 40.6 cm). Pool at 9:30 PM on minnows: three walleye (57.0, 70.0, 65.4 cm, up to 72 coins). Rocks at noon on minnows: two smallmouth bass. The journal now shows 11 species.
 - Found and fixed in the playtest: the riffle's water didn't show (Roblox terrain works in 4 stud cells and a 1.5 stud fill was too thin), and clear shallow water over a gray bed looked dry. The water now fills whole cells and the streambed is blue-gray.
 
+## Overnight, unverified (2026-11-26, Claude in the cloud)
+
+Nothing below has been seen in Studio. All of it is on the branch `claude/overnight-duet-kpkf6f` in draft pull request #1; `main` and the place are unchanged.
+
+### Finished
+- **Economy check** (`docs/ECONOMY.md`, `tools/econ/sim.py`): a player who knows one good spot buys every shop item inside 10 minutes; worms at the dock earns about a sixth of a big-fish spot; a rare fish that is the only taker bites as fast as a common one, so time of day barely matters for money; with reel assist on, doing nothing at all lands about half the fish. Six proposed changes, none applied.
+- **Boat plan** (`docs/superpowers/plans/2026-11-26-boat.md`): six tasks, each with its Studio playtest. Pure modules with tests, not used by the game yet: `BoatData.luau`, `BoatLogic.luau`, `BigLakeFishData.luau` (white bass, lake trout, muskellunge), `BoatLogic.spec.luau`, `BigLakeFish.spec.luau`.
+- **Art pass** (`art/`): 32 models built by script in Blender 5.1.2: dock, both stands, pond rim, three logs, buoy, reeds, lily pads, two pines, a leafy tree, three rocks, all 11 fish, three rods, the bobber, and a Jon Boat for the boat plan. Each is one mesh with vertex colours (no textures), at most about 1,400 triangles, sized in studs to drop onto its gray-box part. Previews and `art/previews/contact-sheet.png`; sizes, triangles and what each replaces in `art/README.md`.
+- **Weather spec** (`docs/WEATHER.md`): six kinds that change bites like real weather, how to read each, what is never sold, and a data table.
+- **Tests outside Studio**: `lune run tools/test/run.luau` runs every spec with Lune (57 pass, 1 skipped because it depends on Roblox's exact random draws). `.github/workflows/checks.yml` runs them on every push; StyLua and Selene report only.
+
+### Half done
+- Models are not imported. The `.glb` files should drop in, but vertex colours and scale need a first look in Studio.
+- The format check would change 15 existing files (StyLua wraps lines over 120 characters). Nothing was reformatted.
+- Selene's first run on GitHub found 1 error and 3 warnings, all in existing client code: two identical `goIdle()` branches in `Controller.luau` (lines 432 and 436, harmless but could be one branch) and three `UDim2.new` calls in `UI.luau` that could be `UDim2.fromScale`. The new files are clean. First GitHub run: unit tests passed, both report-only checks ran.
+
+### Test first in Studio tomorrow
+1. Run `TestRunner.runAll` in Studio: all 57 existing and new tests should pass there too.
+2. Import `art/models/Dock.glb` with the 3D Importer (Scale Unit Stud, Merge Meshes on, Upload to Roblox off): check its size against the gray-box dock and that the colours show.
+3. Import one fish (`Bluegill.glb`) and one stand, same checks.
+4. Then pick up the boat plan at Task 1.
+
+### Questions only Stewart can answer
+- Which of the six economy changes to apply (`docs/ECONOMY.md`)? Change 1 (bite time) matters most.
+- Is the boat price of 1,500 coins and one shared boat model OK, and should a friend be able to ride along?
+- Reformat the code with StyLua (one big formatting commit), or leave the format check as report only?
+- Is the low-poly, flat-colour look of the models the right direction before more are made?
+
 ## What works now
 A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shore, wait for a bite, hook it, fight it on the bar (hold or click anywhere), land it, sell at the Fish Buyer, buy bait at Bait and Tackle, fill the journal, raise fish in your home pond, buy better rods, and unlock Cedar Creek. Eleven species follow real habits (spot, time of day, bait), fish shadows show where they're active, the day runs 16 minutes, and progress saves to Roblox.
 
