@@ -27,4 +27,11 @@ return function(t, Shared)
 		t.eq(Journal.nextRumourIn(14), 1)
 		t.eq(Journal.nextRumourIn(10000), 0)
 	end)
+	t.test("keep fishing and a rumour names the bait too", function()
+		local early = Journal.rumour(FishData.byId.Bluegill, 0) :: string
+		t.ok(not string.find(early, "swear"), early)
+		local later = Journal.rumour(FishData.byId.Bluegill, 12) :: string
+		t.ok(string.find(later, "Old%-timers swear by") ~= nil, later)
+		t.ok(Journal.rumour(FishData.byId.LakeSturgeon, 65) ~= nil and not string.find(Journal.rumour(FishData.byId.LakeSturgeon, 65) :: string, "swear"), "legendary needs 70")
+	end)
 end

@@ -78,12 +78,14 @@ local function stop()
 	end
 	active = nil
 	workspace:SetAttribute("Frenzy", nil)
+	workspace:SetAttribute("FrenzyAt", nil)
 end
 
 -- For testing in Studio: start one now at a spot.
 function FrenzyService.start(spot: string)
 	stop()
 	active = { spot = spot, endsAt = os.clock() + Frenzy.DURATION, effect = boil(SHOW_AT[spot] or Vector3.zero) }
+	workspace:SetAttribute("FrenzyAt", SHOW_AT[spot]) -- where the boil is, for the gulls and the sound
 	workspace:SetAttribute("Frenzy", spot)
 	for _, p in Players:GetPlayers() do
 		Remotes.event("Toast"):FireClient(p, Frenzy.SIGNS[spot] or "Fish are feeding like crazy somewhere!")

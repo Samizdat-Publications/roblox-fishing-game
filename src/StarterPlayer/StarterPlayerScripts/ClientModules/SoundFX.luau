@@ -205,7 +205,10 @@ local function update(dt: number)
 	-- A feeding frenzy boils louder the closer you are to it.
 	local spot = workspace:GetAttribute("Frenzy")
 	local boil = 0
-	if type(spot) == "string" and pos then
+	local boilAt = workspace:GetAttribute("FrenzyAt")
+	if type(spot) == "string" and pos and typeof(boilAt) == "Vector3" then
+		boil = SoundMix.frenzyLevel((Vector3.new(pos.X, 0, pos.Z) - Vector3.new(boilAt.X, 0, boilAt.Z)).Magnitude)
+	elseif type(spot) == "string" and pos then
 		for _, at in SoundFX.frenzyPoints(spot) do
 			boil = math.max(boil, SoundMix.frenzyLevel((Vector3.new(pos.X, 0, pos.Z) - at).Magnitude))
 		end

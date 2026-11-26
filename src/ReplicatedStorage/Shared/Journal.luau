@@ -7,11 +7,15 @@ local Shared = script.Parent
 local FishLogic = require(Shared.FishLogic)
 local Rarity = require(Shared.Rarity)
 local Weather = require(Shared.Weather)
+local BaitData = require(Shared.BaitData)
 
 local Journal = {}
 
 -- Catches needed (all species together) before a rumour about a tier is heard.
 Journal.RUMOUR_AFTER = { Common = 0, Uncommon = 5, Rare = 15, Epic = 30, Legendary = 60, Mythic = 100, Godlike = 250 }
+
+-- After this many more catches past a tier's first rumour, the old-timers also name a bait.
+Journal.BAIT_TIP_AFTER = 10
 
 local PERIOD_TEXT = { Dawn = "at dawn", Day = "by day", Dusk = "at dusk", Night = "at night" }
 local WEATHER_TEXT = { Storm = "in a thunderstorm", Fog = "on a foggy morning", PreStorm = "just before a storm", Overcast = "on a cloudy day", Wind = "on a windy day", ColdFront = "after a cold front" }
@@ -40,7 +44,15 @@ function Journal.rumour(species: any, totalCaught: number): string?
 		local w = best(species.weather)
 		text ..= ", but only " .. (WEATHER_TEXT[w or ""] or "in strange weather")
 	end
-	return text .. "."
+	text ..= "."
+	-- Keep fishing and the rumour gets sharper: which bait it takes.
+	if totalCaught >= (Journal.RUMOUR_AFTER[tier] or 0) + Journal.BAIT_TIP_AFTER then
+		local bait = BaitData.byId[best(species.baits) or ""]
+		if bait then
+			text ..= string.format(" Old-timers swear by %s.", string.lower(bait.name))
+		end
+	end
+	return text
 end
 
 -- How many more catches until the next rumour is heard (0 when every rumour is out).
