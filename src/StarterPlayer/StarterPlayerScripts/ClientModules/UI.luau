@@ -14,6 +14,7 @@ local RodData = require(Shared.RodData)
 local FishLogic = require(Shared.FishLogic)
 local Rarity = require(Shared.Rarity)
 local BoatData = require(Shared.BoatData)
+local Journal = require(Shared.Journal)
 
 local UI = {}
 
@@ -739,14 +740,16 @@ function UI.refreshJournal()
 			c.stats.Text = string.format("Caught %d. Best: %.2f kg, %.1f cm\non %s at %s", count, best.kg, best.cm, (BaitData.byId[best.bait] and BaitData.byId[best.bait].name or best.bait), FishLogic.SPOT_NAMES[best.spot] or best.spot)
 			c.habit.Text = s.habit
 		else
-			c.name.Text = "???"
-			c.name.TextColor3 = C.text
+			-- Not caught yet: show its tier, and a rumour once enough fish are caught overall.
+			c.name.Text = "???  (" .. Rarity.of(s) .. ")"
+			c.name.TextColor3 = Rarity.colorAt(Rarity.of(s), 0)
 			c.stats.Text = "Not caught yet."
-			c.habit.Text = ""
+			c.habit.Text = Journal.rumour(s, st.totalCaught) or "Catch more fish to hear rumours about this one."
 		end
 	end
 	refs.assistBtn.Text = "Reel assist: " .. (if st.assist then "On" else "Off")
-	refs.journalSummary.Text = string.format("%d of %d species found. %d fish caught in all.", kinds, #FishData.list, st.totalCaught)
+	local nextIn = Journal.nextRumourIn(st.totalCaught)
+	refs.journalSummary.Text = string.format("%d of %d species found. %d fish caught in all.%s", kinds, #FishData.list, st.totalCaught, if nextIn > 0 then string.format(" New rumour in %d.", nextIn) else "")
 end
 
 -- From a bite until the fight ends nothing else may take the player's clicks.
