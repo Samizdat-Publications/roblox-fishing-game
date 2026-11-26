@@ -1,18 +1,18 @@
 {
-  "about": "The fixed views every look step is judged on. Camera at eye, aimed at look, field of view fov, game clock in hours. Same shots, same order, every time. Lake water spans x -110..110 and z -80..80; the dock runs north from the south shore at x 0; north is -Z. Cedar Creek is west of x -200.",
+  "about": "The fixed views every look step is judged on. Camera at eye, aimed at look, field of view fov, game clock in hours. Same shots, same order, every time. Measured in the built world on 11/26/2026: lake water spans x -116..104 and z -135..25 at y 10, ground top is y 11, the dock runs from the south shore north at x -6 (z 25 to -21), the stands and home pond sit south of the dock (z 42 to 50). Cedar Creek runs north to south along x -236 (riffle z -25..20, deep pool z -125..-65), entered through the gate at x -168.",
   "fov": 70,
   "shots": [
-    { "id": "01-dock-dawn",        "place": "lake",  "clock": 6.6,  "eye": [0, 8, 94],      "look": [0, 1, 30],     "what": "From the south shore down the dock at dawn" },
-    { "id": "02-dock-golden",      "place": "lake",  "clock": 18.4, "eye": [0, 8, 94],      "look": [0, 1, 30],     "what": "Same view at golden hour" },
-    { "id": "03-dockend-noon",     "place": "lake",  "clock": 12.0, "eye": [0, 6, 40],      "look": [0, 1, -40],    "what": "Standing at the dock end looking out at noon" },
-    { "id": "04-dockend-night",    "place": "lake",  "clock": 22.0, "eye": [0, 6, 40],      "look": [0, 1, -40],    "what": "Same view at night, lamps on" },
-    { "id": "05-weedbed-golden",   "place": "lake",  "clock": 18.4, "eye": [-58, 7, 90],    "look": [-80, 0, 30],   "what": "South-west shore over the weed bed at golden hour" },
-    { "id": "06-logs-dawn",        "place": "lake",  "clock": 6.6,  "eye": [112, 7, 72],    "look": [78, 0, 40],    "what": "East shore over the fallen logs at dawn" },
-    { "id": "07-overview-golden",  "place": "lake",  "clock": 18.4, "eye": [70, 60, 150],   "look": [0, 0, 0],      "what": "High view of the whole lake at golden hour" },
-    { "id": "08-stands-noon",      "place": "lake",  "clock": 12.0, "eye": [34, 9, 72],     "look": [14, 3, 100],   "what": "The stands and the pond from the water side at noon" },
-    { "id": "09-riffle-dawn",      "place": "creek", "clock": 6.6,  "eye": [-214, 6, 82],   "look": [-230, -1, 50], "what": "Down the riffle at dawn" },
-    { "id": "10-pool-golden",      "place": "creek", "clock": 18.4, "eye": [-204, 7, -18],  "look": [-230, -3, -45],"what": "Over the deep pool at golden hour" },
-    { "id": "11-gate-noon",        "place": "creek", "clock": 12.0, "eye": [-138, 8, 16],   "look": [-180, 3, 0],   "what": "The creek gate and fence from the lake path at noon" },
-    { "id": "12-pool-night",       "place": "creek", "clock": 22.0, "eye": [-204, 7, -18],  "look": [-230, -3, -45],"what": "The deep pool at night" }
+    { "id": "01-dock-dawn",        "place": "lake",  "clock": 6.6,  "eye": [-6, 18, 62],     "look": [-6, 10, -30],   "what": "From the south shore down the dock at dawn" },
+    { "id": "02-dock-golden",      "place": "lake",  "clock": 18.4, "eye": [-6, 18, 62],     "look": [-6, 10, -30],   "what": "Same view at golden hour" },
+    { "id": "03-dockend-noon",     "place": "lake",  "clock": 12.0, "eye": [-6, 16, -18],    "look": [-6, 10, -110],  "what": "Standing at the dock end looking out at noon" },
+    { "id": "04-dockend-night",    "place": "lake",  "clock": 22.0, "eye": [-6, 16, -18],    "look": [-6, 10, -110],  "what": "Same view at night, lamps on" },
+    { "id": "05-weedbed-golden",   "place": "lake",  "clock": 18.4, "eye": [-100, 17, 32],   "look": [-83, 9, -17],   "what": "South-west shore over the weed bed at golden hour" },
+    { "id": "06-logs-dawn",        "place": "lake",  "clock": 6.6,  "eye": [120, 17, 10],    "look": [70, 9, -9],     "what": "East shore over the fallen logs at dawn" },
+    { "id": "07-overview-golden",  "place": "lake",  "clock": 18.4, "eye": [80, 90, 110],    "look": [-6, 10, -55],   "what": "High view of the whole lake at golden hour" },
+    { "id": "08-stands-noon",      "place": "lake",  "clock": 12.0, "eye": [-6, 16, -5],     "look": [5, 14, 45],     "what": "The stands and the home pond from the dock at noon" },
+    { "id": "09-riffle-dawn",      "place": "creek", "clock": 6.6,  "eye": [-225, 17, 32],   "look": [-236, 8, -5],   "what": "Down the riffle at dawn" },
+    { "id": "10-pool-golden",      "place": "creek", "clock": 18.4, "eye": [-212, 18, -70],  "look": [-236, 2, -100], "what": "Over the deep pool at golden hour" },
+    { "id": "11-gate-noon",        "place": "creek", "clock": 12.0, "eye": [-135, 17, -40],  "look": [-168, 13, -55], "what": "The creek gate and fence from the lake path at noon" },
+    { "id": "12-pool-night",       "place": "creek", "clock": 22.0, "eye": [-212, 18, -70],  "look": [-236, 2, -100], "what": "The deep pool at night" }
   ]
 }

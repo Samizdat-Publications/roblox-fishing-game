@@ -3,12 +3,17 @@
 Studio cannot run headless, so a session drives Studio and this script does the rest:
 
   python tools/shots/shots.py list
-  python tools/shots/shots.py snippet 01-dock-dawn      Luau to paste into execute_luau (Edit mode):
-                                                       sets the clock and the camera for that shot
-  python tools/shots/shots.py snippet all              one Luau function call per shot, for reference
+  Shots are taken during Play on the Client data model: Edit mode does not have the whole world
+  (the builder adds most of it at run time).
+  python tools/shots/shots.py snippet pin              run once per Play session (execute_luau, Client):
+                                                       hides the HUD, pins clock and camera each frame
+  python tools/shots/shots.py snippet 01-dock-dawn      Luau for one shot (execute_luau, Client)
+  python tools/shots/shots.py snippet all              every shot, for reference
   python tools/shots/shots.py newrun                   makes artifacts/shots/<stamp>/ and prints it
   (per shot: execute the snippet, then
-   powershell -ExecutionPolicy Bypass -File tools/capture-studio.ps1 -ViewportOnly -Out <run>/<id>.jpg)
+   powershell -ExecutionPolicy Bypass -File tools/capture-studio.ps1 -ViewportOnly -Out <run>/<id>.jpg
+   capture-studio.ps1 picks the window titled "Fishing Game" when several Studios are open)
+  Frame cost at a shot: run tools/shots/probe.luau the same way; budget in docs/PERF.md.
   python tools/shots/shots.py sheet <run> [--before <run>]   contact sheet (and before/after pairs)
   python tools/shots/shots.py score <run> --step <slug> [--runs 3] [--note "..."]
                                                        Neon look review, median of runs, appended to
@@ -41,24 +46,40 @@ def shot(sid: str) -> dict:
     sys.exit(f"No shot named {sid}. Try: python tools/shots/shots.py list")
 
 
+PIN = """-- One-time setup on the Client during Play: hide the HUD and pin clock and camera every frame
+-- to _G.__shot, so the game's own camera and day cycle cannot move them.
+local RS = game:GetService("RunService")
+local L = game:GetService("Lighting")
+local SG = game:GetService("StarterGui")
+for _, g in game.Players.LocalPlayer.PlayerGui:GetChildren() do
+\tif g:IsA("ScreenGui") then g.Enabled = false end
+end
+pcall(function() SG:SetCoreGuiEnabled(Enum.CoreGuiType.All, false) end)
+local shared = game:GetService("ReplicatedStorage"):FindFirstChild("Shared")
+local looks = shared and shared:FindFirstChild("LookPresets")
+local lookMod = looks and select(2, pcall(require, looks))
+if _G.__shotHB then _G.__shotHB:Disconnect() end
+_G.__shotHB = RS.Heartbeat:Connect(function()
+\tlocal s = _G.__shot
+\tif not s then return end
+\tL.ClockTime = s.clock
+\t-- If a look module exists (beauty pass), let it set the light for this hour the same way the game does.
+\tif type(lookMod) == "table" and lookMod.apply then lookMod.apply(s.clock) end
+\tlocal cam = workspace.CurrentCamera
+\tcam.CameraType = Enum.CameraType.Scriptable
+\tcam.FieldOfView = s.fov
+\tcam.CFrame = CFrame.lookAt(s.eye, s.look)
+end)
+return "pin ready"
+"""
+
+
 def luau_for(s: dict) -> str:
     e, l = s["eye"], s["look"]
-    return f"""-- shot {s['id']}: {s['what']}
-local Lighting = game:GetService("Lighting")
-Lighting.ClockTime = {s['clock']}
--- If a look module exists (beauty pass), let it set the light for this hour the same way the game does.
-local shared = game:GetService("ReplicatedStorage"):FindFirstChild("Shared")
-local look = shared and shared:FindFirstChild("LookPresets")
-if look then
-\tlocal ok, mod = pcall(require, look)
-\tif ok and type(mod) == "table" and mod.apply then mod.apply({s['clock']}) end
-end
-local cam = workspace.CurrentCamera
-cam.CameraType = Enum.CameraType.Scriptable
-cam.FieldOfView = {SHOTS['fov']}
-cam.CFrame = CFrame.lookAt(Vector3.new({e[0]}, {e[1]}, {e[2]}), Vector3.new({l[0]}, {l[1]}, {l[2]}))
-return "shot {s['id']} set"
-"""
+    return (f"-- shot {s['id']}: {s['what']}\n"
+            f"_G.__shot = {{clock = {s['clock']}, fov = {SHOTS['fov']}, "
+            f"eye = Vector3.new({e[0]}, {e[1]}, {e[2]}), look = Vector3.new({l[0]}, {l[1]}, {l[2]})}}\n"
+            f"task.wait(1.5)\nreturn \"shot {s['id']} set\"\n")
 
 
 def git_commit() -> str:
@@ -74,7 +95,9 @@ def cmd_list(_):
 
 
 def cmd_snippet(a):
-    if a.id == "all":
+    if a.id == "pin":
+        print(PIN)
+    elif a.id == "all":
         for s in SHOTS["shots"]:
             print(luau_for(s))
     else:
