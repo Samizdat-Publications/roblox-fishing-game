@@ -31,9 +31,9 @@ Dropped before generating: pixel or voxel art (fights Roblox's smooth terrain an
 Stewart looked at the voting page and picked **Real-ish**, the lake shot above all. Claude's case against it was weaker than the scores made it look:
 - The critic gap is small: 7.3 against 8.2, from one model judging AI concept art.
 - Its biggest knock was phone readability. Every style shares that problem, and the fix is the same in all of them: a glowing bobber and line.
-- The heavy cost in the first note assumed custom textures on every prop. On a second look, the images are simple chunky shapes with realistic materials, and Roblox's built-in materials cover most of that.
+- The heavy cost in the first note assumed custom textures on every prop. A better split: Roblox's built-in materials for terrain and large surfaces, and custom PBR textures wherever they clearly look better (fish first), held to a phone budget we measure on a full-quality test corner.
 
-The cheaper build order and the phone proof that comes first are in [pbr/README.md](pbr/README.md). Liam can still vote on the page; if he falls for another style, that is a conversation to have, not a rebuild.
+It is now the house style on main (`art/README.md`, `DIRECTION.md`, `DECISIONS.md`). Build notes: [pbr/README.md](pbr/README.md). Liam can still vote on the page; if he falls for another style, that is a conversation to have, not a rebuild.
 
 The original recommendation follows for the record.
 

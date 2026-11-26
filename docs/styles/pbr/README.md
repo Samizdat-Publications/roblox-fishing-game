@@ -8,17 +8,13 @@ Realistic materials (wood grain, wet stones, real grass) with simple shapes.
 
 ## Stewart picked this one (2026-11-26)
 
-The cheaper way to build it came from a second look at the images, the lake shot above all. The shapes are still chunky and simple: faceted pines, block stands, a plain plank dock. What makes it look real is the materials. Most of that can come from Roblox's own built-in materials, which are already physically based (wood planks, grass, sand, rock, mud, cobblestone) and shared by every game. A custom texture set for every prop isn't needed.
+It is now the house style on main; the rules are in `art/README.md` under "House style: Real-ish". The aim is the best look we can get without going over what phones can handle. That makes two layers:
+- **Base:** Roblox's built-in materials (grass, sand, rock, mud, planks) on terrain and large surfaces, where they look good for free.
+- **Hero:** custom PBR textures wherever they clearly look better, with fish first. Use shared texture sets per family so quality scales.
 
-**Build it in this order:**
-1. **Terrain and light.** Roblox terrain materials for ground, sand, rock and mud, with grass decoration and a soft shoreline. Terrain water is tuned toward the clear teal in the lake shot, and Future lighting gets SunRays, a mild Bloom and an Atmosphere haze.
-2. **Our Blender models, re-dressed.** Keep the scripted shapes and give each part a Roblox material (WoodPlanks for the dock, Fabric for the awnings, Slate for the rocks) instead of a flat vertex colour. The scripts gain a UV step so the materials wrap properly; check how they map on the first import.
-3. **Custom textures only for hero props.** A `SurfaceAppearance` (colour, normal, roughness) goes on the few things the camera lives on: the dock, the two stands, the fish on the line. Use small shared texture sets.
-4. **A phone proof before the rest.** Build one corner of the lake (the dock and the stands) this way, then run it in the Device Simulator at the smallest phone and on Stewart's phone against the L0 frame budget. Only then roll it out.
+A full-quality test corner of the lake (the dock and the two stands), measured on the smallest phone and on Stewart's phone, sets the budget for each area. The world will grow into a big lake with vehicles and fishing islands, each its own streaming area with its own texture set.
 
-**Must-haves that came out of the critic:** a bright or glowing bobber and line, so they read against busy textures and dark water. Keep the grass in the foreground, and put less fine detail where the player looks for bites.
-
-Done this way, the phone risk drops from high to **medium**, and the effort drops from 10 to 15 sessions to about **5 to 8**. The section below is the original note, which assumed custom textures on everything.
+The sections below are the original note, written before the pick.
 
 ## What it would take
 
