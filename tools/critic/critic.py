@@ -152,6 +152,7 @@ def main():
     ap.add_argument("--criteria", default="", help="what 'best' means (rank mode)")
     ap.add_argument("--question", default="", help="the open question (consult mode)")
     ap.add_argument("--note", default="", help="extra context for the critic, like what changed in this step")
+    ap.add_argument("--json-out", default="", help="also write the full verdict as JSON to this path (used by tools/shots/shots.py score)")
     args = ap.parse_args()
 
     model = gemini.MODELS[args.model or {"review": "neon", "rank": "hydrogen", "consult": "carbon"}[args.mode]]
@@ -183,6 +184,8 @@ def main():
         for name in uploaded:
             gemini.delete(name)
     path = write_report(args.step, model, args.mode, files, note, verdict)
+    if args.json_out:
+        Path(args.json_out).write_text(json.dumps({"report": str(path.relative_to(ROOT)), **verdict}, indent=2), encoding="utf-8")
     print(json.dumps(verdict, indent=2)[:3000])
     print(f"\nWrote {path.relative_to(ROOT)}")
 

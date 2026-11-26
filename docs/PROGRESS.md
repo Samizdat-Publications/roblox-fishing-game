@@ -163,6 +163,13 @@ Nothing below has been seen in Studio. All of it is on the branch `claude/overni
 - Found on the first import: Roblox showed the vertex colours far too dark (Blender writes them in linear light). `art/scripts/roblox_colors.py` converts them; the first bluegill upload is unused. Also, the dock came in back to front and the fish head points along -X in Roblox; both are handled in code and noted in `art/README.md`.
 - Verified in a playtest: spawned on the dock, walked to the end (feet at 1.5, the deck top), cast from the end and landed a carp, opened Bait and Tackle with E at the new stand, landed a bluegill and it hung as the model. The invisible spawn pad sat 0.4 above the new deck, so it no longer collides and players stand on the deck. 73 tests pass; checksums match.
 
+## 2026-11-26: Leg plan and L0 (steady ground)
+
+- Fable 5.2 reviewed the project and wrote the leg plan for 11/27 to 12/17/2026: `docs/superpowers/plans/2026-11-26-next-leg.md`, readable at https://claude.ai/artifact/3F2bNUEujyw3c92QDYqWox. Order: L0 steady ground, L1 rare fish (PR #2 landed), L2 the cast, L3 bait the hook, L4 the wait, L5 postcard lake, L6 living lake, L7 the dinghy. Every milestone from L1 on ends with a Liam session.
+- L0 harness: the fixed 12 shots, contact sheet, critic score history, frame-time probe, em dash lint and the gate (`python tools/check.py`: 73 specs, lint, economy run, all pass). Routing and agent files recorded (`docs/ROUTING.md`, `.claude/agents/`).
+- Still to do in L0: the baseline shots, look score and frame budget (needs the Fishing Game place open in Studio), and the 29 model imports another session is doing.
+- Found: the repo folder `C:\Users\stewa\Documents\Claude\Roblox` is checked out on an old commit of the PR #2 branch with main's newer files untracked, and another session works in it. L0 work was done in a separate worktree and pushed to main. Put the folder back on main when no other session is using it: everything in it is either already on main or older than main.
+
 ## Overnight 2, unverified (2026-11-26, Claude in the cloud)
 
 Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6f` in draft pull request #2, with main (sound pass included) merged in; `main` and the place are unchanged. Compiles (`lune run tools/test/syntax.luau`, 57 files) and 135 tests pass with Lune. Full list and open design questions: `docs/OVERNIGHT-SUMMARY-2026-11-26.md`.
@@ -201,7 +208,10 @@ A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shor
 - The test save on Stewart's account has 21 coins and 14 fish from Claude's playtests. Ask Claude to wipe it if you want a fresh start.
 
 ## Waiting on Stewart
-- **Check two experience settings** (Creator Dashboard, the Fishing Game experience): the age rating reads 13+ and voice chat is on. The game aims at Minimal or Mild for Liam's age; turn voice chat off and redo the maturity questionnaire if you agree.
+- **Voice chat off:** in Studio, File, Experience Settings, Communication, turn Enable Voice Chat off.
+- **Rating:** Creator Dashboard, the Fishing Game experience, Publish settings, Content ratings: redo the questionnaire and check it comes out Minimal or Mild.
+- **Open the place on your own phone** once now and once after the beauty pass (L5), to check the frame rate on a real device.
+- **Before L7:** give Liam's Roblox account access to the place, for the two-person boat.
 - Playtest it: open Fishing Game in Studio and press Play (F5).
 - Optional, speeds up Claude's builds: in Studio, Assistant Settings, MCP Permissions, Connect to the internet, add `localhost:8765` to the HTTP domain allow list.
 - Done already: the place is saved to Roblox and Studio API access is on.
