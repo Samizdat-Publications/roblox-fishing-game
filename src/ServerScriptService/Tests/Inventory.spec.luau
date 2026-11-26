@@ -142,6 +142,22 @@ return function(t, Shared)
 		t.ok(type(snap.goals[1].text) == "string" and snap.goals[1].progress == 0, "goal fields")
 	end)
 
+	t.test("trophies and monsters are counted per species for the journal", function()
+		local d = Inventory.new()
+		local base = { id = "Bluegill", name = "Bluegill", cm = 25, kg = 0.3, price = 9, bait = "Worm", spot = "Dock", period = "Day", at = 0 }
+		Inventory.recordCatch(d, base)
+		local t1 = table.clone(base)
+		t1.sizeClass = "trophy"
+		Inventory.recordCatch(d, t1)
+		local m1 = table.clone(base)
+		m1.sizeClass = "monster"
+		Inventory.recordCatch(d, m1)
+		local snap = Inventory.snapshot(d)
+		t.eq(snap.trophies.Bluegill, 1)
+		t.eq(snap.monsters.Bluegill, 1)
+		t.eq(snap.counts.Bluegill, 3)
+	end)
+
 	t.test("reconcile fills gaps in old saves", function()
 		local d = Inventory.reconcile({ coins = 99, journal = { entries = {} } })
 		t.eq(d.coins, 99)

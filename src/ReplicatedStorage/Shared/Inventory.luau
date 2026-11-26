@@ -212,6 +212,13 @@ function Inventory.recordCatch(data: Data, fish: Fish): boolean
 		table.remove(j.entries, 1)
 	end
 	j.counts[fish.id] = (j.counts[fish.id] or 0) + 1
+	-- Trophies and monsters per species, for the journal (UNVERIFIED in Studio, 2026-11-26).
+	if fish.sizeClass == "trophy" or fish.sizeClass == "monster" then
+		local key = if fish.sizeClass == "monster" then "monsters" else "trophies"
+		local t = (j :: any)[key] or {}
+		t[fish.id] = (t[fish.id] or 0) + 1;
+		(j :: any)[key] = t
+	end
 	data.totalCaught += 1
 	local best = j.bests[fish.id]
 	if not best or fish.kg > best.kg then
@@ -255,6 +262,8 @@ function Inventory.snapshot(data: Data): any
 		end)(),
 		bests = data.journal.bests,
 		counts = data.journal.counts,
+		trophies = (data.journal :: any).trophies or {},
+		monsters = (data.journal :: any).monsters or {},
 		recent = { table.unpack(data.journal.entries, math.max(1, #data.journal.entries - 9)) },
 		assist = data.assist,
 		totalCaught = data.totalCaught,

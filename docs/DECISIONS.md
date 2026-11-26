@@ -64,3 +64,17 @@ Notable design and build calls, newest last.
 
 - **A rod's extra reach scales with cast power.** The flat bonus made the Graphite Rod's shortest cast 24 studs, longer than the creek is wide, so the best rod couldn't fish the riffle. Now cast length = 8 + power x (32 + rod bonus): full power reaches exactly as far as before, a soft cast is 8 studs with any rod.
 - **The "Keep reeling!" warning waits for the first press.** It showed the instant a fish was hooked, which reads as "you already messed up". Before the first press the bar says "HOLD TO REEL"; the fish still slips away if the player never reels.
+
+## 2026-11-26 (second overnight run, cloud, all unverified in Studio)
+
+- **Size class is rolled at the hook, on the server.** As the rarity plan says: trophies and monsters fight harder, so the fight has to know first. Studio-only test hook: set the player attribute `DebugSizeClass` to `trophy` or `monster`.
+- **New Legendary fish were tuned down before landing.** At first try the Lake Sturgeon and Brown Trout put an expert at 104 coins a minute (+32 percent). Rarity and price were cut until the expert sat at +15 percent, the plan's limit, with the dock kid unchanged.
+- **Mythics are tied to weather and don't count toward a place's 6 to 10 species.** One per place: Albino Catfish (deep hole, storm nights), Golden Trout (riffle, foggy dawns), Tiger Muskie (island point, the pre-storm rush). A species with a `weather` table only bites in those weathers.
+- **Legendary and rarer fish never breed in the home pond,** and a trophy or monster in the pond keeps its size. Otherwise two sturgeon would become a farm.
+- **Daily goals are the same for everyone on the same UTC day** (friends can chase them together), never ask for water you can't reach yet, and pay as soon as they're done. Rewards 25, 60 and 120 coins: about 2 minutes of an expert's fishing and 7 of a new player's, so they help the slower player most.
+- **Weather is planned per server per game day** (at midnight on the game clock), seeded when the server starts. Servers don't share weather. The look (Atmosphere density, haze, brightness) is a first guess for the critic loop.
+- **Frenzies are only for real schooling fish,** Common and Uncommon (bluegill and pumpkinseed at the dock, perch in open water, crappie at the logs, chubs in the riffle, white bass and whitefish on the Big Lake), about 1.2 a game day, a minute each.
+- **Boats: one boat per owner waits at the slip, the one chosen in the shop.** Four slips cover a small server; a fifth owner waits for a free slip. Buying a boat makes it the one at the slip.
+- **Big Lake fish are now in `FishData.list`** (the journal shows all 26 species), because the Big Lake exists in code (`BoatWorld`). Its fish shadows aren't drawn yet.
+- **Team catches split coins evenly with the odd coin to whoever landed it,** and the fish finder shows each mark's tier colour and size, never its name.
+- **Sounds play from `Shared/SoundIds.luau` once uploaded;** until an id is pasted in, the game keeps its built-in sounds.

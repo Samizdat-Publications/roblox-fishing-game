@@ -737,7 +737,14 @@ function UI.refreshJournal()
 			kinds += 1
 			c.name.Text = s.name .. "  (" .. Rarity.of(s) .. ")"
 			c.name.TextColor3 = Rarity.colorAt(Rarity.of(s), 0)
-			c.stats.Text = string.format("Caught %d. Best: %.2f kg, %.1f cm\non %s at %s", count, best.kg, best.cm, (BaitData.byId[best.bait] and BaitData.byId[best.bait].name or best.bait), FishLogic.SPOT_NAMES[best.spot] or best.spot)
+			local big = ""
+			local nT, nM = (st.trophies or {})[s.id] or 0, (st.monsters or {})[s.id] or 0
+			if nM > 0 then
+				big = string.format(" %d monster%s!", nM, if nM == 1 then "" else "s")
+			elseif nT > 0 then
+				big = string.format(" %d troph%s.", nT, if nT == 1 then "y" else "ies")
+			end
+			c.stats.Text = string.format("Caught %d.%s Best: %.2f kg, %.1f cm\non %s at %s", count, big, best.kg, best.cm, (BaitData.byId[best.bait] and BaitData.byId[best.bait].name or best.bait), FishLogic.SPOT_NAMES[best.spot] or best.spot)
 			c.habit.Text = s.habit
 		else
 			-- Not caught yet: show its tier, and a rumour once enough fish are caught overall.
