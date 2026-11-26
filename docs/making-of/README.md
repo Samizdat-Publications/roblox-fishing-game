@@ -4,6 +4,21 @@ A Roblox fishing game where real fishing knowledge matters: the right bait, spot
 
 Newest first. The live page with before and after sliders is `docs/making-of/index.html` (published as a Claude artifact).
 
+## Next: Better rods
+
+2026-11-25 19:55 · commit `dc2dd04`
+
+Bait and Tackle now sells rods. Everyone starts with the Willow Rod; the Fiberglass Rod (120 coins) casts 8 studs further and gives a bigger catch zone, and the Graphite Rod (350 coins) casts 16 studs further, has the biggest zone and takes half the pull out of heavy fish. The rod in your hands changes to match. In the playtest a full-power cast went 40 studs with the Willow Rod and 48 with the Fiberglass Rod.
+
+**Bait and Tackle before and after the Rods section**
+
+| Before | After |
+|---|---|
+| ![before](stills/2026-11-25-rods-before.jpg) | ![after](stills/2026-11-25-rods-after.jpg) |
+
+![The yellow Fiberglass Rod in hand](stills/2026-11-25-rods-in-hand.jpg)
+*The yellow Fiberglass Rod in hand*
+
 ## Next: Your own pond
 
 2026-11-25 19:25 · commit `2b41b0e`

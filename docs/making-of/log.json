@@ -2,7 +2,7 @@
   "project": "Fishing Game",
   "pitch": "A Roblox fishing game where real fishing knowledge matters: the right bait, spot and time of day decide what bites.",
   "status": "in-development",
-  "updated": "2026-11-25T19:40:00",
+  "updated": "2026-11-25T19:55:00",
   "entries": [
     {
       "id": "start",
@@ -225,6 +225,28 @@
         {
           "src": "stills/2026-11-25-pond-babies.jpg",
           "caption": "Baby bass in the pond panel after three hours of pond time"
+        }
+      ]
+    },
+    {
+      "id": "rods",
+      "tag": "Next",
+      "date": "2026-11-25",
+      "time": "19:55",
+      "commit": "dc2dd04",
+      "title": "Better rods",
+      "summary": "Bait and Tackle now sells rods. Everyone starts with the Willow Rod; the Fiberglass Rod (120 coins) casts 8 studs further and gives a bigger catch zone, and the Graphite Rod (350 coins) casts 16 studs further, has the biggest zone and takes half the pull out of heavy fish. The rod in your hands changes to match. In the playtest a full-power cast went 40 studs with the Willow Rod and 48 with the Fiberglass Rod.",
+      "pairs": [
+        {
+          "before": "stills/2026-11-25-rods-before.jpg",
+          "after": "stills/2026-11-25-rods-after.jpg",
+          "caption": "Bait and Tackle before and after the Rods section"
+        }
+      ],
+      "stills": [
+        {
+          "src": "stills/2026-11-25-rods-in-hand.jpg",
+          "caption": "The yellow Fiberglass Rod in hand"
         }
       ]
     }
