@@ -156,6 +156,13 @@ Nothing below has been seen in Studio. All of it is on the branch `claude/overni
 - Verified: 73 tests pass in Studio and with Lune; checksums match. Playtest logs showed every cue at the right moment (dawn dock: tap, reel, splash, stinger; night deep hole: deep pull, tension music up to 0.8 and back to 0, big splash; creek: creek ambience at full and lake dawn at a quarter; a trout left to run: drag, thrash, line strain, small splash as it got away).
 - Critic (Gemini Neon, `sound` rubric, clips with audio): 6/10 on the first pass (heavy cast splash, quiet bites, late chime, theme cut off), 7/10 after fixes. Reports and actions in `docs/critic/`.
 
+## 2026-11-26: First models in the game
+
+- The dock, the Bait and Tackle stand and the bluegill from the art pass are in the game, uploaded to Roblox (asset ids in `art/README.md`) and kept in `ServerStorage.Art`.
+- `WorldBuilder.dress()` lays the models over the gray box and hides the parts they replace; the gray-box parts stay solid but invisible, so walking, casting, the shop prompt and the fishing zones are unchanged. A landed bluegill now hangs on the line as the real model, sized to its length; other fish keep the old shape until their models go in.
+- Found on the first import: Roblox showed the vertex colours far too dark (Blender writes them in linear light). `art/scripts/roblox_colors.py` converts them; the first bluegill upload is unused. Also, the dock came in back to front and the fish head points along -X in Roblox; both are handled in code and noted in `art/README.md`.
+- Verified in a playtest: spawned on the dock, walked to the end (feet at 1.5, the deck top), cast from the end and landed a carp, opened Bait and Tackle with E at the new stand, landed a bluegill and it hung as the model. The invisible spawn pad sat 0.4 above the new deck, so it no longer collides and players stand on the deck. 73 tests pass; checksums match.
+
 ## Overnight 2, unverified (2026-11-26, Claude in the cloud)
 
 Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6f` in draft pull request #2, with main (sound pass included) merged in; `main` and the place are unchanged. Compiles (`lune run tools/test/syntax.luau`, 57 files) and 135 tests pass with Lune. Full list and open design questions: `docs/OVERNIGHT-SUMMARY-2026-11-26.md`.

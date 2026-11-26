@@ -4,6 +4,30 @@ A Roblox fishing game where real fishing knowledge matters: the right bait, spot
 
 Newest first. The live page with before and after sliders is `docs/making-of/index.html` (published as a Claude artifact).
 
+## Art: Our first models in the game
+
+2026-11-26 13:30 · commit `c4041a7`
+
+The dock, the Bait and Tackle stand and the bluegill, built by script in Blender, are now in the game. The dock has planks, posts, bollards and two lanterns at the far end; the shop has a striped awning, bait tubs and a rod rack. A landed bluegill now hangs on the line as the real fish. The first import came in nearly black because Blender and Roblox store colours differently, so a small converter now fixes every model before upload. Everything still walks, casts and shops exactly as before, because the old gray blocks stay underneath as invisible floors and walls.
+
+**The dock, gray box and model**
+
+| Before | After |
+|---|---|
+| ![before](stills/2026-11-26-models-dock-before.jpg) | ![after](stills/2026-11-26-models-dock-after.jpg) |
+
+**Bait and Tackle, gray box and model**
+
+| Before | After |
+|---|---|
+| ![before](stills/2026-11-26-models-shop-before.jpg) | ![after](stills/2026-11-26-models-shop-after.jpg) |
+
+![Standing at the end of the new dock](stills/2026-11-26-models-dock-end.jpg)
+*Standing at the end of the new dock*
+
+![A bluegill as it hangs on the line](stills/2026-11-26-models-bluegill-on-line.jpg)
+*A bluegill as it hangs on the line*
+
 ## Sound: The lake comes alive with sound
 
 2026-11-26 11:30 · commit `f132de3`

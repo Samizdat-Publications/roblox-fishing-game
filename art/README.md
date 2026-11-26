@@ -41,12 +41,22 @@ Duet's chunky low-poly, flat-colour, vertex-coloured look is the house style for
 
 (That's Blender's default install folder; adjust if yours differs. Unverified on Stewart's PC.) One model: the same with `art\scripts\dock.py`; one fish: add `-- Walleye` at the end of the line for `fish.py`. In the cloud it ran as plain Python with `pip install bpy==5.1.2` (plus Pillow for the small previews and the contact sheet). `ART_SAMPLES` sets render quality (48 by default). Each run writes `models/<Name>.glb`, `models/<Name>.fbx`, `previews/<Name>.png` (1024 px) and updates `models/manifest.json` (sizes, triangles, what it replaces). `scripts/contact_sheet.py` rebuilds the sheet.
 
-## Importing (for tomorrow's session)
+## Importing (done for the first three on 2026-11-26)
 
-1. Studio, 3D Importer (File, Import 3D), pick the `.glb`. Scale Unit **Stud**, keep vertex colours, **Merge Meshes** on.
-2. "Upload to Roblox" creates the asset on Stewart's account. Turn it off while trying things, on for the version that stays.
-3. Collisions: keep the existing gray-box parts as the invisible collision and cast-check shapes (set `Transparency = 1`), and set the new MeshParts to `CanCollide = false`, `CanQuery = false`. Then nothing about walking, casting or the zones changes. Small props (reeds, lily pads, fish, rods, bobber) never collide.
-4. Place each model where its gray-box part was, using the notes in the table.
+What works, learned on the first import:
+
+1. **Convert the colours first:** `python art/scripts/roblox_colors.py <Name>` writes `art/models/roblox/<Name>.glb`. Blender exports vertex colours in linear light and Roblox shows them as display colours, so an unconverted model comes in far too dark (the first bluegill was nearly black). Upload the converted copy, never the one in `art/models/`.
+2. **Upload through Open Cloud** (Studio MCP `open_cloud_invoke`, `POST /assets/v1/assets`, assetType Model) from `art/models/roblox/`; the repo folder is an approved upload folder. Record the asset id in the table below. Each upload is a permanent asset, so upload once.
+3. **Insert it into `ServerStorage.Art`** (the package stays there). Roblox keeps the size exactly (1 stud = 1 Blender unit) and the pivot at the bottom centre, but gives the model a random turn on insert, and **the head or front points along -X in Roblox** (Blender's +X). `PivotTo` an exact CFrame to place it.
+4. **Place it from code:** add an entry to `ART` in `src/ServerScriptService/Server/WorldBuilder.luau` (its CFrame and the gray-box parts it hides), then run `WorldBuilder.dress(workspace.Lake)` in Edit. The gray-box parts stay as invisible collision and cast-check shapes; the models are anchored with `CanCollide`, `CanQuery` and `CanTouch` off, so walking, casting, prompts and zones work exactly as before.
+5. **Fish** need no placing: a species with a model in `ServerStorage.Art` (named by its id, like `Bluegill`) hangs on the line when caught, stretched to the catch's length (`FishingService` `artFish`).
+
+| Model | Roblox asset id | In the game |
+|---|---|---|
+| Dock | 92795692386476 | `Lake.Art.Dock`, turned 180 degrees so the lamp end is out in the lake; deck top at y = 1.5 |
+| BaitShopStand | 128962467669158 | `Lake.Art.BaitShopStand` at (18, 1, 96.5), open front to the lake |
+| Bluegill | 109571493310355 | On the line when a bluegill is landed |
+| Bluegill (first try) | 123238298956061 | Not used: uploaded before the colour fix, too dark |
 
 ## The models
 

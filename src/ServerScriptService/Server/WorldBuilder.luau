@@ -426,8 +426,98 @@ function WorldBuilder.build(): Model
 	end
 	lamps.Parent = lake
 
+	WorldBuilder.dress(lake)
 	lake.Parent = workspace
 	return lake
+end
+
+-- Our own models (art/README.md), laid over the gray box. They live in ServerStorage.Art
+-- (uploaded from art/models/roblox/). The gray-box parts stay as invisible collision and
+-- cast-check shapes, so walking, casting, prompts and zones work exactly as before; the
+-- models never collide, never block a raycast and never fire touches.
+local ART = {
+	{
+		name = "Dock",
+		cframe = CFrame.new(0, -7.5, 57.65) * CFrame.Angles(0, math.pi, 0), -- deck top at y = 1.5
+		hide = { "Dock", "Lamps.Post1", "Lamps.Post2", "Lamps.Bulb1", "Lamps.Bulb2", "DockSpawn" },
+		-- The spawn pad sits 0.4 above the deck; players drop onto the new deck instead.
+		ghost = { "DockSpawn" },
+	},
+	{
+		name = "BaitShopStand",
+		cframe = CFrame.new(18, 1, 96.5), -- open front faces the lake
+		hide = { "ShopStand.Counter", "ShopStand.PostL", "ShopStand.PostR", "ShopStand.Roof" },
+	},
+}
+
+-- "Lamps.Post1" -> lake.Lamps.Post1, or nil.
+local function find(root: Instance, path: string): Instance?
+	local node: Instance? = root
+	for _, step in string.split(path, ".") do
+		node = node and node:FindFirstChild(step)
+	end
+	return node
+end
+
+local function hideParts(inst: Instance)
+	local list = inst:GetDescendants()
+	table.insert(list, inst)
+	for _, d in list do
+		if d:IsA("BasePart") then
+			d.Transparency = 1 -- lights inside (the dock-end bulbs) keep shining
+		elseif d:IsA("Decal") or d:IsA("Texture") then
+			d.Transparency = 1
+		end
+	end
+end
+
+-- Places every model found in ServerStorage.Art and hides the gray box it replaces.
+-- Safe to run again: it rebuilds Lake.Art from scratch. Returns how many were placed.
+function WorldBuilder.dress(lake: Model): number
+	local art = game:GetService("ServerStorage"):FindFirstChild("Art")
+	local folder = lake:FindFirstChild("Art")
+	if folder then
+		folder:Destroy()
+	end
+	if not art then
+		return 0
+	end
+	folder = Instance.new("Folder")
+	folder.Name = "Art"
+	local placed = 0
+	for _, entry in ART do
+		local source = art:FindFirstChild(entry.name)
+		if source and source:IsA("Model") then
+			local m = source:Clone()
+			for _, d in m:GetDescendants() do
+				if d:IsA("PackageLink") then
+					d:Destroy() -- a plain copy in the world; the package stays in ServerStorage
+				elseif d:IsA("BasePart") then
+					d.Anchored = true
+					d.CanCollide = false
+					d.CanQuery = false
+					d.CanTouch = false
+				end
+			end
+			m:PivotTo(entry.cframe)
+			m.Parent = folder
+			for _, path in entry.hide do
+				local node = find(lake, path)
+				if node then
+					hideParts(node)
+				end
+			end
+			for _, path in (entry :: any).ghost or {} do
+				local node = find(lake, path)
+				if node and node:IsA("BasePart") then
+					node.CanCollide = false
+				end
+			end
+			placed += 1
+		end
+	end
+	folder.Parent = lake
+	return placed
 end
 
 return WorldBuilder

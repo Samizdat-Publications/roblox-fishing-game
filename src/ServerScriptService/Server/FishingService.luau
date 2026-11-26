@@ -5,6 +5,7 @@ local Players = game:GetService("Players")
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerStorage = game:GetService("ServerStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared.Config)
@@ -357,6 +358,26 @@ local function onHook(player: Player)
 	end)
 end
 
+-- The species' own model from ServerStorage.Art (art/README.md), stretched to this fish's
+-- length, or nil for species that only have a Blender preview so far.
+local function artFish(species: FishData.Species, len: number): BasePart?
+	local art = ServerStorage:FindFirstChild("Art")
+	local source = art and art:FindFirstChild(species.id)
+	local mesh = source and source:FindFirstChildWhichIsA("MeshPart", true)
+	if not mesh then
+		return nil
+	end
+	local part = mesh:Clone()
+	part:ClearAllChildren()
+	part.Name = "Body"
+	part.Size = mesh.Size * (len / mesh.Size.X) -- the model's length runs along X
+	part.Anchored = true
+	part.CanCollide = false
+	part.CanQuery = false
+	part.CanTouch = false
+	return part
+end
+
 -- Hold the landed fish up on the line for a moment (everyone nearby sees it).
 local function showCatch(player: Player, species: FishData.Species, cm: number)
 	local tip = RodService.tip(player)
@@ -367,32 +388,46 @@ local function showCatch(player: Player, species: FishData.Species, cm: number)
 	local m = Instance.new("Model")
 	m.Name = "CaughtFish_" .. player.Name
 	local top = tip.WorldPosition - Vector3.new(0, 1, 0)
-	local body = Instance.new("Part")
-	body.Name = "Body"
-	body.Size = Vector3.new(len * 0.18, len, len * 0.38)
-	body.CFrame = CFrame.new(top - Vector3.new(0, len / 2, 0))
-	body.Color = species.color
-	body.Material = Enum.Material.SmoothPlastic
-	body.Anchored = true
-	body.CanCollide = false
-	body.CanQuery = false
-	body.CanTouch = false
-	local mesh = Instance.new("SpecialMesh")
-	mesh.MeshType = Enum.MeshType.Sphere
-	mesh.Parent = body
-	body.Parent = m
-	local tail = Instance.new("WedgePart")
-	tail.Name = "Tail"
-	tail.Size = Vector3.new(len * 0.06, len * 0.3, len * 0.36)
-	tail.CFrame = CFrame.new(top - Vector3.new(0, len + len * 0.12, 0)) * CFrame.Angles(math.rad(180), 0, 0)
-	tail.Color = species.color
-	tail.Anchored = true
-	tail.CanCollide = false
-	tail.CanQuery = false
-	tail.CanTouch = false
-	tail.Parent = m
+	local body: BasePart
+	local hang = CFrame.identity
+	local mouth = Vector3.new(0, len / 2, 0)
+	local model = artFish(species, len)
+	if model then
+		-- After Roblox's import the model's head points along -X (Blender's +X): turn it
+		-- nose-up, hanging from its mouth.
+		body = model
+		hang = CFrame.Angles(0, 0, math.rad(-90))
+		mouth = Vector3.new(-len / 2, 0, 0)
+		body.CFrame = CFrame.new(top - Vector3.new(0, len / 2, 0)) * hang
+		body.Parent = m
+	else
+		body = Instance.new("Part")
+		body.Name = "Body"
+		body.Size = Vector3.new(len * 0.18, len, len * 0.38)
+		body.CFrame = CFrame.new(top - Vector3.new(0, len / 2, 0))
+		body.Color = species.color
+		body.Material = Enum.Material.SmoothPlastic
+		body.Anchored = true
+		body.CanCollide = false
+		body.CanQuery = false
+		body.CanTouch = false
+		local mesh = Instance.new("SpecialMesh")
+		mesh.MeshType = Enum.MeshType.Sphere
+		mesh.Parent = body
+		body.Parent = m
+		local tail = Instance.new("WedgePart")
+		tail.Name = "Tail"
+		tail.Size = Vector3.new(len * 0.06, len * 0.3, len * 0.36)
+		tail.CFrame = CFrame.new(top - Vector3.new(0, len + len * 0.12, 0)) * CFrame.Angles(math.rad(180), 0, 0)
+		tail.Color = species.color
+		tail.Anchored = true
+		tail.CanCollide = false
+		tail.CanQuery = false
+		tail.CanTouch = false
+		tail.Parent = m
+	end
 	local a = Instance.new("Attachment")
-	a.Position = Vector3.new(0, len / 2, 0)
+	a.Position = mouth
 	a.Parent = body
 	local line = Instance.new("Beam")
 	line.Attachment0 = tip
@@ -406,7 +441,7 @@ local function showCatch(player: Player, species: FishData.Species, cm: number)
 	task.spawn(function()
 		for i = 1, 25 do -- a little wiggle
 			local swing = math.sin(i * 0.9) * math.rad(12)
-			body.CFrame = CFrame.new(top - Vector3.new(0, len / 2, 0)) * CFrame.Angles(0, 0, swing)
+			body.CFrame = CFrame.new(top - Vector3.new(0, len / 2, 0)) * CFrame.Angles(0, 0, swing) * hang
 			task.wait(0.1)
 		end
 		m:Destroy()
