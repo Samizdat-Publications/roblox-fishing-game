@@ -113,10 +113,21 @@ return function(t, Shared)
 
 	t.test("v3 saves get the Willow Rod and no creek pass", function()
 		local d = Inventory.reconcile({ v = 3, coins = 5, journal = { entries = {} } })
-		t.eq(d.v, 4)
+		t.ok(d.v >= 4, "version " .. d.v)
 		t.eq(d.rod, "Willow")
 		t.eq(d.rods.Willow, true)
 		t.eq(d.creekPass, false)
+	end)
+
+	t.test("v4 saves become v5 with no boat; the snapshot shows boats", function()
+		local d = Inventory.reconcile({ v = 4, coins = 5, journal = { entries = {} }, rods = { Willow = true }, rod = "Willow" })
+		t.eq(d.v, 5)
+		t.eq(next(d.boats), nil, "owns no boat")
+		t.eq(d.boat, "")
+		local snap = Inventory.snapshot(d)
+		t.ok(type(snap.boats) == "table" and snap.boat == "", "snapshot")
+		d.boats.Dinghy = true
+		t.eq(snap.boats.Dinghy, nil, "snapshot is a copy")
 	end)
 
 	t.test("reconcile fills gaps in old saves", function()

@@ -37,13 +37,15 @@ export type Data = {
 	rods: { [string]: boolean },
 	rod: string,
 	creekPass: boolean,
+	boats: { [string]: boolean }, -- v5: boats owned (BoatLogic.buy fills this in)
+	boat: string, -- v5: the boat waiting at your slip ("" for none yet)
 }
 
 local Inventory = {}
 
 function Inventory.new(): Data
 	return {
-		v = 4,
+		v = 5,
 		coins = Config.START_COINS,
 		bait = { Worm = Config.START_WORMS },
 		lures = {},
@@ -56,6 +58,8 @@ function Inventory.new(): Data
 		rods = { Willow = true },
 		rod = "Willow",
 		creekPass = false,
+		boats = {},
+		boat = "",
 	}
 end
 
@@ -87,6 +91,10 @@ function Inventory.reconcile(saved: any): Data
 	-- v4: rods and the Creek Pass (filled in from the fresh data above).
 	if saved.v < 4 then
 		saved.v = 4
+	end
+	-- v5: boats (filled in from the fresh data above). UNVERIFIED in Studio (2026-11-26).
+	if saved.v < 5 then
+		saved.v = 5
 	end
 	return saved
 end
@@ -248,6 +256,8 @@ function Inventory.snapshot(data: Data): any
 		rods = table.clone(data.rods),
 		rod = data.rod,
 		creekPass = data.creekPass,
+		boats = table.clone(data.boats),
+		boat = data.boat,
 		bag = (function()
 			local out = {}
 			for i, f in data.bag do

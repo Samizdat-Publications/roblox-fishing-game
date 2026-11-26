@@ -11,6 +11,7 @@ local EVENTS = {
 	"Equip", -- client: (baitId: string)
 	"SetAssist", -- client: (on: boolean)
 	"EquipRod", -- client: (rodId: string)
+	"ChooseBoat", -- client: (boatId: string), which owned boat waits at your slip
 	"FishingEvent", -- server: (kind: string, payload: table)
 	"State", -- server: (snapshot: table)
 	"Toast", -- server: (text: string)
@@ -19,6 +20,7 @@ local FUNCTIONS = {
 	"RequestState", -- () -> snapshot
 	"Buy", -- (baitId) -> (ok, message)
 	"BuyRod", -- (rodId) -> (ok, message)
+	"BuyBoat", -- (boatId) -> (ok, message)
 	"PondAction", -- (action: "keep"|"sell"|"release", index) -> (ok, message)
 }
 
