@@ -43,6 +43,23 @@ GOALS = [
     ("Graphite Rod", ROD_BY_ID["Graphite"]["price"]),
 ]
 
+# Boats and the Big Lake (second overnight run; --boats). Prices and speeds from BoatData.
+import re as _re  # noqa: E402
+
+_boat_src = (Path(__file__).resolve().parent.parent.parent / "src/ReplicatedStorage/Shared/BoatData.luau").read_text()
+BOATS = {}
+for _m in _re.finditer(r'id = "(\w+)",.*?price = (\d+),\s*maxSpeed = (\d+)', _boat_src, _re.S):
+    BOATS[_m.group(1)] = {"price": int(_m.group(2)), "speed": int(_m.group(3))}
+BOAT_GOALS = [("Inflatable Dinghy", BOATS["Dinghy"]["price"]), ("Deep-V", BOATS["DeepV"]["price"])]
+BIG_SPOTS = ["Basin", "IslandPoint"]  # dinghy water
+BLUE_SPOTS = ["DropOff"]  # Deep-V with a full crew; per person the split equals a solo rate
+# Studs a boat travels from the slips (x 5, z 60) to fish each Big Lake spot (BoatRules zones),
+# plus the walk from the stands to the slips. The motor reaches full speed in about a second.
+BOAT_DIST = {"Basin": 220, "IslandPoint": 306, "DropOff": 370}
+BIG_SPOT_GAP = 120  # between two Big Lake spots
+SLIP_WALK = 60
+BOAT_SPEED = 12  # set per player in play_session
+
 # Walking distance in studs from the two stands to where you stand to fish each spot,
 # measured off WorldBuilder.luau (paths, dock, creek gate). Walk speed is Roblox's 16.
 WALK_FROM_STANDS = {
@@ -430,6 +447,7 @@ class Player:
         self.earned = defaultdict(float)  # where coins came from
         self.spent = defaultdict(float)
         self.goal_i = 0
+        self.boat = None
         self.goal_minutes = {}
         self.catches = 0
         self.gross = 0.0  # value of every fish caught and sold, before spending
@@ -473,7 +491,10 @@ class Strategy:
     uses_pond = False
 
     def spots(self, p):
-        return LAKE_SPOTS + (CREEK_SPOTS if p.creek else [])
+        out = LAKE_SPOTS + (CREEK_SPOTS if p.creek else [])
+        if p.boat:
+            out = out + BIG_SPOTS + (BLUE_SPOTS if p.boat == "DeepV" else [])
+        return out
 
     def choose(self, p, period, rng, current):
         raise NotImplementedError
@@ -563,6 +584,13 @@ class RandomPlayer(Strategy):
 def walk_time(a, b):
     if a == b:
         return 0
+    big = set(BOAT_DIST)
+    if a in big and b in big:
+        return BIG_SPOT_GAP / BOAT_SPEED + 1
+    if a in big or b in big:
+        boat_end, other = (a, b) if a in big else (b, a)
+        drive = BOAT_DIST[boat_end] / BOAT_SPEED + 1 + 4  # plus untying and tying up
+        return drive + SLIP_WALK / WALK_SPEED + walk_time(None if other is None else other, None) * (0 if other is None else 1)
     if a is None or b is None:
         return WALK_FROM_STANDS.get(a or b, 60) / WALK_SPEED
     if a in CREEK_SPOTS and b in CREEK_SPOTS:
@@ -605,6 +633,10 @@ def play_session(p, strat, rng, clock_start, minutes=SESSION_MIN, log=None):
                     p.rod = "Fiberglass"
                 elif g[0] == "Graphite Rod":
                     p.rod = "Graphite"
+                elif g[0] == "Inflatable Dinghy":
+                    p.boat = "Dinghy"
+                elif g[0] == "Deep-V":
+                    p.boat = "DeepV"
                 else:
                     p.creek = True
                 p.goal_minutes[g[0]] = (p.played + t) / 60
@@ -631,7 +663,8 @@ def play_session(p, strat, rng, clock_start, minutes=SESSION_MIN, log=None):
         t += SHOP_MENU
         return True
 
-    global WEATHER_NOW, WIND_NOW
+    global WEATHER_NOW, WIND_NOW, BOAT_SPEED
+    BOAT_SPEED = BOATS[p.boat]["speed"] if p.boat else 12
     day_kind, day_wind, day_index = "Clear", None, None
     while t < end:
         period = period_from_clock(clock())
@@ -755,7 +788,8 @@ def visit_pond(p, rng):
     return sold
 
 
-def run_career(strat, seed, sessions=12, log=None, stop_early=True):
+def run_career(strat, seed, sessions=None, log=None, stop_early=True):
+    sessions = sessions or (30 if len(GOALS) > 3 else 12)
     rng = random.Random(seed)
     p = Player()
     per_session = []
@@ -838,6 +872,26 @@ def report_best_spots():
     return table(rows, ["Water", "Time", "Best (live bait)", "coins/min", "Best (with both lures)", "coins/min"])
 
 
+def report_big_lake():
+    """Best expected coins per minute on the Big Lake vs the lake and creek (Graphite Rod, both lures)."""
+    p = Player()
+    p.rod, p.creek, p.lures = "Graphite", True, {"Spinner", "PlasticWorm"}
+    rows = []
+    for period in PERIODS:
+        def best(spots):
+            top = (0, "", "")
+            for spot in spots:
+                for b in BAIT:
+                    r, _ = expected_rate(spot, period, b["id"], p, KID, 0.92)
+                    top = max(top, (r * 60, spot, b["name"]))
+            return top
+        home = best(LAKE_SPOTS + CREEK_SPOTS)
+        dinghy = best(BIG_SPOTS)
+        blue = best(BLUE_SPOTS)
+        rows.append([period, f"{home[0]:.1f} ({home[1]})", f"{dinghy[0]:.1f} ({dinghy[1]}, {dinghy[2]})", f"{blue[0]:.1f} ({blue[2]})"])
+    return table(rows, ["Time", "Lake and creek, best", "Dinghy water, best", "Blue water (Deep-V, per person)"])
+
+
 def report_fights(trials):
     rows = []
     for s in FISH:
@@ -907,6 +961,9 @@ def section(title, runs, trials):
     print(f"\n# {title}\n")
     print("## Best spot and bait by time of day (expected coins per real minute, Willow Rod, kid reflexes)\n")
     print(report_best_spots())
+    if len(GOALS) > 3:
+        print("\n## Big Lake (expected coins per real minute, Graphite Rod, both lures, kid reflexes)\n")
+        print(report_big_lake())
     print("\n## Fights: chance to land / seconds to land (reel assist on)\n")
     print(report_fights(trials))
     print("\n## Careers: play minutes until each purchase (bought in order, median)\n")
@@ -923,8 +980,11 @@ def main():
     ap.add_argument("--weather", action="store_true", help="play with the weather mix from Weather.luau")
     ap.add_argument("--log", action="store_true", help="print one smart career's purchases")
     ap.add_argument("--only", choices=["current", "proposal"], help="run just one of the two")
+    ap.add_argument("--boats", action="store_true", help="add the Dinghy and Deep-V to the purchases, and the Big Lake")
     args = ap.parse_args()
-    global SIZE_CLASSES, WEATHER_ON
+    global SIZE_CLASSES, WEATHER_ON, GOALS
+    if args.boats:
+        GOALS = GOALS + BOAT_GOALS
     SIZE_CLASSES = not args.no_size_classes
     WEATHER_ON = args.weather
     runs = 12 if args.quick else 60

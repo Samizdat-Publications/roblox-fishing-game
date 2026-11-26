@@ -165,3 +165,28 @@ From `python3 tools/econ/loop.py`, which reuses the simulator's rules and reads 
 | Riffle | Day | Minnow | 45.8 | 97.3 | 52 |
 
 About 1.2 frenzies happen per 16 minute game day, so a 25 minute session sees roughly two, and walking there eats part of each minute. That is at most about 100 coins a session (+4 percent for an expert, about +12 percent for a kid who chases them). Frenzies are an exciting moment, not an income source, and the numbers say they can stay as they are.
+
+## The full loop with boats and the Big Lake (2026-11-26, second overnight run, unverified in Studio)
+
+`python3 tools/econ/sim.py --boats` adds the Inflatable Dinghy (1,200) and Deep-V (4,000) after the Graphite Rod, the Big Lake's fish, and boat travel (walk to the slips, then 220 to 370 studs at the boat's top speed). The Deep-V is counted as crewed, and with team catches split evenly each crew member earns what one rod would solo.
+
+Best expected coins per real minute with the Graphite Rod and both lures, kid reflexes:
+
+| Time | Lake and creek, best | Dinghy water, best | Blue water (Deep-V, per person) |
+|---|---|---|---|
+| Dawn | 118 (riffle) | 105 (basin, minnows) | 153 (minnows) |
+| Day | 124 (creek rocks) | 133 (island point, spinner) | 154 (minnows) |
+| Dusk | 133 (deep pool) | 158 (island point, spinner) | 145 (minnows) |
+| Night | 137 (deep pool) | 46 (basin, worms) | 112 (minnows) |
+
+So the dinghy is a side step, not a big raise: a little better by day and at dusk, worse at dawn and much worse at night (nothing in dinghy water feeds after dark). Blue water pays about a quarter more than the best home water by day, the reward for crewing up. That matches the design: the boats open new fish and places more than new income.
+
+Minutes of play until each purchase (bought in order, median of runs):
+
+| Player | Fiberglass (150) | Creek Pass (500) | Graphite (900) | Dinghy (1,200) | Deep-V (4,000) |
+|---|---|---|---|---|---|
+| Smart | 5 | 10 | 20 | 31 | 70 |
+| Dock and worms | 4 | 21 | 54 | 95 | 238 |
+| Random | 4 | 20 | 45 | 84 | 215 |
+
+The boat plan aimed for the first boat to take 1 to 2 sessions after the Graphite Rod for a smart player and 3 to 4 at the dock. At 1,200 the dinghy takes about half a session for a smart player and under 2 sessions at the dock, so it comes sooner than planned. Stewart chose to keep 1,200 and 4,000 until playtests (see `docs/DECISIONS.md`), so nothing was changed; if it feels too quick, 1,800 for the dinghy would land it on the plan. The Deep-V lands about right: under 2 sessions after the dinghy for a smart player, around 6 at the dock, and anyone can ride as navigator in a friend's Deep-V before owning one.

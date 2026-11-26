@@ -145,7 +145,9 @@ def load_config():
 def load_all():
     return {
         "config": load_config(),
-        "fish": table_after(SHARED / "FishData.luau", "local list: { Species } ="),
+        # FishData appends the Big Lake's fish at load time, so the sim does the same.
+        "fish": table_after(SHARED / "FishData.luau", "local list: { Species } =")
+        + table_after(SHARED / "BigLakeFishData.luau", "local list: { any } ="),
         "bait": table_after(SHARED / "BaitData.luau", "local list: { Bait } ="),
         "rods": table_after(SHARED / "RodData.luau", "local list: { Rod } ="),
     }
@@ -154,4 +156,4 @@ def load_all():
 if __name__ == "__main__":
     d = load_all()
     print(len(d["fish"]), "fish,", len(d["bait"]), "baits,", len(d["rods"]), "rods")
-    print({k: d["config"][k] for k in ("DAY_LENGTH", "BITE_MIN", "BITE_MAX", "POND_OFFLINE_CAP")})
+    print({k: d["config"].get(k) for k in ("DAY_LENGTH", "BITE_MIN", "BITE_SLOWEST", "POND_OFFLINE_CAP")})
