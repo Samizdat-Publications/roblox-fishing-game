@@ -29,7 +29,7 @@ CONTEXT = (
     "You are reviewing a Roblox fishing game in development, made by a father and his 11-year-old son. "
     "It aims for a beautiful, calm-but-tense fishing game where real fishing knowledge (spot, time of day, bait) "
     "decides what bites. The art style is deliberately chunky low-poly with flat vertex colours; judge it on "
-    "light, mood and readability, not polygon counts. It must also read well on a small phone. Be specific and "
+    "light, mood and readability, not polygon counts. It is played mainly on desktop and must still read on a small phone. Be specific and "
     "honest; name exact things you see or hear, with timestamps for clips."
 )
 
