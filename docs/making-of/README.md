@@ -6,7 +6,7 @@ Newest first. The live page with before and after sliders is `docs/making-of/ind
 
 ## Art: Our first models in the game
 
-2026-11-26 13:30
+2026-11-26 13:30 · commit `c4041a7`
 
 The dock, the Bait and Tackle stand and the bluegill, built by script in Blender, are now in the game. The dock has planks, posts, bollards and two lanterns at the far end; the shop has a striped awning, bait tubs and a rod rack. A landed bluegill now hangs on the line as the real fish. The first import came in nearly black because Blender and Roblox store colours differently, so a small converter now fixes every model before upload. Everything still walks, casts and shops exactly as before, because the old gray blocks stay underneath as invisible floors and walls.
 
