@@ -26,6 +26,7 @@ local WeatherService = require(Server.WeatherService)
 local Weather = require(Shared.Weather)
 local Frenzy = require(Shared.Frenzy)
 local FrenzyService = require(Server.FrenzyService)
+local Teamwork = require(Shared.Teamwork)
 local BoatService = require(Server.BoatService)
 local BoatRules = require(Shared.BoatRules)
 
@@ -447,6 +448,24 @@ local function onFightResult(player: Player, won: any)
 		at = os.time(),
 		sizeClass = if class ~= "normal" then class else nil,
 	}
+	-- Team catch on the Deep-V in blue water: both journals, the coins split evenly.
+	-- UNVERIFIED in Studio (boat plan Task 8, 2026-11-26).
+	local boatId, mates, aboard, blue = BoatService.crewOf(player)
+	if Teamwork.isTeamCatch(boatId, blue, aboard) then
+		local shares = Teamwork.split(fish.price, 1 + #mates)
+		fish.price = shares[1]
+		for i, mate in mates do
+			local mateData = PlayerData.get(mate)
+			if mateData then
+				local copy = table.clone(fish)
+				copy.price = shares[i + 1]
+				Inventory.recordCatch(mateData, copy)
+				GoalService.onCatch(mate, mateData, copy)
+				PlayerData.changed(mate)
+				toast(mate, string.format("Team catch! %s landed a %s. Your share: %d coins.", player.DisplayName, species.name, copy.price))
+			end
+		end
+	end
 	local first = (data.journal.counts[species.id] or 0) == 0
 	local best = Inventory.recordCatch(data, fish)
 	GoalService.onCatch(player, data, fish)

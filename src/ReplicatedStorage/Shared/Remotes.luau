@@ -21,6 +21,7 @@ local FUNCTIONS = {
 	"Buy", -- (baitId) -> (ok, message)
 	"BuyRod", -- (rodId) -> (ok, message)
 	"BuyBoat", -- (boatId) -> (ok, message)
+	"FishFinder", -- () -> marks under the boat, for the Deep-V's navigator only
 	"PondAction", -- (action: "keep"|"sell"|"release", index) -> (ok, message)
 }
 

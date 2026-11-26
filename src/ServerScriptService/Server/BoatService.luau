@@ -532,6 +532,28 @@ function BoatService.seatedIn(player: Player): (string?, number)
 	return nil, 0
 end
 
+-- For team catches: the boat this player sits in, the others aboard, how many are aboard,
+-- and whether it's in blue water.
+function BoatService.crewOf(player: Player): (string?, { Player }, number, boolean)
+	local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+	local part = hum and hum.SeatPart
+	if part then
+		for _, boat in boats do
+			if part == boat.helm or part == boat.nav then
+				local mates = {}
+				for _, s in { boat.helm, boat.nav } do
+					local p = occupantPlayer(s :: any)
+					if p and p ~= player then
+						table.insert(mates, p)
+					end
+				end
+				return boat.id, mates, aboard(boat), BoatRules.inBlueWater(boat.hull.Position)
+			end
+		end
+	end
+	return nil, {}, 0, false
+end
+
 -- Extra casting rules on the water (BoatRules.castCheck with this player's seat).
 function BoatService.castCheck(player: Player, landing: Vector3): (boolean, string?)
 	local id, speed = BoatService.seatedIn(player)
@@ -570,6 +592,27 @@ function BoatService.start()
 		PlayerData.changed(player)
 		spawnFor(player)
 	end)
+
+	-- The fish finder: only the navigator of a boat sees what's under it (boat plan Task 8).
+	local Teamwork = require(Shared.Teamwork)
+	local FishLogic = require(Shared.FishLogic)
+	local WorldBuilder = require(script.Parent.WorldBuilder)
+	local zones = WorldBuilder.zones()
+	for _, z in BoatRules.ZONES do
+		table.insert(zones, z)
+	end
+	Remotes.func("FishFinder").OnServerInvoke = function(player: Player)
+		local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+		local part = hum and hum.SeatPart
+		for _, boat in boats do
+			if part ~= nil and part == boat.nav then
+				local spot = FishLogic.spotAt(boat.hull.Position, zones)
+				local period = FishLogic.periodFromClock(game:GetService("Lighting").ClockTime)
+				return Teamwork.finder(spot, period, WeatherService.now())
+			end
+		end
+		return nil
+	end
 
 	PlayerData.onLoad(function(p)
 		spawnFor(p)
