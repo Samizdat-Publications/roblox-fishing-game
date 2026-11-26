@@ -35,6 +35,9 @@ Config.FREE_WORMS = 5
 Config.BAG_LIMIT = 30 -- fish carried before you must sell
 Config.JOURNAL_KEEP = 100 -- most recent catches kept in the journal
 
+-- Cedar Creek
+Config.CREEK_PASS_PRICE = 250
+
 -- Home pond
 Config.POND_CAPACITY = 6
 Config.POND_GROW_RATE = 0.3567 -- per hour: closes 30 percent of the gap to full size each hour

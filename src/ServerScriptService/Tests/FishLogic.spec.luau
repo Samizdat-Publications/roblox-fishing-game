@@ -72,4 +72,29 @@ return function(t, Shared)
 		t.eq(FishLogic.spotAt(Vector3.new(5, 0, 50), zones), "Dock")
 		t.eq(FishLogic.spotAt(Vector3.new(60, 0, -60), zones), "OpenWater")
 	end)
+	t.test("creek fish live in the creek and only there", function()
+		t.eq(FishLogic.biteWeights("Riffle", "Dawn", "Cricket")[1].id, "RainbowTrout")
+		t.eq(FishLogic.biteWeights("Pool", "Night", "Minnow")[1].id, "Walleye")
+		t.eq(FishLogic.biteWeights("Rocks", "Day", "Spinner")[1].id, "SmallmouthBass")
+		local creekIds = { RainbowTrout = true, SmallmouthBass = true, Walleye = true }
+		for _, spot in { "Dock", "WeedBed", "Logs", "DeepHole", "OpenWater" } do
+			for _, period in { "Dawn", "Day", "Dusk", "Night" } do
+				for _, bait in { "Worm", "Cricket", "Minnow", "Stinkbait", "Spinner", "PlasticWorm" } do
+					for _, w in FishLogic.biteWeights(spot, period, bait) do
+						t.ok(not creekIds[w.id], w.id .. " bit in the lake at " .. spot)
+					end
+				end
+			end
+		end
+	end)
+
+	t.test("creek water counts as water, its banks don't", function()
+		local boxes = {
+			{ cframe = CFrame.new(0, -0.5, 0), size = Vector3.new(220, 1, 160) },
+			{ cframe = CFrame.new(-230, 0, 52.5), size = Vector3.new(12, 1, 45) },
+		}
+		t.ok(FishLogic.isOnWaterAny(Vector3.new(-230, 0, 50), boxes), "riffle")
+		t.ok(not FishLogic.isOnWaterAny(Vector3.new(-245, 0, 50), boxes), "bank")
+		t.ok(FishLogic.isOnWaterAny(Vector3.new(10, 0, 10), boxes), "lake")
+	end)
 end

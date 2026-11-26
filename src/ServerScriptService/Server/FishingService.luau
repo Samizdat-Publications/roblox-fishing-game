@@ -39,7 +39,7 @@ type Session = {
 local sessions: { [Player]: Session } = {}
 local rng = Random.new()
 local zones = WorldBuilder.zones()
-local waterCF, waterSize = WorldBuilder.water()
+local waters = WorldBuilder.waters()
 
 local fishingEvent: RemoteEvent
 local toastEvent: RemoteEvent
@@ -230,8 +230,12 @@ local function onCast(player: Player, dir: any, power: any)
 	local dist = Config.CAST_MIN + p * Config.CAST_RANGE + rod.castBonus
 	local landing = hrp.Position + flat * dist
 	landing = Vector3.new(landing.X, 0.3, landing.Z)
-	if not FishLogic.isOnWater(landing, waterCF, waterSize) then
+	if not FishLogic.isOnWaterAny(landing, waters) then
 		send(player, "Hint", { text = "That landed on dry ground. Face the water and cast." })
+		return
+	end
+	if FishLogic.CREEK_SPOTS[FishLogic.spotAt(landing, zones)] and not data.creekPass then
+		send(player, "Hint", { text = "Cedar Creek needs a Creek Pass. Get one at the gate on the west path." })
 		return
 	end
 

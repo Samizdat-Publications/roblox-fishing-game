@@ -89,7 +89,7 @@ function FishShadows.start()
 	local lake = workspace:WaitForChild("Lake")
 	local zones = lake:WaitForChild("Zones")
 	-- Wait for each zone: with streaming on they can arrive a moment after the player.
-	for _, name in { "Dock", "WeedBed", "Logs", "DeepHole" } do
+	for _, name in { "Dock", "WeedBed", "Logs", "DeepHole", "Riffle", "Rocks", "Pool" } do
 		local z = zones:WaitForChild(name, 15)
 		if z and z:IsA("BasePart") then
 			table.insert(areas, { name = z.Name, cframe = z.CFrame, size = z.Size })

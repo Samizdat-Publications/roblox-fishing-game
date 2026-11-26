@@ -258,6 +258,20 @@ local function onFishingEvent(kind: string, payload: any)
 	end
 end
 
+-- The creek gate opens only on the screen of a player who owns the Creek Pass.
+local function updateCreekGate(s: any)
+	local lake = workspace:FindFirstChild("Lake")
+	local gate = lake and lake:FindFirstChild("CreekGate", true) :: BasePart?
+	local prompt = lake and lake:FindFirstChild("CreekPrompt", true) :: ProximityPrompt?
+	if gate then
+		gate.CanCollide = not s.creekPass
+		gate.Transparency = if s.creekPass then 0.85 else 0
+	end
+	if prompt then
+		prompt.Enabled = not s.creekPass
+	end
+end
+
 local function cycleBait()
 	if not snapshot then
 		return
@@ -349,6 +363,7 @@ function Controller.start()
 		snapshot = s
 		UI.setState(s)
 		PondView.update(s.pond)
+		updateCreekGate(s)
 	end)
 	Remotes.event("FishingEvent").OnClientEvent:Connect(onFishingEvent)
 	Remotes.event("Toast").OnClientEvent:Connect(function(text)
@@ -360,6 +375,7 @@ function Controller.start()
 			snapshot = s
 			UI.setState(s)
 			PondView.update(s.pond)
+			updateCreekGate(s)
 		end
 	end)
 

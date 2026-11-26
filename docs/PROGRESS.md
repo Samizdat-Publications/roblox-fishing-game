@@ -97,12 +97,18 @@ Plan: `docs/superpowers/plans/2026-11-25-rods-and-creek.md`.
 - Data version 4 gives older saves the Willow Rod.
 - Verified: 40 unit tests pass (new: buy, equip, refusals, the fight help is applied to a copy, v3 saves upgrade). Playtest: sold the bag (to 261 coins), the shop showed Willow "In your hands", Fiberglass 120 and Graphite greyed out; clicking Fiberglass paid 120 (to 141) and put a yellow 6.6 stud rod in hand. Full-power casts from the same spot: Willow 40.0 studs, Fiberglass 48.0; the same fish's catch zone went from 0.280 to 0.322 of the bar.
 
+### Cedar Creek (next version, item 2, part 2): done
+- A stream west of the lake, behind a tall fence with a red gate on the west path. Hold E (gamepad X) at the gate post to buy a Creek Pass for 250 coins (a one second hold, so nobody buys it by accident). The gate opens only for players who own a pass; casts into the creek without one are refused with a hint.
+- Three stretches, each its own spot with a new real fish: the riffle (fast shallow water with pebbles) for Rainbow Trout at dawn and in daylight on crickets or a spinner; the rocks (boulders mid-stream) for Smallmouth Bass by day on a spinner, crickets or minnows; the deep pool for Walleye at dusk and after dark on minnows. Creek fish never bite in the lake and lake fish never bite in the creek. Pines, a bank path and a gate lamp.
+- Verified: 42 unit tests pass (new: each creek fish tops its spot, none of them bite anywhere in the lake, creek water counts as water and its banks don't). Playtest: walking at the closed gate stopped at it and pathfinding found no route; holding E with 141 coins said "A Creek Pass costs 250 coins. You have 141."; after selling, holding E paid 250 (254 to 4) and the gate went see-through; walked in. Riffle at 6:12 AM on crickets: three rainbow trout (37.2, 35.8, 40.6 cm). Pool at 9:30 PM on minnows: three walleye (57.0, 70.0, 65.4 cm, up to 72 coins). Rocks at noon on minnows: two smallmouth bass. The journal now shows 11 species.
+- Found and fixed in the playtest: the riffle's water didn't show (Roblox terrain works in 4 stud cells and a 1.5 stud fill was too thin), and clear shallow water over a gray bed looked dry. The water now fills whole cells and the streambed is blue-gray.
+
 ## What works now
-A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shore, wait for a bite, hook it, fight it on the bar (hold or click anywhere), land it, sell at the Fish Buyer, buy bait at Bait and Tackle, fill the journal, and raise fish in your home pond. Eight species follow real habits (spot, time of day, bait), fish shadows show where they're active, the day runs 16 minutes, and progress saves to Roblox.
+A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shore, wait for a bite, hook it, fight it on the bar (hold or click anywhere), land it, sell at the Fish Buyer, buy bait at Bait and Tackle, fill the journal, raise fish in your home pond, buy better rods, and unlock Cedar Creek. Eleven species follow real habits (spot, time of day, bait), fish shadows show where they're active, the day runs 16 minutes, and progress saves to Roblox.
 
 ## What's left (next version, after Stewart and Liam playtest)
 - More tuning once Stewart and Liam have played more (prices, fight lengths).
-- Later versions from `DESIGN.md`: a second fishing spot (Cedar Creek, next), a boat, weather, co-op, art pass. (Home pond and rods are in.)
+- Later versions from `DESIGN.md`: a boat (next), weather, co-op, art pass. (Home pond, rods and Cedar Creek are in.)
 - Pond ideas for later: upgrades for more space, feeding to speed growth, rare color variants from breeding.
 - The test save on Stewart's account has 21 coins and 14 fish from Claude's playtests. Ask Claude to wipe it if you want a fresh start.
 

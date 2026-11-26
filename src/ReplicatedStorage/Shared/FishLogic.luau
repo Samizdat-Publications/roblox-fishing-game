@@ -12,6 +12,9 @@ FishLogic.SPOT_NAMES = {
 	Logs = "the fallen logs",
 	DeepHole = "the deep hole",
 	OpenWater = "open water",
+	Riffle = "the riffle",
+	Rocks = "the creek rocks",
+	Pool = "the deep pool",
 }
 
 export type Weight = { id: string, w: number }
@@ -118,5 +121,18 @@ end
 function FishLogic.isOnWater(pos: Vector3, waterCFrame: CFrame, waterSize: Vector3): boolean
 	return inBox(pos, waterCFrame, waterSize)
 end
+
+-- True when the point is over any of the water boxes (the lake and the creek's stretches).
+function FishLogic.isOnWaterAny(pos: Vector3, boxes: { { cframe: CFrame, size: Vector3 } }): boolean
+	for _, b in boxes do
+		if inBox(pos, b.cframe, b.size) then
+			return true
+		end
+	end
+	return false
+end
+
+-- Spots that need the Creek Pass.
+FishLogic.CREEK_SPOTS = { Riffle = true, Rocks = true, Pool = true }
 
 return FishLogic

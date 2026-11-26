@@ -19,6 +19,21 @@ local ZONES = {
 	{ name = "DeepHole", center = Vector3.new(0, 0, -22), size = Vector3.new(60, 10, 56) },
 }
 
+-- Cedar Creek, west of the lake behind a gated fence: three stretches of water, each its own spot.
+-- Rectangles in studs (x1, x2, z1, z2) with the bed height under the water.
+local CREEK = {
+	{ name = "Riffle", x1 = -236, x2 = -224, z1 = 30, z2 = 75, bed = -1.5 },
+	{ name = "Rocks", x1 = -240, x2 = -220, z1 = -10, z2 = 30, bed = -4 },
+	{ name = "Pool", x1 = -252, x2 = -208, z1 = -70, z2 = -10, bed = -9 },
+}
+for _, c in CREEK do
+	table.insert(ZONES, {
+		name = c.name,
+		center = Vector3.new((c.x1 + c.x2) / 2, 0, (c.z1 + c.z2) / 2),
+		size = Vector3.new(c.x2 - c.x1, 10, c.z2 - c.z1),
+	})
+end
+
 local COLORS = {
 	water = Color3.fromRGB(70, 130, 180),
 	floor = Color3.fromRGB(110, 100, 80),
@@ -104,8 +119,123 @@ function WorldBuilder.zones(): { { name: string, cframe: CFrame, size: Vector3 }
 	return out
 end
 
+-- Every water box a cast may land in: the lake and the creek's three stretches.
+function WorldBuilder.waters(): { { cframe: CFrame, size: Vector3 } }
+	local out = { { cframe = WATER_CF, size = WATER_SIZE } }
+	for _, c in CREEK do
+		table.insert(out, {
+			cframe = CFrame.new((c.x1 + c.x2) / 2, -0.5, (c.z1 + c.z2) / 2),
+			size = Vector3.new(c.x2 - c.x1, 1, c.z2 - c.z1),
+		})
+	end
+	return out
+end
+
 function WorldBuilder.water(): (CFrame, Vector3)
 	return WATER_CF, WATER_SIZE
+end
+
+-- Cedar Creek: banks, beds and terrain water for each stretch, boulders, pebbles, trees,
+-- a path from the lake, and a tall fence with a gate (CreekGate) and its prompt (CreekPrompt).
+function WorldBuilder.buildCreek(lake: Model)
+	local creek = Instance.new("Model")
+	creek.Name = "CedarCreek"
+	local terrain = workspace.Terrain
+	terrain:FillBlock(CFrame.new(-230, -4, 0), Vector3.new(140, 16, 160), Enum.Material.Air)
+
+	-- Banks (top at y = 1) around the three water rectangles.
+	local function bank(x1: number, x2: number, z1: number, z2: number)
+		part(creek, "Bank", Vector3.new(x2 - x1, 8, z2 - z1), CFrame.new((x1 + x2) / 2, -3, (z1 + z2) / 2), COLORS.ground, { Material = Enum.Material.Grass })
+	end
+	bank(-300, -252, -80, 80)
+	bank(-208, -160, -80, 80)
+	bank(-252, -240, -10, 30)
+	bank(-220, -208, -10, 30)
+	bank(-252, -236, 30, 80)
+	bank(-224, -208, 30, 80)
+	bank(-252, -208, -80, -70)
+
+	-- Water and beds.
+	for _, c in CREEK do
+		local w, d = c.x2 - c.x1, c.z2 - c.z1
+		local center = Vector3.new((c.x1 + c.x2) / 2, 0, (c.z1 + c.z2) / 2)
+		part(creek, c.name .. "Bed", Vector3.new(w, 1, d), CFrame.new(center.X, c.bed - 0.5, center.Z), if c.name == "Pool" then COLORS.deep else Color3.fromRGB(70, 105, 125), { -- blue-gray so clear shallow water reads as water
+			Material = if c.name == "Riffle" then Enum.Material.Pebble else Enum.Material.Slate,
+		})
+		-- Terrain works in 4 stud cells, so fill whole cells down past the bed (the bed part hides
+		-- the water below it). A 1.5 stud fill was too thin to show up at all.
+		local depth = math.ceil(-c.bed / 4) * 4
+		terrain:FillBlock(CFrame.new(center.X, -depth / 2, center.Z), Vector3.new(w, depth, d), Enum.Material.Water)
+	end
+
+	-- Boulders in the rocky run, pebbles in the riffle.
+	local stone = Color3.fromRGB(125, 125, 120)
+	for i, b in { { -233, -2, 3.5 }, { -226, 8, 3 }, { -236, 18, 2.6 }, { -228, 25, 3.2 }, { -231, 0, 2 } } do
+		local rock = part(creek, "Boulder" .. i, Vector3.new(b[3] * 2, b[3] * 1.6, b[3] * 2), CFrame.new(b[1], -1.5, b[2]), stone, { Material = Enum.Material.Rock })
+		rock.Shape = Enum.PartType.Ball
+	end
+	local rng = Random.new(5)
+	for i = 1, 14 do
+		local r = rng:NextNumber(0.6, 1.2)
+		local pebble = part(creek, "Pebble" .. i, Vector3.new(r * 2, r * 2, r * 2), CFrame.new(rng:NextNumber(-235, -225), -1.6 + r * 0.6, rng:NextNumber(32, 73)), stone, {
+			Material = Enum.Material.Rock,
+		})
+		pebble.Shape = Enum.PartType.Ball
+	end
+
+	-- A few gray-box pines along the banks.
+	for i, t in { { -265, 40 }, { -270, -20 }, { -262, -55 }, { -195, 55 }, { -190, -40 }, { -285, 10 }, { -200, 10 }, { -275, 65 } } do
+		part(creek, "Trunk" .. i, Vector3.new(1.4, 8, 1.4), CFrame.new(t[1], 5, t[2]), COLORS.darkWood, { Material = Enum.Material.Wood })
+		local crown = part(creek, "Crown" .. i, Vector3.new(7, 9, 7), CFrame.new(t[1], 12, t[2]), Color3.fromRGB(45, 95, 50), { Material = Enum.Material.Grass })
+		crown.Shape = Enum.PartType.Ball
+	end
+
+	-- Path from the lake's west path to the creek, and a bank path inside.
+	part(creek, "PathToCreek", Vector3.new(90, 0.2, 6), CFrame.new(-163, 1.1, 0), COLORS.path, { Material = Enum.Material.Sand })
+	part(creek, "BankPath", Vector3.new(6, 0.2, 140), CFrame.new(-203, 1.1, 0), COLORS.path, { Material = Enum.Material.Sand })
+
+	-- Fence across the whole west side, with the gate on the path.
+	part(creek, "FenceSouth", Vector3.new(1, 8, 76), CFrame.new(-162, 5, 42), COLORS.wood, { Material = Enum.Material.WoodPlanks })
+	part(creek, "FenceNorth", Vector3.new(1, 8, 76), CFrame.new(-162, 5, -42), COLORS.wood, { Material = Enum.Material.WoodPlanks })
+	local gate = part(creek, "CreekGate", Vector3.new(1, 8, 8), CFrame.new(-162, 5, 0), Color3.fromRGB(150, 60, 45), { Material = Enum.Material.WoodPlanks })
+	local post = part(creek, "GatePost", Vector3.new(1.2, 4, 1.2), CFrame.new(-158, 3, 5.5), COLORS.darkWood)
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.Name = "CreekPrompt"
+	prompt.ActionText = "Buy Creek Pass"
+	prompt.ObjectText = "Cedar Creek, 250 coins"
+	prompt.HoldDuration = 1 -- a hold, so nobody buys it by accident
+	prompt.MaxActivationDistance = 12
+	prompt.RequiresLineOfSight = false
+	prompt.KeyboardKeyCode = Enum.KeyCode.E
+	prompt.GamepadKeyCode = Enum.KeyCode.ButtonX
+	prompt.Parent = post
+	sign(creek, gate, "Cedar Creek", Color3.fromRGB(140, 220, 160))
+	local lampBulb = part(creek, "GateLamp", Vector3.new(1.2, 1.2, 1.2), CFrame.new(-158, 9, -5.5), Color3.fromRGB(255, 230, 170), {
+		Material = Enum.Material.Neon,
+		CanCollide = false,
+	})
+	lampBulb.Shape = Enum.PartType.Ball
+	part(creek, "GateLampPost", Vector3.new(0.5, 8, 0.5), CFrame.new(-158, 5, -5.5), COLORS.darkWood)
+	local light = Instance.new("PointLight")
+	light.Range = 26
+	light.Brightness = 1.6
+	light.Color = Color3.fromRGB(255, 225, 170)
+	light.Parent = lampBulb
+
+	-- Invisible boxes marking the creek's water, used by casts.
+	local waterFolder = Instance.new("Folder")
+	waterFolder.Name = "CreekWater"
+	for _, c in CREEK do
+		local w = part(waterFolder, c.name .. "Water", Vector3.new(c.x2 - c.x1, 1, c.z2 - c.z1), CFrame.new((c.x1 + c.x2) / 2, -0.5, (c.z1 + c.z2) / 2), COLORS.water, {
+			Transparency = 1,
+			CanCollide = false,
+			CanQuery = false,
+			CanTouch = false,
+		})
+		w:SetAttribute("IsWater", true)
+	end
+	waterFolder.Parent = creek
+	creek.Parent = lake
 end
 
 function WorldBuilder.build(): Model
@@ -255,6 +385,8 @@ function WorldBuilder.build(): Model
 	pondPrompt.Parent = post
 	sign(pond, post, "Your Pond", Color3.fromRGB(120, 210, 200))
 	pond.Parent = lake
+
+	WorldBuilder.buildCreek(lake)
 
 	-- Spawn on the shore end of the dock, facing the water
 	local spawn = Instance.new("SpawnLocation")

@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local BaitData = require(Shared.BaitData)
+local Config = require(Shared.Config)
 local Inventory = require(Shared.Inventory)
 local Remotes = require(Shared.Remotes)
 
@@ -97,6 +98,31 @@ function EconomyService.start()
 	end)
 
 	local lake = workspace:WaitForChild("Lake")
+	local creekPrompt = lake:FindFirstChild("CreekPrompt", true) :: ProximityPrompt?
+	if creekPrompt then
+		creekPrompt.Triggered:Connect(function(player: Player)
+			local data = PlayerData.get(player)
+			if not data then
+				return
+			end
+			if data.creekPass then
+				toast(player, "Your Creek Pass is good. Head on in.")
+				return
+			end
+			if data.coins < Config.CREEK_PASS_PRICE then
+				toast(player, string.format("A Creek Pass costs %d coins. You have %d.", Config.CREEK_PASS_PRICE, data.coins))
+				return
+			end
+			data.coins -= Config.CREEK_PASS_PRICE
+			data.creekPass = true
+			print(string.format("[Economy] %s bought the Creek Pass (now %d coins)", player.Name, data.coins))
+			toast(player, "Creek Pass bought! The gate is open. Trout, smallmouth and walleye are waiting.")
+			PlayerData.changed(player)
+			PlayerData.saveNow(player)
+		end)
+	else
+		warn("[Economy] CreekPrompt missing")
+	end
 	local sell = lake:FindFirstChild("SellPrompt", true) :: ProximityPrompt?
 	local shop = lake:FindFirstChild("ShopPrompt", true) :: ProximityPrompt?
 	if sell then
