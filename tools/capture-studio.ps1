@@ -4,7 +4,8 @@
 param(
   [Parameter(Mandatory = $true)][string]$Out,
   [int]$Width = 1280,
-  [switch]$ViewportOnly
+  [switch]$ViewportOnly,
+  [string]$Title = "Fishing Game"
 )
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.Drawing
@@ -22,7 +23,8 @@ public static class Win {
 # Without this, display scaling shrinks the window rect and the right side gets cut off.
 [void][Win]::SetProcessDPIAware()
 
-$proc = Get-Process RobloxStudioBeta -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1
+# -Title picks the right window when several Studios are open (default: the Fishing Game place).
+$proc = Get-Process RobloxStudioBeta -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 -and $_.MainWindowTitle -like "*$Title*" } | Select-Object -First 1
 if (-not $proc) { throw "Roblox Studio is not open." }
 $h = $proc.MainWindowHandle
 if ([Win]::IsIconic($h)) { throw "Roblox Studio is minimized; restore it so it can be captured." }

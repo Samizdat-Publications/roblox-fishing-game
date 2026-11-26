@@ -88,6 +88,13 @@ Notable design and build calls, newest last.
 - **PR #2 lands behind switches.** Weather, frenzies, goals, boats and the Big Lake each get an on and off switch in `Config` when PR #2 is merged (start of L1), so each is proven by itself.
 - **The harness:** `tools/shots/shots.json` is the fixed list of 12 views (8 lake, 4 creek; dawn, noon, golden hour, night). `tools/shots/shots.py` makes the Studio snippet for each shot, the contact sheet (with before and after pairs) and the critic score (median of 3 Neon runs, appended to `docs/critic/score_history.json`). `tools/shots/probe.luau` measures frame time. `tools/lint.py` fails on em dashes in docs and in Luau strings. `tools/check.py` is the gate before every commit to main (Lune specs, compile check when present, lint, quick economy run); the lint also runs on GitHub.
 
+## 2026-11-26 (all models)
+
+- **The lake was moved back to its coordinates.** After a Studio restart the whole `Workspace.Lake` model sat 6 studs west, 10 up and 55 north of where `WorldBuilder` builds it, while the terrain water, the fishing zones and the cast checks stayed put. Nothing in the game wants that offset, so it was moved back exactly (ground top at y = 1) and the art re-dressed. If you ever drag the lake on purpose, tell Claude: the zone and water boxes in `WorldBuilder` would need to move with it.
+- **Placement stays in code, with three kinds of place:** an exact spot, a seeded scatter (reeds, lily pads) that comes out the same on every rebuild, or fitted over a gray-box part (logs, pines, rocks). The gray-box parts stay as invisible collision, so the creek boulders still block wading.
+- **Rods in hand stay gray-box for now.** The rod models are uploaded, but swapping the held rod touches the weld, the tip attachment the line hangs from, and every device's camera view; it gets its own step with a playtest.
+- **Fish shadows stay as soft blobs.** They are shadows under the water; real fish models there would read as fish floating in plain sight and give away the species.
+
 ## 2026-11-26 (second overnight run, cloud, all unverified in Studio)
 
 - **Size class is rolled at the hook, on the server.** As the rarity plan says: trophies and monsters fight harder, so the fight has to know first. Studio-only test hook: set the player attribute `DebugSizeClass` to `trophy` or `monster`.
