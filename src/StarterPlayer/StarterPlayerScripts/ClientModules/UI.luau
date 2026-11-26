@@ -170,6 +170,10 @@ function UI.init(cbs: { [string]: (...any) -> () })
 	refs.coins = label(top, "Coins", "0 coins", UDim2.fromOffset(150, 44), UDim2.fromOffset(10, 0), 20, C.gold, Enum.Font.GothamBold)
 	refs.coins.TextXAlignment = Enum.TextXAlignment.Left
 	refs.clock = label(top, "Clock", "7:00 AM  Dawn", UDim2.fromOffset(200, 44), UDim2.fromOffset(180, 0), 20)
+	refs.clock.TextScaled = true -- room for the weather after the time
+	local clockMax = Instance.new("UITextSizeConstraint")
+	clockMax.MaxTextSize = 20
+	clockMax.Parent = refs.clock
 	refs.bag = label(top, "Bag", "Bag: 0", UDim2.fromOffset(170, 44), UDim2.fromOffset(380, 0), 18, C.dim)
 	refs.bag.TextXAlignment = Enum.TextXAlignment.Right
 
@@ -338,7 +342,8 @@ function UI.init(cbs: { [string]: (...any) -> () })
 end
 
 function UI.setClock(clock: number)
-	refs.clock.Text = clockText(clock) .. "  " .. FishLogic.periodFromClock(clock)
+	local weather = workspace:GetAttribute("WeatherName")
+	refs.clock.Text = clockText(clock) .. "  " .. FishLogic.periodFromClock(clock) .. (if type(weather) == "string" and weather ~= "Clear" then ", " .. weather else "")
 end
 
 function UI.setState(state: any)
@@ -681,7 +686,8 @@ function UI.refreshShop()
 			end
 		end
 	end
-	refs.shopHint.Text = string.format("You have %d coins. The right bait beats the expensive bait.", s.coins)
+	local forecast = workspace:GetAttribute("Forecast")
+	refs.shopHint.Text = string.format("You have %d coins. %s", s.coins, if type(forecast) == "string" then "Forecast: " .. forecast else "The right bait beats the expensive bait.")
 end
 
 function UI.buildJournal()

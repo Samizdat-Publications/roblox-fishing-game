@@ -4,6 +4,7 @@ local Shared = script.Parent
 local Config = require(Shared.Config)
 local FishData = require(Shared.FishData)
 local Rarity = require(Shared.Rarity)
+local Weather = require(Shared.Weather)
 
 local FishLogic = {}
 
@@ -37,10 +38,14 @@ function FishLogic.periodFromClock(clock: number): string
 end
 
 -- Candidates for a bite, heaviest weight first. Empty when nothing here wants this bait now.
-function FishLogic.biteWeights(spot: string, period: string, baitId: string): { Weight }
+-- `now` (optional) is the weather: it multiplies each fish's weight and can make day bite
+-- like dawn for low-light hunters (Weather.luau). Without it, plain clear weather.
+function FishLogic.biteWeights(spot: string, period: string, baitId: string, now: Weather.Now?): { Weight }
 	local out: { Weight } = {}
 	for _, s in FishData.list do
-		local w = s.rarity * (s.spots[spot] or 0) * (s.periods[period] or 0) * (s.baits[baitId] or 0)
+		local p = Weather.periodFor(now, s.id, period)
+		local w = s.rarity * (s.spots[spot] or 0) * (s.periods[p] or 0) * (s.baits[baitId] or 0)
+		w *= Weather.multiplier(now, s.id, spot, period)
 		if w > 0 then
 			table.insert(out, { id = s.id, w = w })
 		end

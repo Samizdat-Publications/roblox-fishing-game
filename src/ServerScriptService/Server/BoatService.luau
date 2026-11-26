@@ -16,6 +16,7 @@ local BoatLogic = require(Shared.BoatLogic)
 local BoatRules = require(Shared.BoatRules)
 local Remotes = require(Shared.Remotes)
 local PlayerData = require(script.Parent.PlayerData)
+local WeatherService = require(script.Parent.WeatherService)
 
 local BoatService = {}
 
@@ -362,6 +363,10 @@ function spawnFor(player: Player)
 	-- Only the owner may take the helm. The client hides the prompt from everyone else too.
 	boat.drivePrompt.Triggered:Connect(function(who: Player)
 		if who ~= player or helm.Occupant then
+			return
+		end
+		if boat.docked and WeatherService.isStorm() then
+			hint(who, "Lightning! Fishing from shore is safer. Boats stay in until the storm passes.")
 			return
 		end
 		local hum = who.Character and who.Character:FindFirstChildOfClass("Humanoid")

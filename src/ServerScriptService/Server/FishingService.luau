@@ -22,6 +22,8 @@ local PlayerData = require(Server.PlayerData)
 local WorldBuilder = require(Server.WorldBuilder)
 local RodService = require(Server.RodService)
 local GoalService = require(Server.GoalService)
+local WeatherService = require(Server.WeatherService)
+local Weather = require(Shared.Weather)
 local BoatService = require(Server.BoatService)
 local BoatRules = require(Shared.BoatRules)
 
@@ -159,6 +161,10 @@ local scheduleBite: (Player, Session) -> ()
 local function nothingHint(s: Session): string
 	local bait = BaitData.byId[s.bait or ""]
 	local where = FishLogic.SPOT_NAMES[s.spot or "OpenWater"] or "here"
+	local because = Weather.hint(WeatherService.now())
+	if because then
+		return because
+	end
 	return string.format("Nothing wants %s at %s right now. Try another bait, another spot, or another time of day.", bait and bait.name:lower() or "that", where)
 end
 
@@ -289,7 +295,7 @@ local function onCast(player: Player, dir: any, power: any)
 	s.spot = FishLogic.spotAt(landing, zones)
 	s.period = FishLogic.periodFromClock(Lighting.ClockTime)
 	s.bait = baitId
-	s.weights = FishLogic.biteWeights(s.spot :: string, s.period :: string, baitId)
+	s.weights = FishLogic.biteWeights(s.spot :: string, s.period :: string, baitId, WeatherService.now())
 	s.bobber = makeBobber(player, landing)
 	send(player, "Landed", {
 		pos = landing,

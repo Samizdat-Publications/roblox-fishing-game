@@ -17,6 +17,7 @@ if not workspace:FindFirstChild("BigLake") then
 end
 
 require(Server.DayNight).start()
+require(Server.WeatherService).start() -- weather (UNVERIFIED in Studio, 2026-11-26)
 require(Server.PlayerData).start()
 require(Server.RodService).start()
 require(Server.FishingService).start()

@@ -28,7 +28,8 @@ local function activity(spot: string, period: string): number
 	local best = 0
 	for _, b in BaitData.list do
 		local total = 0
-		for _, w in FishLogic.biteWeights(spot, period, b.id) do
+		local now = { weather = workspace:GetAttribute("Weather") or "Clear", wind = workspace:GetAttribute("WindFrom"), moon = workspace:GetAttribute("Moon") or 0 }
+		for _, w in FishLogic.biteWeights(spot, period, b.id, now :: any) do
 			total += w.w
 		end
 		best = math.max(best, total)
