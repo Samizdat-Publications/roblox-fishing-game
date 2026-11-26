@@ -1,0 +1,33 @@
+--!strict
+-- Roblox asset ids for every game sound. Prompts, files and how each was made are in
+-- audio/README.md; the sounds were uploaded 2026-11-26. An empty id means "not uploaded":
+-- SoundFX skips it, so the game still runs without it.
+return {
+	["amb-lake-dawn"] = "rbxassetid://75899041326551",
+	["amb-lake-day"] = "rbxassetid://131111386965866",
+	["amb-lake-dusk"] = "rbxassetid://82078051625749",
+	["amb-lake-night"] = "rbxassetid://126929590872808",
+	["amb-creek"] = "rbxassetid://100143865714004",
+	["wait-bobber-tick"] = "rbxassetid://86176657896960",
+	["bite-nibble"] = "rbxassetid://125293862124668",
+	["bite-tap"] = "rbxassetid://84949385588097",
+	["bite-slam"] = "rbxassetid://134948659349119",
+	["bite-deep-pull"] = "rbxassetid://74865533338533",
+	["reel-click"] = "rbxassetid://124139702532219",
+	["drag-zip"] = "rbxassetid://131892656500430",
+	["line-strain"] = "rbxassetid://128212235558095",
+	["thrash-splash"] = "rbxassetid://100088064761803",
+	["splash-small"] = "rbxassetid://125799618702788",
+	["splash-big"] = "rbxassetid://84379040677203",
+	["sting-common"] = "rbxassetid://94330783579661",
+	["sting-uncommon"] = "rbxassetid://80260553499530",
+	["sting-rare"] = "rbxassetid://140324306594399",
+	["sting-epic"] = "rbxassetid://136953225890121",
+	["sting-legendary"] = "rbxassetid://91099343832765",
+	["sting-mythic"] = "rbxassetid://88524387075648",
+	["sting-godlike"] = "rbxassetid://80444017499358",
+	["sting-new-species"] = "rbxassetid://140661394861736",
+	["theme-lake"] = "rbxassetid://76895844343949",
+	["theme-creek"] = "rbxassetid://119583899918145",
+	["tension-fight"] = "rbxassetid://131247988401466",
+} :: { [string]: string }

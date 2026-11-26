@@ -136,7 +136,9 @@ def write_report(step: str, model: str, mode: str, files: list[Path], prompt_not
             if verdict.get(key):
                 lines += [f"{title}:", *[f"- {x}" for x in verdict[key]], ""]
     lines += ["Action taken: (fill in: what we changed, or why we didn't)", ""]
-    path.write_text("\n".join(lines), encoding="utf-8")
+    # House rule: no em dashes in anything a person reads; models like to write them.
+    text = "\n".join(lines).replace(" — ", " - ").replace("—", " - ")
+    path.write_text(text, encoding="utf-8")
     return path
 
 

@@ -177,6 +177,7 @@ function scheduleBite(player: Player, s: Session)
 		s.nibbling = pattern.predips > 0
 		for _ = 1, pattern.predips do
 			setBobberY(s, -0.25)
+			send(player, "Dip") -- the client plays the nibble sound
 			task.wait(0.18)
 			if s.token ~= token or s.phase ~= "Waiting" then
 				return
