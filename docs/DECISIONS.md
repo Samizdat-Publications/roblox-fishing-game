@@ -35,3 +35,11 @@ Notable design and build calls, newest last.
 - **Pond fish are per player:** the pond is shared scenery, but each player sees only their own fish in it (drawn on their own screen).
 - **Rods include the reel** (one item, not two) to keep the shop simple for kids. Three tiers: Willow (free), Fiberglass (120), Graphite (350). Bonuses are cast distance, catch zone size and, for Graphite, less pull from heavy fish; they never change which fish bite, so knowledge still beats gear.
 - **Cedar Creek is a stream, not a second lake,** so it plays differently: three short stretches (riffle, rocks, pool) each with one signature fish, all real stream species (rainbow trout, smallmouth bass, walleye). The Creek Pass costs 250 coins once, bought with a one second hold at the gate. The gate opens on the owner's screen only; the server also refuses creek casts without a pass, so it can't be skipped by casting over the fence.
+
+## 2026-11-26 (overnight, cloud, unverified in Studio)
+
+- **Big Lake fish sit in their own data file until the Big Lake exists.** The boat plan asked for new species in `FishData.luau`, but the journal lists every species in it, so three fish nobody can catch yet would show as "???" the moment this merged. They live in `BigLakeFishData.luau` with the same shape; boat plan Task 5 appends them to `FishData` with the zones.
+- **The boat starts server-owned.** Roblox's own example hands a driven vehicle to the driver, but it also says the server can't check physics a client owns. A fishing boat is slow, so the server keeps it and checks every move; switch to driver ownership plus checks only if the playtest feels laggy.
+- **No deprecated body movers.** The boat uses `LinearVelocity`, `AngularVelocity`, `AlignOrientation` and `AlignPosition`; the `VehicleSeat` is read for input only.
+- **Tests also run outside Studio** with Lune (`lune run tools/test/run.luau`), using a small `Random` stand-in. One existing test depends on Roblox's exact random draws for its seed and is reported as skipped there.
+- **Models are one mesh with vertex colours.** Roblox allows one material per mesh, so each model's flat-coloured parts are baked into vertex colours and joined. One MeshPart per model, no textures to upload.
