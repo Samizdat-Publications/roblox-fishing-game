@@ -3,6 +3,7 @@
 local Shared = script.Parent
 local Config = require(Shared.Config)
 local FishData = require(Shared.FishData)
+local Rarity = require(Shared.Rarity)
 
 local FishLogic = {}
 
@@ -104,6 +105,38 @@ function FishLogic.rollSize(species: FishData.Species, rng: Random): (number, nu
 		kg = 0.01
 	end
 	return cm, kg
+end
+
+-- One catch: its size class first ("normal", "trophy" or "monster"), then its length and
+-- weight. Server only (the rng must be the server's). A Monster can be longer than maxCm.
+-- UNVERIFIED in Studio (added 2026-11-26, rarity plan Task 1).
+function FishLogic.rollCatch(species: FishData.Species, rng: Random): (number, number, string)
+	local roll = rng:NextNumber()
+	local range = nil
+	local class = "normal"
+	if roll < Rarity.MONSTER_CHANCE then
+		class, range = "monster", Rarity.MONSTER_LENGTH
+	elseif roll < Rarity.MONSTER_CHANCE + Rarity.TROPHY_CHANCE then
+		class, range = "trophy", Rarity.TROPHY_LENGTH
+	end
+	if not range then
+		local cm, kg = FishLogic.rollSize(species, rng)
+		return cm, kg, class
+	end
+	local cm = species.maxCm * (range[1] + (range[2] - range[1]) * rng:NextNumber())
+	cm = math.floor(cm * 10 + 0.5) / 10
+	local kg = species.weightCoef * cm * cm * cm
+	kg = math.max(0.01, math.floor(kg * 100 + 0.5) / 100)
+	return cm, kg, class
+end
+
+-- The fight for a catch of this size class: big ones gain slower and pull harder.
+function FishLogic.fightFor(profile: FishData.FightProfile, sizeClass: string): FishData.FightProfile
+	local adj = Rarity.FIGHT[sizeClass] or Rarity.FIGHT.normal
+	local p = table.clone(profile)
+	p.gain = profile.gain * adj.gain
+	p.heavy = math.min(Rarity.HEAVY_CAP, profile.heavy + adj.heavy)
+	return p
 end
 
 function FishLogic.priceFor(species: FishData.Species, kg: number): number
