@@ -223,7 +223,8 @@ local function onFishingEvent(kind: string, payload: any)
 		UI.setLocked(true)
 		freezeCharacter(true)
 		UI.bite(true)
-		UI.status("Bite! Press " .. UI.inputName() .. " now!")
+		local how = if payload and payload.style == "pull" then "It's pulling the bobber under! " elseif payload and payload.style == "slam" then "Wham! " else "Bite! "
+		UI.status(how .. "Press " .. UI.inputName() .. " now!")
 	elseif kind == "Missed" then
 		setState("Waiting")
 		endFishOn()
@@ -444,7 +445,7 @@ function Controller.start()
 			end
 			local hold = holding()
 			local result = FightModel.step(fight, math.min(dt, 0.1), hold)
-			UI.showFight(fight, nil, hold)
+			UI.showFight(fight, nil, hold, FightModel.slack(fight))
 			if result then
 				setState("Resolving")
 				UI.showFight(nil)

@@ -25,6 +25,7 @@ local FishingService = {}
 type Session = {
 	phase: string, -- Idle, Waiting, Bite, Fighting
 	token: number,
+	nibbling: boolean?, -- a fish is testing the bait (small dips before the real bite)
 	bobber: BasePart?,
 	land: Vector3?,
 	spot: string?,
@@ -164,11 +165,34 @@ function scheduleBite(player: Player, s: Session)
 		if s.token ~= token or s.phase ~= "Waiting" then
 			return
 		end
-		s.species = FishLogic.pickSpecies(s.weights or {}, rng)
+		local speciesId = FishLogic.pickSpecies(s.weights or {}, rng)
+		local species = speciesId and FishData.byId[speciesId]
+		if not species then
+			return
+		end
+		-- Each kind of fish takes the bait its own way: nibblers dip the bobber a couple of
+		-- times first (those dips aren't the bite), slams yank it deep, pulls drag it under
+		-- slowly and give a little longer to react.
+		local pattern = FishLogic.bitePattern(species)
+		s.nibbling = pattern.predips > 0
+		for _ = 1, pattern.predips do
+			setBobberY(s, -0.25)
+			task.wait(0.18)
+			if s.token ~= token or s.phase ~= "Waiting" then
+				return
+			end
+			setBobberY(s, 0)
+			task.wait(pattern.dipGap)
+			if s.token ~= token or s.phase ~= "Waiting" then
+				return
+			end
+		end
+		s.nibbling = false
+		s.species = speciesId
 		s.phase = "Bite"
-		setBobberY(s, -0.6)
-		send(player, "Bite")
-		task.delay(Config.HOOK_WINDOW, function()
+		setBobberY(s, -pattern.depth)
+		send(player, "Bite", { style = pattern.style })
+		task.delay(pattern.hookWindow, function()
 			if s.token == token and s.phase == "Bite" then
 				s.phase = "Waiting"
 				setBobberY(s, 0)
@@ -379,6 +403,11 @@ end
 
 local function onCancel(player: Player)
 	local s = session(player)
+	if s.phase == "Waiting" and s.nibbling then
+		-- Striking at a nibble: too early, but the fish is still there.
+		send(player, "Hint", { text = "Too early, that was just a nibble. Wait for the bobber to go under." })
+		return
+	end
 	if s.phase == "Waiting" or s.phase == "Bite" then
 		reset(player, s)
 	elseif s.phase == "Fighting" then
