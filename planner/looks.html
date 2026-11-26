@@ -55,6 +55,10 @@ figcaption { font-size: 0.82rem; color: var(--muted); margin-top: 4px; }
 .made-up { color: var(--muted); font-size: 0.9rem; }
 .pick { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: grid; gap: 10px; max-width: 68ch; }
 .pick strong { color: var(--sun); }
+.switch { display: flex; gap: 8px; flex-wrap: wrap; }
+.switch button { font: inherit; font-weight: 700; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--fg); cursor: pointer; }
+.switch button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.switch button:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
 hr { border: 0; border-top: 1px solid var(--line); margin: 0; }
 @media (max-width: 560px) { .views { grid-template-columns: 1fr; } }
 </style>
@@ -63,8 +67,13 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 0; }
   <header>
     <span class="eyebrow">Beauty pass, L5 · pick one</span>
     <h1>Five lake looks I can really build</h1>
-    <p class="lede">Each look is today's game with new light, real water, natural shores and hills around the lake. They all use the models already in the game (dock, stands, pines, reeds, logs). Pictures by Gemini's image model from real screenshots; scores by Gemini 4 Neon, out of 10. The pictures invent a few details, listed under each look, so read them as the mood to aim for.</p>
+    <p class="lede">Each look is today's game in the Real-ish house style (simple shapes, realistic materials) with new light, real water, natural shores and hills around the lake. They all use the models already in the game (dock, stands, pines, reeds, logs). Pictures by Gemini's image model from real screenshots; scores by Gemini 4 Neon, out of 10. The pictures invent a few details, listed under each look, so read them as the mood to aim for.</p>
   </header>
+
+  <div class="switch" role="group" aria-label="Which version to show">
+    <button type="button" id="show-realish" aria-pressed="true">Real-ish</button>
+    <button type="button" id="show-lowpoly" aria-pressed="false">Old low-poly</button>
+  </div>
 
   <div class="pick" id="pick">
     <p>Loading the looks.</p>
@@ -80,18 +89,21 @@ function bars(c) {
   const rows = [["Beauty", c.beauty], ["Mood", c.mood], ["Easy to see on a phone", c.readability], ["Suits kids", c.kids_fit], ["Buildable", c.buildable]];
   return '<div class="bars">' + rows.map(([k, v]) => `<span>${k}</span><span class="bar"><i style="width:${(v / 10) * 100}%"></i></span><span class="num">${v}</span>`).join("") + "</div>";
 }
-fetch("looks.json").then(r => r.json()).then(data => {
-  const looks = data.looks;
-  document.getElementById("pick").innerHTML = data.pick;
-  document.getElementById("looks").innerHTML = looks.map(l => `
+let DATA = null;
+function show(set) {
+  const s = DATA.sets[set];
+  document.getElementById("show-realish").setAttribute("aria-pressed", String(set === "realish"));
+  document.getElementById("show-lowpoly").setAttribute("aria-pressed", String(set === "lowpoly"));
+  document.getElementById("pick").innerHTML = s.pick;
+  document.getElementById("looks").innerHTML = s.looks.map(l => `
     <section class="look" id="${esc(l.id)}">
       <div class="look-head">
         <div><h2>${esc(l.name)}</h2><p class="line">${esc(l.line)}</p></div>
         <div class="score">${l.critic.overall}<small> / 10</small></div>
       </div>
-      <figure class="hero"><img src="looks/${l.id}/lake.jpg" alt="${esc(l.name)}: the whole lake from above"></figure>
+      <figure class="hero"><img src="${l.dir}/lake.jpg" alt="${esc(l.name)}: the whole lake from above"></figure>
       <div class="views">
-        ${["creek", "logs", "bite"].map(b => `<figure><img src="looks/${l.id}/${b}.jpg" alt="${esc(l.name)}: ${BASE_NAMES[b]}" loading="lazy"><figcaption>${BASE_NAMES[b]}</figcaption></figure>`).join("")}
+        ${["creek", "logs", "bite"].map(b => `<figure><img src="${l.dir}/${b}.jpg" alt="${esc(l.name)}: ${BASE_NAMES[b]}" loading="lazy"><figcaption>${BASE_NAMES[b]}</figcaption></figure>`).join("")}
       </div>
       <div class="facts">
         <div><h3>Critic</h3>${bars(l.critic)}<p style="margin-top:8px">${esc(l.critic.one_line)}</p></div>
@@ -100,6 +112,12 @@ fetch("looks.json").then(r => r.json()).then(data => {
       </div>
       <hr>
     </section>`).join("");
+}
+document.getElementById("show-realish").addEventListener("click", () => DATA && show("realish"));
+document.getElementById("show-lowpoly").addEventListener("click", () => DATA && show("lowpoly"));
+fetch("looks.json").then(r => r.json()).then(data => {
+  DATA = data;
+  show("realish");
 }).catch(() => {
   document.getElementById("pick").innerHTML = "<p>The looks didn't load. Reload the page to try again.</p>";
 });

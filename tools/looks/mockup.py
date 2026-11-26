@@ -53,14 +53,34 @@ ROBLOX = (
     "painted or cartoon-outlined. No textures beyond Roblox terrain materials, no lens effects."
 )
 
+# The house style since 2026-11-26 (art/README.md): chunky simple shapes, realistic materials.
+REALISH = (
+    "It must look like a real-time screenshot of THIS Roblox game, in its Real-ish house style: chunky, simple "
+    "shapes with realistic materials. Roblox Terrain water (its built-in waves, colour and reflections, clear teal in the "
+    "shallows), Terrain grass, sand, mud and rock with sloped natural banks, Roblox's built-in materials on large surfaces, "
+    "and realistic PBR textures (SurfaceAppearance: colour, normal, roughness) on the hero props: real wood grain on the dock "
+    "planks, posts and stands, wet stone on the pond rim and rocks, bark on the logs, natural foliage on the trees. Keep "
+    "every model's simple, slightly chunky shapes and proportions: the realism comes from materials and light, not from "
+    "more detail or more polygons. Simple hills and treelines on the horizon, Lighting with Atmosphere haze, Sky, Bloom, "
+    "ColorCorrection and SunRays, and simple particles. Not a photograph: it should still read as a well-made Roblox "
+    "game. No lens effects. The bobber and line stay bright and easy to see against the textures."
+)
+STYLE_TEXT = {"lowpoly": ROBLOX, "realish": REALISH}
+STYLE_NAME = {"lowpoly": "the old flat low-poly style", "realish": "the Real-ish house style (chunky shapes, realistic materials)"}
+STYLE = "lowpoly"
+
+
+def out_dir() -> Path:
+    return OUT if STYLE == "lowpoly" else OUT / STYLE
+
 LOOKS = {
     "golden": {
         "name": "Golden Afternoon",
         "line": "Late sun, long shadows, warm light dancing on real water.",
         "prompt": "late afternoon golden hour: a low warm sun to one side, long soft shadows, warm gold light and gentle haze, "
         "sparkling sun glints on deep blue-green water that is lighter and clearer in the shallows, grassy banks sloping into "
-        "the water with sandy edges, a ring of low green hills and a low-poly treeline all around the horizon.",
-        "build": "Lighting presets by hour, Terrain water and sloped banks, low-poly hills and treeline ring.",
+        "the water with sandy edges, a ring of low green hills and a treeline all around the horizon.",
+        "build": "Lighting presets by hour, Terrain water and sloped banks, a ring of hills and treeline.",
     },
     "dawn": {
         "name": "Misty Dawn",
@@ -94,6 +114,16 @@ LOOKS = {
         "with a soft glowing tip so it is easy to see, dark but readable shapes, never pitch black.",
         "build": "Night Lighting preset with moon and stars, lamp PointLights, a firefly particle, a glowing bobber tip.",
     },
+    "winter": {
+        "name": "Frozen Winter",
+        "line": "The lake freezes over: snow on the banks, ice fishing through a hole.",
+        "prompt": "a crisp sunny winter day: the lake and the creek frozen over with thick blue-white ice and patches of snow "
+        "on it, snow covering the banks, the hills and the pine boughs, the leafy trees bare, the dock and stands with snow on "
+        "their roofs and rails, a pale blue sky and low winter sun with long blue shadows. For ice fishing: a small round hole "
+        "cut in the ice with dark water in it, a short ice-fishing rod and a small bright bobber in the hole, and a little "
+        "wooden shelter on the ice. In the bite view the bobber sits in a round hole cut in the ice instead of open water.",
+        "build": "A winter Lighting preset, snow terrain and a frozen water swap, snow caps on props, a later ice-fishing mode.",
+    },
 }
 
 
@@ -119,12 +149,12 @@ def prompt_for(look: str, base: str) -> str:
         "logs, the creek and the player." + keep_ui + " "
         "Replace the hard square gray-box edges of the lake and creek with natural sloped banks, and the empty flat horizon "
         "and edge of the world with low hills and trees. "
-        "Render it as " + s["prompt"] + " " + ROBLOX + " It is a calm but exciting fishing game for kids."
+        "Render it as " + s["prompt"] + " " + STYLE_TEXT[STYLE] + " It is a calm but exciting fishing game for kids."
     )
 
 
 def gen_one(look: str, base: str, force: bool):
-    dest = OUT / look / f"{base}.jpg"
+    dest = out_dir() / look / f"{base}.jpg"
     if dest.exists() and not force:
         print(f"skip {dest.relative_to(ROOT)}")
         return dest
@@ -176,12 +206,12 @@ CRITIC_SCHEMA = {
 
 def critic(look: str) -> dict:
     s = LOOKS[look]
-    files = sorted((OUT / look).glob("*.jpg"))
+    files = sorted((out_dir() / look).glob("*.jpg"))
     parts = [{"text": (
         "You are an art director reviewing concept images for a Roblox fishing game made by a father and his son. "
         f"Each image restyles a real screenshot of the game into one candidate look called '{s['name']}': {s['line']} "
         f"The team plans to build it with: {s['build']} plus Terrain water and sloped banks, using their existing chunky "
-        "low-poly flat-colour models. Judge the look across all images from 0 to 10 on beauty, mood, readability on a small "
+        "models, drawn in " + STYLE_NAME[STYLE] + ". Judge the look across all images from 0 to 10 on beauty, mood, readability on a small "
         "phone (water, bobber, dock, player), kids_fit, and buildable (how faithfully this team could really reach it in "
         "Roblox on a phone with those tools). Then an overall score. List what the images made up that the real build "
         "could not have. Be honest and specific; do not give everything the same score. Do not use em dashes.")}]
@@ -190,7 +220,7 @@ def critic(look: str) -> dict:
     v = gemini.generate(gemini.MODELS["neon"], parts, CRITIC_SCHEMA)
     v["model"] = gemini.MODELS["neon"]
     v["images"] = [f.name for f in files]
-    (OUT / look / "critic.json").write_text(json.dumps(v, indent=2), encoding="utf-8")
+    (out_dir() / look / "critic.json").write_text(json.dumps(v, indent=2), encoding="utf-8")
     return v
 
 
@@ -200,7 +230,10 @@ def main():
     ap.add_argument("--looks", default=",".join(LOOKS))
     ap.add_argument("--bases", default=",".join(BASES))
     ap.add_argument("--force", action="store_true")
+    ap.add_argument("--style", default="lowpoly", choices=list(STYLE_TEXT))
     a = ap.parse_args()
+    global STYLE
+    STYLE = a.style
     load_key()
     looks = [x for x in a.looks.split(",") if x]
     bases = [x for x in a.bases.split(",") if x]
