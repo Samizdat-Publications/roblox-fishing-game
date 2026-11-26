@@ -3,6 +3,8 @@
 local Shared = script.Parent
 local Config = require(Shared.Config)
 local FishData = require(Shared.FishData)
+local Rarity = require(Shared.Rarity)
+local Weather = require(Shared.Weather)
 
 local FishLogic = {}
 
@@ -15,6 +17,9 @@ FishLogic.SPOT_NAMES = {
 	Riffle = "the riffle",
 	Rocks = "the creek rocks",
 	Pool = "the deep pool",
+	Basin = "the open basin", -- the Big Lake (boat plan Task 5)
+	IslandPoint = "the island point",
+	DropOff = "the blue-water drop-off",
 }
 
 export type Weight = { id: string, w: number }
@@ -33,10 +38,17 @@ function FishLogic.periodFromClock(clock: number): string
 end
 
 -- Candidates for a bite, heaviest weight first. Empty when nothing here wants this bait now.
-function FishLogic.biteWeights(spot: string, period: string, baitId: string): { Weight }
+-- `now` (optional) is the weather: it multiplies each fish's weight and can make day bite
+-- like dawn for low-light hunters (Weather.luau). Without it, plain clear weather.
+function FishLogic.biteWeights(spot: string, period: string, baitId: string, now: Weather.Now?): { Weight }
 	local out: { Weight } = {}
 	for _, s in FishData.list do
-		local w = s.rarity * (s.spots[spot] or 0) * (s.periods[period] or 0) * (s.baits[baitId] or 0)
+		local p = Weather.periodFor(now, s.id, period)
+		local w = s.rarity * (s.spots[spot] or 0) * (s.periods[p] or 0) * (s.baits[baitId] or 0)
+		w *= Weather.multiplier(now, s.id, spot, period)
+		if s.weather then -- Mythics: only in their weather
+			w *= s.weather[if now then now.weather else "Clear"] or 0
+		end
 		if w > 0 then
 			table.insert(out, { id = s.id, w = w })
 		end
@@ -104,6 +116,38 @@ function FishLogic.rollSize(species: FishData.Species, rng: Random): (number, nu
 		kg = 0.01
 	end
 	return cm, kg
+end
+
+-- One catch: its size class first ("normal", "trophy" or "monster"), then its length and
+-- weight. Server only (the rng must be the server's). A Monster can be longer than maxCm.
+-- UNVERIFIED in Studio (added 2026-11-26, rarity plan Task 1).
+function FishLogic.rollCatch(species: FishData.Species, rng: Random): (number, number, string)
+	local roll = rng:NextNumber()
+	local range = nil
+	local class = "normal"
+	if roll < Rarity.MONSTER_CHANCE then
+		class, range = "monster", Rarity.MONSTER_LENGTH
+	elseif roll < Rarity.MONSTER_CHANCE + Rarity.TROPHY_CHANCE then
+		class, range = "trophy", Rarity.TROPHY_LENGTH
+	end
+	if not range then
+		local cm, kg = FishLogic.rollSize(species, rng)
+		return cm, kg, class
+	end
+	local cm = species.maxCm * (range[1] + (range[2] - range[1]) * rng:NextNumber())
+	cm = math.floor(cm * 10 + 0.5) / 10
+	local kg = species.weightCoef * cm * cm * cm
+	kg = math.max(0.01, math.floor(kg * 100 + 0.5) / 100)
+	return cm, kg, class
+end
+
+-- The fight for a catch of this size class: big ones gain slower and pull harder.
+function FishLogic.fightFor(profile: FishData.FightProfile, sizeClass: string): FishData.FightProfile
+	local adj = Rarity.FIGHT[sizeClass] or Rarity.FIGHT.normal
+	local p = table.clone(profile)
+	p.gain = profile.gain * adj.gain
+	p.heavy = math.min(Rarity.HEAVY_CAP, profile.heavy + adj.heavy)
+	return p
 end
 
 function FishLogic.priceFor(species: FishData.Species, kg: number): number

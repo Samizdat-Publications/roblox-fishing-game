@@ -17,6 +17,9 @@ local store: DataStore? = nil
 local memoryOnly = false
 local memory: { [number]: any } = {} -- survives respawns in a session when there is no DataStore
 local loaded: { [Player]: Inventory.Data } = {}
+-- Players whose save couldn't be read: they play on fresh data, but it's never saved over
+-- their real save. UNVERIFIED in Studio (2026-11-26).
+local noSave: { [Player]: boolean } = {}
 local loadListeners: { (Player, Inventory.Data) -> () } = {}
 
 local function key(player: Player): string
@@ -63,13 +66,16 @@ end
 
 local function load(player: Player)
 	local saved: any = nil
+	local readOk = true
 	if store and not memoryOnly then
+		readOk = false
 		for attempt = 1, 3 do
 			local ok, result = pcall(function()
 				return (store :: DataStore):GetAsync(key(player))
 			end)
 			if ok then
 				saved = result
+				readOk = true
 				break
 			end
 			warn("[PlayerData] load attempt " .. attempt .. " failed: " .. tostring(result))
@@ -77,6 +83,13 @@ local function load(player: Player)
 		end
 	else
 		saved = memory[player.UserId]
+	end
+	if not player.Parent then
+		return -- left while loading: nothing to set up (and nothing to save)
+	end
+	if not readOk then
+		noSave[player] = true
+		Remotes.event("Toast"):FireClient(player, "Your saved progress couldn't be loaded right now. Rejoin to try again; nothing here will be saved.")
 	end
 	local data = Inventory.reconcile(saved)
 	loaded[player] = data
@@ -90,11 +103,16 @@ end
 -- Run `fn(player, data)` right after each player's data loads.
 function PlayerData.onLoad(fn: (Player, Inventory.Data) -> ())
 	table.insert(loadListeners, fn)
+	-- Players who loaded before this listener was added (memory-only mode loads without
+	-- waiting) still get it. UNVERIFIED in Studio (2026-11-26).
+	for p, data in loaded do
+		task.spawn(fn, p, data)
+	end
 end
 
 local function save(player: Player)
 	local data = loaded[player]
-	if not data then
+	if not data or noSave[player] then
 		return
 	end
 	memory[player.UserId] = data
@@ -128,6 +146,7 @@ function PlayerData.start()
 	Players.PlayerRemoving:Connect(function(player)
 		save(player)
 		loaded[player] = nil
+		noSave[player] = nil
 	end)
 	game:BindToClose(function()
 		for _, p in Players:GetPlayers() do

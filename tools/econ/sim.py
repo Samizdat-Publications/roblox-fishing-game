@@ -43,6 +43,23 @@ GOALS = [
     ("Graphite Rod", ROD_BY_ID["Graphite"]["price"]),
 ]
 
+# Boats and the Big Lake (second overnight run; --boats). Prices and speeds from BoatData.
+import re as _re  # noqa: E402
+
+_boat_src = (Path(__file__).resolve().parent.parent.parent / "src/ReplicatedStorage/Shared/BoatData.luau").read_text()
+BOATS = {}
+for _m in _re.finditer(r'id = "(\w+)",.*?price = (\d+),\s*maxSpeed = (\d+)', _boat_src, _re.S):
+    BOATS[_m.group(1)] = {"price": int(_m.group(2)), "speed": int(_m.group(3))}
+BOAT_GOALS = [("Inflatable Dinghy", BOATS["Dinghy"]["price"]), ("Deep-V", BOATS["DeepV"]["price"])]
+BIG_SPOTS = ["Basin", "IslandPoint"]  # dinghy water
+BLUE_SPOTS = ["DropOff"]  # Deep-V with a full crew; per person the split equals a solo rate
+# Studs a boat travels from the slips (x 5, z 60) to fish each Big Lake spot (BoatRules zones),
+# plus the walk from the stands to the slips. The motor reaches full speed in about a second.
+BOAT_DIST = {"Basin": 220, "IslandPoint": 306, "DropOff": 370}
+BIG_SPOT_GAP = 120  # between two Big Lake spots
+SLIP_WALK = 60
+BOAT_SPEED = 12  # set per player in play_session
+
 # Walking distance in studs from the two stands to where you stand to fish each spot,
 # measured off WorldBuilder.luau (paths, dock, creek gate). Walk speed is Roblox's 16.
 WALK_FROM_STANDS = {
@@ -83,10 +100,72 @@ BITE_RULE = "proposed" if "BITE_SLOWEST" in CFG else "current"
 BITE_SLOWEST = CFG.get("BITE_SLOWEST", 40)  # slowest bite; weaker combos count as "nothing here"
 
 
+# Weather (a Python port of Weather.luau; keep the two in step). WEATHER_NOW is the weather
+# kind right now, or None for plain clear days (the default; --weather turns the mix on).
+WEATHER_ON = False
+WEATHER_NOW = None
+WIND_NOW = None
+LOW_LIGHT = {"LargemouthBass", "Walleye", "BlackCrappie", "NorthernPike", "SmallmouthBass", "Bowfin", "Muskellunge"}
+PREDATORS = {k: 1.4 for k in ["LargemouthBass", "NorthernPike", "Walleye", "SmallmouthBass", "WhiteBass", "Muskellunge", "Bowfin"]}
+WEATHER = {
+    "Clear": dict(chance=0.33),
+    "Overcast": dict(chance=0.25, spots=dict(WeedBed=1.3, Dock=1.2, Riffle=1.2, Rocks=1.1, DeepHole=0.85, Pool=0.85, DropOff=0.85), dawn=LOW_LIGHT),
+    "Fog": dict(chance=0.15, dawn=LOW_LIGHT),
+    "Wind": dict(chance=0.15),
+    "PreStorm": dict(chance=0.12, all=1.3, species=dict(LargemouthBass=1.6, NorthernPike=1.6, ChannelCatfish=1.6, Walleye=1.6, WhiteBass=1.6)),
+    "Storm": dict(chance=0, all=0.6),
+    "ColdFront": dict(chance=0, all=0.5, spots=dict(DeepHole=1.6, Pool=1.6, DropOff=1.6, Dock=1.2)),
+}
+SPOT_SIDE = {"WeedBed": "west", "Logs": "east", "Dock": "south", "DeepHole": "north"}
+OPPOSITE = {"north": "south", "south": "north", "east": "west", "west": "east"}
+
+
+def plan_day(rng, previous):
+    if previous == "PreStorm":
+        return "ColdFront", None
+    r, acc = rng.random(), 0
+    for k, v in WEATHER.items():
+        acc += v["chance"]
+        if v["chance"] > 0 and r < acc:
+            return k, (rng.choice(list(OPPOSITE)) if k == "Wind" else None)
+    return "Clear", None
+
+
+def weather_at(kind, clock):
+    c = clock % 24
+    if kind == "Fog" and (c >= 10 or c < 5):
+        return "Clear"
+    if kind == "PreStorm":
+        if 15 <= c < 18:
+            return "Storm"
+        if c < 13 or c >= 18:
+            return "Clear"
+    return kind
+
+
+def weather_mult(sid, spot):
+    k = WEATHER.get(WEATHER_NOW or "Clear", {})
+    m = k.get("all", 1) * k.get("spots", {}).get(spot, 1)
+    if WEATHER_NOW == "Wind" and WIND_NOW:
+        side = SPOT_SIDE.get(spot)
+        if side == OPPOSITE[WIND_NOW]:
+            m *= PREDATORS.get(sid, 1)
+        elif side == WIND_NOW:
+            m *= 0.8
+    else:
+        m *= k.get("species", {}).get(sid, 1)
+    return m
+
+
 def bite_weights(spot, period, bait):
     out = []
+    k = WEATHER.get(WEATHER_NOW or "Clear", {})
     for s in FISH:
-        w = s["rarity"] * s["spots"].get(spot, 0) * s["periods"].get(period, 0) * s["baits"].get(bait, 0)
+        if s.get("weather") and (s["weather"].get(WEATHER_NOW or "Clear", 0) <= 0):
+            continue  # Mythics only bite in their weather
+        p = "Dawn" if (period == "Day" and s["id"] in k.get("dawn", ())) else period
+        w = s["rarity"] * s["spots"].get(spot, 0) * s["periods"].get(p, 0) * s["baits"].get(bait, 0)
+        w *= weather_mult(s["id"], spot)
         if w > 0:
             out.append((s["id"], w))
     out.sort(key=lambda x: -x[1])
@@ -124,6 +203,57 @@ def roll_size(s, rng):
     cm = round((s["minCm"] + (s["maxCm"] - s["minCm"]) * u) * 10) / 10
     kg = max(0.01, round(s["weightCoef"] * cm ** 3 * 100) / 100)
     return cm, kg
+
+
+# Trophy and monster catches (rarity plan; values read from Rarity.luau so they stay in step).
+def _rarity_consts():
+    import re
+    src = (Path(__file__).resolve().parents[2] / "src/ReplicatedStorage/Shared/Rarity.luau").read_text()
+    def num(name):
+        return float(re.search(r"Rarity\." + name + r"\s*=\s*([0-9.]+)", src).group(1))
+    def pair(name):
+        a, b = re.search(r"Rarity\." + name + r"\s*=\s*\{\s*([0-9.]+),\s*([0-9.]+)\s*\}", src).groups()
+        return float(a), float(b)
+    fights = {}
+    for cls in ("trophy", "monster"):
+        g, h = re.search(cls + r"\s*=\s*\{\s*gain\s*=\s*([0-9.]+),\s*heavy\s*=\s*([0-9.]+)", src).groups()
+        fights[cls] = (float(g), float(h))
+    return {
+        "monster": num("MONSTER_CHANCE"), "trophy": num("TROPHY_CHANCE"),
+        "monster_len": pair("MONSTER_LENGTH"), "trophy_len": pair("TROPHY_LENGTH"),
+        "heavy_cap": num("HEAVY_CAP"), "fights": fights,
+    }
+
+
+RARITY = _rarity_consts()
+SIZE_CLASSES = True  # --no-size-classes turns trophies and monsters off for a comparison
+
+
+def roll_catch(s, rng):
+    """Like FishLogic.rollCatch: size class first, then length and weight."""
+    if SIZE_CLASSES:
+        r = rng.random()
+        rng_len = None
+        if r < RARITY["monster"]:
+            cls, rng_len = "monster", RARITY["monster_len"]
+        elif r < RARITY["monster"] + RARITY["trophy"]:
+            cls, rng_len = "trophy", RARITY["trophy_len"]
+        if rng_len:
+            cm = round(s["maxCm"] * (rng_len[0] + (rng_len[1] - rng_len[0]) * rng.random()) * 10) / 10
+            kg = max(0.01, round(s["weightCoef"] * cm ** 3 * 100) / 100)
+            return cm, kg, cls
+    cm, kg = roll_size(s, rng)
+    return cm, kg, "normal"
+
+
+def fight_for(profile, cls):
+    if cls == "normal":
+        return profile
+    g, h = RARITY["fights"][cls]
+    p = dict(profile)
+    p["gain"] = profile["gain"] * g
+    p["heavy"] = min(RARITY["heavy_cap"], profile["heavy"] + h)
+    return p
 
 
 def price_for(s, kg):
@@ -317,6 +447,7 @@ class Player:
         self.earned = defaultdict(float)  # where coins came from
         self.spent = defaultdict(float)
         self.goal_i = 0
+        self.boat = None
         self.goal_minutes = {}
         self.catches = 0
         self.gross = 0.0  # value of every fish caught and sold, before spending
@@ -360,7 +491,10 @@ class Strategy:
     uses_pond = False
 
     def spots(self, p):
-        return LAKE_SPOTS + (CREEK_SPOTS if p.creek else [])
+        out = LAKE_SPOTS + (CREEK_SPOTS if p.creek else [])
+        if p.boat:
+            out = out + BIG_SPOTS + (BLUE_SPOTS if p.boat == "DeepV" else [])
+        return out
 
     def choose(self, p, period, rng, current):
         raise NotImplementedError
@@ -450,6 +584,13 @@ class RandomPlayer(Strategy):
 def walk_time(a, b):
     if a == b:
         return 0
+    big = set(BOAT_DIST)
+    if a in big and b in big:
+        return BIG_SPOT_GAP / BOAT_SPEED + 1
+    if a in big or b in big:
+        boat_end, other = (a, b) if a in big else (b, a)
+        drive = BOAT_DIST[boat_end] / BOAT_SPEED + 1 + 4  # plus untying and tying up
+        return drive + SLIP_WALK / WALK_SPEED + walk_time(None if other is None else other, None) * (0 if other is None else 1)
     if a is None or b is None:
         return WALK_FROM_STANDS.get(a or b, 60) / WALK_SPEED
     if a in CREEK_SPOTS and b in CREEK_SPOTS:
@@ -492,6 +633,10 @@ def play_session(p, strat, rng, clock_start, minutes=SESSION_MIN, log=None):
                     p.rod = "Fiberglass"
                 elif g[0] == "Graphite Rod":
                     p.rod = "Graphite"
+                elif g[0] == "Inflatable Dinghy":
+                    p.boat = "Dinghy"
+                elif g[0] == "Deep-V":
+                    p.boat = "DeepV"
                 else:
                     p.creek = True
                 p.goal_minutes[g[0]] = (p.played + t) / 60
@@ -518,8 +663,17 @@ def play_session(p, strat, rng, clock_start, minutes=SESSION_MIN, log=None):
         t += SHOP_MENU
         return True
 
+    global WEATHER_NOW, WIND_NOW, BOAT_SPEED
+    BOAT_SPEED = BOATS[p.boat]["speed"] if p.boat else 12
+    day_kind, day_wind, day_index = "Clear", None, None
     while t < end:
         period = period_from_clock(clock())
+        if WEATHER_ON:
+            d = int(clock() // 24)
+            if d != day_index:
+                day_index = d
+                day_kind, day_wind = plan_day(rng, day_kind)
+            WEATHER_NOW, WIND_NOW = weather_at(day_kind, clock()), day_wind
         if isinstance(strat, Smart):
             lure = strat.lure_worth_buying(p, period)
             if lure and p.coins >= BAIT_BY_ID[lure]["price"]:
@@ -580,15 +734,15 @@ def play_session(p, strat, rng, clock_start, minutes=SESSION_MIN, log=None):
         sid = pick_species(w, rng)
         if BAIT_BY_ID[bait]["kind"] == "live":
             p.bait[bait] -= 1
-        prof = apply_rod(FISH_BY_ID[sid]["fight"], p.rod)
+        s = FISH_BY_ID[sid]
+        cm, kg, cls = roll_catch(s, rng)  # rolled at the hook, as on the server
+        prof = apply_rod(fight_for(s["fight"], cls), p.rod)
         won, ft = fight_once(prof, True, strat.skill, rng)
         t += ft
         if not won:
             t += AFTER_ESCAPE
             continue
         t += AFTER_CATCH
-        s = FISH_BY_ID[sid]
-        cm, kg = roll_size(s, rng)
         price = price_for(s, kg)
         p.catches += 1
         kept = False
@@ -634,7 +788,8 @@ def visit_pond(p, rng):
     return sold
 
 
-def run_career(strat, seed, sessions=12, log=None, stop_early=True):
+def run_career(strat, seed, sessions=None, log=None, stop_early=True):
+    sessions = sessions or (30 if len(GOALS) > 3 else 12)
     rng = random.Random(seed)
     p = Player()
     per_session = []
@@ -717,6 +872,26 @@ def report_best_spots():
     return table(rows, ["Water", "Time", "Best (live bait)", "coins/min", "Best (with both lures)", "coins/min"])
 
 
+def report_big_lake():
+    """Best expected coins per minute on the Big Lake vs the lake and creek (Graphite Rod, both lures)."""
+    p = Player()
+    p.rod, p.creek, p.lures = "Graphite", True, {"Spinner", "PlasticWorm"}
+    rows = []
+    for period in PERIODS:
+        def best(spots):
+            top = (0, "", "")
+            for spot in spots:
+                for b in BAIT:
+                    r, _ = expected_rate(spot, period, b["id"], p, KID, 0.92)
+                    top = max(top, (r * 60, spot, b["name"]))
+            return top
+        home = best(LAKE_SPOTS + CREEK_SPOTS)
+        dinghy = best(BIG_SPOTS)
+        blue = best(BLUE_SPOTS)
+        rows.append([period, f"{home[0]:.1f} ({home[1]})", f"{dinghy[0]:.1f} ({dinghy[1]}, {dinghy[2]})", f"{blue[0]:.1f} ({blue[2]})"])
+    return table(rows, ["Time", "Lake and creek, best", "Dinghy water, best", "Blue water (Deep-V, per person)"])
+
+
 def report_fights(trials):
     rows = []
     for s in FISH:
@@ -786,6 +961,9 @@ def section(title, runs, trials):
     print(f"\n# {title}\n")
     print("## Best spot and bait by time of day (expected coins per real minute, Willow Rod, kid reflexes)\n")
     print(report_best_spots())
+    if len(GOALS) > 3:
+        print("\n## Big Lake (expected coins per real minute, Graphite Rod, both lures, kid reflexes)\n")
+        print(report_big_lake())
     print("\n## Fights: chance to land / seconds to land (reel assist on)\n")
     print(report_fights(trials))
     print("\n## Careers: play minutes until each purchase (bought in order, median)\n")
@@ -798,9 +976,17 @@ def section(title, runs, trials):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true", help="fewer runs")
+    ap.add_argument("--no-size-classes", action="store_true", help="turn trophies and monsters off, to compare")
+    ap.add_argument("--weather", action="store_true", help="play with the weather mix from Weather.luau")
     ap.add_argument("--log", action="store_true", help="print one smart career's purchases")
     ap.add_argument("--only", choices=["current", "proposal"], help="run just one of the two")
+    ap.add_argument("--boats", action="store_true", help="add the Dinghy and Deep-V to the purchases, and the Big Lake")
     args = ap.parse_args()
+    global SIZE_CLASSES, WEATHER_ON, GOALS
+    if args.boats:
+        GOALS = GOALS + BOAT_GOALS
+    SIZE_CLASSES = not args.no_size_classes
+    WEATHER_ON = args.weather
     runs = 12 if args.quick else 60
     trials = 150 if args.quick else 400
 

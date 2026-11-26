@@ -3,6 +3,7 @@
 -- its size and price, and checks the client's fight result before paying out.
 local Players = game:GetService("Players")
 local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
 
@@ -14,12 +15,21 @@ local FishLogic = require(Shared.FishLogic)
 local FightModel = require(Shared.FightModel)
 local Inventory = require(Shared.Inventory)
 local RodData = require(Shared.RodData)
+local Rarity = require(Shared.Rarity)
 local Remotes = require(Shared.Remotes)
 
 local Server = script.Parent
 local PlayerData = require(Server.PlayerData)
 local WorldBuilder = require(Server.WorldBuilder)
 local RodService = require(Server.RodService)
+local GoalService = require(Server.GoalService)
+local WeatherService = require(Server.WeatherService)
+local Weather = require(Shared.Weather)
+local Frenzy = require(Shared.Frenzy)
+local FrenzyService = require(Server.FrenzyService)
+local Teamwork = require(Shared.Teamwork)
+local BoatService = require(Server.BoatService)
+local BoatRules = require(Shared.BoatRules)
 
 local FishingService = {}
 
@@ -36,12 +46,23 @@ type Session = {
 	species: string?,
 	fightStart: number,
 	minSecs: number,
+	catch: { cm: number, kg: number, class: string }?, -- rolled at the hook (rarity plan Task 2)
 }
 
 local sessions: { [Player]: Session } = {}
 local rng = Random.new()
 local zones = WorldBuilder.zones()
 local waters = WorldBuilder.waters()
+-- The channel and the Big Lake (boat-only water), when it's switched on. UNVERIFIED in
+-- Studio, 2026-11-26.
+if Config.BIG_LAKE_ON then
+	for _, z in BoatRules.ZONES do
+		table.insert(zones, z)
+	end
+	for _, b in BoatRules.extraCastWaters() do
+		table.insert(waters, b)
+	end
+end
 
 local fishingEvent: RemoteEvent
 local toastEvent: RemoteEvent
@@ -147,12 +168,19 @@ local scheduleBite: (Player, Session) -> ()
 local function nothingHint(s: Session): string
 	local bait = BaitData.byId[s.bait or ""]
 	local where = FishLogic.SPOT_NAMES[s.spot or "OpenWater"] or "here"
+	local because = Weather.hint(WeatherService.now())
+	if because then
+		return because
+	end
 	return string.format("Nothing wants %s at %s right now. Try another bait, another spot, or another time of day.", bait and bait.name:lower() or "that", where)
 end
 
 function scheduleBite(player: Player, s: Session)
 	local token = s.token
 	local delay = FishLogic.biteDelay(s.weights or {}, rng)
+	if delay and FrenzyService.at(s.spot) then
+		delay *= Frenzy.BITE_SPEED -- the school is boiling: bites come back to back
+	end
 	if not delay then
 		task.delay(Config.NOTHING_WAIT, function()
 			if s.token == token and s.phase == "Waiting" then
@@ -262,6 +290,11 @@ local function onCast(player: Player, dir: any, power: any)
 		send(player, "Hint", { text = "That landed on dry ground. Face the water and cast." })
 		return
 	end
+	local boatOk, boatMsg = BoatService.castCheck(player, landing)
+	if not boatOk then
+		send(player, "Hint", { text = boatMsg or "You can't cast there from here." })
+		return
+	end
 	if FishLogic.CREEK_SPOTS[FishLogic.spotAt(landing, zones)] and not data.creekPass then
 		send(player, "Hint", { text = "Cedar Creek needs a Creek Pass. Get one at the gate on the west path." })
 		return
@@ -273,7 +306,10 @@ local function onCast(player: Player, dir: any, power: any)
 	s.spot = FishLogic.spotAt(landing, zones)
 	s.period = FishLogic.periodFromClock(Lighting.ClockTime)
 	s.bait = baitId
-	s.weights = FishLogic.biteWeights(s.spot :: string, s.period :: string, baitId)
+	s.weights = FishLogic.biteWeights(s.spot :: string, s.period :: string, baitId, WeatherService.now())
+	if FrenzyService.at(s.spot) then
+		s.weights = Frenzy.weights(s.weights :: { FishLogic.Weight }, s.spot :: string)
+	end
 	s.bobber = makeBobber(player, landing)
 	send(player, "Landed", {
 		pos = landing,
@@ -295,14 +331,27 @@ local function onHook(player: Player)
 	PlayerData.changed(player)
 	s.phase = "Fighting"
 	s.fightStart = os.clock()
-	s.minSecs = FightModel.minSeconds(species.fight, data.assist)
+	-- Size class first (server random only), so trophies and monsters fight harder.
+	-- UNVERIFIED in Studio (rarity plan Task 2, 2026-11-26).
+	local cm, kg, class = FishLogic.rollCatch(species, rng)
+	local forced = if RunService:IsStudio() then player:GetAttribute("DebugSizeClass") else nil
+	if forced == "trophy" or forced == "monster" then
+		class = forced
+		cm = species.maxCm * (if forced == "monster" then 1.35 else 1.0)
+		kg = math.floor(species.weightCoef * cm ^ 3 * 100 + 0.5) / 100
+	end
+	s.catch = { cm = cm, kg = kg, class = class }
+	local profile = FishLogic.fightFor(species.fight, class)
+	s.minSecs = FightModel.minSeconds(profile, data.assist)
 	setBobberY(s, -1)
 	local token = s.token
 	send(player, "Hooked", {
-		fight = RodData.applyFight(species.fight, data.rod),
+		fight = RodData.applyFight(profile, data.rod),
 		assist = data.assist,
 		seed = rng:NextInteger(1, 1e6),
 		note = species.fightNote,
+		sizeClass = class,
+		tier = Rarity.of(species),
 	})
 	task.delay(Config.FIGHT_MAX_SECONDS, function()
 		if s.token == token and s.phase == "Fighting" then
@@ -414,11 +463,18 @@ local function onFightResult(player: Player, won: any)
 		if won == true then
 			warn(string.format("[Fishing] %s reported a win too fast (%.2fs < %.2fs); counted as escape", player.Name, elapsed, s.minSecs))
 		end
-		send(player, "Escaped", { text = "It got away! " .. species.fightNote })
+		send(player, "Escaped", { text = "It got away! " .. species.fightNote, snapped = true })
 		cleanup(s)
 		return
 	end
-	local cm, kg = FishLogic.rollSize(species, rng)
+	local rolled = s.catch
+	local cm, kg, class = 0, 0, "normal"
+	if rolled then
+		cm, kg, class = rolled.cm, rolled.kg, rolled.class
+	else
+		cm, kg = FishLogic.rollSize(species, rng)
+	end
+	s.catch = nil
 	local fish: Inventory.Fish = {
 		id = species.id,
 		name = species.name,
@@ -429,11 +485,45 @@ local function onFightResult(player: Player, won: any)
 		spot = s.spot or "OpenWater",
 		period = s.period or "Day",
 		at = os.time(),
+		sizeClass = if class ~= "normal" then class else nil,
 	}
+	-- Team catch on the Deep-V in blue water: both journals, the coins split evenly.
+	-- UNVERIFIED in Studio (boat plan Task 8, 2026-11-26).
+	local boatId, mates, aboard, blue = BoatService.crewOf(player)
+	if Teamwork.isTeamCatch(boatId, blue, aboard) then
+		local shares = Teamwork.split(fish.price, 1 + #mates)
+		fish.price = shares[1]
+		for i, mate in mates do
+			local mateData = PlayerData.get(mate)
+			if mateData then
+				local copy = table.clone(fish)
+				copy.price = shares[i + 1]
+				local full = Inventory.bagFull(mateData)
+				Inventory.recordCatch(mateData, copy)
+				if full then
+					-- No room in their bag: the journal still gets it, the share is paid now.
+					table.remove(mateData.bag)
+					mateData.coins += copy.price
+				end
+				GoalService.onCatch(mate, mateData, copy, FrenzyService.at(fish.spot))
+				PlayerData.changed(mate)
+				toast(mate, string.format("Team catch! %s landed a %s. Your share: %d coins.", player.DisplayName, species.name, copy.price))
+			end
+		end
+	end
 	local first = (data.journal.counts[species.id] or 0) == 0
 	local best = Inventory.recordCatch(data, fish)
+	GoalService.onCatch(player, data, fish, FrenzyService.at(fish.spot))
 	print(string.format("[Fishing] %s caught %s %.1f cm %.2f kg worth %d at %s (%s, %s)", player.Name, fish.name, cm, kg, fish.price, fish.spot, fish.period, fish.bait))
-	send(player, "Caught", { fish = fish, best = best, first = first, habit = species.habit })
+	send(player, "Caught", { fish = fish, best = best, first = first, habit = species.habit, tier = Rarity.of(species), sizeClass = class })
+	if class == "monster" then
+		for _, p in Players:GetPlayers() do
+			toast(p, string.format("%s landed a MONSTER %s: %.0f cm, %.1f kg!", player.DisplayName, species.name, cm, kg))
+			if p ~= player then
+				send(p, "Announce", { sound = "server-horn" }) -- a foghorn for everyone else (UNVERIFIED in Studio)
+			end
+		end
+	end
 	cleanup(s)
 	showCatch(player, species, cm)
 	PlayerData.changed(player)
@@ -472,6 +562,28 @@ function FishingService.start()
 		if s then
 			cleanup(s)
 			sessions[player] = nil
+		end
+	end)
+	-- Fishing from a boat: twice a second, a line that the boat ran away from comes free.
+	-- UNVERIFIED in Studio (2026-11-26).
+	task.spawn(function()
+		while true do
+			task.wait(0.5)
+			for player, s in sessions do
+				if s.land and (s.phase == "Waiting" or s.phase == "Bite" or s.phase == "Fighting") then
+					local ok, msg = BoatService.lineCheck(player, s.land)
+					if not ok then
+						local fighting = s.phase == "Fighting"
+						cleanup(s)
+						if fighting then
+							send(player, "Escaped", { text = msg or "The line came free." })
+						else
+							send(player, "Hint", { text = msg or "The line came free." })
+							send(player, "Reset")
+						end
+					end
+				end
+			end
 		end
 	end)
 	Players.PlayerAdded:Connect(function(player)

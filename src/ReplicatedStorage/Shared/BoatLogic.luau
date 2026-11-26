@@ -57,8 +57,8 @@ function BoatLogic.step(m: Motion, boatId: string, throttle: any, steer: any, dt
 	return { speed = speed, yawRate = st * b.turnRate * turnShare * dir }
 end
 
--- Server check on a driver's reported movement (the driver owns the boat's physics so it
--- feels smooth). Allows a little slack for lag; anything faster is a cheat or a glitch.
+-- Server check on a boat's movement between two checks (the server owns the boat's physics
+-- and drives it from the helm's input). Allows a little slack; anything faster is a glitch.
 function BoatLogic.moveOk(fromPos: Vector3, toPos: Vector3, dt: number, boatId: string): boolean
 	local b = BoatData.byId[boatId]
 	if not b or dt <= 0 then

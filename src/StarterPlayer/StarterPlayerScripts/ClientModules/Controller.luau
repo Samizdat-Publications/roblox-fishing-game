@@ -65,6 +65,28 @@ local function play(name: string)
 	end
 end
 
+-- Play an uploaded sound by its id from audio/README.md (Shared/SoundIds.luau); falls back to
+-- a built-in sound until it's uploaded. UNVERIFIED in Studio (2026-11-26).
+local SoundIds = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("SoundIds"))
+local uploaded: { [string]: Sound } = {}
+local function playId(id: string, fallback: string?)
+	local asset = SoundIds[id]
+	if type(asset) == "string" and asset ~= "" then
+		local s = uploaded[id]
+		if not s then
+			s = Instance.new("Sound")
+			s.Name = "Fish_" .. id
+			s.SoundId = asset
+			s.Volume = 0.6
+			s.Parent = SoundService
+			uploaded[id] = s
+		end
+		s:Play()
+	elseif fallback then
+		play(fallback)
+	end
+end
+
 local function setState(s: string)
 	state = s
 	stateSince = os.clock()
@@ -176,7 +198,7 @@ local function onFish(_name: string, inputState: Enum.UserInputState, _input: In
 		castTimeout = os.clock() + 3
 		local cam = workspace.CurrentCamera
 		Remotes.event("Cast"):FireServer(cam.CFrame.LookVector, power)
-		play("cast")
+		playId("cast-whoosh", "cast")
 		UI.status("Casting...")
 	elseif state == "Waiting" and began and os.clock() - stateSince > 0.6 then
 		Remotes.event("CancelCast"):FireServer()
@@ -241,6 +263,11 @@ local function onFishingEvent(kind: string, payload: any)
 		end
 		UI.status("") -- the reel prompt says what to do; keeps small screens clear
 		UI.showFight(fight, payload.note, holding())
+		if payload.sizeClass == "monster" then
+			UI.toast("Something HUGE is on the line!", Color3.fromRGB(240, 75, 125))
+		elseif payload.sizeClass == "trophy" then
+			UI.toast("This one feels big!", Color3.fromRGB(250, 175, 40))
+		end
 	elseif kind == "Caught" then
 		UI.catchCard(payload)
 		goIdleAfterFight()
@@ -344,6 +371,18 @@ function Controller.start()
 			if ok then
 				play("catch")
 			end
+		end,
+		buyBoat = function(boatId: string) -- UNVERIFIED in Studio (2026-11-26)
+			local ok, msg = Remotes.func("BuyBoat"):InvokeServer(boatId)
+			UI.toast(msg, if ok then Color3.fromRGB(120, 220, 130) else Color3.fromRGB(240, 120, 110))
+			UI.shopHint(msg)
+			if ok then
+				play("catch")
+			end
+		end,
+		chooseBoat = function(boatId: string)
+			Remotes.event("ChooseBoat"):FireServer(boatId)
+			play("click")
 		end,
 		equipRod = function(rodId: string)
 			Remotes.event("EquipRod"):FireServer(rodId)

@@ -173,6 +173,37 @@ Nothing below has been seen in Studio. All of it is on the branch `claude/overni
 - Still to do in L0: the 29 model imports another session is doing.
 - Found: the repo folder `C:\Users\stewa\Documents\Claude\Roblox` is checked out on an old commit of the PR #2 branch with main's newer files untracked, and another session works in it. L0 work was done in a separate worktree and pushed to main. Put the folder back on main when no other session is using it: everything in it is either already on main or older than main.
 
+## Overnight 2, unverified (2026-11-26, Claude in the cloud)
+
+Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6f` in draft pull request #2, with main (sound pass included) merged in; `main` and the place are unchanged. Compiles (`lune run tools/test/syntax.luau`, 57 files) and 135 tests pass with Lune. Full list and open design questions: `docs/OVERNIGHT-SUMMARY-2026-11-26.md`.
+
+### Built
+- **Rarity:** seven tiers on every fish with colours on the catch card and journal; trophy (2 percent) and monster (0.2 percent) catches rolled on the server at the hook, with harder fights, warnings, banners, a server message for monsters and journal counts. The sound pass's stingers now get real tiers.
+- **Fish:** 15 new species (26 in all), three of them Mythics tied to weather (Albino Catfish in storms, Golden Trout in fog, Tiger Muskie in the pre-storm rush). Blender models for all 15 plus the Dinghy and Deep-V.
+- **Loop:** three daily goals (paid on the server, Goals panel), journal rumours for uncaught fish, weather with an 8 day moon (changes bites, clock and shop forecast, boats stay in during lightning), feeding frenzies about once a game day, no breeding of Legendary or rarer fish in the pond.
+- **Boats:** Dinghy (1,200) and Deep-V (4,000) in the shop, four slips by the dock, driving with the normal movement controls, the Big Lake through a north channel (island, buoy line, blue water), casting from a boat, team catches split on the Deep-V, a fish finder for the navigator.
+- **Sound:** 25 more prompts in `audio/sounds-next.json`, joined to `SoundIds.luau` with empty ids; `SoundFX` plays 20 of them once uploaded (rules and tests in `SoundMix`).
+- **Economy:** expert +15 percent, dock kid unchanged, weather averages within 2 percent (`docs/ECONOMY.md`).
+- **Read-through fixes** after an independent review of the new server scripts: one AlignOrientation holds the boat's heading, boats sit at the water line, seats only by prompt, only the helm casts off, the storm check applies near the slip, no buying a boat while aboard, a mate with a full bag gets paid their share.
+
+### Second round (same night)
+- Economy check of the full loop with boats (`sim.py --boats`) and of goals and frenzies (`loop.py`); numbers in `docs/ECONOMY.md`. No prices changed.
+- Daily goals: eight kinds now (new: catch on a bait, a good-sized fish, fish during a frenzy, Big Lake spots for boat owners).
+- Journal rumours name a bait after ten more catches; gulls circle and dive over a frenzy.
+- Second read-through fixes: helm controls now reach the server through a `BoatInput` remote; riders always land on the dock; a boat that runs from its bobber loses the line; blue-water casts need the full crew; a save that couldn't be read is never overwritten.
+
+### Switches (leg plan L0, done on this branch 2026-11-26)
+- `Config.WEATHER_ON`, `FRENZIES_ON`, `GOALS_ON`, `BIG_LAKE_ON` and `BOATS_ON`, all `false`, read in `Main.server.luau`. Off means: weather reports clear skies (weather-only fish don't bite), no frenzies, no goals and no Goals button, no Big Lake build (and no casting toward it), the shop hides boats and the server refuses buying one. Boats need the Big Lake switch too. Rarity, trophies and monsters, the 26 species and the journal are always on. `Switches.spec` checks the defaults; `python tools/check.py` passes (137 specs).
+
+### Test first in Studio
+1. Push `src/` into Studio and run `TestRunner.runAll`: everything passes.
+2. Play with every switch off: nothing new shows but tiers, trophies, the 26-card journal; no errors. Then turn on one switch at a time for steps 4 to 7 (Big Lake and boats together).
+3. Catch card shows tier colours; set the player attribute `DebugSizeClass` to `monster` and land one (banner, server message, journal count, stinger).
+4. Goals panel and journal (26 cards, rumours, still scrolls on a phone).
+5. Give coins, buy the dinghy: it waits at slip 1; E to drive (keyboard, touch, gamepad; try it in a local server too, the controls travel through a remote); the buoy line turns it back; cast while stopped in the basin; F to tie up.
+6. Command bar: `require(game.ServerScriptService.Server.WeatherService).force("Fog")` and `require(game.ServerScriptService.Server.FrenzyService).start("Dock")`.
+7. Two-player local server: the Deep-V won't move alone, moves with a rider, the fish finder shows only for the navigator, a blue-water catch lands in both journals.
+
 ## What works now
 A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shore, wait for a bite, hook it, fight it on the bar (hold or click anywhere), land it, sell at the Fish Buyer, buy bait at Bait and Tackle, fill the journal, raise fish in your home pond, buy better rods, and unlock Cedar Creek. Eleven species follow real habits (spot, time of day, bait), fish shadows show where they're active, the day runs 16 minutes, and progress saves to Roblox.
 

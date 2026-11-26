@@ -47,6 +47,19 @@ Config.POND_BREED_CHANCE = 0.25 -- chance per roll for each species with two gro
 Config.POND_OFFLINE_CAP = 8 * 3600 -- most time counted while away
 Config.POND_TICK = 30 -- seconds between pond updates while playing
 
+-- Switches for the second overnight run's features (leg plan L0): each lands switched off
+-- and is turned on and proven by itself. Boats need the Big Lake (its slips and channel).
+-- With weather off the sky stays clear and weather-only fish (Mythics) don't bite.
+Config.WEATHER_ON = false
+Config.FRENZIES_ON = false
+Config.GOALS_ON = false
+Config.BIG_LAKE_ON = false
+Config.BOATS_ON = false
+
+function Config.boatsOn(): boolean
+	return Config.BOATS_ON and Config.BIG_LAKE_ON
+end
+
 -- Saving
 Config.DATASTORE_NAME = "PlayerData_v1"
 Config.AUTOSAVE_SECONDS = 120

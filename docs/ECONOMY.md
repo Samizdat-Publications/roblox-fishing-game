@@ -123,3 +123,70 @@ For the boat plan: a boat priced around 1,500 to 2,000 would be the next goal af
 - Cast reach: the sim assumes every spot can be reached from its shore.
 - When players sell: the sim sells when the bag is full or when the bag would pay for the next goal.
 - Exact random numbers: Python's random numbers, not Roblox's `Random`, so single runs differ but averages should match.
+
+## 2026-11-26 (second overnight run): new species, trophies and monsters
+
+Re-run with nine new species (six reachable today: Bowfin, Lake Sturgeon, Creek Chub, Rock Bass, Brook Trout, Brown Trout), trophy and monster catches (2 and 0.2 percent, rolled at the hook, harder fights), the full 60 runs per player type. Unverified in Studio; numbers come from `tools/econ/sim.py`.
+
+| Player | coins/min before | with new fish, no size classes | with new fish and size classes |
+|---|---|---|---|
+| smart | 78.9 | 87.6 | 90.7 |
+| smart, no pond | 87.0 | 96.9 | 101.3 |
+| dock and worms | 30.5 | 31.0 | 31.4 |
+| random | 31.8 | 35.9 | 36.2 |
+
+- Trophies and monsters add about 3 to 4 percent; the new fish add about 11 percent for a smart player and almost nothing at the dock.
+- The smart player lands at +15 percent, right on the rarity plan's limit. Most of it is the Legendary fish, which reward knowing the right spot, time and bait. To get there the first try was cut: Lake Sturgeon rarity 0.05 to 0.03 and base price 160 to 80, Brown Trout 0.06 to 0.04 and 70 to 50, Bowfin 45 to 30 (the first try put a smart player at 104 coins a minute).
+- The dock kid's curve hasn't moved: Fiberglass Rod in 4 minutes, Creek Pass in 22, Graphite Rod in 54.
+- Not modeled yet: daily goals (25, 60 and 120 coins a day, about 2 minutes of a smart player's fishing and 7 of the dock kid's, so they help the slower player most). Big Lake fish are left out until the Big Lake exists.
+- Compare with sizes off: `python3 tools/econ/sim.py --no-size-classes`.
+
+### Weather, frenzies and Mythics (same night)
+
+- `python3 tools/econ/sim.py --weather` plays with the day plans from `Weather.luau` (a Python port; keep the two in step). Over whole careers it lands within about 2 percent of clear-weather play (smart 87 vs 89 coins a minute, dock 30.7 vs 31.4), so weather reshuffles where to fish more than it changes income.
+- Best possible rate for a smart player with every lure, by weather held all day: overcast, fog and wind within 2 percent of clear; the pre-storm rush +13 percent; storm and cold front -15 percent. In the game the rush and the storm last only a few hours of a storm day, so a session swings less than that. Inside the 20 percent the weather spec allows.
+- A player who doesn't adapt feels it more: a cold front halves most spots (deep water holds up), which is the lesson it teaches.
+- Mythics bite only in their weather (storm, fog, the pre-storm rush), at rarity 0.03; the simulation includes them when `--weather` is on.
+- Feeding frenzies aren't simulated yet. Expected about 1.2 a game day, a minute each, only for Common and Uncommon schooling fish: a nice burst for whoever is there, small next to a session's income.
+
+## Daily goals and feeding frenzies (2026-11-26, second overnight run, unverified in Studio)
+
+From `python3 tools/econ/loop.py`, which reuses the simulator's rules and reads `Frenzy.luau` and `Goals.luau`.
+
+**Daily goals** pay 205 coins a day when all three are done. Against one 25 minute session that is about a quarter more for a new player (dock and worms: 785 coins a session, +26 percent) and under a tenth more for an expert (2,405 coins, +9 percent). So goals mostly help new players catch up, which is what they're for; they're capped per day, so grinding doesn't multiply them. If a new player's first days feel too fast in playtests, trim the hard goal first.
+
+**Frenzies** last 60 s, bites come 4 times as fast and the school fish weigh 3 times as much. Best case, for a kid already standing at the spot:
+
+| Spot | Time | Bait | coins/min normally | during a frenzy | extra per frenzy |
+|---|---|---|---|---|---|
+| Dock | Night | Minnow | 43.0 | 75.6 | 33 |
+| Open water | Dusk | Worm | 40.2 | 86.1 | 46 |
+| Fallen logs | Night | Worm | 37.9 | 93.9 | 56 |
+| Riffle | Day | Minnow | 45.8 | 97.3 | 52 |
+
+About 1.2 frenzies happen per 16 minute game day, so a 25 minute session sees roughly two, and walking there eats part of each minute. That is at most about 100 coins a session (+4 percent for an expert, about +12 percent for a kid who chases them). Frenzies are an exciting moment, not an income source, and the numbers say they can stay as they are.
+
+## The full loop with boats and the Big Lake (2026-11-26, second overnight run, unverified in Studio)
+
+`python3 tools/econ/sim.py --boats` adds the Inflatable Dinghy (1,200) and Deep-V (4,000) after the Graphite Rod, the Big Lake's fish, and boat travel (walk to the slips, then 220 to 370 studs at the boat's top speed). The Deep-V is counted as crewed, and with team catches split evenly each crew member earns what one rod would solo.
+
+Best expected coins per real minute with the Graphite Rod and both lures, kid reflexes:
+
+| Time | Lake and creek, best | Dinghy water, best | Blue water (Deep-V, per person) |
+|---|---|---|---|
+| Dawn | 118 (riffle) | 105 (basin, minnows) | 153 (minnows) |
+| Day | 124 (creek rocks) | 133 (island point, spinner) | 154 (minnows) |
+| Dusk | 133 (deep pool) | 158 (island point, spinner) | 145 (minnows) |
+| Night | 137 (deep pool) | 70 (basin, minnows) | 112 (minnows) |
+
+So the dinghy is a side step, not a big raise: a little better by day and at dusk, worse at dawn and at night. (At first nothing in dinghy water fed after dark, 46 coins a minute; the burbot now comes up into the basin at night, as real burbot do, which lifts it to 70 without changing the best plan at any hour.) Blue water pays about a quarter more than the best home water by day, the reward for crewing up. That matches the design: the boats open new fish and places more than new income.
+
+Minutes of play until each purchase (bought in order, median of runs):
+
+| Player | Fiberglass (150) | Creek Pass (500) | Graphite (900) | Dinghy (1,200) | Deep-V (4,000) |
+|---|---|---|---|---|---|
+| Smart | 5 | 10 | 20 | 31 | 70 |
+| Dock and worms | 4 | 21 | 54 | 95 | 238 |
+| Random | 4 | 20 | 45 | 84 | 215 |
+
+The boat plan aimed for the first boat to take 1 to 2 sessions after the Graphite Rod for a smart player and 3 to 4 at the dock. At 1,200 the dinghy takes about half a session for a smart player and under 2 sessions at the dock, so it comes sooner than planned. Stewart chose to keep 1,200 and 4,000 until playtests (see `docs/DECISIONS.md`), so nothing was changed; if it feels too quick, 1,800 for the dinghy would land it on the plan. The Deep-V lands about right: under 2 sessions after the dinghy for a smart player, around 6 at the dock, and anyone can ride as navigator in a friend's Deep-V before owning one.

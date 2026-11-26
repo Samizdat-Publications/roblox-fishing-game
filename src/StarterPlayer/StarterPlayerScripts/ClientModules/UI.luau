@@ -12,6 +12,10 @@ local FishData = require(Shared.FishData)
 local BaitData = require(Shared.BaitData)
 local RodData = require(Shared.RodData)
 local FishLogic = require(Shared.FishLogic)
+local Rarity = require(Shared.Rarity)
+local BoatData = require(Shared.BoatData)
+local Config = require(Shared.Config)
+local Journal = require(Shared.Journal)
 
 local UI = {}
 
@@ -168,6 +172,10 @@ function UI.init(cbs: { [string]: (...any) -> () })
 	refs.coins = label(top, "Coins", "0 coins", UDim2.fromOffset(150, 44), UDim2.fromOffset(10, 0), 20, C.gold, Enum.Font.GothamBold)
 	refs.coins.TextXAlignment = Enum.TextXAlignment.Left
 	refs.clock = label(top, "Clock", "7:00 AM  Dawn", UDim2.fromOffset(200, 44), UDim2.fromOffset(180, 0), 20)
+	refs.clock.TextScaled = true -- room for the weather after the time
+	local clockMax = Instance.new("UITextSizeConstraint")
+	clockMax.MaxTextSize = 20
+	clockMax.Parent = refs.clock
 	refs.bag = label(top, "Bag", "Bag: 0", UDim2.fromOffset(170, 44), UDim2.fromOffset(380, 0), 18, C.dim)
 	refs.bag.TextXAlignment = Enum.TextXAlignment.Right
 
@@ -182,6 +190,31 @@ function UI.init(cbs: { [string]: (...any) -> () })
 			callbacks.toggleJournal()
 		end
 	end)
+
+	-- Daily goals: a button under the journal and a small list beside it.
+	-- UNVERIFIED in Studio (2026-11-26).
+	refs.goalsBtn = button(gui, "GoalsButton", "Goals", UDim2.fromOffset(190, 50), UDim2.new(0, 12, 0.5, 60), C.panel2, function()
+		refs.goalsBox.Visible = not refs.goalsBox.Visible
+	end)
+	local goalsBox = frame(gui, "Goals", UDim2.fromOffset(330, 150), UDim2.new(0, 212, 0.5, -60), C.panel, 0.15)
+	corner(goalsBox)
+	pad(goalsBox, 10)
+	goalsBox.Visible = false
+	local goalsList = Instance.new("UIListLayout")
+	goalsList.Padding = UDim.new(0, 4)
+	goalsList.SortOrder = Enum.SortOrder.LayoutOrder
+	goalsList.Parent = goalsBox
+	refs.goalsTitle = label(goalsBox, "Title", "Today's goals", UDim2.new(1, 0, 0, 24), UDim2.new(), 18, C.gold, Enum.Font.GothamBold)
+	refs.goalsTitle.TextXAlignment = Enum.TextXAlignment.Left
+	refs.goalLines = {}
+	for i = 1, 3 do
+		local l = label(goalsBox, "Goal" .. i, "", UDim2.new(1, 0, 0, 34), UDim2.new(), 15, C.text)
+		l.LayoutOrder = i
+		l.TextXAlignment = Enum.TextXAlignment.Left
+		l.TextWrapped = true
+		refs.goalLines[i] = l
+	end
+	refs.goalsBox = goalsBox
 
 	-- Status line and power meter (bottom center)
 	refs.status = label(gui, "Status", "", UDim2.fromOffset(640, 40), UDim2.new(0.5, -320, 1, -150), 22, C.text, Enum.Font.GothamBold)
@@ -260,6 +293,10 @@ function UI.init(cbs: { [string]: (...any) -> () })
 	refs.cardBody = label(card, "Body", "", UDim2.new(1, 0, 0, 60), UDim2.fromOffset(0, 38), 19, C.text)
 	refs.cardNote = label(card, "Note", "", UDim2.new(1, 0, 0, 70), UDim2.fromOffset(0, 100), 16, C.dim)
 	refs.card = card
+	refs.cardStroke = Instance.new("UIStroke")
+	refs.cardStroke.Thickness = 3
+	refs.cardStroke.Transparency = 0.1
+	refs.cardStroke.Parent = card
 
 	-- Big touch Fish button, left of Roblox's jump button. Hold and release like a mouse button.
 	if UserInputService.TouchEnabled then
@@ -307,7 +344,8 @@ function UI.init(cbs: { [string]: (...any) -> () })
 end
 
 function UI.setClock(clock: number)
-	refs.clock.Text = clockText(clock) .. "  " .. FishLogic.periodFromClock(clock)
+	local weather = workspace:GetAttribute("WeatherName")
+	refs.clock.Text = clockText(clock) .. "  " .. FishLogic.periodFromClock(clock) .. (if type(weather) == "string" and weather ~= "Clear" then ", " .. weather else "")
 end
 
 function UI.setState(state: any)
@@ -315,6 +353,25 @@ function UI.setState(state: any)
 	refs.coins.Text = string.format("%d coins", state.coins)
 	refs.bag.Text = string.format("Bag: %d fish (%d)", state.bagCount, state.bagValue)
 	refs.baitBtn.Text = baitLabel(state)
+	local goals = state.goals or {}
+	local doneCount = 0
+	for i, l in refs.goalLines do
+		local g = goals[i]
+		if g then
+			if g.done then
+				doneCount += 1
+			end
+			l.Text = string.format("%s %s  (%d/%d, %d coins)", if g.done then "[done]" else "-", g.text, g.progress, g.target, g.reward)
+			l.TextColor3 = if g.done then C.green else C.text
+		else
+			l.Text = ""
+		end
+	end
+	refs.goalsBtn.Text = string.format("Goals %d/%d", doneCount, #goals)
+	refs.goalsBtn.Visible = #goals > 0 -- no goals while they're switched off
+	if #goals == 0 then
+		refs.goalsBox.Visible = false
+	end
 	if openPanel == "Shop" then
 		UI.refreshShop()
 	elseif openPanel == "Journal" then
@@ -452,8 +509,16 @@ end
 
 function UI.catchCard(payload: any)
 	local f = payload.fish
-	refs.cardTitle.Text = (if payload.first then "New species! " else "") .. f.name
-	refs.cardBody.Text = string.format("%.1f cm, %.2f kg. Worth %d coins.%s", f.cm, f.kg, f.price, if payload.best then "\nPersonal best!" else "")
+	-- Rarity: the tier colour on the title and border, and a banner for trophies and monsters.
+	-- UNVERIFIED in Studio (rarity plan Task 3, 2026-11-26).
+	local tier = payload.tier or Rarity.of(FishData.byId[f.id])
+	local color = Rarity.colorAt(tier, os.clock())
+	local class = Rarity.sizeClassOf(f)
+	local banner = if class == "monster" then "MONSTER! " elseif class == "trophy" then "TROPHY! " else ""
+	refs.cardTitle.Text = banner .. (if payload.first then "New species! " else "") .. f.name
+	refs.cardTitle.TextColor3 = color
+	refs.cardStroke.Color = color
+	refs.cardBody.Text = string.format("%s. %.1f cm, %.2f kg. Worth %d coins.%s", (Rarity.byId[tier] or Rarity.byId.Common).name, f.cm, f.kg, f.price, if payload.best then "\nPersonal best!" else "")
 	refs.cardNote.Text = if payload.first then ("Journal: " .. payload.habit) else ("Caught at " .. (FishLogic.SPOT_NAMES[f.spot] or f.spot) .. " on " .. ((BaitData.byId[f.bait] and BaitData.byId[f.bait].name) or f.bait) .. ".")
 	refs.card.Visible = true
 	local token = os.clock()
@@ -543,6 +608,38 @@ function UI.buildShop()
 		end)
 		refs.rodRows[r.id] = btn
 	end
+	-- Boats: bought once; the chosen one waits at your slip by the dock. UNVERIFIED in Studio.
+	local boatHeader = label(scroll, "BoatsHeader", "Boats", UDim2.new(1, -10, 0, 30), UDim2.new(), 20, C.gold, Enum.Font.GothamBlack)
+	boatHeader.TextXAlignment = Enum.TextXAlignment.Left
+	boatHeader.LayoutOrder = 200
+	refs.boatRows = {}
+	boatHeader.Visible = Config.boatsOn()
+	for i, b in (if Config.boatsOn() then BoatData.list else {}) do
+		local row = frame(scroll, "Boat_" .. b.id, UDim2.new(1, -10, 0, 84), UDim2.new(), C.panel2, 0.1)
+		row.LayoutOrder = 200 + i
+		corner(row, 10)
+		local swatch = frame(row, "Swatch", UDim2.fromOffset(6, 64), UDim2.fromOffset(6, 10), b.color, 0)
+		corner(swatch, 3)
+		local title = b.name .. (if b.crew > 1 then " (for two players)" else "")
+		label(row, "Name", title, UDim2.fromOffset(320, 28), UDim2.fromOffset(18, 6), 20, C.text, Enum.Font.GothamBold).TextXAlignment = Enum.TextXAlignment.Left
+		local blurb = label(row, "Blurb", b.blurb, UDim2.fromOffset(330, 48), UDim2.fromOffset(18, 32), 14, C.dim)
+		blurb.TextXAlignment = Enum.TextXAlignment.Left
+		blurb.TextYAlignment = Enum.TextYAlignment.Top
+		local btn = button(row, "Buy", "", UDim2.fromOffset(150, 50), UDim2.new(1, -162, 0, 17), C.blue, function()
+			local st = lastState
+			if not st then
+				return
+			end
+			if st.boats and st.boats[b.id] then
+				if callbacks.chooseBoat then
+					callbacks.chooseBoat(b.id)
+				end
+			elseif callbacks.buyBoat then
+				callbacks.buyBoat(b.id)
+			end
+		end)
+		refs.boatRows[b.id] = btn
+	end
 	refs.shopHint = label(p, "Hint", "", UDim2.new(1, -24, 0, 40), UDim2.new(0, 12, 1, -48), 15, C.dim)
 	refs.shop = p
 end
@@ -580,7 +677,24 @@ function UI.refreshShop()
 			btn.BackgroundColor3 = if s.coins >= r.price then C.blue else C.panel
 		end
 	end
-	refs.shopHint.Text = string.format("You have %d coins. The right bait beats the expensive bait.", s.coins)
+	for _, b in BoatData.list do
+		local btn = refs.boatRows and refs.boatRows[b.id]
+		if btn then
+			local owned = s.boats and s.boats[b.id]
+			if s.boat == b.id then
+				btn.Text = "At your slip"
+				btn.BackgroundColor3 = C.panel
+			elseif owned then
+				btn.Text = "Use this boat"
+				btn.BackgroundColor3 = C.green
+			else
+				btn.Text = b.price .. " coins"
+				btn.BackgroundColor3 = if s.coins >= b.price then C.blue else C.panel
+			end
+		end
+	end
+	local forecast = workspace:GetAttribute("Forecast")
+	refs.shopHint.Text = string.format("You have %d coins. %s", s.coins, if type(forecast) == "string" then "Forecast: " .. forecast else "The right bait beats the expensive bait.")
 end
 
 function UI.buildJournal()
@@ -627,17 +741,28 @@ function UI.refreshJournal()
 		local count = st.counts[s.id] or 0
 		if best then
 			kinds += 1
-			c.name.Text = s.name
-			c.stats.Text = string.format("Caught %d. Best: %.2f kg, %.1f cm\non %s at %s", count, best.kg, best.cm, (BaitData.byId[best.bait] and BaitData.byId[best.bait].name or best.bait), FishLogic.SPOT_NAMES[best.spot] or best.spot)
+			c.name.Text = s.name .. "  (" .. Rarity.of(s) .. ")"
+			c.name.TextColor3 = Rarity.colorAt(Rarity.of(s), 0)
+			local big = ""
+			local nT, nM = (st.trophies or {})[s.id] or 0, (st.monsters or {})[s.id] or 0
+			if nM > 0 then
+				big = string.format(" %d monster%s!", nM, if nM == 1 then "" else "s")
+			elseif nT > 0 then
+				big = string.format(" %d troph%s.", nT, if nT == 1 then "y" else "ies")
+			end
+			c.stats.Text = string.format("Caught %d.%s Best: %.2f kg, %.1f cm\non %s at %s", count, big, best.kg, best.cm, (BaitData.byId[best.bait] and BaitData.byId[best.bait].name or best.bait), FishLogic.SPOT_NAMES[best.spot] or best.spot)
 			c.habit.Text = s.habit
 		else
-			c.name.Text = "???"
+			-- Not caught yet: show its tier, and a rumour once enough fish are caught overall.
+			c.name.Text = "???  (" .. Rarity.of(s) .. ")"
+			c.name.TextColor3 = Rarity.colorAt(Rarity.of(s), 0)
 			c.stats.Text = "Not caught yet."
-			c.habit.Text = ""
+			c.habit.Text = Journal.rumour(s, st.totalCaught) or "Catch more fish to hear rumours about this one."
 		end
 	end
 	refs.assistBtn.Text = "Reel assist: " .. (if st.assist then "On" else "Off")
-	refs.journalSummary.Text = string.format("%d of %d species found. %d fish caught in all.", kinds, #FishData.list, st.totalCaught)
+	local nextIn = Journal.nextRumourIn(st.totalCaught)
+	refs.journalSummary.Text = string.format("%d of %d species found. %d fish caught in all.%s", kinds, #FishData.list, st.totalCaught, if nextIn > 0 then string.format(" New rumour in %d.", nextIn) else "")
 end
 
 -- From a bite until the fight ends nothing else may take the player's clicks.

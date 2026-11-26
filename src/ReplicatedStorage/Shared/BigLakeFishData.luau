@@ -1,16 +1,14 @@
 --!strict
 -- The Big Lake's fish, reached only by boat. Same shape as FishData entries.
--- UNVERIFIED: written overnight 2026-11-26 without Studio. Kept out of FishData.list on
--- purpose so the journal doesn't show three fish nobody can catch yet; the boat plan
--- (docs/superpowers/plans/2026-11-26-boat.md, Task 5) appends these to FishData.list once
--- the Big Lake's zones exist. The basin and island point are dinghy water; the drop-off is
--- in the blue water, reachable only on the two-person Deep-V boat.
-local Shared = script.Parent
-local FishData = require(Shared.FishData)
-
-local list: { FishData.Species } = {
+-- UNVERIFIED: written overnight 2026-11-26 without Studio. FishData appends these to its
+-- list now that the Big Lake exists in code (BoatWorld, BoatRules). The basin and island
+-- point are dinghy water; the drop-off is in the blue water, reachable only on the
+-- two-person Deep-V boat.
+-- No require of FishData here: FishData appends this list, so requiring it back would loop.
+local list: { any } = {
 	{
 		id = "WhiteBass",
+		tier = "Uncommon",
 		name = "White Bass",
 		spots = { Basin = 1, DropOff = 0.4 },
 		periods = { Dawn = 0.8, Day = 0.6, Dusk = 1, Night = 0.1 },
@@ -28,6 +26,7 @@ local list: { FishData.Species } = {
 	},
 	{
 		id = "LakeTrout",
+		tier = "Epic",
 		name = "Lake Trout",
 		spots = { DropOff = 1, Basin = 0.3 },
 		periods = { Dawn = 1, Day = 0.7, Dusk = 0.5, Night = 0.1 },
@@ -45,6 +44,7 @@ local list: { FishData.Species } = {
 	},
 	{
 		id = "Muskellunge",
+		tier = "Legendary",
 		name = "Muskellunge",
 		spots = { IslandPoint = 1, DropOff = 0.3 },
 		periods = { Dawn = 0.5, Day = 0.8, Dusk = 1, Night = 0.1 },
@@ -60,6 +60,79 @@ local list: { FishData.Species } = {
 		fightNote = "Huge, wild runs.",
 		bite = "slam",
 	},
+	{
+		id = "LakeWhitefish",
+		tier = "Uncommon",
+		name = "Lake Whitefish",
+		spots = { DropOff = 1, Basin = 0.5 },
+		periods = { Dawn = 1, Day = 0.7, Dusk = 0.4, Night = 0.1 },
+		baits = { Worm = 0.8, Minnow = 0.6 },
+		rarity = 0.8,
+		minCm = 30,
+		maxCm = 60,
+		weightCoef = 1.1e-5,
+		basePrice = 16,
+		color = Color3.fromRGB(210, 210, 200),
+		fight = { zone = 0.28, speed = 0.8, dart = 0.9, range = 0.4, sink = 0.4, heavy = 0.25, gain = 0.22, loss = 0.15, style = "steady" },
+		habit = "Schools over the drop-off in the cool early hours. Worms or minnows.",
+		fightNote = "Steady, dogged pulls.",
+		bite = "tap",
+	},
+	{
+		id = "FreshwaterDrum",
+		tier = "Uncommon",
+		name = "Freshwater Drum",
+		spots = { Basin = 1, IslandPoint = 0.4 },
+		periods = { Dawn = 0.5, Day = 1, Dusk = 0.8, Night = 0.3 },
+		baits = { Worm = 1, Stinkbait = 0.7, Minnow = 0.4 },
+		rarity = 0.7,
+		minCm = 25,
+		maxCm = 60,
+		weightCoef = 1.56e-5,
+		basePrice = 15,
+		color = Color3.fromRGB(170, 175, 180),
+		fight = { zone = 0.27, speed = 0.7, dart = 0.8, range = 0.45, sink = 0.6, heavy = 0.4, gain = 0.2, loss = 0.15, style = "diver" },
+		habit = "Grunts along the basin floor by day. Worms or stinkbait.",
+		fightNote = "Heavy, sideways pulls.",
+		bite = "pull",
+	},
+	{
+		id = "Burbot",
+		tier = "Epic",
+		name = "Burbot",
+		spots = { DropOff = 1, Basin = 0.4 }, -- at night it comes up out of the deep to feed
+		periods = { Dawn = 0.05, Day = 0.02, Dusk = 0.3, Night = 1 },
+		baits = { Minnow = 1, Stinkbait = 0.8 },
+		rarity = 0.2,
+		minCm = 35,
+		maxCm = 80,
+		weightCoef = 8e-6,
+		basePrice = 35,
+		color = Color3.fromRGB(105, 95, 60),
+		fight = { zone = 0.25, speed = 0.6, dart = 0.6, range = 0.5, sink = 0.7, heavy = 0.5, gain = 0.16, loss = 0.13, style = "diver" },
+		habit = "The only freshwater cod, it hunts the cold drop-off at night and wanders up into the basin. Minnows or stinkbait.",
+		fightNote = "Eel-like twisting.",
+		bite = "pull",
+	},
+	{
+		id = "TigerMuskie",
+		tier = "Mythic",
+		name = "Tiger Muskie",
+		spots = { IslandPoint = 1 },
+		periods = { Day = 0.6, Dusk = 1 },
+		baits = { Spinner = 1 },
+		weather = { PreStorm = 1 },
+		rarity = 0.03,
+		minCm = 80,
+		maxCm = 140,
+		weightCoef = 8.3e-6,
+		basePrice = 200,
+		color = Color3.fromRGB(170, 160, 90),
+		fight = { zone = 0.22, speed = 1.6, dart = 1.1, range = 0.9, sink = 0.2, heavy = 0.6, gain = 0.14, loss = 0.18, style = "shaker" },
+		habit = "A striped cross of pike and muskie that hunts the island point in the feeding rush before a storm. Spinners.",
+		fightNote = "Savage head shakes.",
+		bite = "slam",
+	},
 }
 
 -- Spot names for the journal and hints (merge into FishLogic.SPOT_NAMES with the fish).
@@ -69,7 +142,7 @@ local spotNames = {
 	IslandPoint = "the island point",
 }
 
-local byId: { [string]: FishData.Species } = {}
+local byId: { [string]: any } = {}
 for _, s in list do
 	byId[s.id] = s
 end
