@@ -26,7 +26,6 @@ local HINT_GAP = 3 -- seconds between repeats of the same hint to one player
 
 type Movers = {
 	lv: LinearVelocity,
-	av: AngularVelocity,
 	ao: AlignOrientation,
 	ap: AlignPosition,
 }
@@ -44,6 +43,7 @@ type Boat = {
 	tiePrompt: ProximityPrompt,
 	movers: Movers,
 	motion: BoatLogic.Motion,
+	yaw: number, -- heading in radians around +Y; the AlignOrientation holds the hull to it
 	lastGood: Vector3,
 	checkTimer: number,
 	emptyFor: number,
@@ -100,6 +100,7 @@ local function seat(model: Model, hull: BasePart, class: string, name: string, o
 	s.Color = Color3.fromRGB(60, 60, 65)
 	s.TopSurface = Enum.SurfaceType.Smooth
 	s.CanCollide = false
+	s.CanTouch = false -- only the prompts seat people (no sitting by bumping into it)
 	s.Massless = true
 	if class == "VehicleSeat" then
 		-- Read for input only: its own drive works through hinge motors, which a hull hasn't.
@@ -182,13 +183,6 @@ local function makeMovers(hull: BasePart): Movers
 	local center = Instance.new("Attachment")
 	center.Name = "Center"
 	center.Parent = hull
-	-- AlignOrientation in one-attachment mode aligns the attachment's primary axis (its X);
-	-- point that up so only "stay upright" is held and yaw stays free.
-	local up = Instance.new("Attachment")
-	up.Name = "Up"
-	up.Axis = Vector3.new(0, 1, 0)
-	up.SecondaryAxis = Vector3.new(1, 0, 0)
-	up.Parent = hull
 
 	local lv = Instance.new("LinearVelocity")
 	lv.Attachment0 = center
@@ -200,18 +194,13 @@ local function makeMovers(hull: BasePart): Movers
 	lv.MaxForce = 1e6
 	lv.Parent = hull
 
-	local av = Instance.new("AngularVelocity")
-	av.Attachment0 = center
-	av.RelativeTo = Enum.ActuatorRelativeTo.World
-	av.AngularVelocity = Vector3.zero
-	av.MaxTorque = 1e6
-	av.Parent = hull
-
+	-- One constraint holds the hull upright and on its heading; the server turns the heading
+	-- each frame (so nothing fights it, and a bump that tilts the hull rights itself).
 	local ao = Instance.new("AlignOrientation")
 	ao.Mode = Enum.OrientationAlignmentMode.OneAttachment
-	ao.AlignType = Enum.AlignType.PrimaryAxisParallel
-	ao.Attachment0 = up
-	ao.PrimaryAxis = Vector3.new(0, 1, 0)
+	ao.AlignType = Enum.AlignType.AllAxes
+	ao.Attachment0 = center
+	ao.CFrame = CFrame.fromOrientation(0, 0, 0)
 	ao.MaxTorque = 1e6
 	ao.Responsiveness = 30
 	ao.Parent = hull
@@ -225,7 +214,7 @@ local function makeMovers(hull: BasePart): Movers
 	ap.Responsiveness = 25
 	ap.Parent = hull
 
-	return { lv = lv, av = av, ao = ao, ap = ap }
+	return { lv = lv, ao = ao, ap = ap }
 end
 
 local function occupantPlayer(s: BasePart?): Player?
@@ -257,13 +246,17 @@ end
 local function stop(boat: Boat)
 	boat.motion = { speed = 0, yawRate = 0 }
 	boat.movers.lv.PlaneVelocity = Vector2.zero
-	boat.movers.av.AngularVelocity = Vector3.zero
 	boat.hull.AssemblyLinearVelocity = Vector3.zero
 	boat.hull.AssemblyAngularVelocity = Vector3.zero
 end
 
+-- Move the boat so its water line sits at cf (cf's Y is ignored: always the water level).
 local function moveTo(boat: Boat, cf: CFrame)
-	boat.model:PivotTo(cf * CFrame.new(0, boat.hull.Size.Y / 2 - 0.4, 0))
+	local flat = CFrame.new(cf.Position.X, BoatRules.WATER_Y, cf.Position.Z) * cf.Rotation
+	boat.model:PivotTo(flat * CFrame.new(0, boat.hull.Size.Y / 2 - 0.4, 0))
+	local look = cf.LookVector
+	boat.yaw = math.atan2(-look.X, -look.Z)
+	boat.movers.ao.CFrame = CFrame.fromOrientation(0, boat.yaw, 0)
 	stop(boat)
 end
 
@@ -314,7 +307,7 @@ end
 local function fillWaiting()
 	for _, p in Players:GetPlayers() do
 		local data = PlayerData.get(p)
-		if data and not boats[p] and data.boat ~= "" then
+		if p.Parent and data and not boats[p] and data.boat ~= "" then
 			spawnFor(p)
 		end
 	end
@@ -350,6 +343,7 @@ function spawnFor(player: Player)
 		tiePrompt = prompt(helm, "TiePrompt", "Tie up", "Boat slip " .. slip),
 		movers = makeMovers(hull),
 		motion = { speed = 0, yawRate = 0 },
+		yaw = 0,
 		lastGood = hull.Position,
 		checkTimer = 0,
 		emptyFor = 0,
@@ -365,7 +359,8 @@ function spawnFor(player: Player)
 		if who ~= player or helm.Occupant then
 			return
 		end
-		if boat.docked and WeatherService.isStorm() then
+		local slipPos = BoatRules.slipCFrame(boat.slip, boat.id).Position
+		if WeatherService.isStorm() and (boat.docked or BoatLogic.canDock(boat.hull.Position, slipPos, boat.motion.speed)) then
 			hint(who, "Lightning! Fishing from shore is safer. Boats stay in until the storm passes.")
 			return
 		end
@@ -382,8 +377,7 @@ function spawnFor(player: Player)
 			end
 			local hum = who.Character and who.Character:FindFirstChildOfClass("Humanoid")
 			if hum and hum.Health > 0 and not hum.Sit then
-				castOff(boat)
-				nav:Sit(hum)
+				nav:Sit(hum) -- a rider doesn't cast off: only the helm does
 			end
 		end)
 	end
@@ -403,8 +397,20 @@ function spawnFor(player: Player)
 	end)
 
 	local function onSeatChanged(s: BasePart, prompt: ProximityPrompt?, ownerOnly: boolean)
+		local died: RBXScriptConnection? = nil
 		(s :: any):GetPropertyChangedSignal("Occupant"):Connect(function()
 			local occ = (s :: any).Occupant :: Humanoid?
+			if died then
+				died:Disconnect() -- only the current occupant's death counts
+				died = nil
+			end
+			-- A seat weld joins the character to the boat and leaving splits it off again:
+			-- keep the server as the boat's physics owner either way.
+			if not boat.docked then
+				pcall(function()
+					boat.hull:SetNetworkOwner(nil)
+				end)
+			end
 			if prompt then
 				prompt.Enabled = occ == nil
 			end
@@ -420,12 +426,12 @@ function spawnFor(player: Player)
 				end
 				return
 			end
-			castOff(boat)
+			if ownerOnly then
+				castOff(boat)
+			end
 			boat.emptyFor = 0
 			-- Dying or resetting at the helm sends the boat home.
-			local died
 			died = occ.Died:Connect(function()
-				died:Disconnect()
 				if boats[player] == boat and ownerOnly then
 					task.delay(1, function()
 						if boats[player] == boat and not helm.Occupant then
@@ -461,6 +467,10 @@ local function step(dt: number)
 		local throttle, steer = 0, 0
 		if boat.helm.Occupant then
 			throttle, steer = boat.helm.ThrottleFloat, boat.helm.SteerFloat
+			-- Fallback if the float inputs don't reach the server: the whole-number ones.
+			if throttle == 0 and steer == 0 then
+				throttle, steer = boat.helm.Throttle, boat.helm.Steer
+			end
 		end
 		local okCrew, crewMsg = BoatLogic.canDrive(boat.id, n)
 		if not okCrew then
@@ -474,7 +484,8 @@ local function step(dt: number)
 		local vx, vz = BoatRules.planeVelocity(boat.hull.CFrame.LookVector, boat.motion.speed)
 		local dx, dz = BoatRules.drift(boat.id, pos, n)
 		boat.movers.lv.PlaneVelocity = Vector2.new(vx + dx, vz + dz)
-		boat.movers.av.AngularVelocity = Vector3.new(0, BoatRules.spinY(boat.motion.yawRate), 0)
+		boat.yaw += BoatRules.spinY(boat.motion.yawRate) * dt
+		boat.movers.ao.CFrame = CFrame.fromOrientation(0, boat.yaw, 0)
 		boat.movers.ap.Position = Vector3.new(pos.X, BoatRules.WATER_Y + boat.hull.Size.Y / 2 - 0.4, pos.Z)
 
 		boat.checkTimer += dt
@@ -568,6 +579,10 @@ function BoatService.start()
 		if not data or type(boatId) ~= "string" then
 			return false, "That boat isn't for sale."
 		end
+		local current = boats[player]
+		if current and not current.docked and (current.helm.Occupant or (current.nav and current.nav.Occupant)) then
+			return false, "Tie up your boat before buying another."
+		end
 		local ok, msg = BoatLogic.buy(data, boatId)
 		if ok then
 			data.boat = boatId -- the new boat waits at your slip
@@ -620,7 +635,7 @@ function BoatService.start()
 	Players.PlayerRemoving:Connect(function(p)
 		despawn(p)
 		lastHint[p] = nil
-		fillWaiting()
+		task.defer(fillWaiting) -- after the leaving player is gone, so their boat isn't rebuilt
 	end)
 	RunService.Heartbeat:Connect(step)
 end

@@ -90,6 +90,11 @@ end
 -- Run `fn(player, data)` right after each player's data loads.
 function PlayerData.onLoad(fn: (Player, Inventory.Data) -> ())
 	table.insert(loadListeners, fn)
+	-- Players who loaded before this listener was added (memory-only mode loads without
+	-- waiting) still get it. UNVERIFIED in Studio (2026-11-26).
+	for p, data in loaded do
+		task.spawn(fn, p, data)
+	end
 end
 
 local function save(player: Player)

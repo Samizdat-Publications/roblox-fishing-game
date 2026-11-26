@@ -459,7 +459,13 @@ local function onFightResult(player: Player, won: any)
 			if mateData then
 				local copy = table.clone(fish)
 				copy.price = shares[i + 1]
+				local full = Inventory.bagFull(mateData)
 				Inventory.recordCatch(mateData, copy)
+				if full then
+					-- No room in their bag: the journal still gets it, the share is paid now.
+					table.remove(mateData.bag)
+					mateData.coins += copy.price
+				end
 				GoalService.onCatch(mate, mateData, copy)
 				PlayerData.changed(mate)
 				toast(mate, string.format("Team catch! %s landed a %s. Your share: %d coins.", player.DisplayName, species.name, copy.price))
