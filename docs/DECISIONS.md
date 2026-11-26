@@ -51,3 +51,9 @@ Notable design and build calls, newest last.
 - **Players who already bought the Creek Pass at 250 keep it.** Prices only affect new purchases.
 - **Fish fight in six styles, chosen from how the real fish fight.** Trout and smallmouth jump, largemouth make runs, catfish and carp bulldog to the bottom, pike and muskie shake their heads, panfish dart, perch and walleye wander. A style only changes how the fish moves on the bar; zone size, gain and loss stay per species, so the economy numbers hold. The test bot that tracks the fish still beats every species, so no style is unfair.
 - **Bites have four shapes, and none shortens the hook window below 1.8 s.** Nibble, tap, slam, pull. A pull (catfish, carp) gives a longer window because the real thing is slow. The window floor keeps it fair for younger players.
+
+## 2026-11-26
+
+- **Boat prices stay for now** (Stewart): Inflatable Dinghy 1,200 coins, Deep-V 4,000. Retune after playtests.
+- **StyLua:** reformat once, after PR #1 is merged and nothing else is in flight, in a commit of its own ("Format with StyLua, no behavior changes"), pushed into Studio with checksums and tests confirmed. Then the format check in `.github/workflows/checks.yml` becomes enforcing instead of report-only, and Selene's error (and its warnings, if cheap) get fixed.
+- **Art house style:** Duet's chunky low-poly, flat-colour, vertex-coloured look. Blender by script (`art/scripts/`) for all props, environment, fish, rods and boats; Meshy only for one-off organic shapes, decimated and recoloured to the palette in Blender; UI icons rendered from the same models; no PixelLab or CadQuery for in-game art. The palette lives in `art/scripts/palette.py`. Details in `art/README.md`.

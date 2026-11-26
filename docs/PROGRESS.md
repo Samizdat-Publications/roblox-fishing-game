@@ -132,11 +132,11 @@ Nothing below has been seen in Studio. All of it is on the branch `claude/overni
 4. Fight a trout, a bass, a catfish and a pike with DebugAutoFish off: each should move differently on the bar.
 5. Then pick up the boat plan at Task 1 (the dinghy).
 
-### Questions only Stewart can answer
-- Dinghy 1,200 coins and Deep-V 4,000: right ballpark? (A smart player earns about 1,000 coins in 20 minutes after the economy changes.)
-- Do the six fight styles feel right once you play them? Each has one or two numbers to tune.
-- Reformat the code with StyLua (one big formatting commit), or leave the format check as report only?
-- Is the low-poly, flat-colour look of the models the right direction before more are made?
+### Questions for Stewart (answered 2026-11-26, see `docs/DECISIONS.md`)
+- Boat prices: keep the dinghy at 1,200 and the Deep-V at 4,000, retune after playtests.
+- StyLua: reformat once after PR #1 is merged, in its own commit, then make the format check enforcing.
+- Art look: Duet's chunky low-poly, flat-colour style is the house style (palette in `art/scripts/palette.py`, rules in `art/README.md`).
+- Still open: do the six fight styles feel right once you play them? Each has one or two numbers to tune.
 
 ## What works now
 A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shore, wait for a bite, hook it, fight it on the bar (hold or click anywhere), land it, sell at the Fish Buyer, buy bait at Bait and Tackle, fill the journal, raise fish in your home pond, buy better rods, and unlock Cedar Creek. Eleven species follow real habits (spot, time of day, bait), fish shadows show where they're active, the day runs 16 minutes, and progress saves to Roblox.

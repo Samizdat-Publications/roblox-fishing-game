@@ -17,11 +17,20 @@ Made overnight 2026-11-26 by script in Blender 5.1.2 (the `bpy` module, headless
 
 Unconfirmed: whether Studio shows the baked vertex colours exactly as in the previews (the Importer has an "Ignore Vertex Colors" option, so it reads them; check the first import).
 
+## House style (decided 2026-11-26)
+
+Duet's chunky low-poly, flat-colour, vertex-coloured look is the house style for everything in the game.
+
+- **Blender by script** (`art/scripts/`) is the main tool for all props, environment, fish, rods and boats. Every script takes its colours from `art/scripts/palette.py`; add a colour there before using it.
+- **Meshy** only for one-off complex organic shapes a script can't make well. Always decimate and recolour it in Blender to the same palette before import.
+- **UI icons** (journal fish, bait, rods, boats) are rendered from the same Blender models, so the UI matches the world.
+- **PixelLab and CadQuery are not used** for in-game art, to keep one consistent look.
+
 ## Conventions
 
 - **Units:** 1 Blender unit = 1 stud. Blender is Z up; the exports are Y up, so the model's height is Roblox Y.
 - **Pivot:** bottom centre of each model's bounding box.
-- **Look:** low-poly, chunky, flat colours with light shading, readable on a phone. One shared palette in `scripts/common.py`.
+- **Look:** low-poly, chunky, flat colours with light shading, readable on a phone. One shared palette in `scripts/palette.py`.
 - **Fish scale:** 1 stud = 12 cm, the same scale the catch on the line uses (`FishingService.showCatch`: length in studs = cm / 12). Each fish is built at its species' average length; scale it by caught cm / average cm. Heads point along +X.
 
 ## Rebuild

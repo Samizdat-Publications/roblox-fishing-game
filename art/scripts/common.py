@@ -27,30 +27,8 @@ MANIFEST = MODELS / "manifest.json"
 PREVIEW_PX = 1024
 PREVIEW_SAMPLES = int(os.environ.get("ART_SAMPLES", "48"))
 
-# The house palette: flat colours, readable on a phone.
-PALETTE = {
-    "wood": (124, 92, 60),
-    "darkWood": (88, 62, 40),
-    "plank": (150, 112, 72),
-    "rope": (196, 170, 120),
-    "stone": (140, 140, 135),
-    "darkStone": (105, 105, 102),
-    "moss": (90, 120, 60),
-    "leaf": (70, 130, 55),
-    "pine": (45, 95, 50),
-    "bark": (95, 70, 50),
-    "sell": (230, 180, 60),
-    "shop": (90, 160, 220),
-    "white": (235, 235, 230),
-    "red": (220, 60, 50),
-    "lamp": (255, 230, 170),
-    "metal": (60, 62, 70),
-    "reed": (120, 140, 70),
-    "lily": (70, 140, 70),
-    "pinkFlower": (235, 150, 180),
-    "tub": (70, 100, 150),
-    "worm": (190, 110, 110),
-}
+# The house palette lives in palette.py (no Blender needed to read it).
+from palette import PALETTE  # noqa: E402,F401
 
 
 def srgb_to_linear(c):
