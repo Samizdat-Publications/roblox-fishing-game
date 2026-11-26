@@ -6,7 +6,7 @@ Newest first. The live page with before and after sliders is `docs/making-of/ind
 
 ## Art: The whole lake in our own models
 
-2026-11-26 16:30
+2026-11-26 16:30 · commit `f883e07`
 
 The rest of the art is in: a Fish Buyer stand, a stone rim for the home pond, mossy logs half sunk in the water, a red and white buoy over the deep hole, reed clumps and lily pads in the weed bed, leafy trees round the lake, pines and rocks along Cedar Creek, a new bobber, and every fish hangs on the line as itself. While checking, the whole lake turned out to have been knocked 55 studs sideways and 10 up in Studio, away from its own water; it is back in place. Walking, casting, selling and the pond all work as before.
 
