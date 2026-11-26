@@ -26,7 +26,18 @@ The critic scored concept images, so the scores compare the styles with each oth
 
 Dropped before generating: pixel or voxel art (fights Roblox's smooth terrain and avatars), anime or painterly brush-stroke looks (need screen shaders Roblox doesn't have), and full photoreal (too heavy for phones and clashes with Roblox avatars; "Real-ish" is the most realistic option that still runs).
 
-## Recommendation
+## Decision (2026-11-26): Real-ish
+
+Stewart looked at the voting page and picked **Real-ish**, the lake shot above all. Claude's case against it was weaker than the scores made it look:
+- The critic gap is small: 7.3 against 8.2, from one model judging AI concept art.
+- Its biggest knock was phone readability. Every style shares that problem, and the fix is the same in all of them: a glowing bobber and line.
+- The heavy cost in the first note assumed custom textures on every prop. On a second look, the images are simple chunky shapes with realistic materials, and Roblox's built-in materials cover most of that.
+
+The cheaper build order and the phone proof that comes first are in [pbr/README.md](pbr/README.md). Liam can still vote on the page; if he falls for another style, that is a conversation to have, not a rebuild.
+
+The original recommendation follows for the record.
+
+## Recommendation (before the decision)
 
 **Build on Golden Hour Low-Poly, and borrow from three others.** It tied for the top score (8.2), it is what the house style already is, it needs no change to the Blender pipeline, it has the lowest phone risk, and most of its work is the L5 beauty pass the leg plan already schedules (light, water, shoreline, a horizon full of trees).
 
