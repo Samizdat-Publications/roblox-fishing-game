@@ -1,0 +1,106 @@
+<title>Five Lake Looks</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: one long column of looks; each look is a wide hero image, three small views and a score strip. */
+:root {
+  --bg: #eef4f3;
+  --panel: #ffffff;
+  --fg: #12312f;
+  --muted: #4f6b68;
+  --line: #cfdedb;
+  --accent: #0f7f78;
+  --sun: #c7861d;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1b1d; --panel: #13272a; --fg: #e4f0ee; --muted: #9db6b2; --line: #24403f; --accent: #46c2b6; --sun: #e6b04f; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1b1d; --panel: #13272a; --fg: #e4f0ee; --muted: #9db6b2; --line: #24403f; --accent: #46c2b6; --sun: #e6b04f; color-scheme: dark;
+}
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 17px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+main { max-width: 1080px; margin: 0 auto; display: grid; gap: 56px; }
+header { display: grid; gap: 12px; max-width: 68ch; }
+h1 { font-family: var(--display); font-weight: 800; font-size: clamp(2.1rem, 5vw, 3.3rem); line-height: 1.05; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.2rem); margin: 0; line-height: 1.1; text-wrap: balance; }
+p { margin: 0; }
+.lede { color: var(--muted); }
+.eyebrow { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+.look { display: grid; gap: 16px; }
+.look-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 20px; }
+.look-head .line { color: var(--muted); max-width: 60ch; }
+.score { font-family: var(--display); font-weight: 800; font-size: 2rem; color: var(--accent); font-variant-numeric: tabular-nums; }
+.score small { font-size: 0.9rem; color: var(--muted); font-weight: 600; }
+figure { margin: 0; }
+.hero img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 10px; display: block; background: var(--line); }
+.views { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.views img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; display: block; background: var(--line); }
+figcaption { font-size: 0.82rem; color: var(--muted); margin-top: 4px; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px 28px; }
+.facts > div { min-width: 0; }
+.facts h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 4px; }
+.facts ul { margin: 0; padding-left: 1.1em; }
+.bars { display: grid; grid-template-columns: max-content 1fr max-content; gap: 6px 10px; align-items: center; font-size: 0.9rem; }
+.bar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--accent); }
+.bars .num { font-variant-numeric: tabular-nums; color: var(--muted); }
+.made-up { color: var(--muted); font-size: 0.9rem; }
+.pick { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: grid; gap: 10px; max-width: 68ch; }
+.pick strong { color: var(--sun); }
+hr { border: 0; border-top: 1px solid var(--line); margin: 0; }
+@media (max-width: 560px) { .views { grid-template-columns: 1fr; } }
+</style>
+
+<main>
+  <header>
+    <span class="eyebrow">Beauty pass, L5 · pick one</span>
+    <h1>Five lake looks I can really build</h1>
+    <p class="lede">Each look is today's game with new light, real water, natural shores and hills around the lake. They all use the models already in the game (dock, stands, pines, reeds, logs). Pictures by Gemini's image model from real screenshots; scores by Gemini 4 Neon, out of 10. The pictures invent a few details, listed under each look, so read them as the mood to aim for.</p>
+  </header>
+
+  <div class="pick" id="pick">
+    <p>Loading the looks.</p>
+  </div>
+
+  <div id="looks"></div>
+</main>
+
+<script>
+const BASE_NAMES = { creek: "Cedar Creek", logs: "The logs", bite: "A bite at night" };
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function bars(c) {
+  const rows = [["Beauty", c.beauty], ["Mood", c.mood], ["Easy to see on a phone", c.readability], ["Suits kids", c.kids_fit], ["Buildable", c.buildable]];
+  return '<div class="bars">' + rows.map(([k, v]) => `<span>${k}</span><span class="bar"><i style="width:${(v / 10) * 100}%"></i></span><span class="num">${v}</span>`).join("") + "</div>";
+}
+fetch("looks.json").then(r => r.json()).then(data => {
+  const looks = data.looks;
+  document.getElementById("pick").innerHTML = data.pick;
+  document.getElementById("looks").innerHTML = looks.map(l => `
+    <section class="look" id="${esc(l.id)}">
+      <div class="look-head">
+        <div><h2>${esc(l.name)}</h2><p class="line">${esc(l.line)}</p></div>
+        <div class="score">${l.critic.overall}<small> / 10</small></div>
+      </div>
+      <figure class="hero"><img src="looks/${l.id}/lake.jpg" alt="${esc(l.name)}: the whole lake from above"></figure>
+      <div class="views">
+        ${["creek", "logs", "bite"].map(b => `<figure><img src="looks/${l.id}/${b}.jpg" alt="${esc(l.name)}: ${BASE_NAMES[b]}" loading="lazy"><figcaption>${BASE_NAMES[b]}</figcaption></figure>`).join("")}
+      </div>
+      <div class="facts">
+        <div><h3>Critic</h3>${bars(l.critic)}<p style="margin-top:8px">${esc(l.critic.one_line)}</p></div>
+        <div><h3>What it takes</h3><p>${esc(l.build)}</p><h3 style="margin-top:12px">Watch out for</h3><ul>${l.critic.risks.slice(0, 3).map(r => `<li>${esc(r)}</li>`).join("")}</ul></div>
+        <div><h3>The pictures made up</h3><p class="made-up">${l.critic.made_up.slice(0, 4).map(esc).join(". ")}.</p></div>
+      </div>
+      <hr>
+    </section>`).join("");
+}).catch(() => {
+  document.getElementById("pick").innerHTML = "<p>The looks didn't load. Reload the page to try again.</p>";
+});
+</script>
