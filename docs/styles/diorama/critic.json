@@ -1,0 +1,29 @@
+{
+  "beauty": 8.6,
+  "mood": 8.9,
+  "readability": 6.8,
+  "kids_fit": 8.5,
+  "overall": 8.2,
+  "one_line": "It feels like playing inside a cozy, glowing toy fishing park built right on your bedroom table.",
+  "strengths": [
+    "Warm sunlight, glowing dock lanterns, and soft shadows create an inviting atmosphere that makes players want to linger.",
+    "Chunky wooden docks, striped tackle stalls, and stone ponds look handmade and toy-like, giving the game a distinct identity on Roblox.",
+    "The night scene adds real mystery and gentle tension, proving this cozy style can still feel exciting when waiting for a bite.",
+    "Classic blocky Roblox avatars blend naturally into the miniature world instead of looking out of place."
+  ],
+  "risks": [
+    "Strong tilt-shift blur looks great in stills, but Roblox depth-of-field effects can hurt phone performance and shrink the usable view on small screens.",
+    "Small bobbers and thin fishing lines get lost against busy grass, bright water ripples, and dark night water on mobile displays.",
+    "Dense blades of grass, soft global lighting, and clear pebble-bottom water are hard to match on budget phones without causing lag or looking plastic.",
+    "Zoomed-out angles reveal flat empty ground beyond the trees, which breaks the handmade diorama feeling unless edges are carefully disguised."
+  ],
+  "weakest_image": "lake.jpg",
+  "model": "gemini-4-neon",
+  "images": [
+    "creek.jpg",
+    "dock.jpg",
+    "lake.jpg",
+    "night.jpg",
+    "pond.jpg"
+  ]
+}
