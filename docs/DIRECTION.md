@@ -21,7 +21,7 @@ Every fishing spot should look like a postcard you'd want to sit at, at every ti
   - the deep hole is dark;
   - add mist at dawn, lily pads and reeds at the edges, insects over the water at dusk, and moon glitter at night.
 - **Each place gets its own mood and palette, drawn from real lakes** (no real place names): pine-dark lake water, a sunlit stream, later a misty big lake and a frozen lake.
-- **Models** follow the house style in `art/README.md`: chunky low-poly, vertex colours, Blender by script. Lighting and atmosphere make them beautiful, not polygon counts.
+- **Models** follow the house style in `art/README.md`: Real-ish, Stewart's pick on 2026-11-26. That means chunky, simple shapes made by script in Blender, with realistic materials (Roblox's built-in materials first, custom textures only on hero props). Materials and light make the models beautiful, not polygon counts.
 - **Phones count.** The look has to hold up on the smallest phone in the Device Simulator, without heavy effects that tank the frame rate.
 - **Judged by a critic, not by us.** Every look pass is checked by the Gemini critic (section 5) on stills and a short video. Iterate until it scores well, and log the before and after stills in the making-of.
 

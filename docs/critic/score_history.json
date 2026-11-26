@@ -26,5 +26,33 @@
       "docs\\critic\\2026-11-26-baseline-l0-neon-2.md",
       "docs\\critic\\2026-11-26-baseline-l0-neon-3.md"
     ]
+  },
+  {
+    "date": "2026-11-26",
+    "step": "baseline-l0-models",
+    "rubric": "look",
+    "run": "2026-11-26-1624",
+    "commit": "8ebd3da",
+    "shots": 12,
+    "median": 3,
+    "scores": [
+      3.0,
+      3,
+      3.5
+    ],
+    "points": {
+      "composition": 4,
+      "light": 2,
+      "water": 2.5,
+      "mood": 2.5,
+      "want_to_fish": 3.5,
+      "phone_readability": 3,
+      "broken_or_ugly": 3
+    },
+    "reports": [
+      "docs\\critic\\2026-11-26-baseline-l0-models-neon.md",
+      "docs\\critic\\2026-11-26-baseline-l0-models-neon-2.md",
+      "docs\\critic\\2026-11-26-baseline-l0-models-neon-3.md"
+    ]
   }
 ]

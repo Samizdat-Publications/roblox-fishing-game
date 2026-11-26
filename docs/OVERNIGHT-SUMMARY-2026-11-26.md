@@ -12,7 +12,7 @@ Input for tomorrow's master plan. Everything here is on draft pull request #2 (b
   - Creek: Creek Chub, Rock Bass, Brook Trout (Rare), Brown Trout (Legendary), Golden Trout (Mythic, foggy dawns).
   - Big Lake: Lake Whitefish, Freshwater Drum, Burbot (Epic), Tiger Muskie (Mythic, the pre-storm rush), plus the earlier White Bass, Lake Trout and Muskellunge.
   - 26 species in all. Each has real habits, a fight style, a bite style and a journal line.
-- **Models** (ready for the same upload path as the dock and bluegill: `python art/scripts/roblox_colors.py <Name>` converts each one cleanly, checked on Bowfin and DeepV; a species with no uploaded model keeps the old shape on the line) for all 15 newer fish and both boats (Blender by script, house style, under 1,000 triangles each). Contact sheet: `art/previews/contact-sheet.png`.
+- **Models** (ready for the same upload path as the dock and bluegill: `python art/scripts/roblox_colors.py <Name>` converts each one cleanly, checked on Bowfin and DeepV; a species with no uploaded model keeps the old shape on the line) for all 15 newer fish and both boats (made in the old chunky flat-colour style; the house style changed to Real-ish on 11/26, so they may want textures before upload) (Blender by script, house style, under 1,000 triangles each). Contact sheet: `art/previews/contact-sheet.png`.
 
 ### The loop
 - **Daily goals:** three a day (easy, medium, hard), the same for everyone, never asking for water you can't reach, paid on the server, shown in a Goals panel.
