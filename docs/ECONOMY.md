@@ -148,3 +148,20 @@ Re-run with nine new species (six reachable today: Bowfin, Lake Sturgeon, Creek 
 - A player who doesn't adapt feels it more: a cold front halves most spots (deep water holds up), which is the lesson it teaches.
 - Mythics bite only in their weather (storm, fog, the pre-storm rush), at rarity 0.03; the simulation includes them when `--weather` is on.
 - Feeding frenzies aren't simulated yet. Expected about 1.2 a game day, a minute each, only for Common and Uncommon schooling fish: a nice burst for whoever is there, small next to a session's income.
+
+## Daily goals and feeding frenzies (2026-11-26, second overnight run, unverified in Studio)
+
+From `python3 tools/econ/loop.py`, which reuses the simulator's rules and reads `Frenzy.luau` and `Goals.luau`.
+
+**Daily goals** pay 205 coins a day when all three are done. Against one 25 minute session that is about a quarter more for a new player (dock and worms: 785 coins a session, +26 percent) and under a tenth more for an expert (2,405 coins, +9 percent). So goals mostly help new players catch up, which is what they're for; they're capped per day, so grinding doesn't multiply them. If a new player's first days feel too fast in playtests, trim the hard goal first.
+
+**Frenzies** last 60 s, bites come 4 times as fast and the school fish weigh 3 times as much. Best case, for a kid already standing at the spot:
+
+| Spot | Time | Bait | coins/min normally | during a frenzy | extra per frenzy |
+|---|---|---|---|---|---|
+| Dock | Night | Minnow | 43.0 | 75.6 | 33 |
+| Open water | Dusk | Worm | 40.2 | 86.1 | 46 |
+| Fallen logs | Night | Worm | 37.9 | 93.9 | 56 |
+| Riffle | Day | Minnow | 45.8 | 97.3 | 52 |
+
+About 1.2 frenzies happen per 16 minute game day, so a 25 minute session sees roughly two, and walking there eats part of each minute. That is at most about 100 coins a session (+4 percent for an expert, about +12 percent for a kid who chases them). Frenzies are an exciting moment, not an income source, and the numbers say they can stay as they are.
