@@ -4,7 +4,7 @@ Approved by Stewart on 2026-11-25. Working title: "Fishing Game" (Liam names it 
 
 ## Intent
 
-Stewart and his son Liam (11, turns 12 on 2026-12-11) want a Roblox game they can play together and eventually publish. Liam is into fishing. Stewart builds the first version alone, with Claude doing the building, before Liam joins as creative director. Long term the game ships with lots of their own models (Blender, Meshy, downloads).
+Stewart and his son want a Roblox game they can play together and eventually publish. Liam is into fishing. Stewart builds the first version alone, with Claude doing the building, before Liam joins as creative director. Long term the game ships with lots of their own models (Blender, Meshy, downloads).
 
 Stewart is not trying to learn to code. Claude builds; Stewart steers and playtests.
 

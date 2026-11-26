@@ -39,7 +39,7 @@
 
 ### M5 Journal and saving: done
 - J opened the Fish Journal: 5 of 8 species found, 12 fish caught; each card shows count, best weight and length, bait and spot, and the habit line after the first catch; uncaught species show "???". The Reel assist button toggled On to Off.
-- Studio API access is on, so the DataStore is live: stopping play logged `saved ProBabyTurtle`; restarting loaded `21 coins, 12 caught`, bag 6 fish (173), Minnows x7.
+- Studio API access is on, so the DataStore is live: stopping play logged the save for the test account; restarting loaded `21 coins, 12 caught`, bag 6 fish (173), Minnows x7.
 - Memory fallback checked earlier in an unsaved place: `DataStore unavailable (...). Using memory only; progress will not save.`
 
 ### M6 Controls and polish: done
