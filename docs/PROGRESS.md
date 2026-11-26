@@ -112,7 +112,7 @@ Nothing below has been seen in Studio. All of it is on the branch `claude/overni
 - **Boat plan** (`docs/superpowers/plans/2026-11-26-boat.md`): six tasks, each with its Studio playtest. Pure modules with tests, not used by the game yet: `BoatData.luau`, `BoatLogic.luau`, `BigLakeFishData.luau` (white bass, lake trout, muskellunge), `BoatLogic.spec.luau`, `BigLakeFish.spec.luau`.
 - **Art pass** (`art/`): 32 models built by script in Blender 5.1.2: dock, both stands, pond rim, three logs, buoy, reeds, lily pads, two pines, a leafy tree, three rocks, all 11 fish, three rods, the bobber, and a Jon Boat for the boat plan. Each is one mesh with vertex colours (no textures), at most about 1,400 triangles, sized in studs to drop onto its gray-box part. Previews and `art/previews/contact-sheet.png`; sizes, triangles and what each replaces in `art/README.md`.
 - **Weather spec** (`docs/WEATHER.md`): six kinds that change bites like real weather, how to read each, what is never sold, and a data table.
-- **Tests outside Studio**: `lune run tools/test/run.luau` runs every spec with Lune (57 pass, 1 skipped because it depends on Roblox's exact random draws). `.github/workflows/checks.yml` runs them on every push; StyLua and Selene report only.
+- **Tests outside Studio**: `lune run tools/test/run.luau` runs every spec with Lune (56 pass and 1 is skipped because it depends on Roblox's exact random draws). `.github/workflows/checks.yml` runs them on every pull request and every push to main; StyLua and Selene report only.
 
 ### Half done
 - Models are not imported. The `.glb` files should drop in, but vertex colours and scale need a first look in Studio.
