@@ -14,6 +14,7 @@ local RodData = require(Shared.RodData)
 local FishLogic = require(Shared.FishLogic)
 local Rarity = require(Shared.Rarity)
 local BoatData = require(Shared.BoatData)
+local Config = require(Shared.Config)
 local Journal = require(Shared.Journal)
 
 local UI = {}
@@ -367,6 +368,10 @@ function UI.setState(state: any)
 		end
 	end
 	refs.goalsBtn.Text = string.format("Goals %d/%d", doneCount, #goals)
+	refs.goalsBtn.Visible = #goals > 0 -- no goals while they're switched off
+	if #goals == 0 then
+		refs.goalsBox.Visible = false
+	end
 	if openPanel == "Shop" then
 		UI.refreshShop()
 	elseif openPanel == "Journal" then
@@ -608,7 +613,8 @@ function UI.buildShop()
 	boatHeader.TextXAlignment = Enum.TextXAlignment.Left
 	boatHeader.LayoutOrder = 200
 	refs.boatRows = {}
-	for i, b in BoatData.list do
+	boatHeader.Visible = Config.boatsOn()
+	for i, b in (if Config.boatsOn() then BoatData.list else {}) do
 		local row = frame(scroll, "Boat_" .. b.id, UDim2.new(1, -10, 0, 84), UDim2.new(), C.panel2, 0.1)
 		row.LayoutOrder = 200 + i
 		corner(row, 10)

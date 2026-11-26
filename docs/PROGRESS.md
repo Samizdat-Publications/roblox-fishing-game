@@ -189,9 +189,12 @@ Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6
 - Journal rumours name a bait after ten more catches; gulls circle and dive over a frenzy.
 - Second read-through fixes: helm controls now reach the server through a `BoatInput` remote; riders always land on the dock; a boat that runs from its bobber loses the line; blue-water casts need the full crew; a save that couldn't be read is never overwritten.
 
+### Switches (leg plan L0, done on this branch 2026-11-26)
+- `Config.WEATHER_ON`, `FRENZIES_ON`, `GOALS_ON`, `BIG_LAKE_ON` and `BOATS_ON`, all `false`, read in `Main.server.luau`. Off means: weather reports clear skies (weather-only fish don't bite), no frenzies, no goals and no Goals button, no Big Lake build (and no casting toward it), the shop hides boats and the server refuses buying one. Boats need the Big Lake switch too. Rarity, trophies and monsters, the 26 species and the journal are always on. `Switches.spec` checks the defaults; `python tools/check.py` passes (137 specs).
+
 ### Test first in Studio
 1. Push `src/` into Studio and run `TestRunner.runAll`: everything passes.
-2. Play: no errors in the server output at start (BigLake built, weather started, goals filled).
+2. Play with every switch off: nothing new shows but tiers, trophies, the 26-card journal; no errors. Then turn on one switch at a time for steps 4 to 7 (Big Lake and boats together).
 3. Catch card shows tier colours; set the player attribute `DebugSizeClass` to `monster` and land one (banner, server message, journal count, stinger).
 4. Goals panel and journal (26 cards, rumours, still scrolls on a phone).
 5. Give coins, buy the dinghy: it waits at slip 1; E to drive (keyboard, touch, gamepad; try it in a local server too, the controls travel through a remote); the buoy line turns it back; cast while stopped in the basin; F to tie up.

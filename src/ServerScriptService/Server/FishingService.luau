@@ -53,12 +53,15 @@ local sessions: { [Player]: Session } = {}
 local rng = Random.new()
 local zones = WorldBuilder.zones()
 local waters = WorldBuilder.waters()
--- The channel and the Big Lake (boat-only water). UNVERIFIED in Studio, 2026-11-26.
-for _, z in BoatRules.ZONES do
-	table.insert(zones, z)
-end
-for _, b in BoatRules.extraCastWaters() do
-	table.insert(waters, b)
+-- The channel and the Big Lake (boat-only water), when it's switched on. UNVERIFIED in
+-- Studio, 2026-11-26.
+if Config.BIG_LAKE_ON then
+	for _, z in BoatRules.ZONES do
+		table.insert(zones, z)
+	end
+	for _, b in BoatRules.extraCastWaters() do
+		table.insert(waters, b)
+	end
 end
 
 local fishingEvent: RemoteEvent

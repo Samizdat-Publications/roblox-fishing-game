@@ -12,6 +12,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Weather = require(Shared.Weather)
 local Remotes = require(Shared.Remotes)
+local Config = require(Shared.Config)
 
 local WeatherService = {}
 
@@ -61,12 +62,14 @@ local function publish(announce: boolean)
 end
 
 -- The weather right now, for the bite rules.
+local CALM: Weather.Now = { weather = "Clear", moon = 0 } -- weather switched off
+
 function WeatherService.now(): Weather.Now
-	return current
+	return if Config.WEATHER_ON then current else CALM
 end
 
 function WeatherService.isStorm(): boolean
-	return current.weather == "Storm"
+	return Config.WEATHER_ON and current.weather == "Storm"
 end
 
 -- For testing in Studio: force a kind for the rest of the day.

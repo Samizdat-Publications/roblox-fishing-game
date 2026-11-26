@@ -42,7 +42,11 @@ Input for tomorrow's master plan. Everything here is on draft pull request #2 (b
 - **20 new sounds hooked up** to play once uploaded (Big Lake and blue-water ambience, motors by speed, rain, thunder, gusts, frenzy boil, a monster foghorn, coins, goals, a line snap).
 - **A second independent read-through** found that a server-owned boat never gets the helm's controls from a VehicleSeat, so the client now sends them through a `BoatInput` remote (the most important thing to check in Studio). Also fixed: characters get their own physics back when they stand up, riders are put on the dock whenever a boat goes home or is removed, a boat that runs from its bobber loses the line, casting into blue water needs the full crew, no boat is built for a player who left while loading, and a save that couldn't be read is never written over.
 
+### After the leg plan (2026-11-26, afternoon)
+- **On and off switches** in `Config` for weather, frenzies, goals, the Big Lake and boats, all off, as the leg plan's L0 asks, so PR #2 can merge with them off and each be proven by itself. The leg plan also answered this doc's open questions (no streaks, one shared forecast by date, schooling fish only in frenzies, lures next leg, +15 percent kept, Big Lake built in Edit in L7).
+
 ## Test first in Studio
+0. Everything new except rarity starts switched off in `Config`; turn on one switch at a time.
 1. `TestRunner.runAll`: everything passes.
 2. Play: the server output shows no errors at start (BigLake built, weather started, goals filled in).
 3. Fish a few minutes: the catch card shows the tier colour; set the player attribute `DebugSizeClass` to `monster` and land one (banner, server message, journal count).

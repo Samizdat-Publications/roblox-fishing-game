@@ -9,6 +9,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local FishLogic = require(Shared.FishLogic)
 local BaitData = require(Shared.BaitData)
+local Config = require(Shared.Config)
 
 local FishShadows = {}
 
@@ -190,7 +191,7 @@ function FishShadows.start()
 		end
 	end
 	-- The Big Lake's spots, when it exists (UNVERIFIED in Studio, 2026-11-26).
-	local big = workspace:WaitForChild("BigLake", 15)
+	local big = if Config.BIG_LAKE_ON then workspace:WaitForChild("BigLake", 15) else nil
 	local bigZones = big and big:WaitForChild("Zones", 15)
 	if bigZones then
 		for _, name in { "Basin", "IslandPoint", "DropOff" } do

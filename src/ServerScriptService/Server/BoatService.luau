@@ -11,6 +11,7 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
+local Config = require(Shared.Config)
 local BoatData = require(Shared.BoatData)
 local BoatLogic = require(Shared.BoatLogic)
 local BoatRules = require(Shared.BoatRules)
@@ -650,6 +651,13 @@ function BoatService.lineCheck(player: Player, bobber: Vector3): (boolean, strin
 end
 
 function BoatService.start()
+	if not Config.boatsOn() then
+		-- Switched off (Config.BOATS_ON / BIG_LAKE_ON): answer the shop so it never waits.
+		Remotes.func("BuyBoat").OnServerInvoke = function()
+			return false, "Boats are coming soon."
+		end
+		return
+	end
 	toastEvent = Remotes.event("Toast")
 
 	Remotes.func("BuyBoat").OnServerInvoke = function(player: Player, boatId: any)

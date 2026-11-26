@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Goals = require(Shared.Goals)
 local Remotes = require(Shared.Remotes)
+local Config = require(Shared.Config)
 
 local GoalService = {}
 
@@ -26,6 +27,9 @@ end
 
 -- Call after a catch is recorded. Returns true when a goal paid out.
 function GoalService.onCatch(player: Player, data: any, fish: any, frenzy: boolean?): boolean
+	if not Config.GOALS_ON then
+		return false
+	end
 	local done = Goals.onCatch(current(data), fish, frenzy)
 	pay(player, data, done)
 	return #done > 0
@@ -33,6 +37,9 @@ end
 
 -- Call after selling, with the coins the sale earned.
 function GoalService.onSell(player: Player, data: any, coins: number): boolean
+	if not Config.GOALS_ON then
+		return false
+	end
 	local done = Goals.onSell(current(data), coins)
 	pay(player, data, done)
 	return #done > 0
@@ -44,6 +51,9 @@ function GoalService.today(data: any): Goals.State
 end
 
 function GoalService.start()
+	if not Config.GOALS_ON then
+		return -- switched off: no goals are made, so the Goals button stays hidden
+	end
 	local PlayerData = require(script.Parent.PlayerData)
 	PlayerData.onLoad(function(p, data)
 		current(data)
