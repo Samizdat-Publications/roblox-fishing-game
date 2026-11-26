@@ -21,6 +21,7 @@ local FightModel = require(Shared.FightModel)
 local Remotes = require(Shared.Remotes)
 
 local UI = require(script.Parent.UI)
+local PondView = require(script.Parent.PondView)
 
 local Controller = {}
 
@@ -315,6 +316,13 @@ function Controller.start()
 				Remotes.event("SetAssist"):FireServer(not snapshot.assist)
 			end
 		end,
+		pond = function(action: string, index: number)
+			local ok, msg = Remotes.func("PondAction"):InvokeServer(action, index)
+			UI.toast(msg, if ok then Color3.fromRGB(120, 220, 130) else Color3.fromRGB(240, 120, 110))
+			if ok then
+				play("click")
+			end
+		end,
 		buy = function(baitId: string)
 			local ok, msg = Remotes.func("Buy"):InvokeServer(baitId)
 			UI.toast(msg, if ok then Color3.fromRGB(120, 220, 130) else Color3.fromRGB(240, 120, 110))
@@ -328,6 +336,7 @@ function Controller.start()
 	Remotes.event("State").OnClientEvent:Connect(function(s)
 		snapshot = s
 		UI.setState(s)
+		PondView.update(s.pond)
 	end)
 	Remotes.event("FishingEvent").OnClientEvent:Connect(onFishingEvent)
 	Remotes.event("Toast").OnClientEvent:Connect(function(text)
@@ -338,6 +347,7 @@ function Controller.start()
 		if s then
 			snapshot = s
 			UI.setState(s)
+			PondView.update(s.pond)
 		end
 	end)
 
@@ -381,6 +391,8 @@ function Controller.start()
 	game:GetService("ProximityPromptService").PromptTriggered:Connect(function(prompt)
 		if prompt.Name == "ShopPrompt" and not UI.isLocked() then
 			UI.openShop()
+		elseif prompt.Name == "PondPrompt" and not UI.isLocked() then
+			UI.openPond()
 		end
 	end)
 

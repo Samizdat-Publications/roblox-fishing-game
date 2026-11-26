@@ -151,7 +151,7 @@ function UI.init(cbs: { [string]: (...any) -> () })
 		end
 		-- Panels shrink to fit short phone screens (heights are in scaled units).
 		local h = gui.AbsoluteSize.Y / scale.Scale
-		for _, panel in { refs.shop, refs.journal } do
+		for _, panel in { refs.shop, refs.journal, refs.pond } do
 			if panel then
 				panel.Size = UDim2.fromOffset(640, math.min(470, h - 70))
 			end
@@ -301,6 +301,7 @@ function UI.init(cbs: { [string]: (...any) -> () })
 
 	UI.buildShop()
 	UI.buildJournal()
+	UI.buildPond()
 	rescale()
 end
 
@@ -317,6 +318,8 @@ function UI.setState(state: any)
 		UI.refreshShop()
 	elseif openPanel == "Journal" then
 		UI.refreshJournal()
+	elseif openPanel == "Pond" then
+		UI.refreshPond()
 	end
 end
 
@@ -610,6 +613,9 @@ end
 function UI.closePanels()
 	refs.shop.Visible = false
 	refs.journal.Visible = false
+	if refs.pond then
+		refs.pond.Visible = false
+	end
 	openPanel = nil
 	GuiService.SelectedObject = nil
 end
@@ -642,6 +648,114 @@ function UI.toggleJournal()
 	if UI.inputName() == "R2" then
 		GuiService.SelectedObject = refs.assistBtn
 	end
+end
+
+----------------------------------------------------------------------------------------
+-- Home pond panel
+
+function UI.buildPond()
+	local p, scroll = panelShell("Pond", "Your Pond")
+	local layout = Instance.new("UIListLayout")
+	layout.Padding = UDim.new(0, 6)
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Parent = scroll
+	refs.pondList = scroll
+	refs.pondHint = label(p, "Hint", "Fish grow while you're away (up to 8 hours). Two grown fish of a kind can have babies.", UDim2.new(1, -24, 0, 40), UDim2.new(0, 12, 1, -48), 14, C.dim)
+	refs.pond = p
+end
+
+local function pondRow(parent: Instance, order: number, title: string, detail: string, grow: number?, buttons: { { text: string, color: Color3, fn: () -> () } }): Frame
+	local row = frame(parent, "Row" .. order, UDim2.new(1, -10, 0, 58), UDim2.new(), C.panel2, 0.1)
+	row.LayoutOrder = order
+	corner(row, 10)
+	local name = label(row, "Name", title, UDim2.fromOffset(220, 26), UDim2.fromOffset(12, 4), 18, C.text, Enum.Font.GothamBold)
+	name.TextXAlignment = Enum.TextXAlignment.Left
+	local info = label(row, "Info", detail, UDim2.fromOffset(250, 22), UDim2.fromOffset(12, 30), 14, C.gold)
+	info.TextXAlignment = Enum.TextXAlignment.Left
+	if grow then
+		local bar = frame(row, "Grow", UDim2.fromOffset(90, 8), UDim2.fromOffset(240, 12), Color3.fromRGB(40, 40, 40), 0)
+		corner(bar, 4)
+		local fill = frame(bar, "Fill", UDim2.fromScale(math.clamp(grow, 0.03, 1), 1), UDim2.new(), C.green, 0)
+		corner(fill, 4)
+	end
+	for i, b in buttons do
+		button(row, "Btn" .. i, b.text, UDim2.fromOffset(100, 42), UDim2.new(1, -(110 * (#buttons - i + 1)), 0, 8), b.color, b.fn)
+	end
+	return row
+end
+
+local function header(parent: Instance, order: number, text: string)
+	local h = label(parent, "Header" .. order, text, UDim2.new(1, -10, 0, 28), UDim2.new(), 17, C.gold, Enum.Font.GothamBlack)
+	h.TextXAlignment = Enum.TextXAlignment.Left
+	h.LayoutOrder = order
+end
+
+function UI.refreshPond()
+	local st = lastState
+	if not st or not refs.pondList then
+		return
+	end
+	for _, c in refs.pondList:GetChildren() do
+		if c:IsA("GuiObject") then
+			c:Destroy()
+		end
+	end
+	local pond = st.pond or { fish = {}, capacity = 6 }
+	local order = 1
+	header(refs.pondList, order, string.format("In your pond (%d of %d)", #pond.fish, pond.capacity))
+	for i, f in pond.fish do
+		order += 1
+		local s = FishData.byId[f.id]
+		local grow = if s then (f.cm - s.minCm) / (s.maxCm - s.minCm) else 0
+		pondRow(refs.pondList, order, (if f.bornHere then "Baby " else "") .. f.name, string.format("%.1f cm, %.2f kg. Worth %d.", f.cm, f.kg, f.price), grow, {
+			{ text = "Sell", color = C.green, fn = function()
+				callbacks.pond("sell", i)
+			end },
+			{ text = "Let go", color = C.panel, fn = function()
+				callbacks.pond("release", i)
+			end },
+		})
+	end
+	if #pond.fish == 0 then
+		order += 1
+		local l = label(refs.pondList, "Empty", "Nothing here yet. Keep a fish from your bag below.", UDim2.new(1, -10, 0, 30), UDim2.new(), 15, C.dim)
+		l.LayoutOrder = order
+	end
+	order += 1
+	header(refs.pondList, order, "In your bag")
+	local bag = st.bag or {}
+	for i, f in bag do
+		order += 1
+		pondRow(refs.pondList, order, f.name, string.format("%.1f cm. Sells for %d now.", f.cm, f.price), nil, {
+			{ text = "Keep", color = C.blue, fn = function()
+				callbacks.pond("keep", i)
+			end },
+		})
+	end
+	if #bag == 0 then
+		order += 1
+		local l = label(refs.pondList, "BagEmpty", "Your bag is empty. Catch some fish first.", UDim2.new(1, -10, 0, 30), UDim2.new(), 15, C.dim)
+		l.LayoutOrder = order
+	end
+	if UI.inputName() == "R2" and openPanel == "Pond" then
+		for _, d in refs.pondList:GetDescendants() do
+			if d:IsA("TextButton") then
+				GuiService.SelectedObject = d
+				break
+			end
+		end
+	end
+end
+
+function UI.openPond()
+	if locked then
+		return
+	end
+	UI.closePanels()
+	openPanel = "Pond"
+	refs.pond.Visible = true
+	UI.refreshPond()
+	refs.pondList.CanvasPosition = Vector2.zero -- always open at the top
 end
 
 function UI.shopHint(text: string)

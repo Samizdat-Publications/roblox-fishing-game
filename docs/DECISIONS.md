@@ -30,3 +30,6 @@ Notable design and build calls, newest last.
 - **No accidental recast.** After a fight the button must be released and 0.8 s pass before the next cast.
 - **Data version 2** turns reel assist back on for older saves (a test had switched it off on Stewart's save).
 - **Pushing code:** `tools/sync/push_snippet.py` builds a paste-ready Luau snippet for whole files when the localhost sync is blocked; `multi_edit` for small edits; `tools/sync/verify.py` confirms the result.
+- **Stewart's direction (2026-11-25 evening):** Liam fills in the planner later; until then Claude makes the design calls for looks and fun and logs them here.
+- **Home pond rules:** 6 fish, only from your own catches (no buying fish); growth closes 30 percent of the gap to full size per hour; two grown fish of a kind (60 percent of the way to full size) have a 25 percent chance of a baby every 30 minutes; time away counts up to 8 hours. Pond fish sell at their grown size, which makes the pond a slow, steady money-maker without beating active fishing.
+- **Pond fish are per player:** the pond is shared scenery, but each player sees only their own fish in it (drawn on their own screen).

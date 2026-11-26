@@ -31,13 +31,14 @@ export type Data = {
 	},
 	assist: boolean,
 	totalCaught: number,
+	pond: any,
 }
 
 local Inventory = {}
 
 function Inventory.new(): Data
 	return {
-		v = 2,
+		v = 3,
 		coins = Config.START_COINS,
 		bait = { Worm = Config.START_WORMS },
 		lures = {},
@@ -46,6 +47,7 @@ function Inventory.new(): Data
 		journal = { entries = {}, bests = {}, counts = {} },
 		assist = true,
 		totalCaught = 0,
+		pond = { fish = {}, lastTick = 0, capacity = Config.POND_CAPACITY, breedTimer = 0 },
 	}
 end
 
@@ -69,6 +71,10 @@ function Inventory.reconcile(saved: any): Data
 	if (saved.v or 1) < 2 then
 		saved.assist = true
 		saved.v = 2
+	end
+	-- v3: the home pond (the empty pond itself is filled in from the fresh data above).
+	if saved.v < 3 then
+		saved.v = 3
 	end
 	return saved
 end
@@ -201,6 +207,14 @@ function Inventory.snapshot(data: Data): any
 		recent = { table.unpack(data.journal.entries, math.max(1, #data.journal.entries - 9)) },
 		assist = data.assist,
 		totalCaught = data.totalCaught,
+		pond = { fish = data.pond.fish, capacity = data.pond.capacity },
+		bag = (function()
+			local out = {}
+			for i, f in data.bag do
+				out[i] = { id = f.id, name = f.name, cm = f.cm, kg = f.kg, price = f.price }
+			end
+			return out
+		end)(),
 	}
 end
 

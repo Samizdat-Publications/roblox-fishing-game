@@ -17,6 +17,7 @@ local EVENTS = {
 local FUNCTIONS = {
 	"RequestState", -- () -> snapshot
 	"Buy", -- (baitId) -> (ok, message)
+	"PondAction", -- (action: "keep"|"sell"|"release", index) -> (ok, message)
 }
 
 local Remotes = {}

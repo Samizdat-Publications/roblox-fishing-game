@@ -35,6 +35,14 @@ Config.FREE_WORMS = 5
 Config.BAG_LIMIT = 30 -- fish carried before you must sell
 Config.JOURNAL_KEEP = 100 -- most recent catches kept in the journal
 
+-- Home pond
+Config.POND_CAPACITY = 6
+Config.POND_GROW_RATE = 0.3567 -- per hour: closes 30 percent of the gap to full size each hour
+Config.POND_BREED_EVERY = 1800 -- seconds of pond time between breeding rolls
+Config.POND_BREED_CHANCE = 0.25 -- chance per roll for each species with two grown fish
+Config.POND_OFFLINE_CAP = 8 * 3600 -- most time counted while away
+Config.POND_TICK = 30 -- seconds between pond updates while playing
+
 -- Saving
 Config.DATASTORE_NAME = "PlayerData_v1"
 Config.AUTOSAVE_SECONDS = 120

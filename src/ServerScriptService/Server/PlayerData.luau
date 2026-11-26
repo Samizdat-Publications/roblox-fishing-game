@@ -17,6 +17,7 @@ local store: DataStore? = nil
 local memoryOnly = false
 local memory: { [number]: any } = {} -- survives respawns in a session when there is no DataStore
 local loaded: { [Player]: Inventory.Data } = {}
+local loadListeners: { (Player, Inventory.Data) -> () } = {}
 
 local function key(player: Player): string
 	return "u_" .. player.UserId
@@ -80,7 +81,15 @@ local function load(player: Player)
 	local data = Inventory.reconcile(saved)
 	loaded[player] = data
 	print(string.format("[PlayerData] %s loaded: %d coins, %d caught%s", player.Name, data.coins, data.totalCaught, if memoryOnly then " (memory)" else ""))
+	for _, fn in loadListeners do
+		task.spawn(fn, player, data)
+	end
 	PlayerData.changed(player)
+end
+
+-- Run `fn(player, data)` right after each player's data loads.
+function PlayerData.onLoad(fn: (Player, Inventory.Data) -> ())
+	table.insert(loadListeners, fn)
 end
 
 local function save(player: Player)

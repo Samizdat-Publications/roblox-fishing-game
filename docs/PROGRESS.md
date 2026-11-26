@@ -82,12 +82,22 @@ Stewart: "several occasions where no matter how hard I clicked it didn't move th
 - **Signs:** the stand signs read from 400 studs instead of 120. The lake model always loads in full (it's small), which also fixed the fish shadows missing from the spots on first load.
 - **Nicer water:** a little more wave, reflection and clarity.
 
+### Home pond (next version, item 1 from DESIGN.md): done
+Plan: `docs/superpowers/plans/2026-11-25-home-pond.md`. Stewart said to make the design calls ourselves for now (Liam fills in the planner later).
+- A stone-rimmed pond on the grass east of the stands with a "Your Pond" sign. Walk up and press E (gamepad X) to open the Pond panel.
+- Keep up to 6 fish from your bag. They grow toward full size (30 percent of the remaining gap each hour) and two grown fish of a kind can have babies. Time away counts, up to 8 hours. Sell a pond fish at its current, bigger size, or let it go.
+- Each player sees their own pond fish swimming, colored by species and sized by length.
+- Old saves get an empty pond (data version 3).
+- Verified: 38 unit tests pass (9 new pond tests: growth math, size cap, negative time, a week away equals 8 hours, breeding needs two grown fish and never overfills, keep refuses when full, sell pays once, old saves upgrade). Playtest: E opened the panel; Keep on a 47.8 cm and a 42.7 cm bass moved them into the pond (bag 14 to 12) and both swam there; a Studio-only 3 hour fast-forward grew them to 55.8 and 54.1 cm (worth 50 and 46, up from 34 and 26) and bred young bass up to the 6 fish limit; Sell paid 50 coins (21 to 71); after a restart the pond still had all 5 fish; gamepad X opened and B closed the panel.
+- Tuned after the playtest: breeding chance halved (four babies in three hours was too fast), birth messages grouped ("4 baby Largemouth Bass were born"), and the panel always opens scrolled to the top.
+
 ## What works now
-A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shore, wait for a bite, hook it, fight it on the bar, land it, sell at the Fish Buyer, buy bait at Bait and Tackle, and fill the journal. Eight species follow real habits (spot, time of day, bait), the day runs 16 minutes, and progress saves to Roblox.
+A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shore, wait for a bite, hook it, fight it on the bar (hold or click anywhere), land it, sell at the Fish Buyer, buy bait at Bait and Tackle, fill the journal, and raise fish in your home pond. Eight species follow real habits (spot, time of day, bait), fish shadows show where they're active, the day runs 16 minutes, and progress saves to Roblox.
 
 ## What's left (next version, after Stewart and Liam playtest)
 - More tuning once Stewart and Liam have played more (prices, fight lengths).
-- Later versions from `DESIGN.md`: home pond, better rods and a boat, a second fishing spot, weather, co-op, art pass.
+- Later versions from `DESIGN.md`: better rods and a boat, a second fishing spot, weather, co-op, art pass. (Home pond is in.)
+- Pond ideas for later: upgrades for more space, feeding to speed growth, rare color variants from breeding.
 - The test save on Stewart's account has 21 coins and 14 fish from Claude's playtests. Ask Claude to wipe it if you want a fresh start.
 
 ## Waiting on Stewart

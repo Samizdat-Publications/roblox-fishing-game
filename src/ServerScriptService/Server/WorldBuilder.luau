@@ -224,6 +224,38 @@ function WorldBuilder.build(): Model
 	stand(lake, "SellStand", Vector3.new(-18, 1, 96), COLORS.sell, "Sell Fish", "SellPrompt", "Sell all fish", "Fish Buyer")
 	stand(lake, "ShopStand", Vector3.new(18, 1, 96), COLORS.shop, "Bait and Tackle", "ShopPrompt", "Open shop", "Bait and Tackle")
 
+	-- Home pond on the grass east of the stands: a stone rim, clear water, a sign and a prompt.
+	local pond = Instance.new("Model")
+	pond.Name = "HomePond"
+	local pc = Vector3.new(50, 1, 106)
+	local pw, pd = 22, 14
+	part(pond, "Bottom", Vector3.new(pw, 0.2, pd), CFrame.new(pc + Vector3.new(0, 0.1, 0)), Color3.fromRGB(60, 70, 60), { Material = Enum.Material.Mud })
+	local pondWater = part(pond, "Water", Vector3.new(pw, 1.1, pd), CFrame.new(pc + Vector3.new(0, 0.75, 0)), Color3.fromRGB(80, 150, 190), {
+		Transparency = 0.55,
+		CanCollide = false,
+		CanQuery = false,
+		Material = Enum.Material.Glass,
+	})
+	pondWater:SetAttribute("IsPondWater", true)
+	local stone = Color3.fromRGB(140, 140, 135)
+	part(pond, "RimN", Vector3.new(pw + 2, 1.6, 1), CFrame.new(pc + Vector3.new(0, 0.8, -pd / 2 - 0.5)), stone, { Material = Enum.Material.Cobblestone })
+	part(pond, "RimS", Vector3.new(pw + 2, 1.6, 1), CFrame.new(pc + Vector3.new(0, 0.8, pd / 2 + 0.5)), stone, { Material = Enum.Material.Cobblestone })
+	part(pond, "RimW", Vector3.new(1, 1.6, pd), CFrame.new(pc + Vector3.new(-pw / 2 - 0.5, 0.8, 0)), stone, { Material = Enum.Material.Cobblestone })
+	part(pond, "RimE", Vector3.new(1, 1.6, pd), CFrame.new(pc + Vector3.new(pw / 2 + 0.5, 0.8, 0)), stone, { Material = Enum.Material.Cobblestone })
+	local post = part(pond, "SignPost", Vector3.new(1.2, 3.5, 1.2), CFrame.new(pc + Vector3.new(0, 1.75, -pd / 2 - 2)), COLORS.wood)
+	local pondPrompt = Instance.new("ProximityPrompt")
+	pondPrompt.Name = "PondPrompt"
+	pondPrompt.ActionText = "Check pond"
+	pondPrompt.ObjectText = "Your Pond"
+	pondPrompt.HoldDuration = 0
+	pondPrompt.MaxActivationDistance = 12
+	pondPrompt.RequiresLineOfSight = false
+	pondPrompt.KeyboardKeyCode = Enum.KeyCode.E
+	pondPrompt.GamepadKeyCode = Enum.KeyCode.ButtonX
+	pondPrompt.Parent = post
+	sign(pond, post, "Your Pond", Color3.fromRGB(120, 210, 200))
+	pond.Parent = lake
+
 	-- Spawn on the shore end of the dock, facing the water
 	local spawn = Instance.new("SpawnLocation")
 	spawn.Name = "DockSpawn"

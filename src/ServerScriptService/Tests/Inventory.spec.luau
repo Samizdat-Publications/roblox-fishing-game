@@ -81,7 +81,7 @@ return function(t, Shared)
 	t.test("saves from before v2 get reel assist turned back on", function()
 		local d = Inventory.reconcile({ v = 1, coins = 21, assist = false, journal = { entries = {} } })
 		t.eq(d.assist, true)
-		t.eq(d.v, 2)
+		t.ok(d.v >= 2, "version " .. d.v)
 		d.assist = false
 		local again = Inventory.reconcile(d)
 		t.eq(again.assist, false, "a v2 save keeps the player's choice")
