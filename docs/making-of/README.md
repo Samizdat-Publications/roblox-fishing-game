@@ -6,7 +6,7 @@ Newest first. The live page with before and after sliders is `docs/making-of/ind
 
 ## Art preview: Our own models, first set (Blender previews)
 
-2026-11-26 01:50
+2026-11-26 01:50 · commit `368c415`
 
 An art preview, not yet in the game. Thirty-two low-poly models built by script in Blender overnight: the dock, both market stands, the pond's stone rim, logs, a buoy, reeds, lily pads, pines, a leafy tree, rocks, all eleven fish in their real colours and at true relative size, the three rods with reels, the bobber, and a Jon boat for the boat to come. Each is one mesh with baked colours, sized in studs to drop onto the gray box it replaces. These are renders from Blender; they still need to be imported and checked in Studio.
 
