@@ -66,6 +66,28 @@ local function play(name: string)
 	end
 end
 
+-- Play an uploaded sound by its id from audio/README.md (Shared/SoundIds.luau); falls back to
+-- a built-in sound until it's uploaded. UNVERIFIED in Studio (2026-11-26).
+local SoundIds = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("SoundIds"))
+local uploaded: { [string]: Sound } = {}
+local function playId(id: string, fallback: string?)
+	local asset = SoundIds[id]
+	if type(asset) == "string" and asset ~= "" then
+		local s = uploaded[id]
+		if not s then
+			s = Instance.new("Sound")
+			s.Name = "Fish_" .. id
+			s.SoundId = asset
+			s.Volume = 0.6
+			s.Parent = SoundService
+			uploaded[id] = s
+		end
+		s:Play()
+	elseif fallback then
+		play(fallback)
+	end
+end
+
 local function setState(s: string)
 	state = s
 	stateSince = os.clock()
@@ -176,7 +198,7 @@ local function onFish(_name: string, inputState: Enum.UserInputState, _input: In
 		castTimeout = os.clock() + 3
 		local cam = workspace.CurrentCamera
 		Remotes.event("Cast"):FireServer(cam.CFrame.LookVector, power)
-		play("cast")
+		playId("cast-whoosh", "cast")
 		UI.status("Casting...")
 	elseif state == "Waiting" and began and os.clock() - stateSince > 0.6 then
 		Remotes.event("CancelCast"):FireServer()
@@ -214,11 +236,12 @@ end
 local function onFishingEvent(kind: string, payload: any)
 	if kind == "Landed" then
 		setState("Waiting")
-		play("splash")
+		playId("bobber-plop", "splash")
 		UI.status("Waiting for a bite at " .. tostring(payload.spotName) .. "...")
 	elseif kind == "Bite" then
 		setState("Bite")
-		play("bite")
+		local style = payload and payload.style
+		playId(if style == "pull" then "bite-deep-pull" elseif style == "nibble" then "bite-nibble" elseif style == "tap" then "bite-tap" else "bite-slam", "bite")
 		UI.closePanels()
 		UI.setLocked(true)
 		freezeCharacter(true)
@@ -248,7 +271,12 @@ local function onFishingEvent(kind: string, payload: any)
 			UI.toast("This one feels big!", Color3.fromRGB(250, 175, 40))
 		end
 	elseif kind == "Caught" then
-		play("catch")
+		local tier = string.lower(payload.tier or "Common")
+		local cls = payload.fish and payload.fish.sizeClass
+		playId(if cls == "monster" then "sting-monster" elseif cls == "trophy" then "sting-trophy" else "sting-" .. tier, "catch")
+		if payload.first then
+			playId("sting-new-species")
+		end
 		UI.catchCard(payload)
 		goIdleAfterFight()
 	elseif kind == "Escaped" then
