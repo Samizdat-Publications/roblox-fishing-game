@@ -151,4 +151,79 @@ return function(t, Shared)
 			end
 		end
 	end)
+
+	-- Fight styles (UNVERIFIED in Studio, added 2026-11-26).
+	local BigLake = require(Shared.BigLakeFishData)
+
+	-- Watch a fish for 30 seconds with progress frozen, tracking what its style does.
+	local function watch(profile, seed)
+		local s = FightModel.new(profile, false, seed)
+		local seen = { top = 0, bottom = 0, runs = 0, jumps = 0, maxStep = 0 }
+		local last, lastMode = s.fishPos, s.mode
+		for _ = 1, math.floor(30 / DT) do
+			FightModel.step(s, DT, false)
+			s.progress = 0.5
+			seen.top = math.max(seen.top, s.fishPos)
+			seen.bottom = seen.bottom + (if s.fishPos < 0.3 then DT else 0)
+			if s.mode ~= lastMode and s.mode == "run" then
+				seen.runs += 1
+			elseif s.mode ~= lastMode and s.mode == "jump" then
+				seen.jumps += 1
+			end
+			seen.maxStep = math.max(seen.maxStep, math.abs(s.fishPos - last))
+			last, lastMode = s.fishPos, s.mode
+		end
+		return seen
+	end
+
+	t.test("every fish has a known fight style and bite", function()
+		local styles = { tugger = true, steady = true, runner = true, jumper = true, diver = true, shaker = true }
+		local bites = { nibble = true, tap = true, slam = true, pull = true }
+		for _, list in { FishData.list, BigLake.list } do
+			for _, sp in list do
+				t.ok(styles[sp.fight.style or ""], sp.id .. " style")
+				t.ok(bites[sp.bite or ""], sp.id .. " bite")
+			end
+		end
+	end)
+
+	t.test("styles show up: trout jump, bass run, catfish hug the bottom, pike shake", function()
+		local trout, bass, cat, gill, pike = 0, 0, 0, 0, 0
+		for seed = 1, 6 do
+			trout += watch(FishData.byId.RainbowTrout.fight, seed).jumps
+			bass += watch(FishData.byId.LargemouthBass.fight, seed).runs
+			cat += watch(FishData.byId.ChannelCatfish.fight, seed).bottom
+			gill += watch(FishData.byId.Bluegill.fight, seed).bottom
+			pike = math.max(pike, watch(FishData.byId.NorthernPike.fight, seed).maxStep)
+		end
+		t.ok(trout >= 6, "trout jumps " .. trout)
+		t.ok(bass >= 6, "bass runs " .. bass)
+		t.ok(cat > gill * 1.5, string.format("catfish bottom %.1f s vs bluegill %.1f s", cat, gill))
+		t.ok(pike > FishData.byId.NorthernPike.fight.speed * DT * 1.5, "pike shakes " .. pike)
+	end)
+
+	t.test("a tracking player still beats the Big Lake fish without assist", function()
+		for _, sp in BigLake.list do
+			for seed = 1, 5 do
+				t.eq((run(sp.fight, false, seed, tracker)), "won", sp.id .. " seed " .. seed)
+			end
+		end
+	end)
+
+	t.test("bite patterns: nibblers dip first, catfish give the longest window, nobody gets a short one", function()
+		local FishLogic = require(Shared.FishLogic)
+		local Config = require(Shared.Config)
+		local gill = FishLogic.bitePattern(FishData.byId.Bluegill)
+		local cat = FishLogic.bitePattern(FishData.byId.ChannelCatfish)
+		local pike = FishLogic.bitePattern(FishData.byId.NorthernPike)
+		t.ok(gill.predips > 0 and pike.predips == 0, "nibbles before the bite")
+		t.ok(pike.depth > gill.depth, "a slam pulls the bobber deeper")
+		t.ok(cat.hookWindow > gill.hookWindow, "a pull gives more time")
+		for _, list in { FishData.list, BigLake.list } do
+			for _, sp in list do
+				t.ok(FishLogic.bitePattern(sp).hookWindow >= Config.HOOK_WINDOW - 0.2, sp.id .. " window")
+			end
+		end
+		t.eq(FishLogic.bitePattern({ bite = nil } :: any).style, "slam", "old data falls back")
+	end)
 end

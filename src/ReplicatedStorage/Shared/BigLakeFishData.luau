@@ -2,7 +2,7 @@
 -- The Big Lake's fish, reached only by boat. Same shape as FishData entries.
 -- UNVERIFIED: written overnight 2026-11-26 without Studio. Kept out of FishData.list on
 -- purpose so the journal doesn't show three fish nobody can catch yet; the boat plan
--- (docs/superpowers/plans/2026-11-26-boat.md, Task 3) appends these to FishData.list once
+-- (docs/superpowers/plans/2026-11-26-boat.md, Task 5) appends these to FishData.list once
 -- the Big Lake's zones exist. The basin and island point are dinghy water; the drop-off is
 -- in the blue water, reachable only on the two-person Deep-V boat.
 local Shared = script.Parent
@@ -21,9 +21,10 @@ local list: { FishData.Species } = {
 		weightCoef = 1.3e-5,
 		basePrice = 14,
 		color = Color3.fromRGB(200, 205, 212),
-		fight = { zone = 0.27, speed = 1.1, dart = 1.6, range = 0.4, sink = 0.1, heavy = 0.2, gain = 0.26, loss = 0.18 },
+		fight = { zone = 0.27, speed = 1.1, dart = 1.6, range = 0.4, sink = 0.1, heavy = 0.2, gain = 0.26, loss = 0.18, style = "tugger" },
 		habit = "Schools in the open basin and chases baitfish at the surface, best at dusk. Spinners and minnows.",
 		fightNote = "Quick, silvery dashes.",
+		bite = "slam",
 	},
 	{
 		id = "LakeTrout",
@@ -37,9 +38,10 @@ local list: { FishData.Species } = {
 		weightCoef = 1.02e-5,
 		basePrice = 40,
 		color = Color3.fromRGB(95, 110, 100),
-		fight = { zone = 0.25, speed = 0.6, dart = 0.6, range = 0.5, sink = 0.7, heavy = 0.6, gain = 0.15, loss = 0.13 },
+		fight = { zone = 0.25, speed = 0.6, dart = 0.6, range = 0.5, sink = 0.7, heavy = 0.6, gain = 0.15, loss = 0.13, style = "diver" },
 		habit = "Lives deep and cold along the drop-off. Best early in the day on minnows.",
 		fightNote = "Deep, heavy head shakes.",
+		bite = "tap",
 	},
 	{
 		id = "Muskellunge",
@@ -53,9 +55,10 @@ local list: { FishData.Species } = {
 		weightCoef = 8.3e-6,
 		basePrice = 90,
 		color = Color3.fromRGB(150, 140, 90),
-		fight = { zone = 0.23, speed = 1.5, dart = 1.0, range = 0.9, sink = 0.2, heavy = 0.5, gain = 0.16, loss = 0.18 },
+		fight = { zone = 0.23, speed = 1.5, dart = 1.0, range = 0.9, sink = 0.2, heavy = 0.5, gain = 0.16, loss = 0.18, style = "shaker" },
 		habit = "The rare giant of the weedy island point. Follows a spinner for ages, then strikes at dusk.",
 		fightNote = "Huge, wild runs.",
+		bite = "slam",
 	},
 }
 

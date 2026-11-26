@@ -6,6 +6,16 @@
 -- climb speed within a fraction of a second, and every fresh press (a click or tap) gives
 -- an instant kick upward, so clicking works as well as holding. Heavy fish only slow the
 -- climb a little; species differ mostly in how the fish moves and how fast you land it.
+--
+-- Fight styles (FightProfile.style), so each kind of fish feels like itself:
+--   tugger  quick little darts (panfish)
+--   steady  slow, short wanders (perch, walleye)
+--   runner  now and then a long run to one end of the bar, then a rest (largemouth bass)
+--   jumper  sudden leaps to the top, then a drop (trout, smallmouth)
+--   diver   keeps pulling for the bottom, with the odd surge up (catfish, carp)
+--   shaker  fast head shakes on top of wild runs (pike, muskie)
+-- UNVERIFIED in Studio (added 2026-11-26): the tests below check each style's shape and that
+-- a tracking player still lands every species.
 local Shared = script.Parent
 local Config = require(Shared.Config)
 local FishData = require(Shared.FishData)
@@ -23,7 +33,13 @@ export type State = {
 	progress: number,
 	t: number,
 	idle: number, -- seconds since the player last pressed or held
+	mode: string, -- "normal", or a style move in progress: "run", "rest", "jump"
+	modeTimer: number,
 }
+
+local MODE_SPEED = { normal = 1, run = 1.7, rest = 0.45, jump = 2.2 }
+local SHAKE_SIZE = 0.045 -- how far a shaker's head shakes move it on the bar
+local SHAKE_RATE = 24 -- radians per second
 
 local FightModel = {}
 
@@ -42,6 +58,8 @@ function FightModel.new(profile: FishData.FightProfile, assist: boolean, seed: n
 		progress = Config.FIGHT_START,
 		t = 0,
 		idle = math.huge, -- nothing counts until the player first presses or holds
+		mode = "normal",
+		modeTimer = 0,
 	}
 end
 
@@ -79,17 +97,48 @@ function FightModel.step(s: State, dt: number, holding: boolean): string?
 		s.zoneVel = math.min(s.zoneVel, 0)
 	end
 
-	-- Fish: picks a new target now and then, sinkers prefer the bottom.
-	if s.rng:NextNumber() < p.dart * dt then
+	-- Fish: picks a new target now and then, sinkers prefer the bottom; its style adds moves.
+	local style = p.style or "tugger"
+	if s.mode ~= "normal" then
+		s.modeTimer -= dt
+		if s.modeTimer <= 0 then
+			if s.mode == "run" then
+				s.mode, s.modeTimer = "rest", 1.0 -- tired after a run
+			elseif s.mode == "jump" then
+				s.mode = "normal"
+				s.fishTarget = math.clamp(s.fishPos - 0.3, 0.05, 0.95) -- splash back down
+			else
+				s.mode = "normal"
+			end
+		end
+	end
+	if s.mode == "normal" and s.rng:NextNumber() < p.dart * dt then
 		local offset = (s.rng:NextNumber() * 2 - 1) * p.range - p.sink * p.range * 0.5
+		if style == "steady" then
+			offset *= 0.6
+		elseif style == "diver" then
+			offset = if s.rng:NextNumber() < 0.15 then p.range else offset - p.range * 0.35 -- a surge, or more down
+		end
 		s.fishTarget = math.clamp(s.fishPos + offset, 0.05, 0.95)
+		if (style == "runner" or style == "shaker") and s.rng:NextNumber() < 0.35 then
+			s.fishTarget = if s.fishPos > 0.5 then 0.08 else 0.92 -- a long run to the far end
+			s.mode, s.modeTimer = "run", 1.0
+		end
+	end
+	if style == "jumper" and s.mode == "normal" and s.rng:NextNumber() < 0.2 * dt then
+		s.fishTarget = 0.95
+		s.mode, s.modeTimer = "jump", 0.9
 	end
 	local d = s.fishTarget - s.fishPos
-	local maxMove = p.speed * dt
+	local maxMove = p.speed * MODE_SPEED[s.mode] * dt
 	if math.abs(d) <= maxMove then
 		s.fishPos = s.fishTarget
 	else
 		s.fishPos += math.sign(d) * maxMove
+	end
+	if style == "shaker" then
+		local shake = SHAKE_SIZE * (math.sin(s.t * SHAKE_RATE) - math.sin((s.t - dt) * SHAKE_RATE))
+		s.fishPos = math.clamp(s.fishPos + shake, 0.02, 0.98)
 	end
 
 	-- Progress fills while the fish is in the zone and the line is tight: the player has

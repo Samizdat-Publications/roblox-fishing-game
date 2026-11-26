@@ -12,7 +12,12 @@ export type FightProfile = {
 	heavy: number, -- how much it fights your lift (0 to 1)
 	gain: number, -- progress per second while inside the zone
 	loss: number, -- progress lost per second outside it
+	style: string?, -- how it fights: "tugger", "runner", "jumper", "diver", "shaker" or "steady" (see FightModel)
 }
+
+-- How it takes the bait: "nibble" (a few small dips first), "tap" (one light dip),
+-- "slam" (sudden, hard), "pull" (a slow drag under). See FishLogic.biteStyle.
+export type BiteStyle = "nibble" | "tap" | "slam" | "pull"
 
 export type Species = {
 	id: string,
@@ -29,6 +34,7 @@ export type Species = {
 	fight: FightProfile,
 	habit: string,
 	fightNote: string,
+	bite: BiteStyle?,
 }
 
 local list: { Species } = {
@@ -44,9 +50,10 @@ local list: { Species } = {
 		weightCoef = 1.9e-5,
 		basePrice = 6,
 		color = Color3.fromRGB(70, 110, 150),
-		fight = { zone = 0.30, speed = 0.9, dart = 1.6, range = 0.35, sink = 0, heavy = 0, gain = 0.30, loss = 0.18 },
+		fight = { zone = 0.30, speed = 0.9, dart = 1.6, range = 0.35, sink = 0, heavy = 0, gain = 0.30, loss = 0.18, style = "tugger" },
 		habit = "Hangs around the dock in daylight. Small hooks, worms or crickets.",
 		fightNote = "Quick little tugs.",
+		bite = "nibble",
 	},
 	{
 		id = "Pumpkinseed",
@@ -60,9 +67,10 @@ local list: { Species } = {
 		weightCoef = 1.8e-5,
 		basePrice = 6,
 		color = Color3.fromRGB(205, 150, 60),
-		fight = { zone = 0.32, speed = 0.8, dart = 1.5, range = 0.3, sink = 0, heavy = 0, gain = 0.32, loss = 0.16 },
+		fight = { zone = 0.32, speed = 0.8, dart = 1.5, range = 0.3, sink = 0, heavy = 0, gain = 0.32, loss = 0.16, style = "tugger" },
 		habit = "Lives in the weed bed. Crickets work best.",
 		fightNote = "Zippy but small.",
+		bite = "nibble",
 	},
 	{
 		id = "YellowPerch",
@@ -76,9 +84,10 @@ local list: { Species } = {
 		weightCoef = 1.28e-5,
 		basePrice = 10,
 		color = Color3.fromRGB(215, 190, 70),
-		fight = { zone = 0.28, speed = 0.6, dart = 1.0, range = 0.3, sink = 0.1, heavy = 0.1, gain = 0.28, loss = 0.16 },
+		fight = { zone = 0.28, speed = 0.6, dart = 1.0, range = 0.3, sink = 0.1, heavy = 0.1, gain = 0.28, loss = 0.16, style = "steady" },
 		habit = "Schools in open water, best in the morning. Minnows.",
 		fightNote = "Steady and stubborn.",
+		bite = "tap",
 	},
 	{
 		id = "BlackCrappie",
@@ -92,9 +101,10 @@ local list: { Species } = {
 		weightCoef = 1.6e-5,
 		basePrice = 12,
 		color = Color3.fromRGB(140, 140, 130),
-		fight = { zone = 0.26, speed = 0.8, dart = 1.4, range = 0.4, sink = 0.1, heavy = 0.1, gain = 0.26, loss = 0.20 },
+		fight = { zone = 0.26, speed = 0.8, dart = 1.4, range = 0.4, sink = 0.1, heavy = 0.1, gain = 0.26, loss = 0.20, style = "tugger" },
 		habit = "Hides in fallen logs, feeds at dusk and after dark. Minnows.",
 		fightNote = "Darts around, soft mouth.",
+		bite = "tap",
 	},
 	{
 		id = "LargemouthBass",
@@ -108,9 +118,10 @@ local list: { Species } = {
 		weightCoef = 1.56e-5,
 		basePrice = 20,
 		color = Color3.fromRGB(85, 125, 60),
-		fight = { zone = 0.25, speed = 1.4, dart = 0.8, range = 0.7, sink = 0.2, heavy = 0.3, gain = 0.22, loss = 0.20 },
+		fight = { zone = 0.25, speed = 1.4, dart = 0.8, range = 0.7, sink = 0.2, heavy = 0.3, gain = 0.22, loss = 0.20, style = "runner" },
 		habit = "Ambushes from weeds and logs at dawn and dusk. Plastic worms and spinners.",
 		fightNote = "Big runs, then rests.",
+		bite = "slam",
 	},
 	{
 		id = "ChannelCatfish",
@@ -124,9 +135,10 @@ local list: { Species } = {
 		weightCoef = 1.08e-5,
 		basePrice = 24,
 		color = Color3.fromRGB(110, 112, 122),
-		fight = { zone = 0.26, speed = 0.5, dart = 0.6, range = 0.5, sink = 0.6, heavy = 0.6, gain = 0.16, loss = 0.14 },
+		fight = { zone = 0.26, speed = 0.5, dart = 0.6, range = 0.5, sink = 0.6, heavy = 0.6, gain = 0.16, loss = 0.14, style = "diver" },
 		habit = "Cruises the deep hole at night. Follows its nose to stinkbait.",
 		fightNote = "Heavy, keeps pulling down.",
+		bite = "pull",
 	},
 	{
 		id = "CommonCarp",
@@ -140,9 +152,10 @@ local list: { Species } = {
 		weightCoef = 1.5e-5,
 		basePrice = 18,
 		color = Color3.fromRGB(175, 135, 60),
-		fight = { zone = 0.27, speed = 0.6, dart = 0.7, range = 0.6, sink = 0.4, heavy = 0.5, gain = 0.15, loss = 0.12 },
+		fight = { zone = 0.27, speed = 0.6, dart = 0.7, range = 0.6, sink = 0.4, heavy = 0.5, gain = 0.15, loss = 0.12, style = "diver" },
 		habit = "Roots along the bottom of open water in daylight. Worms or stinkbait.",
 		fightNote = "Long, slow, strong.",
+		bite = "pull",
 	},
 	{
 		id = "NorthernPike",
@@ -156,9 +169,10 @@ local list: { Species } = {
 		weightCoef = 7.3e-6,
 		basePrice = 45,
 		color = Color3.fromRGB(95, 125, 75),
-		fight = { zone = 0.24, speed = 1.5, dart = 1.2, range = 0.8, sink = 0.2, heavy = 0.3, gain = 0.20, loss = 0.20 },
+		fight = { zone = 0.24, speed = 1.5, dart = 1.2, range = 0.8, sink = 0.2, heavy = 0.3, gain = 0.20, loss = 0.20, style = "shaker" },
 		habit = "Rare hunter on the weed edge and open water by day. Chases spinners.",
 		fightNote = "Wild, fast runs.",
+		bite = "slam",
 	},
 	{
 		id = "RainbowTrout",
@@ -172,9 +186,10 @@ local list: { Species } = {
 		weightCoef = 1.17e-5,
 		basePrice = 18,
 		color = Color3.fromRGB(205, 125, 150),
-		fight = { zone = 0.25, speed = 1.3, dart = 1.8, range = 0.5, sink = 0, heavy = 0.1, gain = 0.24, loss = 0.20 },
+		fight = { zone = 0.25, speed = 1.3, dart = 1.8, range = 0.5, sink = 0, heavy = 0.1, gain = 0.24, loss = 0.20, style = "jumper" },
 		habit = "Holds in the fast, shallow riffle at dawn and in daylight. Crickets and spinners.",
 		fightNote = "Jumps and thrashes.",
+		bite = "tap",
 	},
 	{
 		id = "SmallmouthBass",
@@ -188,9 +203,10 @@ local list: { Species } = {
 		weightCoef = 1.56e-5,
 		basePrice = 22,
 		color = Color3.fromRGB(140, 110, 60),
-		fight = { zone = 0.24, speed = 1.3, dart = 1.0, range = 0.7, sink = 0.2, heavy = 0.4, gain = 0.20, loss = 0.20 },
+		fight = { zone = 0.24, speed = 1.3, dart = 1.0, range = 0.7, sink = 0.2, heavy = 0.4, gain = 0.20, loss = 0.20, style = "jumper" },
 		habit = "Hides behind the creek's boulders by day. Spinners, crickets or minnows.",
 		fightNote = "Strong, stubborn runs.",
+		bite = "slam",
 	},
 	{
 		id = "Walleye",
@@ -204,9 +220,10 @@ local list: { Species } = {
 		weightCoef = 1.04e-5,
 		basePrice = 26,
 		color = Color3.fromRGB(175, 155, 75),
-		fight = { zone = 0.26, speed = 0.7, dart = 0.7, range = 0.5, sink = 0.5, heavy = 0.5, gain = 0.17, loss = 0.14 },
+		fight = { zone = 0.26, speed = 0.7, dart = 0.7, range = 0.5, sink = 0.5, heavy = 0.5, gain = 0.17, loss = 0.14, style = "steady" },
 		habit = "Rises from the deep pool at dusk and after dark. Minnows.",
 		fightNote = "Steady and heavy.",
+		bite = "tap",
 	},
 }
 

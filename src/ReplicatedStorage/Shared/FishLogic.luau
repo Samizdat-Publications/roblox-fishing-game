@@ -141,6 +141,24 @@ function FishLogic.isOnWaterAny(pos: Vector3, boxes: { { cframe: CFrame, size: V
 	return false
 end
 
+-- How a fish takes the bait, so the bobber tells you what's down there before you see it.
+-- predips: small dips before the real bite; depth: how far the bobber goes under (studs);
+-- hookWindow: seconds to press after the real bite (never under Config.HOOK_WINDOW - 0.2,
+-- so younger players still make it). UNVERIFIED in Studio (added 2026-11-26); the server
+-- and client still use one plain bite until the core-mechanics task wires this in.
+export type BitePattern = { style: string, predips: number, dipGap: number, depth: number, hookWindow: number }
+
+local BITE_PATTERNS: { [string]: BitePattern } = {
+	nibble = { style = "nibble", predips = 2, dipGap = 0.45, depth = 0.35, hookWindow = Config.HOOK_WINDOW },
+	tap = { style = "tap", predips = 0, dipGap = 0, depth = 0.3, hookWindow = Config.HOOK_WINDOW - 0.2 },
+	slam = { style = "slam", predips = 0, dipGap = 0, depth = 1.0, hookWindow = Config.HOOK_WINDOW },
+	pull = { style = "pull", predips = 0, dipGap = 0, depth = 0.8, hookWindow = Config.HOOK_WINDOW + 0.6 },
+}
+
+function FishLogic.bitePattern(species: FishData.Species): BitePattern
+	return BITE_PATTERNS[species.bite or "slam"] or BITE_PATTERNS.slam
+end
+
 -- Spots that need the Creek Pass.
 FishLogic.CREEK_SPOTS = { Riffle = true, Rocks = true, Pool = true }
 
