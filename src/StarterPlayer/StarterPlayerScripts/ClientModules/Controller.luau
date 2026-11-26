@@ -323,6 +323,18 @@ function Controller.start()
 				play("click")
 			end
 		end,
+		buyRod = function(rodId: string)
+			local ok, msg = Remotes.func("BuyRod"):InvokeServer(rodId)
+			UI.toast(msg, if ok then Color3.fromRGB(120, 220, 130) else Color3.fromRGB(240, 120, 110))
+			UI.shopHint(msg)
+			if ok then
+				play("catch")
+			end
+		end,
+		equipRod = function(rodId: string)
+			Remotes.event("EquipRod"):FireServer(rodId)
+			play("click")
+		end,
 		buy = function(baitId: string)
 			local ok, msg = Remotes.func("Buy"):InvokeServer(baitId)
 			UI.toast(msg, if ok then Color3.fromRGB(120, 220, 130) else Color3.fromRGB(240, 120, 110))

@@ -9,6 +9,7 @@ local Remotes = require(Shared.Remotes)
 
 local Server = script.Parent
 local PlayerData = require(Server.PlayerData)
+local RodService = require(Server.RodService)
 
 local EconomyService = {}
 
@@ -57,6 +58,28 @@ function EconomyService.start()
 		end
 		return ok, msg
 	end
+
+	Remotes.func("BuyRod").OnServerInvoke = function(player: Player, rodId: any)
+		local data = PlayerData.get(player)
+		if not data or type(rodId) ~= "string" then
+			return false, "That rod isn't for sale."
+		end
+		local ok, msg = Inventory.buyRod(data, rodId)
+		if ok then
+			print(string.format("[Economy] %s bought rod %s (now %d coins)", player.Name, rodId, data.coins))
+			PlayerData.changed(player)
+			RodService.refresh(player)
+		end
+		return ok, msg
+	end
+
+	Remotes.event("EquipRod").OnServerEvent:Connect(function(player: Player, rodId: any)
+		local data = PlayerData.get(player)
+		if data and type(rodId) == "string" and Inventory.equipRod(data, rodId) then
+			PlayerData.changed(player)
+			RodService.refresh(player)
+		end
+	end)
 
 	Remotes.event("Equip").OnServerEvent:Connect(function(player: Player, baitId: any)
 		local data = PlayerData.get(player)

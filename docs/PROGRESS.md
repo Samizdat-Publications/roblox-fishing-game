@@ -91,12 +91,18 @@ Plan: `docs/superpowers/plans/2026-11-25-home-pond.md`. Stewart said to make the
 - Verified: 38 unit tests pass (9 new pond tests: growth math, size cap, negative time, a week away equals 8 hours, breeding needs two grown fish and never overfills, keep refuses when full, sell pays once, old saves upgrade). Playtest: E opened the panel; Keep on a 47.8 cm and a 42.7 cm bass moved them into the pond (bag 14 to 12) and both swam there; a Studio-only 3 hour fast-forward grew them to 55.8 and 54.1 cm (worth 50 and 46, up from 34 and 26) and bred young bass up to the 6 fish limit; Sell paid 50 coins (21 to 71); after a restart the pond still had all 5 fish; gamepad X opened and B closed the panel.
 - Tuned after the playtest: breeding chance halved (four babies in three hours was too fast), birth messages grouped ("4 baby Largemouth Bass were born"), and the panel always opens scrolled to the top.
 
+### Rods (next version, item 2, part 1): done
+Plan: `docs/superpowers/plans/2026-11-25-rods-and-creek.md`.
+- Three rods in Bait and Tackle under a new Rods heading: Willow Rod (everyone starts with it), Fiberglass Rod (120 coins: casts 8 studs further, catch zone 15 percent bigger), Graphite Rod (350 coins: 16 studs further, zone 30 percent bigger, heavy fish pull half as hard). Buying equips it; owned rods switch with "Use this rod". The rod in hand changes color and length.
+- Data version 4 gives older saves the Willow Rod.
+- Verified: 40 unit tests pass (new: buy, equip, refusals, the fight help is applied to a copy, v3 saves upgrade). Playtest: sold the bag (to 261 coins), the shop showed Willow "In your hands", Fiberglass 120 and Graphite greyed out; clicking Fiberglass paid 120 (to 141) and put a yellow 6.6 stud rod in hand. Full-power casts from the same spot: Willow 40.0 studs, Fiberglass 48.0; the same fish's catch zone went from 0.280 to 0.322 of the bar.
+
 ## What works now
 A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shore, wait for a bite, hook it, fight it on the bar (hold or click anywhere), land it, sell at the Fish Buyer, buy bait at Bait and Tackle, fill the journal, and raise fish in your home pond. Eight species follow real habits (spot, time of day, bait), fish shadows show where they're active, the day runs 16 minutes, and progress saves to Roblox.
 
 ## What's left (next version, after Stewart and Liam playtest)
 - More tuning once Stewart and Liam have played more (prices, fight lengths).
-- Later versions from `DESIGN.md`: better rods and a boat, a second fishing spot, weather, co-op, art pass. (Home pond is in.)
+- Later versions from `DESIGN.md`: a second fishing spot (Cedar Creek, next), a boat, weather, co-op, art pass. (Home pond and rods are in.)
 - Pond ideas for later: upgrades for more space, feeding to speed growth, rare color variants from breeding.
 - The test save on Stewart's account has 21 coins and 14 fish from Claude's playtests. Ask Claude to wipe it if you want a fresh start.
 

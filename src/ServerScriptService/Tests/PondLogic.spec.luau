@@ -91,7 +91,7 @@ return function(t, Shared)
 
 	t.test("old saves get an empty pond", function()
 		local d = Inventory.reconcile({ v = 2, coins = 10, journal = { entries = {} } })
-		t.eq(d.v, 3)
+		t.ok(d.v >= 3, "version " .. d.v)
 		t.ok(d.pond ~= nil and #d.pond.fish == 0, "pond")
 		t.eq(d.pond.capacity, Config.POND_CAPACITY)
 	end)

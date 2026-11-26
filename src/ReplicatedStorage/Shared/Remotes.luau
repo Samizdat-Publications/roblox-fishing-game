@@ -10,6 +10,7 @@ local EVENTS = {
 	"CancelCast", -- client: ()
 	"Equip", -- client: (baitId: string)
 	"SetAssist", -- client: (on: boolean)
+	"EquipRod", -- client: (rodId: string)
 	"FishingEvent", -- server: (kind: string, payload: table)
 	"State", -- server: (snapshot: table)
 	"Toast", -- server: (text: string)
@@ -17,6 +18,7 @@ local EVENTS = {
 local FUNCTIONS = {
 	"RequestState", -- () -> snapshot
 	"Buy", -- (baitId) -> (ok, message)
+	"BuyRod", -- (rodId) -> (ok, message)
 	"PondAction", -- (action: "keep"|"sell"|"release", index) -> (ok, message)
 }
 

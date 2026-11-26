@@ -4,6 +4,7 @@
 local Shared = script.Parent
 local Config = require(Shared.Config)
 local BaitData = require(Shared.BaitData)
+local RodData = require(Shared.RodData)
 
 export type Fish = {
 	id: string,
@@ -32,13 +33,16 @@ export type Data = {
 	assist: boolean,
 	totalCaught: number,
 	pond: any,
+	rods: { [string]: boolean },
+	rod: string,
+	creekPass: boolean,
 }
 
 local Inventory = {}
 
 function Inventory.new(): Data
 	return {
-		v = 3,
+		v = 4,
 		coins = Config.START_COINS,
 		bait = { Worm = Config.START_WORMS },
 		lures = {},
@@ -48,6 +52,9 @@ function Inventory.new(): Data
 		assist = true,
 		totalCaught = 0,
 		pond = { fish = {}, lastTick = 0, capacity = Config.POND_CAPACITY, breedTimer = 0 },
+		rods = { Willow = true },
+		rod = "Willow",
+		creekPass = false,
 	}
 end
 
@@ -75,6 +82,10 @@ function Inventory.reconcile(saved: any): Data
 	-- v3: the home pond (the empty pond itself is filled in from the fresh data above).
 	if saved.v < 3 then
 		saved.v = 3
+	end
+	-- v4: rods and the Creek Pass (filled in from the fresh data above).
+	if saved.v < 4 then
+		saved.v = 4
 	end
 	return saved
 end
@@ -108,6 +119,31 @@ function Inventory.buy(data: Data, id: string): (boolean, string)
 	end
 	data.bait[id] = (data.bait[id] or 0) + b.pack
 	return true, "Bought " .. b.pack .. " " .. b.name .. "."
+end
+
+function Inventory.buyRod(data: Data, id: string): (boolean, string)
+	local r = RodData.byId[id]
+	if not r or r.price <= 0 then
+		return false, "That rod isn't for sale."
+	end
+	if data.rods[id] then
+		return false, "You already own the " .. r.name .. "."
+	end
+	if data.coins < r.price then
+		return false, "Not enough coins. You need " .. r.price .. "."
+	end
+	data.coins -= r.price
+	data.rods[id] = true
+	data.rod = id
+	return true, "Bought the " .. r.name .. ". It's in your hands."
+end
+
+function Inventory.equipRod(data: Data, id: string): boolean
+	if data.rods[id] and RodData.byId[id] then
+		data.rod = id
+		return true
+	end
+	return false
 end
 
 -- Called when a fish takes the bait. Lures are never used up.
@@ -208,6 +244,9 @@ function Inventory.snapshot(data: Data): any
 		assist = data.assist,
 		totalCaught = data.totalCaught,
 		pond = { fish = data.pond.fish, capacity = data.pond.capacity },
+		rods = table.clone(data.rods),
+		rod = data.rod,
+		creekPass = data.creekPass,
 		bag = (function()
 			local out = {}
 			for i, f in data.bag do

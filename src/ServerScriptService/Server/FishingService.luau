@@ -12,6 +12,7 @@ local BaitData = require(Shared.BaitData)
 local FishLogic = require(Shared.FishLogic)
 local FightModel = require(Shared.FightModel)
 local Inventory = require(Shared.Inventory)
+local RodData = require(Shared.RodData)
 local Remotes = require(Shared.Remotes)
 
 local Server = script.Parent
@@ -225,7 +226,8 @@ local function onCast(player: Player, dir: any, power: any)
 	end
 	flat = flat.Unit
 	local p = math.clamp(power, 0, 1)
-	local dist = Config.CAST_MIN + p * Config.CAST_RANGE
+	local rod = RodData.byId[data.rod] or RodData.byId.Willow
+	local dist = Config.CAST_MIN + p * Config.CAST_RANGE + rod.castBonus
 	local landing = hrp.Position + flat * dist
 	landing = Vector3.new(landing.X, 0.3, landing.Z)
 	if not FishLogic.isOnWater(landing, waterCF, waterSize) then
@@ -265,7 +267,7 @@ local function onHook(player: Player)
 	setBobberY(s, -1)
 	local token = s.token
 	send(player, "Hooked", {
-		fight = species.fight,
+		fight = RodData.applyFight(species.fight, data.rod),
 		assist = data.assist,
 		seed = rng:NextInteger(1, 1e6),
 		note = species.fightNote,

@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local FishData = require(Shared.FishData)
 local BaitData = require(Shared.BaitData)
+local RodData = require(Shared.RodData)
 local FishLogic = require(Shared.FishLogic)
 
 local UI = {}
@@ -509,6 +510,35 @@ function UI.buildShop()
 		end)
 		refs.shopRows[b.id] = { owned = owned, buy = buy }
 	end
+	-- Rods: each comes with its reel. Bought once, switch any time.
+	local rodHeader = label(scroll, "RodsHeader", "Rods", UDim2.new(1, -10, 0, 30), UDim2.new(), 20, C.gold, Enum.Font.GothamBlack)
+	rodHeader.TextXAlignment = Enum.TextXAlignment.Left
+	rodHeader.LayoutOrder = 100
+	refs.rodRows = {}
+	for i, r in RodData.list do
+		local row = frame(scroll, "Rod_" .. r.id, UDim2.new(1, -10, 0, 70), UDim2.new(), C.panel2, 0.1)
+		row.LayoutOrder = 100 + i
+		corner(row, 10)
+		local swatch = frame(row, "Swatch", UDim2.fromOffset(6, 50), UDim2.fromOffset(6, 10), r.color, 0)
+		corner(swatch, 3)
+		label(row, "Name", r.name, UDim2.fromOffset(220, 28), UDim2.fromOffset(18, 6), 20, C.text, Enum.Font.GothamBold).TextXAlignment = Enum.TextXAlignment.Left
+		local blurb = label(row, "Blurb", r.blurb, UDim2.fromOffset(330, 34), UDim2.fromOffset(18, 32), 14, C.dim)
+		blurb.TextXAlignment = Enum.TextXAlignment.Left
+		local btn = button(row, "Buy", "", UDim2.fromOffset(150, 50), UDim2.new(1, -162, 0, 10), C.blue, function()
+			local st = lastState
+			if not st then
+				return
+			end
+			if st.rods and st.rods[r.id] then
+				if callbacks.equipRod then
+					callbacks.equipRod(r.id)
+				end
+			elseif callbacks.buyRod then
+				callbacks.buyRod(r.id)
+			end
+		end)
+		refs.rodRows[r.id] = btn
+	end
 	refs.shopHint = label(p, "Hint", "", UDim2.new(1, -24, 0, 40), UDim2.new(0, 12, 1, -48), 15, C.dim)
 	refs.shop = p
 end
@@ -530,6 +560,20 @@ function UI.refreshShop()
 			r.owned.Text = "You have " .. (s.bait[b.id] or 0)
 			r.buy.Text = string.format("%d for %d", b.pack, b.price)
 			r.buy.BackgroundColor3 = if s.coins >= b.price then C.blue else C.panel
+		end
+	end
+	for _, r in RodData.list do
+		local btn = refs.rodRows[r.id]
+		local owned = s.rods and s.rods[r.id]
+		if s.rod == r.id then
+			btn.Text = "In your hands"
+			btn.BackgroundColor3 = C.panel
+		elseif owned then
+			btn.Text = "Use this rod"
+			btn.BackgroundColor3 = C.green
+		else
+			btn.Text = r.price .. " coins"
+			btn.BackgroundColor3 = if s.coins >= r.price then C.blue else C.panel
 		end
 	end
 	refs.shopHint.Text = string.format("You have %d coins. The right bait beats the expensive bait.", s.coins)
