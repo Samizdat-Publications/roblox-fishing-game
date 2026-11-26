@@ -16,6 +16,7 @@ local Rarity = require(Shared.Rarity)
 local BoatData = require(Shared.BoatData)
 local Config = require(Shared.Config)
 local Journal = require(Shared.Journal)
+local Units = require(Shared.Units)
 
 local UI = {}
 
@@ -518,7 +519,7 @@ function UI.catchCard(payload: any)
 	refs.cardTitle.Text = banner .. (if payload.first then "New species! " else "") .. f.name
 	refs.cardTitle.TextColor3 = color
 	refs.cardStroke.Color = color
-	refs.cardBody.Text = string.format("%s. %.1f cm, %.2f kg. Worth %d coins.%s", (Rarity.byId[tier] or Rarity.byId.Common).name, f.cm, f.kg, f.price, if payload.best then "\nPersonal best!" else "")
+	refs.cardBody.Text = string.format("%s. %s, %s. Worth %d coins.%s", (Rarity.byId[tier] or Rarity.byId.Common).name, Units.length(f.cm), Units.weight(f.kg), f.price, if payload.best then "\nPersonal best!" else "")
 	refs.cardNote.Text = if payload.first then ("Journal: " .. payload.habit) else ("Caught at " .. (FishLogic.SPOT_NAMES[f.spot] or f.spot) .. " on " .. ((BaitData.byId[f.bait] and BaitData.byId[f.bait].name) or f.bait) .. ".")
 	refs.card.Visible = true
 	local token = os.clock()
@@ -750,7 +751,7 @@ function UI.refreshJournal()
 			elseif nT > 0 then
 				big = string.format(" %d troph%s.", nT, if nT == 1 then "y" else "ies")
 			end
-			c.stats.Text = string.format("Caught %d.%s Best: %.2f kg, %.1f cm\non %s at %s", count, big, best.kg, best.cm, (BaitData.byId[best.bait] and BaitData.byId[best.bait].name or best.bait), FishLogic.SPOT_NAMES[best.spot] or best.spot)
+			c.stats.Text = string.format("Caught %d.%s Best: %s, %s\non %s at %s", count, big, Units.weight(best.kg), Units.length(best.cm), (BaitData.byId[best.bait] and BaitData.byId[best.bait].name or best.bait), FishLogic.SPOT_NAMES[best.spot] or best.spot)
 			c.habit.Text = s.habit
 		else
 			-- Not caught yet: show its tier, and a rumour once enough fish are caught overall.
@@ -880,7 +881,7 @@ function UI.refreshPond()
 		order += 1
 		local s = FishData.byId[f.id]
 		local grow = if s then (f.cm - s.minCm) / (s.maxCm - s.minCm) else 0
-		pondRow(refs.pondList, order, (if f.bornHere then "Baby " else "") .. f.name, string.format("%.1f cm, %.2f kg. Worth %d.", f.cm, f.kg, f.price), grow, {
+		pondRow(refs.pondList, order, (if f.bornHere then "Baby " else "") .. f.name, string.format("%s, %s. Worth %d.", Units.length(f.cm), Units.weight(f.kg), f.price), grow, {
 			{ text = "Sell", color = C.green, fn = function()
 				callbacks.pond("sell", i)
 			end },
@@ -899,7 +900,7 @@ function UI.refreshPond()
 	local bag = st.bag or {}
 	for i, f in bag do
 		order += 1
-		pondRow(refs.pondList, order, f.name, string.format("%.1f cm. Sells for %d now.", f.cm, f.price), nil, {
+		pondRow(refs.pondList, order, f.name, string.format("%s. Sells for %d now.", Units.length(f.cm), f.price), nil, {
 			{ text = "Keep", color = C.blue, fn = function()
 				callbacks.pond("keep", i)
 			end },
