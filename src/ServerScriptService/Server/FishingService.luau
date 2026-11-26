@@ -425,7 +425,7 @@ local function onFightResult(player: Player, won: any)
 		if won == true then
 			warn(string.format("[Fishing] %s reported a win too fast (%.2fs < %.2fs); counted as escape", player.Name, elapsed, s.minSecs))
 		end
-		send(player, "Escaped", { text = "It got away! " .. species.fightNote })
+		send(player, "Escaped", { text = "It got away! " .. species.fightNote, snapped = true })
 		cleanup(s)
 		return
 	end
@@ -481,6 +481,9 @@ local function onFightResult(player: Player, won: any)
 	if class == "monster" then
 		for _, p in Players:GetPlayers() do
 			toast(p, string.format("%s landed a MONSTER %s: %.0f cm, %.1f kg!", player.DisplayName, species.name, cm, kg))
+			if p ~= player then
+				send(p, "Announce", { sound = "server-horn" }) -- a foghorn for everyone else (UNVERIFIED in Studio)
+			end
 		end
 	end
 	cleanup(s)

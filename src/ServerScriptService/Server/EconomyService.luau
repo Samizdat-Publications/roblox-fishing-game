@@ -33,6 +33,7 @@ local function onSell(player: Player)
 	end
 	print(string.format("[Economy] %s sold %d fish for %d coins (now %d)", player.Name, count, coins, data.coins))
 	toast(player, string.format("Sold %d fish for %d coins.", count, coins))
+	Remotes.event("FishingEvent"):FireClient(player, "Sold", { coins = coins }) -- coin sound (UNVERIFIED in Studio)
 	GoalService.onSell(player, data, coins)
 	PlayerData.changed(player)
 	PlayerData.saveNow(player)

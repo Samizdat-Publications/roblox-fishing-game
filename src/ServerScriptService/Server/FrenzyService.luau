@@ -87,6 +87,7 @@ function FrenzyService.start(spot: string)
 	workspace:SetAttribute("Frenzy", spot)
 	for _, p in Players:GetPlayers() do
 		Remotes.event("Toast"):FireClient(p, Frenzy.SIGNS[spot] or "Fish are feeding like crazy somewhere!")
+		Remotes.event("FishingEvent"):FireClient(p, "FrenzyStart", { spot = spot })
 	end
 	print("[Frenzy] at " .. spot)
 end

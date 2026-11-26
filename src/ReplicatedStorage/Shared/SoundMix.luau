@@ -118,4 +118,77 @@ function SoundMix.reelPitch(progress: number, inside: boolean): number
 	return 1 + 0.35 * danger
 end
 
+-- Second overnight run (2026-11-26, cloud, UNVERIFIED in Studio): rules for the sounds
+-- prompted in audio/sounds-next.json. Each is skipped by SoundFX until it's uploaded.
+
+local function smooth(t: number): number
+	t = math.clamp(t, 0, 1)
+	return t * t * (3 - 2 * t)
+end
+
+-- 0..1: how far into the Big Lake you are. The channel through the north shore starts at
+-- z = -78; the open Big Lake at z = -140. Off the map sideways it's silent.
+function SoundMix.bigLakeLevel(x: number, z: number): number
+	if math.abs(x) > 210 then
+		return 0
+	end
+	return smooth((-100 - z) / 50)
+end
+
+-- 0..1: the blue water past the buoy line at z = -290 (the deep, open sound).
+SoundMix.BUOY_Z = -290
+function SoundMix.blueLevel(x: number, z: number): number
+	if math.abs(x) > 210 then
+		return 0
+	end
+	return smooth((SoundMix.BUOY_Z + 10 - z) / 40)
+end
+
+-- The home lake steps back out on the Big Lake (it's far behind you).
+function SoundMix.homeLakeLevel(bigLevel: number): number
+	return 1 - 0.85 * bigLevel
+end
+
+-- Motor volumes and pitch for a boat at this speed: an idle putter at rest that gives way
+-- to a running drone, which rises in pitch with speed.
+export type Motor = { idle: number, run: number, pitch: number }
+function SoundMix.motor(speed: number, maxSpeed: number): Motor
+	local t = if maxSpeed > 0 then math.clamp(speed / maxSpeed, 0, 1) else 0
+	return {
+		idle = 0.35 * (1 - smooth(t * 3)),
+		run = if t > 0.03 then 0.2 + 0.5 * t else 0,
+		pitch = 0.8 + 0.5 * t,
+	}
+end
+
+function SoundMix.motorName(boatId: string?): string
+	return if boatId == "DeepV" then "motor-deepv-run" else "motor-dinghy-run"
+end
+
+-- Weather sounds: a rain loop level, and the gaps (seconds, min and max) between thunder
+-- rolls and wind gusts. nil means none in this weather.
+export type WeatherSound = { rain: number, thunder: { number }?, gust: { number }? }
+local WEATHER_SOUNDS: { [string]: WeatherSound } = {
+	Storm = { rain = 0.7, thunder = { 12, 30 } },
+	PreStorm = { rain = 0, thunder = { 45, 90 } }, -- far off: the storm is coming
+	Wind = { rain = 0, gust = { 10, 22 } },
+	ColdFront = { rain = 0, gust = { 25, 50 } },
+}
+function SoundMix.weather(id: string?): WeatherSound
+	return WEATHER_SOUNDS[id or ""] or { rain = 0 }
+end
+
+-- 0..1: the boil of a feeding frenzy, loud close by and gone beyond 120 studs.
+function SoundMix.frenzyLevel(distance: number): number
+	return smooth((120 - distance) / 95)
+end
+
+-- The catch stinger, with trophy and monster ones when uploaded (`has` says which are).
+function SoundMix.catchStinger(tier: string?, sizeClass: string?, has: (string) -> boolean): string
+	if (sizeClass == "monster" or sizeClass == "trophy") and has("sting-" .. sizeClass) then
+		return "sting-" .. sizeClass
+	end
+	return SoundMix.stingerFor(tier)
+end
+
 return SoundMix

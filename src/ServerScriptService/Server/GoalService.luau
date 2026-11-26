@@ -20,6 +20,7 @@ local function pay(player: Player, data: any, done: { Goals.Goal })
 		data.coins += g.reward
 		print(string.format("[Goals] %s finished \"%s\" (+%d coins)", player.Name, g.text, g.reward))
 		Remotes.event("Toast"):FireClient(player, string.format("Goal done: %s! +%d coins", g.text, g.reward))
+		Remotes.event("FishingEvent"):FireClient(player, "Goal", {}) -- for the goal sound (UNVERIFIED in Studio)
 	end
 end
 

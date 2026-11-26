@@ -158,14 +158,14 @@ Nothing below has been seen in Studio. All of it is on the branch `claude/overni
 
 ## Overnight 2, unverified (2026-11-26, Claude in the cloud)
 
-Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6f` in draft pull request #2, with main (sound pass included) merged in; `main` and the place are unchanged. Compiles (`lune run tools/test/syntax.luau`, 57 files) and 127 tests pass with Lune. Full list and open design questions: `docs/OVERNIGHT-SUMMARY-2026-11-26.md`.
+Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6f` in draft pull request #2, with main (sound pass included) merged in; `main` and the place are unchanged. Compiles (`lune run tools/test/syntax.luau`, 57 files) and 131 tests pass with Lune. Full list and open design questions: `docs/OVERNIGHT-SUMMARY-2026-11-26.md`.
 
 ### Built
 - **Rarity:** seven tiers on every fish with colours on the catch card and journal; trophy (2 percent) and monster (0.2 percent) catches rolled on the server at the hook, with harder fights, warnings, banners, a server message for monsters and journal counts. The sound pass's stingers now get real tiers.
 - **Fish:** 15 new species (26 in all), three of them Mythics tied to weather (Albino Catfish in storms, Golden Trout in fog, Tiger Muskie in the pre-storm rush). Blender models for all 15 plus the Dinghy and Deep-V.
 - **Loop:** three daily goals (paid on the server, Goals panel), journal rumours for uncaught fish, weather with an 8 day moon (changes bites, clock and shop forecast, boats stay in during lightning), feeding frenzies about once a game day, no breeding of Legendary or rarer fish in the pond.
 - **Boats:** Dinghy (1,200) and Deep-V (4,000) in the shop, four slips by the dock, driving with the normal movement controls, the Big Lake through a north channel (island, buoy line, blue water), casting from a boat, team catches split on the Deep-V, a fish finder for the navigator.
-- **Sound:** 25 more prompts in `audio/sounds-next.json`, joined to `SoundIds.luau` with empty ids so `SoundFX` skips them until uploaded.
+- **Sound:** 25 more prompts in `audio/sounds-next.json`, joined to `SoundIds.luau` with empty ids; `SoundFX` plays 20 of them once uploaded (rules and tests in `SoundMix`).
 - **Economy:** expert +15 percent, dock kid unchanged, weather averages within 2 percent (`docs/ECONOMY.md`).
 - **Read-through fixes** after an independent review of the new server scripts: one AlignOrientation holds the boat's heading, boats sit at the water line, seats only by prompt, only the helm casts off, the storm check applies near the slip, no buying a boat while aboard, a mate with a full bag gets paid their share.
 

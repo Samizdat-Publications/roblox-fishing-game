@@ -78,4 +78,45 @@ return function(t, Shared)
 		t.ok(SoundMix.reelPitch(0.05, true) < SoundMix.reelPitch(0.05, false), "back in the zone eases it")
 		t.ok(SoundMix.isBigFight({ heavy = 0.6 }) and not SoundMix.isBigFight({ heavy = 0 }), "heavy fish bring tension")
 	end)
+	t.test("Big Lake and blue water ambience follow where you are (overnight 2)", function()
+		t.eq(SoundMix.bigLakeLevel(0, 57), 0, "on the dock")
+		t.eq(SoundMix.bigLakeLevel(0, -200), 1, "out on the Big Lake")
+		local mid = SoundMix.bigLakeLevel(0, -125)
+		t.ok(mid > 0 and mid < 1, "fading in through the channel")
+		t.eq(SoundMix.blueLevel(0, -200), 0, "inside the buoys")
+		t.eq(SoundMix.blueLevel(0, -340), 1, "in blue water")
+		t.ok(SoundMix.homeLakeLevel(1) < 0.2 and SoundMix.homeLakeLevel(0) == 1, "home lake steps back")
+	end)
+
+	t.test("boat motors idle at rest and rise with speed", function()
+		local rest = SoundMix.motor(0, 12)
+		t.ok(rest.idle > 0.3 and rest.run == 0, "idle putter at rest")
+		local full = SoundMix.motor(12, 12)
+		t.ok(full.idle == 0 and full.run > rest.run and full.pitch > rest.pitch, "full throttle")
+		t.eq(SoundMix.motorName("DeepV"), "motor-deepv-run")
+		t.eq(SoundMix.motorName("Dinghy"), "motor-dinghy-run")
+	end)
+
+	t.test("weather and frenzy sounds", function()
+		t.ok(SoundMix.weather("Storm").rain > 0 and SoundMix.weather("Storm").thunder ~= nil, "storm: rain and thunder")
+		t.eq(SoundMix.weather("Clear").rain, 0)
+		t.ok(SoundMix.weather("Clear").thunder == nil and SoundMix.weather("Wind").gust ~= nil, "wind gusts only when windy")
+		t.eq(SoundMix.frenzyLevel(10), 1, "right on it")
+		t.eq(SoundMix.frenzyLevel(200), 0, "far away")
+		local none = function(_: string)
+			return false
+		end
+		local all = function(_: string)
+			return true
+		end
+		t.eq(SoundMix.catchStinger("Rare", "monster", none), "sting-rare", "falls back to the tier")
+		t.eq(SoundMix.catchStinger("Rare", "monster", all), "sting-monster")
+		t.eq(SoundMix.catchStinger("Rare", nil, all), "sting-rare")
+	end)
+
+	t.test("every sound the rules name has an id slot", function()
+		for _, id in { "amb-biglake", "amb-bluewater", "motor-dinghy-idle", "motor-dinghy-run", "motor-deepv-run", "rain-on-water", "thunder-far", "wind-gust", "frenzy-boil", "frenzy-burst", "server-horn", "sting-trophy", "sting-monster", "buoy-bell", "goal-complete", "sell-coins", "line-snap", "breach-huge", "theme-biglake", "tension-bluewater" } do
+			t.ok(SoundIds[id] ~= nil, id)
+		end
+	end)
 end

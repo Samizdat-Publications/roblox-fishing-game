@@ -14,6 +14,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local SoundIds = require(Shared.SoundIds)
 local SoundMix = require(Shared.SoundMix)
 local FishData = require(Shared.FishData)
+local BoatData = require(Shared.BoatData)
 
 local SoundFX = {}
 
@@ -34,6 +35,10 @@ local cooldowns: { [string]: number } = {}
 local stingerUntil = 0
 local idleSince = 0
 local rng = Random.new()
+-- Overnight 2 (UNVERIFIED in Studio): when the next thunder roll and wind gust are due.
+local nextThunder = 0
+local nextGust = 0
+local frenzyZones: { [string]: { Vector3 } } = {}
 
 local function group(name: string, volume: number): SoundGroup
 	local g = Instance.new("SoundGroup")
@@ -127,7 +132,11 @@ local function update(dt: number)
 	local creek = if pos then SoundMix.creekLevel(SoundMix.creekDistance(pos.X, pos.Z)) else 0
 	-- While the line is in, everything else steps back a little: the held breath before a bite.
 	local hush = if lineIn() then 0.6 elseif fighting() then 0.75 else 1
-	local lake = SoundMix.lakeLevel(creek) * hush
+	local big = if pos then SoundMix.bigLakeLevel(pos.X, pos.Z) else 0
+	local blue = if pos then SoundMix.blueLevel(pos.X, pos.Z) else 0
+	local lake = SoundMix.lakeLevel(creek) * SoundMix.homeLakeLevel(big) * hush
+	fadeTo("amb-biglake", big * (1 - blue) * hush, 0.4, dt)
+	fadeTo("amb-bluewater", blue * hush, 0.4, dt)
 	for id, w in SoundMix.lakeWeights(Lighting.ClockTime) do
 		fadeTo(id, w * lake, 0.5, dt)
 	end
@@ -135,14 +144,13 @@ local function update(dt: number)
 
 	-- Music: one calm theme now and then, never while a line is in or a fish is on.
 	local now = os.clock()
-	local themeName = if creek > 0.5 then "theme-creek" else "theme-lake"
-	local other = if themeName == "theme-lake" then "theme-creek" else "theme-lake"
+	local themeName = if creek > 0.5 then "theme-creek" elseif big > 0.5 and sounds["theme-biglake"] then "theme-biglake" else "theme-lake"
 	local theme = sounds[themeName]
 	local busy = lineIn() or fighting()
-	for _, name in { "theme-lake", "theme-creek" } do
+	for _, name in { "theme-lake", "theme-creek", "theme-biglake" } do
 		local s = sounds[name]
 		if s and s.IsPlaying then
-			local want = if busy or name == other then 0 elseif now < stingerUntil then 0.35 else 1
+			local want = if busy or name ~= themeName then 0 elseif now < stingerUntil then 0.35 else 1
 			fadeTo(name, want, 0.3, dt)
 			if not s.IsPlaying then
 				lastThemeEnd = now
@@ -165,7 +173,99 @@ local function update(dt: number)
 	-- Bobber ticking in the ripples while waiting.
 	fadeTo("wait-bobber-tick", if phase == "Waiting" then 0.2 else 0, 1.5, dt)
 	-- The tension layer comes in during fights with heavy fish.
-	fadeTo("tension-fight", if fighting() and bigFight then 0.8 else 0, 0.6, dt)
+	-- Out in blue water the deep-water layer takes over, once it's uploaded.
+	local deep = blue > 0.5 and sounds["tension-bluewater"] ~= nil
+	fadeTo("tension-fight", if fighting() and bigFight and not deep then 0.8 else 0, 0.6, dt)
+	fadeTo("tension-bluewater", if fighting() and bigFight and deep then 0.8 else 0, 0.6, dt)
+
+	-- Weather: rain on the water in a storm, thunder now and then, gusts on windy days.
+	local weather = SoundMix.weather(workspace:GetAttribute("Weather"))
+	fadeTo("rain-on-water", weather.rain, 0.3, dt)
+	if weather.thunder then
+		if now >= nextThunder then
+			if nextThunder > 0 then
+				play("thunder-far", nil, nil, true)
+			end
+			nextThunder = now + rng:NextNumber(weather.thunder[1], weather.thunder[2])
+		end
+	else
+		nextThunder = 0
+	end
+	if weather.gust then
+		if now >= nextGust then
+			if nextGust > 0 then
+				play("wind-gust", nil, nil, true)
+			end
+			nextGust = now + rng:NextNumber(weather.gust[1], weather.gust[2])
+		end
+	else
+		nextGust = 0
+	end
+
+	-- A feeding frenzy boils louder the closer you are to it.
+	local spot = workspace:GetAttribute("Frenzy")
+	local boil = 0
+	if type(spot) == "string" and pos then
+		for _, at in SoundFX.frenzyPoints(spot) do
+			boil = math.max(boil, SoundMix.frenzyLevel((Vector3.new(pos.X, 0, pos.Z) - at).Magnitude))
+		end
+	end
+	fadeTo("frenzy-boil", boil * 0.8, 0.5, dt)
+
+	-- Your boat's motor, while you're aboard.
+	local char = Players.LocalPlayer.Character
+	local hum = char and char:FindFirstChildOfClass("Humanoid")
+	local seat = hum and hum.SeatPart
+	local boatModel = seat and seat:FindFirstAncestorOfClass("Model")
+	local boatId = boatModel and boatModel:GetAttribute("BoatId")
+	local runName = SoundMix.motorName(boatId)
+	if type(boatId) == "string" and seat then
+		local v = seat.AssemblyLinearVelocity
+		local b = BoatData.byId[boatId]
+		local m = SoundMix.motor(Vector3.new(v.X, 0, v.Z).Magnitude, if b then b.maxSpeed else 12)
+		fadeTo("motor-dinghy-idle", m.idle, 1.5, dt)
+		fadeTo(runName, m.run, 1.5, dt)
+		local run = sounds[runName]
+		if run then
+			run.PlaybackSpeed = m.pitch
+		end
+		-- The buoy line has a bell you hear as you come up on it.
+		if pos and math.abs(pos.Z - SoundMix.BUOY_Z) < 35 then
+			play("buoy-bell", 9, nil, true)
+		end
+	else
+		fadeTo("motor-dinghy-idle", 0, 1.5, dt)
+	end
+	for _, name in { "motor-dinghy-run", "motor-deepv-run" } do
+		if name ~= runName or type(boatId) ~= "string" then
+			fadeTo(name, 0, 1.5, dt)
+		end
+	end
+end
+
+-- Where a frenzy spot's water is (its zone part, or the two open-water patches).
+function SoundFX.frenzyPoints(spot: string): { Vector3 }
+	local cached = frenzyZones[spot]
+	if cached then
+		return cached
+	end
+	local out = {}
+	if spot == "OpenWater" then
+		out = { Vector3.new(-60, 0, -40), Vector3.new(65, 0, -35) }
+	else
+		for _, root in { "Lake", "BigLake" } do
+			local folder = workspace:FindFirstChild(root)
+			local zones = folder and folder:FindFirstChild("Zones")
+			local z = zones and zones:FindFirstChild(spot)
+			if z and z:IsA("BasePart") then
+				table.insert(out, Vector3.new(z.Position.X, 0, z.Position.Z))
+			end
+		end
+	end
+	if #out > 0 then
+		frenzyZones[spot] = out -- with streaming a zone may arrive later, so only cache a find
+	end
+	return out
 end
 
 -- Called by the Controller every frame of a fight.
@@ -235,10 +335,9 @@ function SoundFX.event(kind: string, payload: any)
 		play(SoundMix.splashFor(fish and fish.kg or 0), nil, nil, true)
 		stingerUntil = os.clock() + 4
 		-- A trophy or monster gets its own stinger once one is uploaded (UNVERIFIED in Studio, 2026-11-26).
-		local cls = fish and fish.sizeClass
-		local sting = if (cls == "monster" or cls == "trophy") and sounds["sting-" .. cls]
-			then "sting-" .. cls
-			else SoundMix.stingerFor(species and (species :: any).tier)
+		local sting = SoundMix.catchStinger(species and (species :: any).tier, fish and fish.sizeClass, function(name)
+			return sounds[name] ~= nil
+		end)
 		task.delay(0.35, function()
 			play(sting)
 		end)
@@ -248,7 +347,19 @@ function SoundFX.event(kind: string, payload: any)
 			end)
 		end
 	elseif kind == "Escaped" then
-		play("splash-small", nil, nil, true)
+		play(if payload and payload.snapped and sounds["line-snap"] then "line-snap" else "splash-small", nil, nil, true)
+	-- Overnight 2 (UNVERIFIED in Studio): sounds for the new loop, each skipped until uploaded.
+	elseif kind == "Announce" then
+		play(if payload and payload.sound then payload.sound else "server-horn", 3)
+	elseif kind == "Goal" then
+		play("goal-complete", 1)
+	elseif kind == "Sold" then
+		play("sell-coins", 0.5, nil, true)
+	elseif kind == "FrenzyStart" then
+		play("frenzy-burst", 10)
+	end
+	if kind == "Hooked" and payload and payload.sizeClass == "monster" then
+		play("breach-huge", 2) -- something huge breaks the surface
 	end
 end
 
@@ -268,6 +379,19 @@ function SoundFX.start()
 	make("theme-lake", music, false, 0)
 	make("theme-creek", music, false, 0)
 	make("tension-fight", music, true, 0)
+	-- Overnight 2 sounds (audio/sounds-next.json); each is skipped until its id is pasted in.
+	for _, name in { "amb-biglake", "amb-bluewater", "rain-on-water" } do
+		make(name, amb, true, 0)
+	end
+	for _, name in { "frenzy-boil", "motor-dinghy-idle", "motor-dinghy-run", "motor-deepv-run" } do
+		make(name, fx, true, 0)
+	end
+	make("theme-biglake", music, false, 0)
+	make("tension-bluewater", music, true, 0)
+	make("frenzy-burst", music, false, 0.7)
+	for _, name in { "thunder-far", "wind-gust", "buoy-bell", "server-horn", "goal-complete", "sell-coins", "line-snap", "breach-huge" } do
+		make(name, fx, false, 0.8)
+	end
 	make("reel-click", fx, true, 0.45)
 	for _, name in { "bite-nibble", "bite-tap", "bite-slam", "bite-deep-pull" } do
 		make(name, fx, false, 1)
