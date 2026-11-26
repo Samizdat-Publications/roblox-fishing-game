@@ -11,7 +11,7 @@ local Remotes = require(Shared.Remotes)
 local GoalService = {}
 
 local function current(data: any): Goals.State
-	data.goals = Goals.ensure(data.goals, Goals.dayOf(os.time()), data.creekPass == true)
+	data.goals = Goals.ensure(data.goals, Goals.dayOf(os.time()), data.creekPass == true, next(data.boats or {}) ~= nil)
 	return data.goals
 end
 
@@ -25,8 +25,8 @@ local function pay(player: Player, data: any, done: { Goals.Goal })
 end
 
 -- Call after a catch is recorded. Returns true when a goal paid out.
-function GoalService.onCatch(player: Player, data: any, fish: any): boolean
-	local done = Goals.onCatch(current(data), fish)
+function GoalService.onCatch(player: Player, data: any, fish: any, frenzy: boolean?): boolean
+	local done = Goals.onCatch(current(data), fish, frenzy)
 	pay(player, data, done)
 	return #done > 0
 end

@@ -3,6 +3,7 @@ return function(t, Shared)
 	local Goals = require(Shared.Goals)
 	local FishData = require(Shared.FishData)
 	local CREEK = { Riffle = true, Rocks = true, Pool = true }
+	local BIG = { Basin = true, IslandPoint = true, DropOff = true }
 
 	t.test("three goals a day, easy to hard, same for everyone on the same day", function()
 		local a, b = Goals.forDay(20000, false), Goals.forDay(20000, false)
@@ -30,8 +31,9 @@ return function(t, Shared)
 
 	t.test("no goal needs the creek before you have the Creek Pass, and every goal can be done", function()
 		for day = 19000, 19365 do
-			for _, creek in { false, true } do
-				for _, g in Goals.forDay(day, creek) do
+			for _, access in { { false, false }, { true, false }, { true, true } } do
+				local creek, boat = access[1], access[2]
+				for _, g in Goals.forDay(day, creek, boat) do
 					t.ok(g.target >= 1 and g.reward > 0 and #g.text > 0, "sane " .. g.text)
 					if g.species then
 						local s = FishData.byId[g.species]
@@ -39,15 +41,31 @@ return function(t, Shared)
 						if not creek then
 							local lake = false
 							for spot, w in s.spots do
-								if w > 0 and not CREEK[spot] then
+								if w > 0 and not CREEK[spot] and not BIG[spot] then
 									lake = true
 								end
 							end
 							t.ok(lake, g.text .. " needs the creek")
 						end
 					end
+					if g.species and not boat then
+						local s = FishData.byId[g.species]
+						local off = false
+						for spot, w in s.spots do
+							if w > 0 and not BIG[spot] then
+								off = true
+							end
+						end
+						t.ok(off, g.text .. " needs a boat")
+					end
+					if g.cm then
+						local s = FishData.byId[g.species :: string]
+						t.ok(g.cm > s.minCm and g.cm < s.maxCm, g.text .. " is a size the fish reaches")
+					end
 					if g.spot then
 						t.ok(creek or not CREEK[g.spot], g.text .. " needs the creek")
+						t.ok(boat or not BIG[g.spot], g.text .. " needs a boat")
+						t.ok(g.spot ~= "DropOff", "no goal sends anyone to blue water alone")
 						local bites = false
 						for _, s in FishData.list do
 							if (s.spots[g.spot] or 0) > 0 and (s.periods[g.period or ""] or 0) >= 0.5 then
@@ -98,5 +116,44 @@ return function(t, Shared)
 		t.eq(fresh.day, 101)
 		t.eq(fresh.list[1].progress, 0, "new day")
 		t.eq(Goals.dayOf(86400 * 3 + 5), 3)
+	end)
+	t.test("every kind of goal shows up over a few months", function()
+		local kinds = {}
+		for day = 19000, 19120 do
+			for _, g in Goals.forDay(day, true, true) do
+				kinds[g.kind] = true
+			end
+		end
+		for _, k in { "catchAny", "sell", "catchBait", "catchSpecies", "catchSize", "catchTier", "catchAt", "catchFrenzy" } do
+			t.ok(kinds[k], k)
+		end
+	end)
+
+	t.test("bait, size and frenzy goals count the right catches", function()
+		local state = {
+			day = 1,
+			list = {
+				{ id = "easy", kind = "catchBait", text = "", target = 1, progress = 0, reward = 25, done = false, bait = "Cricket" },
+				{ id = "medium", kind = "catchSize", text = "", target = 1, progress = 0, reward = 60, done = false, species = "Bluegill", cm = 20 },
+				{ id = "hard", kind = "catchFrenzy", text = "", target = 2, progress = 0, reward = 120, done = false },
+			},
+		}
+		t.eq(#Goals.onCatch(state, { id = "Bluegill", spot = "Dock", period = "Day", bait = "Worm", cm = 18 }), 0, "wrong bait, too small, no frenzy")
+		local done = Goals.onCatch(state, { id = "Bluegill", spot = "Dock", period = "Day", bait = "Cricket", cm = 21 }, true)
+		t.eq(#done, 2, "cricket and a 21 cm bluegill")
+		t.eq(state.list[3].progress, 1, "one frenzy fish so far")
+		t.eq(#Goals.onCatch(state, { id = "Pumpkinseed", spot = "Dock", period = "Day", bait = "Worm", cm = 12 }, true), 1, "second frenzy fish")
+	end)
+
+	t.test("boat owners can get Big Lake goals; others never do", function()
+		local big = false
+		for day = 19000, 19365 do
+			for _, g in Goals.forDay(day, true, true) do
+				if g.spot and BIG[g.spot] then
+					big = true
+				end
+			end
+		end
+		t.ok(big, "a Big Lake goal within a year")
 	end)
 end
