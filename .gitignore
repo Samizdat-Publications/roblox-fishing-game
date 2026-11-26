@@ -16,3 +16,8 @@ build/
 
 # Python bytecode
 __pycache__/
+
+# Local secrets, never committed
+.env
+.env.*
+!.env.example
