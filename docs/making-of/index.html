@@ -1,0 +1,207 @@
+<title>Fishing Game Making-Of</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a lake-side logbook. Latest still big on top, then a dated timeline (newest first) with before/after sliders. */
+:root{
+  --bg:#EDF2F1; --surface:#FFFFFF; --surface-2:#F4F7F6; --ink:#12262A; --muted:#556A6E; --line:#CBD8D6;
+  --lake:#1C6E8C; --bobber:#D8432C; --reed:#4C7A3A; --on-accent:#FFFFFF; --shade:rgba(18,38,42,.55);
+  --f-display:"Barlow Condensed", "Arial Narrow", "Segoe UI", sans-serif;
+  --f-body:"IBM Plex Sans", system-ui, "Segoe UI", Roboto, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0D1A1D; --surface:#132427; --surface-2:#182D31; --ink:#E3EEEC; --muted:#93AAAD; --line:#284247;
+  --lake:#5BB4D4; --bobber:#FF6E55; --reed:#8DC172; --on-accent:#0D1A1D; --shade:rgba(0,0,0,.6); color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#0D1A1D; --surface:#132427; --surface-2:#182D31; --ink:#E3EEEC; --muted:#93AAAD; --line:#284247;
+  --lake:#5BB4D4; --bobber:#FF6E55; --reed:#8DC172; --on-accent:#0D1A1D; --shade:rgba(0,0,0,.6); color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg); color:var(--ink); font-family:var(--f-body); font-size:15.5px; line-height:1.55}
+.wrap{max-width:1040px; margin:0 auto; padding-left:max(16px, env(safe-area-inset-left,0px)); padding-right:max(16px, env(safe-area-inset-right,0px))}
+header.wrap{padding-block:32px 8px}
+.eyebrow{font-family:var(--f-mono); font-size:.75rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
+h1{font-family:var(--f-display); font-weight:800; font-size:clamp(2.4rem, 7vw, 4.2rem); line-height:.92; margin:6px 0 0; letter-spacing:.005em; text-wrap:balance}
+.pitch{max-width:60ch; color:var(--muted); margin:12px 0 0}
+.meta{display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; margin-top:14px; font-size:.85rem; color:var(--muted)}
+.pill{display:inline-flex; align-items:center; gap:6px; font-weight:600; font-size:.78rem; padding:3px 10px; border-radius:999px; background:var(--surface); border:1px solid var(--line); color:var(--ink)}
+.pill::before{content:""; width:8px; height:8px; border-radius:50%; background:var(--bobber)}
+main.wrap{display:grid; gap:28px; padding-block:18px 72px}
+
+/* Latest */
+.latest{background:var(--surface); border:1px solid var(--line); border-radius:12px; overflow:hidden}
+.latest figure{margin:0; position:relative; background:#0b1416}
+.latest img{display:block; width:100%; height:auto; cursor:zoom-in}
+.latest .cap{display:flex; flex-wrap:wrap; justify-content:space-between; gap:6px 16px; padding:14px 18px}
+.latest .cap b{font-family:var(--f-display); font-size:1.35rem; font-weight:700; letter-spacing:.01em}
+.latest .cap span{color:var(--muted); font-size:.9rem}
+.latest .strip{display:flex; gap:8px; overflow-x:auto; padding:0 18px 16px}
+.latest .strip button{flex:none; padding:0; border:2px solid transparent; border-radius:6px; background:none; cursor:pointer; overflow:hidden}
+.latest .strip button[aria-pressed="true"]{border-color:var(--bobber)}
+.latest .strip img{display:block; width:120px; height:72px; object-fit:cover}
+
+/* Timeline */
+h2{font-family:var(--f-display); font-weight:700; font-size:1.7rem; margin:0; letter-spacing:.01em}
+.timeline{display:grid; gap:0; position:relative}
+.entry{display:grid; grid-template-columns:120px 1fr; gap:20px; padding:22px 0; border-top:1px solid var(--line)}
+.when{font-family:var(--f-mono); font-size:.78rem; color:var(--muted); display:grid; gap:4px; align-content:start}
+.tag{justify-self:start; font-family:var(--f-display); font-weight:700; font-size:1rem; letter-spacing:.04em; padding:2px 9px; border-radius:5px; background:var(--lake); color:var(--on-accent)}
+.tag.next{background:var(--bobber)}
+.tag.fix{background:var(--reed)}
+.body{display:grid; gap:12px; min-width:0}
+.body h3{font-family:var(--f-display); font-weight:700; font-size:1.45rem; line-height:1.1; margin:0}
+.body p{margin:0; max-width:68ch}
+.commit{font-family:var(--f-mono); font-size:.72rem}
+.grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:10px}
+.grid figure{margin:0; display:grid; gap:5px}
+.grid img{width:100%; aspect-ratio:16/10; object-fit:cover; border-radius:8px; border:1px solid var(--line); cursor:zoom-in; display:block}
+figcaption{font-size:.82rem; color:var(--muted)}
+
+/* Before / after slider */
+.compare{display:grid; gap:6px}
+.ba{position:relative; overflow:hidden; border-radius:10px; border:1px solid var(--line); aspect-ratio:16/10; background:#0b1416; touch-action:pan-y; user-select:none; cursor:ew-resize}
+.ba img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; pointer-events:none}
+.ba .after{clip-path:inset(0 0 0 var(--pos,50%))}
+.ba .handle{position:absolute; top:0; bottom:0; left:var(--pos,50%); width:3px; margin-left:-1.5px; background:#fff; box-shadow:0 0 0 1px rgba(0,0,0,.35)}
+.ba .handle::after{content:"◀ ▶"; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:.7rem; white-space:nowrap; background:#fff; color:#12262A; padding:5px 8px; border-radius:999px; box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.ba .lbl{position:absolute; top:10px; font-family:var(--f-mono); font-size:.7rem; text-transform:uppercase; letter-spacing:.1em; padding:3px 8px; border-radius:4px; background:var(--shade); color:#fff}
+.ba .lbl.b{left:10px}.ba .lbl.a{right:10px}
+.ba input{position:absolute; inset:0; opacity:0; width:100%; height:100%; cursor:ew-resize; margin:0}
+.ba:focus-within{outline:3px solid var(--lake); outline-offset:2px}
+
+/* Lightbox */
+dialog{border:0; padding:0; background:transparent; max-width:96vw; max-height:94vh}
+dialog::backdrop{background:rgba(0,0,0,.82)}
+dialog img{max-width:96vw; max-height:86vh; display:block; border-radius:8px}
+dialog p{color:#fff; margin:8px 2px 0; font-size:.9rem}
+.empty{color:var(--muted)}
+footer{color:var(--muted); font-size:.8rem; padding-top:8px}
+@media (max-width:700px){ .entry{grid-template-columns:1fr; gap:10px} .when{grid-auto-flow:column; justify-content:start; align-items:center; gap:10px} }
+@media (prefers-reduced-motion: reduce){ *{transition:none!important} }
+</style>
+
+<header class="wrap">
+  <div class="eyebrow">The making of</div>
+  <h1 id="title">Fishing Game</h1>
+  <p class="pitch" id="pitch">A Roblox fishing game where real fishing knowledge matters: the right bait, spot and time of day decide what bites.</p>
+  <div class="meta"><span class="pill" id="status">In development</span><span id="counts"></span><span id="updated"></span></div>
+</header>
+
+<main class="wrap">
+  <section class="latest" aria-labelledby="latestTitle">
+    <figure><img id="latestImg" alt=""></figure>
+    <div class="cap"><b id="latestTitle">Latest</b><span id="latestCap">Loading the log…</span></div>
+    <div class="strip" id="latestStrip" aria-label="Latest stills"></div>
+  </section>
+
+  <section aria-labelledby="tlTitle">
+    <h2 id="tlTitle">Every step, newest first</h2>
+    <div class="timeline" id="timeline"></div>
+  </section>
+
+  <footer id="footer">Stills are captured from Roblox Studio playtests at each step.</footer>
+</main>
+
+<dialog id="lightbox"><img id="lbImg" alt=""><p id="lbCap"></p></dialog>
+
+<script>
+"use strict";
+const $ = (s) => document.querySelector(s);
+const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+const STATUS = { "in-development": "In development", "v1": "v1.0", "prototype": "Prototype" };
+
+function lightbox(src, cap) {
+  const d = $("#lightbox"); $("#lbImg").src = src; $("#lbImg").alt = cap || ""; $("#lbCap").textContent = cap || "";
+  if (d.showModal) d.showModal();
+}
+$("#lightbox").addEventListener("click", () => $("#lightbox").close());
+
+function img(src, alt) { const i = el("img"); i.src = src; i.alt = alt || ""; i.loading = "lazy"; i.decoding = "async"; i.addEventListener("click", () => lightbox(src, alt)); return i; }
+
+function compare(pair, idx) {
+  const wrap = el("div", "compare");
+  const ba = el("div", "ba");
+  const b = el("img"); b.src = pair.before; b.alt = "Before: " + (pair.caption || ""); b.loading = "lazy";
+  const a = el("img", "after"); a.src = pair.after; a.alt = "After: " + (pair.caption || ""); a.loading = "lazy";
+  const h = el("div", "handle");
+  const lb = el("span", "lbl b", "Before"), la = el("span", "lbl a", "After");
+  const r = el("input"); r.type = "range"; r.min = 0; r.max = 100; r.value = 50; r.id = "ba-" + idx;
+  r.setAttribute("aria-label", "Slide between before and after: " + (pair.caption || ""));
+  const set = (v) => ba.style.setProperty("--pos", v + "%");
+  r.addEventListener("input", () => set(r.value));
+  ba.append(b, a, h, lb, la, r);
+  wrap.append(ba);
+  if (pair.caption) wrap.append(el("figcaption", "", pair.caption));
+  return wrap;
+}
+
+function fmtDate(d, t) {
+  const dt = new Date(d + "T" + (t || "00:00") + ":00");
+  if (isNaN(dt)) return d + " " + (t || "");
+  return dt.toLocaleDateString([], { month: "short", day: "numeric" }) + (t ? ", " + dt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "");
+}
+
+function render(log) {
+  $("#title").textContent = log.project || "Fishing Game";
+  if (log.pitch) $("#pitch").textContent = log.pitch;
+  $("#status").textContent = STATUS[log.status] || "In development";
+  const entries = log.entries || [];
+  const allStills = [];
+  entries.forEach((e) => {
+    (e.pairs || []).forEach((p) => allStills.push({ src: p.after, caption: p.caption, entry: e }));
+    (e.stills || []).forEach((s) => allStills.push({ src: s.src, caption: s.caption, entry: e }));
+  });
+  $("#counts").textContent = `${entries.length} steps · ${new Set(allStills.map((s) => s.src)).size} stills`;
+  if (log.updated) $("#updated").textContent = "Updated " + new Date(log.updated).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+
+  // Latest: the newest entry with pictures.
+  const newest = [...entries].reverse().find((e) => (e.stills || []).length || (e.pairs || []).length);
+  if (newest) {
+    const shots = [...(newest.pairs || []).map((p) => ({ src: p.after, caption: p.caption })), ...(newest.stills || [])];
+    const show = (s, btn) => {
+      $("#latestImg").src = s.src; $("#latestImg").alt = s.caption || "";
+      $("#latestImg").onclick = () => lightbox(s.src, s.caption);
+      $("#latestTitle").textContent = newest.title;
+      $("#latestCap").textContent = (s.caption || "") + " · " + fmtDate(newest.date, newest.time);
+      for (const b of document.querySelectorAll("#latestStrip button")) b.setAttribute("aria-pressed", String(b === btn));
+    };
+    const strip = $("#latestStrip"); strip.textContent = "";
+    shots.forEach((s, i) => {
+      const b = el("button"); b.type = "button"; b.setAttribute("aria-label", s.caption || "Still " + (i + 1));
+      const t = el("img"); t.src = s.src; t.alt = ""; b.append(t);
+      b.addEventListener("click", () => show(s, b));
+      strip.append(b);
+      if (i === 0) show(s, b);
+    });
+    if (shots.length < 2) strip.hidden = true;
+  }
+
+  const tl = $("#timeline"); tl.textContent = "";
+  let pairIdx = 0;
+  [...entries].reverse().forEach((e) => {
+    const row = el("article", "entry"); row.id = "step-" + e.id;
+    const when = el("div", "when");
+    const tag = el("span", "tag" + (e.inProgress ? " next" : e.tag === "Fix" ? " fix" : ""), e.tag || "");
+    when.append(tag, el("span", "", fmtDate(e.date, e.time)));
+    if (e.commit) when.append(el("span", "commit", e.commit));
+    const body = el("div", "body");
+    body.append(el("h3", "", e.title), el("p", "", e.summary || ""));
+    (e.pairs || []).forEach((p) => body.append(compare(p, pairIdx++)));
+    if ((e.stills || []).length) {
+      const g = el("div", "grid");
+      e.stills.forEach((s) => { const f = el("figure"); f.append(img(s.src, s.caption), el("figcaption", "", s.caption || "")); g.append(f); });
+      body.append(g);
+    }
+    if (!(e.pairs || []).length && !(e.stills || []).length) body.append(el("p", "empty", "No stills for this step."));
+    row.append(when, body);
+    tl.append(row);
+  });
+}
+
+fetch("log.json", { cache: "no-store" })
+  .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+  .then(render)
+  .catch(() => { $("#latestCap").textContent = "The log couldn't load. Open this page from its published link."; });
+</script>

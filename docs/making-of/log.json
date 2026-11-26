@@ -74,7 +74,7 @@
       "time": "18:35",
       "commit": "33e0c7f",
       "title": "Money and the bait shop",
-      "summary": "The Fish Buyer pays coins, worked out on the server so nobody can cheat it. Bait and Tackle sells worms, crickets, minnows, stinkbait and lures, and the bait on your hook changes what bites. Six fish sold for 27 coins in the first test.",
+      "summary": "The Fish Buyer pays coins, worked out on the server so nobody can cheat it. Bait and Tackle sells worms, crickets, minnows, stinkbait and a spinner, and the bait on your hook changes what bites. Six fish sold for 27 coins in the first test.",
       "pairs": [],
       "stills": [
         { "src": "stills/2026-11-25-m4-sell-stand.jpg", "caption": "The Fish Buyer stand" },

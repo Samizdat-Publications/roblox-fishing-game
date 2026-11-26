@@ -1,0 +1,143 @@
+# Fishing Game: the making of
+
+A Roblox fishing game where real fishing knowledge matters: the right bait, spot and time of day decide what bites.
+
+Newest first. The live page with before and after sliders is `docs/making-of/index.html` (published as a Claude artifact).
+
+## Next: Your own pond (in progress)
+
+2026-11-25 19:25 · in progress
+
+A home pond for keeping fish: put a catch in and it keeps growing while you're away, up to 8 hours, and two grown fish of a kind can have babies. Up to 6 fish at a time.
+
+![The pond stand by the shore](stills/2026-11-25-pond-stand-close.jpg)
+*The pond stand by the shore*
+
+![A largemouth bass swimming in the pond](stills/2026-11-25-pond-stand.jpg)
+*A largemouth bass swimming in the pond*
+
+![Baby bass in the pond panel](stills/2026-11-25-pond-babies.jpg)
+*Baby bass in the pond panel*
+
+![Choosing which fish from the bag to keep](stills/2026-11-25-pond-keep-fish.jpg)
+*Choosing which fish from the bag to keep*
+
+## Polish: Fish shadows, the catch on the line, night lamps
+
+2026-11-25 19:11 · commit `34d1104`
+
+Fish shadows now swim where the bite rules say fish should be, a landed fish hangs on the line before it goes in the bag, and lamps on the dock light up the water at night.
+
+**Night at the dock, before and after the lamps**
+
+| Before | After |
+|---|---|
+| ![before](stills/2026-11-25-m3-night-deep-hole.jpg) | ![after](stills/2026-11-25-polish-night-after.jpg) |
+
+![A bluegill held on the line](stills/2026-11-25-polish-catch-on-line.jpg)
+*A bluegill held on the line*
+
+![The Sell Fish sign](stills/2026-11-25-polish-sell-sign.jpg)
+*The Sell Fish sign*
+
+![A dock lamp by day](stills/2026-11-25-polish-dock-lamp.jpg)
+*A dock lamp by day*
+
+## Fix: The reel always answers
+
+2026-11-25 19:06 · commit `6198609`
+
+The first playtest found that clicking sometimes barely moved the catch zone, and clicks on some parts of the screen lost the fish. Now any click or hold anywhere on screen reels, the player's pull always beats the fish's, buttons step aside during a fight, and a big REELING! prompt shows that it is working.
+
+**The fight: before, and after with the hold-anywhere REELING! prompt**
+
+| Before | After |
+|---|---|
+| ![before](stills/2026-11-25-reel-before.jpg) | ![after](stills/2026-11-25-reel-after.jpg) |
+
+![The same fight on a phone, with a big REEL button](stills/2026-11-25-reel-phone.jpg)
+*The same fight on a phone, with a big REEL button*
+
+## M6: Phone and controller
+
+2026-11-25 18:43 · commit `04d3e64`
+
+On the smallest phone in Studio's simulator, the first pass found a tiny touch button sitting on top of jump, a fight panel over the top bar, and a journal taller than the screen. All fixed: a big Fish button, a moved and shorter fight panel, panels that shrink to fit. Gamepad works too: R2 to cast and reel, Y for the journal. Version 1 complete.
+
+**Phone layout: the tiny touch button, then the big Fish button**
+
+| Before | After |
+|---|---|
+| ![before](stills/2026-11-25-m6-phone-before.jpg) | ![after](stills/2026-11-25-m6-phone-after.jpg) |
+
+![Fighting a fish on a phone](stills/2026-11-25-m6-phone-fight.jpg)
+*Fighting a fish on a phone*
+
+![The journal on a console screen](stills/2026-11-25-m6-console-journal.jpg)
+*The journal on a console screen*
+
+## M5: Fish journal and saving
+
+2026-11-25 18:35 · commit `33e0c7f`
+
+Press J for the journal: every species with its count, best weight and length, the bait and spot it was caught on, and a habit tip once you've caught one. Undiscovered fish show as question marks. Coins, bait and the journal save to Roblox and come back after leaving.
+
+![The fish journal, 5 of 8 species found](stills/2026-11-25-m5-journal.jpg)
+*The fish journal, 5 of 8 species found*
+
+## M4: Money and the bait shop
+
+2026-11-25 18:35 · commit `33e0c7f`
+
+The Fish Buyer pays coins, worked out on the server so nobody can cheat it. Bait and Tackle sells worms, crickets, minnows, stinkbait and a spinner, and the bait on your hook changes what bites. Six fish sold for 27 coins in the first test.
+
+![The Fish Buyer stand](stills/2026-11-25-m4-sell-stand.jpg)
+*The Fish Buyer stand*
+
+![Bait and Tackle: each bait says which fish it suits](stills/2026-11-25-m4-bait-shop.jpg)
+*Bait and Tackle: each bait says which fish it suits*
+
+## M3: Real fish habits
+
+2026-11-25 18:35 · commit `33e0c7f`
+
+Eight species, each with its own spots, feeding times, baits, sizes and fight. Tested by fishing them the real way: perch and bluegill at the dock at dawn on worms, largemouth bass at the weed bed at dawn on minnows, channel catfish in the deep hole at 10 PM on stinkbait. The wrong bait at the wrong spot gets a hint instead of a bite.
+
+![10 PM at the end of the dock, stinkbait in the deep hole: catfish time](stills/2026-11-25-m3-night-deep-hole.jpg)
+*10 PM at the end of the dock, stinkbait in the deep hole: catfish time*
+
+## M2: Cast and catch
+
+2026-11-25 18:29 · commit `af16abb`
+
+Hold and release to cast, wait for a bite, hook it, then keep the fish in the green zone until the bar fills. A cast onto dry ground is refused with a hint. The first fish landed was a 19.2 cm pumpkinseed worth 6 coins. The hook window went from 1.6 to 2 seconds to be kinder to young players and touch screens.
+
+![Line in the water, waiting for a bite at the dock](stills/2026-11-25-m2-waiting-for-bite.jpg)
+*Line in the water, waiting for a bite at the dock*
+
+![First catch: a new species card for a pumpkinseed](stills/2026-11-25-m2-first-catch.jpg)
+*First catch: a new species card for a pumpkinseed*
+
+## M1: Gray-box lake
+
+2026-11-25 18:29 · commit `af16abb`
+
+A lake built entirely by script: terrain water, a dock from the south shore, a weed bed, five fallen logs, a deep hole marked by a red buoy, a shore path, and two stands. Players spawn on the dock with a rod. A 16 minute day runs from dawn to night.
+
+![The whole lake from above: dock, weed bed, logs, deep hole buoy, and the two stands](stills/2026-11-25-m1-lake-overview.jpg)
+*The whole lake from above: dock, weed bed, logs, deep hole buoy, and the two stands*
+
+![First spawn, rod in hand](stills/2026-11-25-m1-spawn-dock.jpg)
+*First spawn, rod in hand*
+
+## M0: Pipeline: code in Git, pushed into Studio
+
+2026-11-25 18:29 · commit `af16abb`
+
+All game code lives as files in the repo and is pushed into Studio script by script, then checked byte for byte. A test script made the full round trip: created, read back, run in a playtest, logged, deleted. 22 scripts and 23 unit tests went in.
+
+## Start: Design approved, empty Baseplate
+
+2026-11-25 18:07 · commit `32f4cd8`
+
+The plan: one lake that plays well before anything else, built from plain gray blocks. Eight real lake fish with real habits, a bar minigame that starts easy, a sell stand, a bait shop, a fish journal, and saving. The research behind it found that the biggest Roblox fishing games reward collecting but never real fishing knowledge, so that became the hook. Built by Claude Opus 5.5 working inside Roblox Studio through Studio's MCP server.

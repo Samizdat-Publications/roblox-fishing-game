@@ -1,0 +1,34 @@
+{
+  "name": "Fishing Game",
+  "repo": "roblox-fishing-game",
+  "pitch": "A Roblox fishing game where the right bait, spot and time of day decide what bites.",
+  "status": "in-development",
+  "version": "0.2.0",
+  "kind": "game",
+  "started": "2026-11-25",
+  "updated": "2026-11-25",
+  "tech": [
+    "Luau",
+    "Roblox Studio",
+    "Studio MCP server",
+    "Blender"
+  ],
+  "models": [],
+  "links": {
+    "landing": "",
+    "play": "",
+    "devlog": "docs/making-of/README.md"
+  },
+  "hero": {
+    "gif": "",
+    "poster": "docs/making-of/stills/2026-11-25-m1-lake-overview.jpg",
+    "clip": ""
+  },
+  "credits": [
+    {
+      "what": "Sound effects",
+      "who": "Roblox built-in sounds",
+      "licence": "Roblox terms"
+    }
+  ]
+}
