@@ -2,7 +2,7 @@
   "project": "Fishing Game",
   "pitch": "A Roblox fishing game where real fishing knowledge matters: the right bait, spot and time of day decide what bites.",
   "status": "in-development",
-  "updated": "2026-11-25T19:25:00",
+  "updated": "2026-11-25T19:40:00",
   "entries": [
     {
       "id": "start",
@@ -36,8 +36,14 @@
       "summary": "A lake built entirely by script: terrain water, a dock from the south shore, a weed bed, five fallen logs, a deep hole marked by a red buoy, a shore path, and two stands. Players spawn on the dock with a rod. A 16 minute day runs from dawn to night.",
       "pairs": [],
       "stills": [
-        { "src": "stills/2026-11-25-m1-lake-overview.jpg", "caption": "The whole lake from above: dock, weed bed, logs, deep hole buoy, and the two stands" },
-        { "src": "stills/2026-11-25-m1-spawn-dock.jpg", "caption": "First spawn, rod in hand" }
+        {
+          "src": "stills/2026-11-25-m1-lake-overview.jpg",
+          "caption": "The whole lake from above: dock, weed bed, logs, deep hole buoy, and the two stands"
+        },
+        {
+          "src": "stills/2026-11-25-m1-spawn-dock.jpg",
+          "caption": "First spawn, rod in hand"
+        }
       ]
     },
     {
@@ -50,8 +56,14 @@
       "summary": "Hold and release to cast, wait for a bite, hook it, then keep the fish in the green zone until the bar fills. A cast onto dry ground is refused with a hint. The first fish landed was a 19.2 cm pumpkinseed worth 6 coins. The hook window went from 1.6 to 2 seconds to be kinder to young players and touch screens.",
       "pairs": [],
       "stills": [
-        { "src": "stills/2026-11-25-m2-waiting-for-bite.jpg", "caption": "Line in the water, waiting for a bite at the dock" },
-        { "src": "stills/2026-11-25-m2-first-catch.jpg", "caption": "First catch: a new species card for a pumpkinseed" }
+        {
+          "src": "stills/2026-11-25-m2-waiting-for-bite.jpg",
+          "caption": "Line in the water, waiting for a bite at the dock"
+        },
+        {
+          "src": "stills/2026-11-25-m2-first-catch.jpg",
+          "caption": "First catch: a new species card for a pumpkinseed"
+        }
       ]
     },
     {
@@ -64,7 +76,10 @@
       "summary": "Eight species, each with its own spots, feeding times, baits, sizes and fight. Tested by fishing them the real way: perch and bluegill at the dock at dawn on worms, largemouth bass at the weed bed at dawn on minnows, channel catfish in the deep hole at 10 PM on stinkbait. The wrong bait at the wrong spot gets a hint instead of a bite.",
       "pairs": [],
       "stills": [
-        { "src": "stills/2026-11-25-m3-night-deep-hole.jpg", "caption": "10 PM at the end of the dock, stinkbait in the deep hole: catfish time" }
+        {
+          "src": "stills/2026-11-25-m3-night-deep-hole.jpg",
+          "caption": "10 PM at the end of the dock, stinkbait in the deep hole: catfish time"
+        }
       ]
     },
     {
@@ -77,8 +92,14 @@
       "summary": "The Fish Buyer pays coins, worked out on the server so nobody can cheat it. Bait and Tackle sells worms, crickets, minnows, stinkbait and a spinner, and the bait on your hook changes what bites. Six fish sold for 27 coins in the first test.",
       "pairs": [],
       "stills": [
-        { "src": "stills/2026-11-25-m4-sell-stand.jpg", "caption": "The Fish Buyer stand" },
-        { "src": "stills/2026-11-25-m4-bait-shop.jpg", "caption": "Bait and Tackle: each bait says which fish it suits" }
+        {
+          "src": "stills/2026-11-25-m4-sell-stand.jpg",
+          "caption": "The Fish Buyer stand"
+        },
+        {
+          "src": "stills/2026-11-25-m4-bait-shop.jpg",
+          "caption": "Bait and Tackle: each bait says which fish it suits"
+        }
       ]
     },
     {
@@ -91,7 +112,10 @@
       "summary": "Press J for the journal: every species with its count, best weight and length, the bait and spot it was caught on, and a habit tip once you've caught one. Undiscovered fish show as question marks. Coins, bait and the journal save to Roblox and come back after leaving.",
       "pairs": [],
       "stills": [
-        { "src": "stills/2026-11-25-m5-journal.jpg", "caption": "The fish journal, 5 of 8 species found" }
+        {
+          "src": "stills/2026-11-25-m5-journal.jpg",
+          "caption": "The fish journal, 5 of 8 species found"
+        }
       ]
     },
     {
@@ -103,11 +127,21 @@
       "title": "Phone and controller",
       "summary": "On the smallest phone in Studio's simulator, the first pass found a tiny touch button sitting on top of jump, a fight panel over the top bar, and a journal taller than the screen. All fixed: a big Fish button, a moved and shorter fight panel, panels that shrink to fit. Gamepad works too: R2 to cast and reel, Y for the journal. Version 1 complete.",
       "pairs": [
-        { "before": "stills/2026-11-25-m6-phone-before.jpg", "after": "stills/2026-11-25-m6-phone-after.jpg", "caption": "Phone layout: the tiny touch button, then the big Fish button" }
+        {
+          "before": "stills/2026-11-25-m6-phone-before.jpg",
+          "after": "stills/2026-11-25-m6-phone-after.jpg",
+          "caption": "Phone layout: the tiny touch button, then the big Fish button"
+        }
       ],
       "stills": [
-        { "src": "stills/2026-11-25-m6-phone-fight.jpg", "caption": "Fighting a fish on a phone" },
-        { "src": "stills/2026-11-25-m6-console-journal.jpg", "caption": "The journal on a console screen" }
+        {
+          "src": "stills/2026-11-25-m6-phone-fight.jpg",
+          "caption": "Fighting a fish on a phone"
+        },
+        {
+          "src": "stills/2026-11-25-m6-console-journal.jpg",
+          "caption": "The journal on a console screen"
+        }
       ]
     },
     {
@@ -119,10 +153,17 @@
       "title": "The reel always answers",
       "summary": "The first playtest found that clicking sometimes barely moved the catch zone, and clicks on some parts of the screen lost the fish. Now any click or hold anywhere on screen reels, the player's pull always beats the fish's, buttons step aside during a fight, and a big REELING! prompt shows that it is working.",
       "pairs": [
-        { "before": "stills/2026-11-25-reel-before.jpg", "after": "stills/2026-11-25-reel-after.jpg", "caption": "The fight: before, and after with the hold-anywhere REELING! prompt" }
+        {
+          "before": "stills/2026-11-25-reel-before.jpg",
+          "after": "stills/2026-11-25-reel-after.jpg",
+          "caption": "The fight: before, and after with the hold-anywhere REELING! prompt"
+        }
       ],
       "stills": [
-        { "src": "stills/2026-11-25-reel-phone.jpg", "caption": "The same fight on a phone, with a big REEL button" }
+        {
+          "src": "stills/2026-11-25-reel-phone.jpg",
+          "caption": "The same fight on a phone, with a big REEL button"
+        }
       ]
     },
     {
@@ -134,12 +175,25 @@
       "title": "Fish shadows, the catch on the line, night lamps",
       "summary": "Fish shadows now swim where the bite rules say fish should be, a landed fish hangs on the line before it goes in the bag, and lamps on the dock light up the water at night.",
       "pairs": [
-        { "before": "stills/2026-11-25-m3-night-deep-hole.jpg", "after": "stills/2026-11-25-polish-night-after.jpg", "caption": "Night at the dock, before and after the lamps" }
+        {
+          "before": "stills/2026-11-25-m3-night-deep-hole.jpg",
+          "after": "stills/2026-11-25-polish-night-after.jpg",
+          "caption": "Night at the dock, before and after the lamps"
+        }
       ],
       "stills": [
-        { "src": "stills/2026-11-25-polish-catch-on-line.jpg", "caption": "A bluegill held on the line" },
-        { "src": "stills/2026-11-25-polish-sell-sign.jpg", "caption": "The Sell Fish sign" },
-        { "src": "stills/2026-11-25-polish-dock-lamp.jpg", "caption": "A dock lamp by day" }
+        {
+          "src": "stills/2026-11-25-polish-catch-on-line.jpg",
+          "caption": "A bluegill held on the line"
+        },
+        {
+          "src": "stills/2026-11-25-polish-sell-sign.jpg",
+          "caption": "The Sell Fish sign"
+        },
+        {
+          "src": "stills/2026-11-25-polish-dock-lamp.jpg",
+          "caption": "A dock lamp by day"
+        }
       ]
     },
     {
@@ -147,16 +201,31 @@
       "tag": "Next",
       "date": "2026-11-25",
       "time": "19:25",
-      "commit": "",
-      "inProgress": true,
-      "title": "Your own pond (in progress)",
-      "summary": "A home pond for keeping fish: put a catch in and it keeps growing while you're away, up to 8 hours, and two grown fish of a kind can have babies. Up to 6 fish at a time.",
+      "commit": "2b41b0e",
+      "title": "Your own pond",
+      "summary": "A stone pond next to the shop where you keep fish from your bag, up to 6 at a time. They grow toward full size while you play and while you're away (up to 8 hours), two grown fish of a kind can have babies, and you sell them later at their bigger size or let them go. Each player sees their own fish swimming in it. In the playtest a bass worth 34 coins when caught sold for 50 after three hours of pond time, and the pond kept all its fish after a restart. Breeding was then slowed down after four babies arrived in three hours.",
       "pairs": [],
       "stills": [
-        { "src": "stills/2026-11-25-pond-stand-close.jpg", "caption": "The pond stand by the shore" },
-        { "src": "stills/2026-11-25-pond-stand.jpg", "caption": "A largemouth bass swimming in the pond" },
-        { "src": "stills/2026-11-25-pond-babies.jpg", "caption": "Baby bass in the pond panel" },
-        { "src": "stills/2026-11-25-pond-keep-fish.jpg", "caption": "Choosing which fish from the bag to keep" }
+        {
+          "src": "stills/2026-11-25-pond-full.jpg",
+          "caption": "Five bass swimming in the pond"
+        },
+        {
+          "src": "stills/2026-11-25-pond-stand-close.jpg",
+          "caption": "The pond sign and its Check pond prompt"
+        },
+        {
+          "src": "stills/2026-11-25-pond-keep-fish.jpg",
+          "caption": "Choosing which fish from the bag to keep"
+        },
+        {
+          "src": "stills/2026-11-25-pond-stand.jpg",
+          "caption": "A kept bass swimming in the pond"
+        },
+        {
+          "src": "stills/2026-11-25-pond-babies.jpg",
+          "caption": "Baby bass in the pond panel after three hours of pond time"
+        }
       ]
     }
   ]

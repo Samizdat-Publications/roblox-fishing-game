@@ -4,23 +4,26 @@ A Roblox fishing game where real fishing knowledge matters: the right bait, spot
 
 Newest first. The live page with before and after sliders is `docs/making-of/index.html` (published as a Claude artifact).
 
-## Next: Your own pond (in progress)
+## Next: Your own pond
 
-2026-11-25 19:25 · in progress
+2026-11-25 19:25 · commit `2b41b0e`
 
-A home pond for keeping fish: put a catch in and it keeps growing while you're away, up to 8 hours, and two grown fish of a kind can have babies. Up to 6 fish at a time.
+A stone pond next to the shop where you keep fish from your bag, up to 6 at a time. They grow toward full size while you play and while you're away (up to 8 hours), two grown fish of a kind can have babies, and you sell them later at their bigger size or let them go. Each player sees their own fish swimming in it. In the playtest a bass worth 34 coins when caught sold for 50 after three hours of pond time, and the pond kept all its fish after a restart. Breeding was then slowed down after four babies arrived in three hours.
 
-![The pond stand by the shore](stills/2026-11-25-pond-stand-close.jpg)
-*The pond stand by the shore*
+![Five bass swimming in the pond](stills/2026-11-25-pond-full.jpg)
+*Five bass swimming in the pond*
 
-![A largemouth bass swimming in the pond](stills/2026-11-25-pond-stand.jpg)
-*A largemouth bass swimming in the pond*
-
-![Baby bass in the pond panel](stills/2026-11-25-pond-babies.jpg)
-*Baby bass in the pond panel*
+![The pond sign and its Check pond prompt](stills/2026-11-25-pond-stand-close.jpg)
+*The pond sign and its Check pond prompt*
 
 ![Choosing which fish from the bag to keep](stills/2026-11-25-pond-keep-fish.jpg)
 *Choosing which fish from the bag to keep*
+
+![A kept bass swimming in the pond](stills/2026-11-25-pond-stand.jpg)
+*A kept bass swimming in the pond*
+
+![Baby bass in the pond panel after three hours of pond time](stills/2026-11-25-pond-babies.jpg)
+*Baby bass in the pond panel after three hours of pond time*
 
 ## Polish: Fish shadows, the catch on the line, night lamps
 
