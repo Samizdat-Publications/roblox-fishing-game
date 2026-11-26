@@ -17,20 +17,27 @@ Made overnight 2026-11-26 by script in Blender 5.1.2 (the `bpy` module, headless
 
 Unconfirmed: whether Studio shows the baked vertex colours exactly as in the previews (the Importer has an "Ignore Vertex Colors" option, so it reads them; check the first import).
 
-## House style (decided 2026-11-26)
+## House style: Real-ish (Stewart's pick, 2026-11-26)
 
-Duet's chunky low-poly, flat-colour, vertex-coloured look is the house style for everything in the game.
+Chunky, simple shapes with realistic materials: wood grain on the dock, real grass, sand and stone, clear teal water, natural light. Stewart picked it from the six style options (PR #3, https://github.com/Samizdat-Publications/roblox-fishing-game/pull/3; voting page https://claude.ai/artifact/MJJUZdAHyNqWKE5TdgvX8d). It replaces the flat vertex-colour low-poly look decided earlier the same day. The models already in the game stay until they are re-dressed.
 
-- **Blender by script** (`art/scripts/`) is the main tool for all props, environment, fish, rods and boats. Every script takes its colours from `art/scripts/palette.py`; add a colour there before using it.
-- **Meshy** only for one-off complex organic shapes a script can't make well. Always decimate and recolour it in Blender to the same palette before import.
-- **UI icons** (journal fish, bait, rods, boats) are rendered from the same Blender models, so the UI matches the world.
+- **Shapes stay simple.** Blender by script (`art/scripts/`) is still the main tool for props, environment, fish, rods and boats. Keep the chunky low-poly shapes: the realism comes from materials and light, not from polygon counts.
+- **Desktop first, phones still work.** The game is played mainly on desktop, so the look is aimed at a desktop PC: the best we can get without hitting the PC's performance ceiling. Phones are a second target. They must stay smooth and readable, and they may show a lighter version of the same world. Spend texture memory where the player looks, and save it where they don't.
+- **Base layer: Roblox's built-in materials.** Use them for terrain and large repeated surfaces: grass, sand, rock, mud, plank walkways, ground under the islands. They are already physically based and shared by every Roblox game, so they look good and cost almost nothing. The scripts gain a UV step so materials wrap properly on our meshes; check how they map on the first import.
+- **Hero layer: custom PBR textures.** A `SurfaceAppearance` (colour, normal, roughness, and metalness where it matters) goes wherever it clearly beats a built-in material: the dock, the stands, the boats, the trophy case, every fish model. Fish are the stars, so they get the best textures. Use shared texture sets per family (one set for all docks, one per fish body type) so quality scales without memory blowing up.
+- **Proof corner first, then a budget.** Before the whole world is re-dressed, build one corner of the lake (the dock and the two stands) at full quality, then measure it twice. On Stewart's PC, the target is a steady 60 frames a second at the fixed shots. On phones, the floor is 30 frames a second on Stewart's phone and the smallest phone in the Device Simulator. Those measurements set the texture and draw budget per area.
+- **A lighter phone tier.** On touch devices a client script turns down the extras: grass and decoration distance, particle density, some post effects, far props. Roblox also lowers graphics quality on its own on weak devices. When the phone floor fails, cut the phone extras first, then textures the player can't see, and only then the desktop look.
+- **Built to grow.** The world will get much bigger: a big lake crossed by vehicles, and fishing islands. Each island is its own streaming area with its own texture set (StreamingEnabled, already on by default), so only nearby islands sit in memory.
+- **Readability rules.** The bobber and line glow or carry a bright outline so they read against textures and dark water. Keep the grass in the foreground, and put less fine detail where the player looks for bites.
+- **Meshy** for complex organic shapes a script can't make well (and a source of textures for hero props). Decimate it in Blender, and match it to the same materials before import.
+- **UI icons** (journal fish, bait, rods, boats) are rendered from the same models, so the UI matches the world.
 - **PixelLab and CadQuery are not used** for in-game art, to keep one consistent look.
 
 ## Conventions
 
 - **Units:** 1 Blender unit = 1 stud. Blender is Z up; the exports are Y up, so the model's height is Roblox Y.
 - **Pivot:** bottom centre of each model's bounding box.
-- **Look:** low-poly, chunky, flat colours with light shading, readable on a phone. One shared palette in `scripts/palette.py`.
+- **Look:** chunky, simple shapes with realistic Roblox materials, made for desktop and still readable on a phone (see House style). `scripts/palette.py` still holds the colours for parts that keep a flat colour, such as awnings, bobbers and UI accents.
 - **Fish scale:** 1 stud = 12 cm, the same scale the catch on the line uses (`FishingService.showCatch`: length in studs = cm / 12). Each fish is built at its species' average length; scale it by caught cm / average cm. Heads point along +X.
 
 ## Rebuild
