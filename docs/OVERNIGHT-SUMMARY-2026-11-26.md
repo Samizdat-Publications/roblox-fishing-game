@@ -34,7 +34,7 @@ Input for tomorrow's master plan. Everything here is on draft pull request #2 (b
 - **A compile check for every script** (`lune run tools/test/syntax.luau`), also on GitHub.
 
 ### Second round (after the first report, same night)
-- **The full loop with boats in the economy check** (`python3 tools/econ/sim.py --boats`): the dinghy is a side step (a little better by day and at dusk, poor at night), blue water pays about a quarter more per person, and the dinghy arrives sooner than the boat plan aimed for (half a session after the Graphite Rod for a smart player). Prices left at 1,200 and 4,000 as Stewart decided; 1,800 would put the dinghy on the plan.
+- **The full loop with boats in the economy check** (`python3 tools/econ/sim.py --boats`): the dinghy is a side step (a little better by day and at dusk, weaker at dawn and night; the burbot now comes into the basin at night so there's something to catch), blue water pays about a quarter more per person, and the dinghy arrives sooner than the boat plan aimed for (half a session after the Graphite Rod for a smart player). Prices left at 1,200 and 4,000 as Stewart decided; 1,800 would put the dinghy on the plan.
 - **Goals and frenzies in the economy check** (`python3 tools/econ/loop.py`): goals add about a quarter to a new player's session and under a tenth to an expert's; a frenzy adds 33 to 56 coins if you're there.
 - **More kinds of daily goals:** catch on a given bait, catch a good-sized fish of a species, catch 2 fish during a feeding frenzy, and Big Lake spots for boat owners. Hints only name spots the player can reach.
 - **Journal rumours get sharper:** ten catches after a tier's first rumour, it names a bait ("Old-timers swear by stinkbait").
@@ -55,7 +55,7 @@ Input for tomorrow's master plan. Everything here is on draft pull request #2 (b
 - **Godlike fish:** none yet. The direction says one or two hidden across the game. What are they, and how are they found? A good one for Liam.
 - **Is +15 percent for experts the right ceiling,** or should Legendaries pay less and stay a trophy-and-story reward?
 - **Daily goal rewards:** flat 25, 60 and 120 coins, eight kinds now. Streak bonuses? (Careful: streaks can feel like pressure for a kid.)
-- **Dinghy price:** 1,200 lands sooner than the boat plan aimed for; try 1,800 after playtests? And should something in dinghy water feed at night?
+- **Dinghy price:** 1,200 lands sooner than the boat plan aimed for; try 1,800 after playtests?
 - **Weather sharing:** each server has its own weather. Should every server share one forecast so a "storm tonight" is something friends plan around?
 - **Boats:** one boat at the slip per owner and four slips. Enough? Should a dinghy owner be able to borrow a friend's Deep-V seat as navigator (allowed now), and should the Deep-V helm need its owner?
 - **Frenzies:** only Common and Uncommon schooling fish. Should rarer fish ever school (white bass are already Uncommon)?
