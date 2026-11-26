@@ -157,6 +157,7 @@ class Skill:
 
 KID = Skill("kid", reaction=0.30, deadband=0.03, lapse_rate=0.25, lapse_len=0.4)
 GOOD = Skill("good", reaction=0.18, deadband=0.02, lapse_rate=0.05, lapse_len=0.3)
+IDLE = Skill("idle", reaction=0.1, deadband=99, lapse_rate=0, lapse_len=0)  # never touches the button
 
 
 def apply_rod(profile, rod_id):
@@ -713,9 +714,11 @@ def report_fights(trials):
             cells.append(f"{pw * 100:.0f}% / {tw:.0f}s")
         pw, tw, _ = fight_stats(s["id"], "Willow", GOOD, trials=trials)
         cells.append(f"{pw * 100:.0f}% / {tw:.0f}s")
+        pw, tw, _ = fight_stats(s["id"], "Willow", IDLE, trials=trials)
+        cells.append(f"{pw * 100:.0f}% / {tw:.0f}s")
         cells.append(f"{mean_price(s['id']):.1f}")
         rows.append(cells)
-    return table(rows, ["Fish", "Willow (kid)", "Fiberglass (kid)", "Graphite (kid)", "Willow (quick hands)", "Avg price"])
+    return table(rows, ["Fish", "Willow (kid)", "Fiberglass (kid)", "Graphite (kid)", "Willow (quick hands)", "Willow (no input at all)", "Avg price"])
 
 
 def report_careers(runs):

@@ -30,12 +30,13 @@ Times are minutes of play, median of 60 runs.
    So "the right spot at the right time" only matters for which panfish you get, not for the money.
 3. **The price gap between panfish and big fish is very wide.** A bluegill averages about 4 coins and a catfish 35, but the catfish takes only about twice as long to catch. Worms at the dock, the most natural thing to do, earns about a sixth of what a big-fish spot earns.
 4. **Fights are always won with reel assist on.** The kid-reflex bot landed 100 percent of every species, in 2 to 5 seconds. That is fine for an 11 year old, but it means **better rods make no money difference**: their value is the longer cast and the nicer feel, not more fish. (Real kids may do worse than the bot; Stewart's first playtest found fights hard before the fix.)
+   - **Doing nothing at all lands about half the fish.** A bot that never touches the button landed 40 to 69 percent of fish with reel assist on (catfish 69, walleye 64, carp 63): the catch zone rests at the bottom of the bar, and heavy fish that sink sit inside it. Found while running the existing tests outside Studio, where "doing nothing loses a bluegill" passes in Studio only because of its fixed seed. A kid could set the rod down and still fill the bag.
 5. **Bait is nearly free** for a smart player (about 1 percent of income) and about 12 percent for the dock kid. That's fine; bait isn't meant to be a money sink.
 6. **The pond is generous.** A full pond pays a smart player about 540 coins a day, more than three minutes of top fishing, for one visit. Holding fish in the pond also slows the first purchases a little (3 min vs 1 min to the Fiberglass Rod), because those fish are not sold right away.
 
 ## Proposed changes
 
-Five changes, in order of importance. Tomorrow's session applies only the ones Stewart approves.
+Six changes, in order of importance. Tomorrow's session applies only the ones Stewart approves.
 
 ### 1. Bite time follows how much the fish want it (the big one)
 
@@ -89,7 +90,15 @@ Spinner 60 to 100, Plastic Worm 80 to 100.
 - The pond pays about 220 coins a day with the new prices (down from 540 because fish are worth less), roughly 3 minutes of top fishing or 7 minutes at the dock. That matches the design note: "a slow, steady money-maker without beating active fishing".
 - Fights: worth a look after Liam plays. If he lands everything without trying, the fix is in the fight (for example, assist on only for the first 20 catches), not in prices.
 
-## Results with all five changes
+### 6. A fish only comes in while you're reeling
+
+Today progress fills whenever the fish is inside the catch zone, even if the player hasn't touched anything.
+Proposed: progress fills only if the player has pressed or held within the last second (`Config.FIGHT_IDLE_GRACE = 1.0`, checked in `FightModel.step`, which already knows when the button is held). Missing the fish still loses progress as now.
+
+- Why: it keeps "you caught it" true, stops idle catching, and costs an active kid nothing (the kid bot presses many times a second).
+- Where: `FightModel.step` and its spec; the server's `minSeconds` check is unchanged. This is a rule change, not a price, so it needs a quick playtest feel check.
+
+## Results with the first five changes
 
 | Player | Coins per minute, first session | Fiberglass Rod (150) | then Creek Pass (500) | then Graphite Rod (900) |
 |---|---|---|---|---|

@@ -9,32 +9,32 @@ Day 16 real minutes; sessions of 25 minutes, one a day; 60 runs per player type.
 |--------------|-------|----------------------|-----------|------------------------|-----------|
 | lake only    | Dawn  | WeedBed + Minnow     | 116       | OpenWater + Spinner    | 191       |
 | lake only    | Day   | WeedBed + Minnow     | 140       | OpenWater + Spinner    | 193       |
-| lake only    | Dusk  | DeepHole + Stinkbait | 117       | OpenWater + Spinner    | 188       |
+| lake only    | Dusk  | DeepHole + Stinkbait | 118       | OpenWater + Spinner    | 189       |
 | lake only    | Night | DeepHole + Stinkbait | 136       | OpenWater + Spinner    | 186       |
 | lake + creek | Dawn  | Pool + Minnow        | 125       | OpenWater + Spinner    | 191       |
 | lake + creek | Day   | WeedBed + Minnow     | 140       | OpenWater + Spinner    | 193       |
-| lake + creek | Dusk  | Pool + Minnow        | 169       | OpenWater + Spinner    | 188       |
+| lake + creek | Dusk  | Pool + Minnow        | 168       | OpenWater + Spinner    | 189       |
 | lake + creek | Night | Pool + Minnow        | 162       | OpenWater + Spinner    | 186       |
 
 ## Fights: chance to land / seconds to land (reel assist on)
 
-| Fish            | Willow (kid) | Fiberglass (kid) | Graphite (kid) | Willow (quick hands) | Avg price |
-|-----------------|--------------|------------------|----------------|----------------------|-----------|
-| Bluegill        | 100% / 2s    | 100% / 2s        | 100% / 2s      | 100% / 2s            | 4.3       |
-| Pumpkinseed     | 100% / 2s    | 100% / 2s        | 100% / 2s      | 100% / 2s            | 4.2       |
-| Yellow Perch    | 100% / 2s    | 100% / 2s        | 100% / 2s      | 100% / 2s            | 8.5       |
-| Black Crappie   | 100% / 3s    | 100% / 3s        | 100% / 3s      | 100% / 3s            | 11.8      |
-| Largemouth Bass | 100% / 4s    | 100% / 4s        | 100% / 4s      | 100% / 3s            | 28.1      |
-| Channel Catfish | 100% / 4s    | 100% / 4s        | 100% / 4s      | 100% / 4s            | 34.9      |
-| Common Carp     | 100% / 5s    | 100% / 5s        | 100% / 4s      | 100% / 4s            | 25.8      |
-| Northern Pike   | 100% / 5s    | 100% / 5s        | 100% / 5s      | 100% / 4s            | 65.0      |
-| Rainbow Trout   | 100% / 4s    | 100% / 4s        | 100% / 3s      | 100% / 3s            | 23.9      |
-| Smallmouth Bass | 100% / 5s    | 100% / 5s        | 100% / 4s      | 100% / 4s            | 30.5      |
-| Walleye         | 100% / 4s    | 100% / 4s        | 100% / 4s      | 100% / 4s            | 39.1      |
+| Fish            | Willow (kid) | Fiberglass (kid) | Graphite (kid) | Willow (quick hands) | Willow (no input at all) | Avg price |
+|-----------------|--------------|------------------|----------------|----------------------|--------------------------|-----------|
+| Bluegill        | 100% / 2s    | 100% / 2s        | 100% / 2s      | 100% / 2s            | 53% / 5s                 | 4.3       |
+| Pumpkinseed     | 100% / 2s    | 100% / 2s        | 100% / 2s      | 100% / 2s            | 58% / 4s                 | 4.2       |
+| Yellow Perch    | 100% / 2s    | 100% / 2s        | 100% / 2s      | 100% / 2s            | 49% / 5s                 | 8.5       |
+| Black Crappie   | 100% / 3s    | 100% / 3s        | 100% / 3s      | 100% / 3s            | 49% / 5s                 | 11.8      |
+| Largemouth Bass | 100% / 4s    | 100% / 4s        | 100% / 4s      | 100% / 3s            | 46% / 5s                 | 28.1      |
+| Channel Catfish | 100% / 4s    | 100% / 4s        | 100% / 4s      | 100% / 4s            | 69% / 8s                 | 34.9      |
+| Common Carp     | 100% / 5s    | 100% / 5s        | 100% / 4s      | 100% / 4s            | 63% / 8s                 | 25.8      |
+| Northern Pike   | 100% / 5s    | 100% / 5s        | 100% / 5s      | 100% / 4s            | 50% / 7s                 | 65.0      |
+| Rainbow Trout   | 100% / 4s    | 100% / 4s        | 100% / 3s      | 100% / 3s            | 40% / 6s                 | 23.9      |
+| Smallmouth Bass | 100% / 5s    | 100% / 5s        | 100% / 4s      | 100% / 4s            | 50% / 6s                 | 30.5      |
+| Walleye         | 100% / 4s    | 100% / 4s        | 100% / 4s      | 100% / 4s            | 64% / 7s                 | 39.1      |
 
 ## Careers: play minutes until each purchase (bought in order, median)
 
-| Player             | coins/min, 1st session | Fiberglass Rod (120) | + Creek Pass (250) | + Graphite Rod (350) | bait spend |
+| Player             | coins/min, 1st session | Fiberglass Rod (120.0) | + Creek Pass (250.0) | + Graphite Rod (350.0) | bait spend |
 |--------------------|------------------------|------------------------|----------------------|------------------------|------------|
 | smart              | 160.8                  | 3 min                  | 6 min                | 9 min                  | 1%         |
 | smart, no pond     | 176.2                  | 1 min                  | 4 min                | 7 min                  | 1%         |
@@ -66,30 +66,30 @@ Smart player, pond income per day once it is running (median): 536 coins
 
 | Water        | Time  | Best (live bait)     | coins/min | Best (with both lures) | coins/min |
 |--------------|-------|----------------------|-----------|------------------------|-----------|
-| lake only    | Dawn  | WeedBed + Minnow     | 90        | WeedBed + Spinner      | 113       |
+| lake only    | Dawn  | WeedBed + Minnow     | 89        | WeedBed + Spinner      | 112       |
 | lake only    | Day   | WeedBed + Minnow     | 72        | WeedBed + Spinner      | 96        |
 | lake only    | Dusk  | DeepHole + Stinkbait | 90        | WeedBed + Spinner      | 103       |
 | lake only    | Night | DeepHole + Stinkbait | 110       | DeepHole + Stinkbait   | 110       |
-| lake + creek | Dawn  | Riffle + Cricket     | 98        | WeedBed + Spinner      | 113       |
-| lake + creek | Day   | Rocks + Cricket      | 103       | Rocks + Spinner        | 115       |
-| lake + creek | Dusk  | Pool + Minnow        | 129       | Pool + Minnow          | 129       |
-| lake + creek | Night | Pool + Minnow        | 126       | Pool + Minnow          | 126       |
+| lake + creek | Dawn  | Riffle + Cricket     | 98        | WeedBed + Spinner      | 112       |
+| lake + creek | Day   | Rocks + Cricket      | 104       | Rocks + Spinner        | 116       |
+| lake + creek | Dusk  | Pool + Minnow        | 128       | Pool + Minnow          | 128       |
+| lake + creek | Night | Pool + Minnow        | 125       | Pool + Minnow          | 125       |
 
 ## Fights: chance to land / seconds to land (reel assist on)
 
-| Fish            | Willow (kid) | Fiberglass (kid) | Graphite (kid) | Willow (quick hands) | Avg price |
-|-----------------|--------------|------------------|----------------|----------------------|-----------|
-| Bluegill        | 100% / 2s    | 100% / 2s        | 100% / 2s      | 100% / 2s            | 6.4       |
-| Pumpkinseed     | 100% / 2s    | 100% / 2s        | 100% / 2s      | 100% / 2s            | 6.4       |
-| Yellow Perch    | 100% / 2s    | 100% / 2s        | 100% / 2s      | 100% / 2s            | 10.7      |
-| Black Crappie   | 100% / 3s    | 100% / 3s        | 100% / 3s      | 100% / 3s            | 12.9      |
-| Largemouth Bass | 100% / 4s    | 100% / 4s        | 100% / 4s      | 100% / 3s            | 21.6      |
-| Channel Catfish | 100% / 4s    | 100% / 4s        | 100% / 4s      | 100% / 4s            | 26.2      |
-| Common Carp     | 100% / 5s    | 100% / 5s        | 100% / 4s      | 100% / 4s            | 19.4      |
-| Northern Pike   | 100% / 5s    | 100% / 5s        | 100% / 5s      | 100% / 4s            | 48.8      |
-| Rainbow Trout   | 100% / 4s    | 100% / 4s        | 100% / 3s      | 100% / 3s            | 19.6      |
-| Smallmouth Bass | 100% / 5s    | 100% / 5s        | 100% / 4s      | 100% / 4s            | 23.9      |
-| Walleye         | 100% / 4s    | 100% / 4s        | 100% / 4s      | 100% / 4s            | 28.3      |
+| Fish            | Willow (kid) | Fiberglass (kid) | Graphite (kid) | Willow (quick hands) | Willow (no input at all) | Avg price |
+|-----------------|--------------|------------------|----------------|----------------------|--------------------------|-----------|
+| Bluegill        | 100% / 2s    | 100% / 2s        | 100% / 2s      | 100% / 2s            | 53% / 5s                 | 6.4       |
+| Pumpkinseed     | 100% / 2s    | 100% / 2s        | 100% / 2s      | 100% / 2s            | 58% / 4s                 | 6.4       |
+| Yellow Perch    | 100% / 2s    | 100% / 2s        | 100% / 2s      | 100% / 2s            | 49% / 5s                 | 10.7      |
+| Black Crappie   | 100% / 3s    | 100% / 3s        | 100% / 3s      | 100% / 3s            | 49% / 5s                 | 12.9      |
+| Largemouth Bass | 100% / 4s    | 100% / 4s        | 100% / 4s      | 100% / 3s            | 46% / 5s                 | 21.6      |
+| Channel Catfish | 100% / 4s    | 100% / 4s        | 100% / 4s      | 100% / 4s            | 69% / 8s                 | 26.2      |
+| Common Carp     | 100% / 5s    | 100% / 5s        | 100% / 4s      | 100% / 4s            | 63% / 8s                 | 19.4      |
+| Northern Pike   | 100% / 5s    | 100% / 5s        | 100% / 5s      | 100% / 4s            | 50% / 7s                 | 48.8      |
+| Rainbow Trout   | 100% / 4s    | 100% / 4s        | 100% / 3s      | 100% / 3s            | 40% / 6s                 | 19.6      |
+| Smallmouth Bass | 100% / 5s    | 100% / 5s        | 100% / 4s      | 100% / 4s            | 50% / 6s                 | 23.9      |
+| Walleye         | 100% / 4s    | 100% / 4s        | 100% / 4s      | 100% / 4s            | 64% / 7s                 | 28.3      |
 
 ## Careers: play minutes until each purchase (bought in order, median)
 
