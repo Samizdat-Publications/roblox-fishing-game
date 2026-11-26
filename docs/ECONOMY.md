@@ -177,9 +177,9 @@ Best expected coins per real minute with the Graphite Rod and both lures, kid re
 | Dawn | 118 (riffle) | 105 (basin, minnows) | 153 (minnows) |
 | Day | 124 (creek rocks) | 133 (island point, spinner) | 154 (minnows) |
 | Dusk | 133 (deep pool) | 158 (island point, spinner) | 145 (minnows) |
-| Night | 137 (deep pool) | 46 (basin, worms) | 112 (minnows) |
+| Night | 137 (deep pool) | 70 (basin, minnows) | 112 (minnows) |
 
-So the dinghy is a side step, not a big raise: a little better by day and at dusk, worse at dawn and much worse at night (nothing in dinghy water feeds after dark). Blue water pays about a quarter more than the best home water by day, the reward for crewing up. That matches the design: the boats open new fish and places more than new income.
+So the dinghy is a side step, not a big raise: a little better by day and at dusk, worse at dawn and at night. (At first nothing in dinghy water fed after dark, 46 coins a minute; the burbot now comes up into the basin at night, as real burbot do, which lifts it to 70 without changing the best plan at any hour.) Blue water pays about a quarter more than the best home water by day, the reward for crewing up. That matches the design: the boats open new fish and places more than new income.
 
 Minutes of play until each purchase (bought in order, median of runs):
 

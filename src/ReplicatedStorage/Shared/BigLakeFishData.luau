@@ -100,7 +100,7 @@ local list: { any } = {
 		id = "Burbot",
 		tier = "Epic",
 		name = "Burbot",
-		spots = { DropOff = 1 },
+		spots = { DropOff = 1, Basin = 0.4 }, -- at night it comes up out of the deep to feed
 		periods = { Dawn = 0.05, Day = 0.02, Dusk = 0.3, Night = 1 },
 		baits = { Minnow = 1, Stinkbait = 0.8 },
 		rarity = 0.2,
@@ -110,7 +110,7 @@ local list: { any } = {
 		basePrice = 35,
 		color = Color3.fromRGB(105, 95, 60),
 		fight = { zone = 0.25, speed = 0.6, dart = 0.6, range = 0.5, sink = 0.7, heavy = 0.5, gain = 0.16, loss = 0.13, style = "diver" },
-		habit = "The only freshwater cod, it hunts the cold drop-off at night. Minnows or stinkbait.",
+		habit = "The only freshwater cod, it hunts the cold drop-off at night and wanders up into the basin. Minnows or stinkbait.",
 		fightNote = "Eel-like twisting.",
 		bite = "pull",
 	},

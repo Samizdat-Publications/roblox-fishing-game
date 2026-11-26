@@ -328,6 +328,7 @@ local function despawn(player: Player)
 end
 
 local spawnFor: (Player) -> ()
+local waitingForSlip: { [Player]: boolean } = {}
 
 local function takenSlips(): { [number]: boolean }
 	local taken = {}
@@ -359,9 +360,13 @@ function spawnFor(player: Player)
 	local slip = if boats[player] then boats[player].slip else BoatRules.nextFreeSlip(takenSlips())
 	despawn(player)
 	if not slip then
-		hint(player, "Every boat slip is busy right now. Your boat will be there when one frees up.")
+		if not waitingForSlip[player] then
+			waitingForSlip[player] = true -- say it once, not every time someone leaves
+			hint(player, "Every boat slip is busy right now. Your boat will be there when one frees up.")
+		end
 		return
 	end
+	waitingForSlip[player] = nil
 	local b = BoatData.byId[id]
 	local model, hull, helm, nav = buildModel(player, b, BoatRules.slipCFrame(slip, id))
 	local boat: Boat = {
@@ -717,6 +722,7 @@ function BoatService.start()
 		despawn(p)
 		lastHint[p] = nil
 		inputs[p] = nil
+		waitingForSlip[p] = nil
 		task.defer(fillWaiting) -- after the leaving player is gone, so their boat isn't rebuilt
 	end)
 	RunService.Heartbeat:Connect(step)
