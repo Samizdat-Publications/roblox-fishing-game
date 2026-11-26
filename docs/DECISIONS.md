@@ -95,3 +95,11 @@ Notable design and build calls, newest last.
 - **Rods in hand stay gray-box for now.** The rod models are uploaded, but swapping the held rod touches the weld, the tip attachment the line hangs from, and every device's camera view; it gets its own step with a playtest.
 - **Fish shadows stay as soft blobs.** They are shadows under the water; real fish models there would read as fish floating in plain sight and give away the species.
 
+
+## 2026-11-26 (house style: Real-ish)
+
+- **The house style is now Real-ish** (Stewart's pick from the six style options in PR #3, https://github.com/Samizdat-Publications/roblox-fishing-game/pull/3). It means chunky, simple shapes with realistic materials. It replaces the flat vertex-colour low-poly look from earlier the same day. Rules are in `art/README.md`.
+- **Why, over the critic's ranking:** Gemini 4 Neon ranked it last (7.3 against 8.2 for the top two), but the gap is small, and it came from one model scoring AI concept art. Its main knocks apply to any style and have known fixes: busy textures hiding the bobber (a glowing bobber and line) and dark night shots. Stewart judged the lake concept the best-looking of all, and that's his call.
+- **Quality first, within a measured phone budget.** Stewart wants it to look as good as we can get it without hitting a performance ceiling. That means two layers. Roblox's built-in materials go on terrain and large surfaces, where they look good for free. Custom PBR textures go wherever they clearly look better, with fish first. A full-quality test corner of the lake, measured on the smallest phone and Stewart's phone, sets the per-area budget before the rest is re-dressed.
+- **Where the game is going (Stewart, 2026-11-26), so the style has to scale to it:** a much bigger lake that needs vehicles to cross; fishing islands, each with its own exotic fish found only there; a trophy case for your fish; and a breeding genetics system, growing from the home pond's breeding. Each island becomes its own streaming area with its own texture set. These are direction, not scheduled work; they get planned after the current leg.
+- **Liam can still vote** on the style page (https://claude.ai/artifact/MJJUZdAHyNqWKE5TdgvX8d). A different pick from him is a conversation, not a rebuild.
