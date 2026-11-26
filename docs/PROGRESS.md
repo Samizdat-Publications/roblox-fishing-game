@@ -221,6 +221,12 @@ Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6
 - Still to do in L1: a Lake Sturgeon at the deep hole in its real conditions, the journal on the smallest phone (the simulated mouse wheel zoomed the camera instead of scrolling the journal; check with a real wheel), the 15 new fish models (they hang as the old shape until then), a Neon reveal clip, the StyLua reformat, and Liam's 20 minutes.
 - Look mockups for the beauty pass: five looks (Golden Afternoon, Bright Summer Day, Misty Dawn, Moonlit Night, Autumn Lake) from the all-models stills, page https://claude.ai/artifact/DjMRLNSn6t91zKmR93sGr6 (source `planner/looks.html`, images `docs/looks/`, script `tools/looks/mockup.py`). They were made in the old flat low-poly style before Stewart picked Real-ish, so treat them as light and time-of-day moods, not materials.
 
+## Paused here (2026-11-26 evening, L1 and the looks)
+
+- Done: L1 first Studio pass (place version 44, saved, Edit mode, no playtest running); all scripts match `src/`; 143 tests pass. Five look mockups in the old low-poly style are live on the looks page; Stewart's seasons and frozen-lake direction is recorded.
+- In progress: the Real-ish remake of the looks. Golden Afternoon is done (`docs/looks/realish/golden/`); the rest were rendering when the laptop slept.
+- Next step, exactly: `python tools/looks/mockup.py gen --style realish` (it skips finished images; six looks including Frozen Winter), then `python tools/looks/mockup.py critic --style realish`, then rebuild `planner/looks.json` with a `sets` object (`realish` and `lowpoly`, each with `pick` and `looks`, each look with a `dir`), republish `planner/looks.html` to https://claude.ai/artifact/DjMRLNSn6t91zKmR93sGr6 and commit. After that: the L1 rarity retune against `docs/RARITY-DIRECTION.md` and an economy re-run.
+
 ## What works now
 A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shore, wait for a bite, hook it, fight it on the bar (hold or click anywhere), land it, sell at the Fish Buyer, buy bait at Bait and Tackle, fill the journal, raise fish in your home pond, buy better rods, and unlock Cedar Creek. Eleven species follow real habits (spot, time of day, bait), fish shadows show where they're active, the day runs 16 minutes, and progress saves to Roblox.
 
