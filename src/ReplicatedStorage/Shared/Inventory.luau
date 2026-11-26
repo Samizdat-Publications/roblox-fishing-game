@@ -39,13 +39,14 @@ export type Data = {
 	creekPass: boolean,
 	boats: { [string]: boolean }, -- v5: boats owned (BoatLogic.buy fills this in)
 	boat: string, -- v5: the boat waiting at your slip ("" for none yet)
+	goals: any, -- v6: today's daily goals (Goals.State); filled in by GoalService
 }
 
 local Inventory = {}
 
 function Inventory.new(): Data
 	return {
-		v = 5,
+		v = 6,
 		coins = Config.START_COINS,
 		bait = { Worm = Config.START_WORMS },
 		lures = {},
@@ -60,6 +61,7 @@ function Inventory.new(): Data
 		creekPass = false,
 		boats = {},
 		boat = "",
+		goals = {},
 	}
 end
 
@@ -95,6 +97,10 @@ function Inventory.reconcile(saved: any): Data
 	-- v5: boats (filled in from the fresh data above). UNVERIFIED in Studio (2026-11-26).
 	if saved.v < 5 then
 		saved.v = 5
+	end
+	-- v6: daily goals (an empty table; GoalService fills in today's). UNVERIFIED in Studio.
+	if saved.v < 6 then
+		saved.v = 6
 	end
 	return saved
 end
@@ -258,6 +264,14 @@ function Inventory.snapshot(data: Data): any
 		creekPass = data.creekPass,
 		boats = table.clone(data.boats),
 		boat = data.boat,
+		goals = (function()
+			local out = {}
+			local list = type(data.goals) == "table" and data.goals.list or {}
+			for i, g in list do
+				out[i] = { text = g.text, progress = g.progress, target = g.target, reward = g.reward, done = g.done }
+			end
+			return out
+		end)(),
 		bag = (function()
 			local out = {}
 			for i, f in data.bag do

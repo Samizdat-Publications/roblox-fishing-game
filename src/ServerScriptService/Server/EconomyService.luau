@@ -11,6 +11,7 @@ local Remotes = require(Shared.Remotes)
 local Server = script.Parent
 local PlayerData = require(Server.PlayerData)
 local RodService = require(Server.RodService)
+local GoalService = require(Server.GoalService)
 
 local EconomyService = {}
 
@@ -32,6 +33,7 @@ local function onSell(player: Player)
 	end
 	print(string.format("[Economy] %s sold %d fish for %d coins (now %d)", player.Name, count, coins, data.coins))
 	toast(player, string.format("Sold %d fish for %d coins.", count, coins))
+	GoalService.onSell(player, data, coins)
 	PlayerData.changed(player)
 	PlayerData.saveNow(player)
 end

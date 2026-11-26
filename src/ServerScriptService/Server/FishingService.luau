@@ -21,6 +21,7 @@ local Server = script.Parent
 local PlayerData = require(Server.PlayerData)
 local WorldBuilder = require(Server.WorldBuilder)
 local RodService = require(Server.RodService)
+local GoalService = require(Server.GoalService)
 
 local FishingService = {}
 
@@ -418,6 +419,7 @@ local function onFightResult(player: Player, won: any)
 	}
 	local first = (data.journal.counts[species.id] or 0) == 0
 	local best = Inventory.recordCatch(data, fish)
+	GoalService.onCatch(player, data, fish)
 	print(string.format("[Fishing] %s caught %s %.1f cm %.2f kg worth %d at %s (%s, %s)", player.Name, fish.name, cm, kg, fish.price, fish.spot, fish.period, fish.bait))
 	send(player, "Caught", { fish = fish, best = best, first = first, habit = species.habit, tier = Rarity.of(species), sizeClass = class })
 	if class == "monster" then

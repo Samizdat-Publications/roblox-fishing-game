@@ -184,6 +184,31 @@ function UI.init(cbs: { [string]: (...any) -> () })
 		end
 	end)
 
+	-- Daily goals: a button under the journal and a small list beside it.
+	-- UNVERIFIED in Studio (2026-11-26).
+	refs.goalsBtn = button(gui, "GoalsButton", "Goals", UDim2.fromOffset(190, 50), UDim2.new(0, 12, 0.5, 60), C.panel2, function()
+		refs.goalsBox.Visible = not refs.goalsBox.Visible
+	end)
+	local goalsBox = frame(gui, "Goals", UDim2.fromOffset(330, 150), UDim2.new(0, 212, 0.5, -60), C.panel, 0.15)
+	corner(goalsBox)
+	pad(goalsBox, 10)
+	goalsBox.Visible = false
+	local goalsList = Instance.new("UIListLayout")
+	goalsList.Padding = UDim.new(0, 4)
+	goalsList.SortOrder = Enum.SortOrder.LayoutOrder
+	goalsList.Parent = goalsBox
+	refs.goalsTitle = label(goalsBox, "Title", "Today's goals", UDim2.new(1, 0, 0, 24), UDim2.new(), 18, C.gold, Enum.Font.GothamBold)
+	refs.goalsTitle.TextXAlignment = Enum.TextXAlignment.Left
+	refs.goalLines = {}
+	for i = 1, 3 do
+		local l = label(goalsBox, "Goal" .. i, "", UDim2.new(1, 0, 0, 34), UDim2.new(), 15, C.text)
+		l.LayoutOrder = i
+		l.TextXAlignment = Enum.TextXAlignment.Left
+		l.TextWrapped = true
+		refs.goalLines[i] = l
+	end
+	refs.goalsBox = goalsBox
+
 	-- Status line and power meter (bottom center)
 	refs.status = label(gui, "Status", "", UDim2.fromOffset(640, 40), UDim2.new(0.5, -320, 1, -150), 22, C.text, Enum.Font.GothamBold)
 	refs.status.TextStrokeTransparency = 0.4
@@ -320,6 +345,21 @@ function UI.setState(state: any)
 	refs.coins.Text = string.format("%d coins", state.coins)
 	refs.bag.Text = string.format("Bag: %d fish (%d)", state.bagCount, state.bagValue)
 	refs.baitBtn.Text = baitLabel(state)
+	local goals = state.goals or {}
+	local doneCount = 0
+	for i, l in refs.goalLines do
+		local g = goals[i]
+		if g then
+			if g.done then
+				doneCount += 1
+			end
+			l.Text = string.format("%s %s  (%d/%d, %d coins)", if g.done then "[done]" else "-", g.text, g.progress, g.target, g.reward)
+			l.TextColor3 = if g.done then C.green else C.text
+		else
+			l.Text = ""
+		end
+	end
+	refs.goalsBtn.Text = string.format("Goals %d/%d", doneCount, #goals)
 	if openPanel == "Shop" then
 		UI.refreshShop()
 	elseif openPanel == "Journal" then

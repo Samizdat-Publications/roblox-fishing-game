@@ -123,3 +123,20 @@ For the boat plan: a boat priced around 1,500 to 2,000 would be the next goal af
 - Cast reach: the sim assumes every spot can be reached from its shore.
 - When players sell: the sim sells when the bag is full or when the bag would pay for the next goal.
 - Exact random numbers: Python's random numbers, not Roblox's `Random`, so single runs differ but averages should match.
+
+## 2026-11-26 (second overnight run): new species, trophies and monsters
+
+Re-run with nine new species (six reachable today: Bowfin, Lake Sturgeon, Creek Chub, Rock Bass, Brook Trout, Brown Trout), trophy and monster catches (2 and 0.2 percent, rolled at the hook, harder fights), the full 60 runs per player type. Unverified in Studio; numbers come from `tools/econ/sim.py`.
+
+| Player | coins/min before | with new fish, no size classes | with new fish and size classes |
+|---|---|---|---|
+| smart | 78.9 | 87.6 | 90.7 |
+| smart, no pond | 87.0 | 96.9 | 101.3 |
+| dock and worms | 30.5 | 31.0 | 31.4 |
+| random | 31.8 | 35.9 | 36.2 |
+
+- Trophies and monsters add about 3 to 4 percent; the new fish add about 11 percent for a smart player and almost nothing at the dock.
+- The smart player lands at +15 percent, right on the rarity plan's limit. Most of it is the Legendary fish, which reward knowing the right spot, time and bait. To get there the first try was cut: Lake Sturgeon rarity 0.05 to 0.03 and base price 160 to 80, Brown Trout 0.06 to 0.04 and 70 to 50, Bowfin 45 to 30 (the first try put a smart player at 104 coins a minute).
+- The dock kid's curve hasn't moved: Fiberglass Rod in 4 minutes, Creek Pass in 22, Graphite Rod in 54.
+- Not modeled yet: daily goals (25, 60 and 120 coins a day, about 2 minutes of a smart player's fishing and 7 of the dock kid's, so they help the slower player most). Big Lake fish are left out until the Big Lake exists.
+- Compare with sizes off: `python3 tools/econ/sim.py --no-size-classes`.

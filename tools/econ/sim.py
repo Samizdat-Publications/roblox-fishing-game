@@ -126,6 +126,57 @@ def roll_size(s, rng):
     return cm, kg
 
 
+# Trophy and monster catches (rarity plan; values read from Rarity.luau so they stay in step).
+def _rarity_consts():
+    import re
+    src = (Path(__file__).resolve().parents[2] / "src/ReplicatedStorage/Shared/Rarity.luau").read_text()
+    def num(name):
+        return float(re.search(r"Rarity\." + name + r"\s*=\s*([0-9.]+)", src).group(1))
+    def pair(name):
+        a, b = re.search(r"Rarity\." + name + r"\s*=\s*\{\s*([0-9.]+),\s*([0-9.]+)\s*\}", src).groups()
+        return float(a), float(b)
+    fights = {}
+    for cls in ("trophy", "monster"):
+        g, h = re.search(cls + r"\s*=\s*\{\s*gain\s*=\s*([0-9.]+),\s*heavy\s*=\s*([0-9.]+)", src).groups()
+        fights[cls] = (float(g), float(h))
+    return {
+        "monster": num("MONSTER_CHANCE"), "trophy": num("TROPHY_CHANCE"),
+        "monster_len": pair("MONSTER_LENGTH"), "trophy_len": pair("TROPHY_LENGTH"),
+        "heavy_cap": num("HEAVY_CAP"), "fights": fights,
+    }
+
+
+RARITY = _rarity_consts()
+SIZE_CLASSES = True  # --no-size-classes turns trophies and monsters off for a comparison
+
+
+def roll_catch(s, rng):
+    """Like FishLogic.rollCatch: size class first, then length and weight."""
+    if SIZE_CLASSES:
+        r = rng.random()
+        rng_len = None
+        if r < RARITY["monster"]:
+            cls, rng_len = "monster", RARITY["monster_len"]
+        elif r < RARITY["monster"] + RARITY["trophy"]:
+            cls, rng_len = "trophy", RARITY["trophy_len"]
+        if rng_len:
+            cm = round(s["maxCm"] * (rng_len[0] + (rng_len[1] - rng_len[0]) * rng.random()) * 10) / 10
+            kg = max(0.01, round(s["weightCoef"] * cm ** 3 * 100) / 100)
+            return cm, kg, cls
+    cm, kg = roll_size(s, rng)
+    return cm, kg, "normal"
+
+
+def fight_for(profile, cls):
+    if cls == "normal":
+        return profile
+    g, h = RARITY["fights"][cls]
+    p = dict(profile)
+    p["gain"] = profile["gain"] * g
+    p["heavy"] = min(RARITY["heavy_cap"], profile["heavy"] + h)
+    return p
+
+
 def price_for(s, kg):
     mid = (s["minCm"] + s["maxCm"]) / 2
     avg = s["weightCoef"] * mid ** 3
@@ -580,15 +631,15 @@ def play_session(p, strat, rng, clock_start, minutes=SESSION_MIN, log=None):
         sid = pick_species(w, rng)
         if BAIT_BY_ID[bait]["kind"] == "live":
             p.bait[bait] -= 1
-        prof = apply_rod(FISH_BY_ID[sid]["fight"], p.rod)
+        s = FISH_BY_ID[sid]
+        cm, kg, cls = roll_catch(s, rng)  # rolled at the hook, as on the server
+        prof = apply_rod(fight_for(s["fight"], cls), p.rod)
         won, ft = fight_once(prof, True, strat.skill, rng)
         t += ft
         if not won:
             t += AFTER_ESCAPE
             continue
         t += AFTER_CATCH
-        s = FISH_BY_ID[sid]
-        cm, kg = roll_size(s, rng)
         price = price_for(s, kg)
         p.catches += 1
         kept = False
@@ -798,9 +849,12 @@ def section(title, runs, trials):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true", help="fewer runs")
+    ap.add_argument("--no-size-classes", action="store_true", help="turn trophies and monsters off, to compare")
     ap.add_argument("--log", action="store_true", help="print one smart career's purchases")
     ap.add_argument("--only", choices=["current", "proposal"], help="run just one of the two")
     args = ap.parse_args()
+    global SIZE_CLASSES
+    SIZE_CLASSES = not args.no_size_classes
     runs = 12 if args.quick else 60
     trials = 150 if args.quick else 400
 
