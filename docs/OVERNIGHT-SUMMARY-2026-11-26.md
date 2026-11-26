@@ -29,7 +29,7 @@ Input for tomorrow's master plan. Everything here is on draft pull request #2 (b
 
 ### Sound, economy, tooling
 - **25 more sound prompts** (`audio/sounds-next.json`), added to the sound pass's `Shared/SoundIds.luau` with empty ids; `SoundFX` already plays 20 of them once uploaded (Big Lake and blue-water ambience, motors by speed, rain, thunder and gusts, the frenzy boil, a monster foghorn, trophy and monster stingers, coins, goals, a line snap); see `audio/README.md`.
-- **Economy** (`docs/ECONOMY.md`): after tuning the new Legendaries down, an expert earns 15 percent more than before (the plan's limit) and the dock kid the same. Weather averages within 2 percent of clear days. Run `python3 tools/econ/sim.py --weather`.
+- **Economy** (`docs/ECONOMY.md`): after tuning the new Legendaries down, an expert earns 15 percent more than before (the plan's limit) and the dock kid the same. Weather averages within 2 percent of clear days (`python3 tools/econ/sim.py --weather`). Daily goals add about a quarter to a new player's session and under a tenth to an expert's; a frenzy adds 33 to 56 coins if you're there (`python3 tools/econ/loop.py`).
 - **A read-through of the new server scripts** by a second reviewer found 12 real problems (boat heading fighting itself, boats not at the water line, seats grabbing anyone who bumped them, riders casting off, a full bag losing a team share, and more); all fixed.
 - **A compile check for every script** (`lune run tools/test/syntax.luau`), also on GitHub.
 
