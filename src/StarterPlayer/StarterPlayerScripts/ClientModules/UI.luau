@@ -735,10 +735,15 @@ function UI.refreshJournal()
 	if not st then
 		return
 	end
-	local kinds = 0
+	local kinds, shown = 0, 0
 	for _, s in FishData.list do
 		local c = refs.journalCards[s.id]
 		local best = st.bests[s.id]
+		local listed = Journal.listed(s, best ~= nil)
+		c.name.Parent.Visible = listed
+		if listed then
+			shown += 1
+		end
 		local count = st.counts[s.id] or 0
 		if best then
 			kinds += 1
@@ -763,7 +768,7 @@ function UI.refreshJournal()
 	end
 	refs.assistBtn.Text = "Reel assist: " .. (if st.assist then "On" else "Off")
 	local nextIn = Journal.nextRumourIn(st.totalCaught)
-	refs.journalSummary.Text = string.format("%d of %d species found. %d fish caught in all.%s", kinds, #FishData.list, st.totalCaught, if nextIn > 0 then string.format(" New rumour in %d.", nextIn) else "")
+	refs.journalSummary.Text = string.format("%d of %d species found. %d fish caught in all.%s", kinds, shown, st.totalCaught, if nextIn > 0 then string.format(" New rumour in %d.", nextIn) else "")
 end
 
 -- From a bite until the fight ends nothing else may take the player's clicks.
