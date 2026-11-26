@@ -178,7 +178,7 @@ def critic(look: str) -> dict:
     s = LOOKS[look]
     files = sorted((OUT / look).glob("*.jpg"))
     parts = [{"text": (
-        "You are an art director reviewing concept images for a Roblox fishing game made by a father and his 11-year-old son. "
+        "You are an art director reviewing concept images for a Roblox fishing game made by a father and his son. "
         f"Each image restyles a real screenshot of the game into one candidate look called '{s['name']}': {s['line']} "
         f"The team plans to build it with: {s['build']} plus Terrain water and sloped banks, using their existing chunky "
         "low-poly flat-colour models. Judge the look across all images from 0 to 10 on beauty, mood, readability on a small "
