@@ -140,3 +140,11 @@ Re-run with nine new species (six reachable today: Bowfin, Lake Sturgeon, Creek 
 - The dock kid's curve hasn't moved: Fiberglass Rod in 4 minutes, Creek Pass in 22, Graphite Rod in 54.
 - Not modeled yet: daily goals (25, 60 and 120 coins a day, about 2 minutes of a smart player's fishing and 7 of the dock kid's, so they help the slower player most). Big Lake fish are left out until the Big Lake exists.
 - Compare with sizes off: `python3 tools/econ/sim.py --no-size-classes`.
+
+### Weather, frenzies and Mythics (same night)
+
+- `python3 tools/econ/sim.py --weather` plays with the day plans from `Weather.luau` (a Python port; keep the two in step). Over whole careers it lands within about 2 percent of clear-weather play (smart 87 vs 89 coins a minute, dock 30.7 vs 31.4), so weather reshuffles where to fish more than it changes income.
+- Best possible rate for a smart player with every lure, by weather held all day: overcast, fog and wind within 2 percent of clear; the pre-storm rush +13 percent; storm and cold front -15 percent. In the game the rush and the storm last only a few hours of a storm day, so a session swings less than that. Inside the 20 percent the weather spec allows.
+- A player who doesn't adapt feels it more: a cold front halves most spots (deep water holds up), which is the lesson it teaches.
+- Mythics bite only in their weather (storm, fog, the pre-storm rush), at rarity 0.03; the simulation includes them when `--weather` is on.
+- Feeding frenzies aren't simulated yet. Expected about 1.2 a game day, a minute each, only for Common and Uncommon schooling fish: a nice burst for whoever is there, small next to a session's income.

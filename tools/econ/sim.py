@@ -83,12 +83,72 @@ BITE_RULE = "proposed" if "BITE_SLOWEST" in CFG else "current"
 BITE_SLOWEST = CFG.get("BITE_SLOWEST", 40)  # slowest bite; weaker combos count as "nothing here"
 
 
+# Weather (a Python port of Weather.luau; keep the two in step). WEATHER_NOW is the weather
+# kind right now, or None for plain clear days (the default; --weather turns the mix on).
+WEATHER_ON = False
+WEATHER_NOW = None
+WIND_NOW = None
+LOW_LIGHT = {"LargemouthBass", "Walleye", "BlackCrappie", "NorthernPike", "SmallmouthBass", "Bowfin", "Muskellunge"}
+PREDATORS = {k: 1.4 for k in ["LargemouthBass", "NorthernPike", "Walleye", "SmallmouthBass", "WhiteBass", "Muskellunge", "Bowfin"]}
+WEATHER = {
+    "Clear": dict(chance=0.33),
+    "Overcast": dict(chance=0.25, spots=dict(WeedBed=1.3, Dock=1.2, Riffle=1.2, Rocks=1.1, DeepHole=0.85, Pool=0.85, DropOff=0.85), dawn=LOW_LIGHT),
+    "Fog": dict(chance=0.15, dawn=LOW_LIGHT),
+    "Wind": dict(chance=0.15),
+    "PreStorm": dict(chance=0.12, all=1.3, species=dict(LargemouthBass=1.6, NorthernPike=1.6, ChannelCatfish=1.6, Walleye=1.6, WhiteBass=1.6)),
+    "Storm": dict(chance=0, all=0.6),
+    "ColdFront": dict(chance=0, all=0.5, spots=dict(DeepHole=1.6, Pool=1.6, DropOff=1.6, Dock=1.2)),
+}
+SPOT_SIDE = {"WeedBed": "west", "Logs": "east", "Dock": "south", "DeepHole": "north"}
+OPPOSITE = {"north": "south", "south": "north", "east": "west", "west": "east"}
+
+
+def plan_day(rng, previous):
+    if previous == "PreStorm":
+        return "ColdFront", None
+    r, acc = rng.random(), 0
+    for k, v in WEATHER.items():
+        acc += v["chance"]
+        if v["chance"] > 0 and r < acc:
+            return k, (rng.choice(list(OPPOSITE)) if k == "Wind" else None)
+    return "Clear", None
+
+
+def weather_at(kind, clock):
+    c = clock % 24
+    if kind == "Fog" and (c >= 10 or c < 5):
+        return "Clear"
+    if kind == "PreStorm":
+        if 15 <= c < 18:
+            return "Storm"
+        if c < 13 or c >= 18:
+            return "Clear"
+    return kind
+
+
+def weather_mult(sid, spot):
+    k = WEATHER.get(WEATHER_NOW or "Clear", {})
+    m = k.get("all", 1) * k.get("spots", {}).get(spot, 1)
+    if WEATHER_NOW == "Wind" and WIND_NOW:
+        side = SPOT_SIDE.get(spot)
+        if side == OPPOSITE[WIND_NOW]:
+            m *= PREDATORS.get(sid, 1)
+        elif side == WIND_NOW:
+            m *= 0.8
+    else:
+        m *= k.get("species", {}).get(sid, 1)
+    return m
+
+
 def bite_weights(spot, period, bait):
     out = []
+    k = WEATHER.get(WEATHER_NOW or "Clear", {})
     for s in FISH:
-        if s.get("weather"):  # Mythics only bite in their weather; the sim plays clear days
-            continue
-        w = s["rarity"] * s["spots"].get(spot, 0) * s["periods"].get(period, 0) * s["baits"].get(bait, 0)
+        if s.get("weather") and (s["weather"].get(WEATHER_NOW or "Clear", 0) <= 0):
+            continue  # Mythics only bite in their weather
+        p = "Dawn" if (period == "Day" and s["id"] in k.get("dawn", ())) else period
+        w = s["rarity"] * s["spots"].get(spot, 0) * s["periods"].get(p, 0) * s["baits"].get(bait, 0)
+        w *= weather_mult(s["id"], spot)
         if w > 0:
             out.append((s["id"], w))
     out.sort(key=lambda x: -x[1])
@@ -571,8 +631,16 @@ def play_session(p, strat, rng, clock_start, minutes=SESSION_MIN, log=None):
         t += SHOP_MENU
         return True
 
+    global WEATHER_NOW, WIND_NOW
+    day_kind, day_wind, day_index = "Clear", None, None
     while t < end:
         period = period_from_clock(clock())
+        if WEATHER_ON:
+            d = int(clock() // 24)
+            if d != day_index:
+                day_index = d
+                day_kind, day_wind = plan_day(rng, day_kind)
+            WEATHER_NOW, WIND_NOW = weather_at(day_kind, clock()), day_wind
         if isinstance(strat, Smart):
             lure = strat.lure_worth_buying(p, period)
             if lure and p.coins >= BAIT_BY_ID[lure]["price"]:
@@ -852,11 +920,13 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true", help="fewer runs")
     ap.add_argument("--no-size-classes", action="store_true", help="turn trophies and monsters off, to compare")
+    ap.add_argument("--weather", action="store_true", help="play with the weather mix from Weather.luau")
     ap.add_argument("--log", action="store_true", help="print one smart career's purchases")
     ap.add_argument("--only", choices=["current", "proposal"], help="run just one of the two")
     args = ap.parse_args()
-    global SIZE_CLASSES
+    global SIZE_CLASSES, WEATHER_ON
     SIZE_CLASSES = not args.no_size_classes
+    WEATHER_ON = args.weather
     runs = 12 if args.quick else 60
     trials = 150 if args.quick else 400
 
