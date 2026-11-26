@@ -22,7 +22,10 @@ local function giveRod(character: Model)
 	rod.CanQuery = false
 	rod.CanTouch = false
 	rod.Massless = true
-	rod.CFrame = hand.CFrame * CFrame.Angles(math.rad(40), 0, 0) * CFrame.new(0, 0, -2.6)
+	-- Aim from the character's facing, not the hand's current pose: forward and about 35 degrees up.
+	local root = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local facing = if root then root.CFrame.Rotation else hand.CFrame.Rotation
+	rod.CFrame = CFrame.new(hand.Position) * facing * CFrame.Angles(math.rad(35), 0, 0) * CFrame.new(0, 0, -2.8)
 	local weld = Instance.new("WeldConstraint")
 	weld.Part0 = hand
 	weld.Part1 = rod

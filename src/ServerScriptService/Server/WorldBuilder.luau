@@ -58,7 +58,7 @@ local function sign(parent: Instance, adornee: BasePart, text: string, color: Co
 	gui.Size = UDim2.fromOffset(200, 50)
 	gui.StudsOffset = Vector3.new(0, 4, 0)
 	gui.AlwaysOnTop = false
-	gui.MaxDistance = 120
+	gui.MaxDistance = 400
 	gui.Adornee = adornee
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.fromScale(1, 1)
@@ -126,15 +126,17 @@ function WorldBuilder.build(): Model
 
 	local lake = Instance.new("Model")
 	lake.Name = "Lake"
+	lake.ModelStreamingMode = Enum.ModelStreamingMode.Persistent -- small; always fully loaded
 
 	-- Water: terrain water so characters can swim out; an invisible part marks the bounds.
 	local terrain = workspace.Terrain
 	terrain:FillBlock(CFrame.new(0, -4, 0), Vector3.new(240, 16, 180), Enum.Material.Air)
 	terrain:FillBlock(CFrame.new(0, -3.5, 0), Vector3.new(220, 7, 160), Enum.Material.Water)
 	terrain.WaterColor = COLORS.water
-	terrain.WaterTransparency = 0.55
-	terrain.WaterWaveSize = 0.1
-	terrain.WaterReflectance = 0.3
+	terrain.WaterTransparency = 0.6
+	terrain.WaterWaveSize = 0.15
+	terrain.WaterWaveSpeed = 6
+	terrain.WaterReflectance = 0.45
 	local water = part(lake, "Water", WATER_SIZE, WATER_CF, COLORS.water, {
 		Transparency = 1,
 		CanCollide = false,
@@ -238,6 +240,25 @@ function WorldBuilder.build(): Model
 		decal:Destroy()
 	end
 	spawn.Parent = lake
+
+	-- Lamp posts so the dock and stands are easy to find at night.
+	local lamps = Instance.new("Model")
+	lamps.Name = "Lamps"
+	for i, pos in { Vector3.new(7.5, 1.5, 36), Vector3.new(-7.5, 1.5, 36), Vector3.new(-24, 1, 93), Vector3.new(24, 1, 93) } do
+		part(lamps, "Post" .. i, Vector3.new(0.5, 8, 0.5), CFrame.new(pos + Vector3.new(0, 4, 0)), COLORS.darkWood)
+		local bulb = part(lamps, "Bulb" .. i, Vector3.new(1.2, 1.2, 1.2), CFrame.new(pos + Vector3.new(0, 8.4, 0)), Color3.fromRGB(255, 230, 170), {
+			Material = Enum.Material.Neon,
+			CanCollide = false,
+		})
+		bulb.Shape = Enum.PartType.Ball
+		local light = Instance.new("PointLight")
+		light.Range = 28
+		light.Brightness = 1.6
+		light.Color = Color3.fromRGB(255, 225, 170)
+		light.Shadows = false
+		light.Parent = bulb
+	end
+	lamps.Parent = lake
 
 	lake.Parent = workspace
 	return lake

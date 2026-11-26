@@ -99,6 +99,11 @@ local function makeBobber(player: Player, pos: Vector3): BasePart
 	top.CanTouch = false
 	top.Position = pos + Vector3.new(0, 0.4, 0)
 	top.Parent = b
+	local glow = Instance.new("PointLight") -- so the bobber shows at night
+	glow.Range = 7
+	glow.Brightness = 1.2
+	glow.Color = Color3.fromRGB(255, 240, 220)
+	glow.Parent = top
 	local att = Instance.new("Attachment")
 	att.Name = "LineEnd"
 	att.Position = Vector3.new(0, 0.4, 0)
@@ -273,6 +278,62 @@ local function onHook(player: Player)
 	end)
 end
 
+-- Hold the landed fish up on the line for a moment (everyone nearby sees it).
+local function showCatch(player: Player, species: FishData.Species, cm: number)
+	local tip = RodService.tip(player)
+	if not tip then
+		return
+	end
+	local len = math.clamp(cm / 12, 1, 8) -- studs; a bit bigger than life so it reads on screen
+	local m = Instance.new("Model")
+	m.Name = "CaughtFish_" .. player.Name
+	local top = tip.WorldPosition - Vector3.new(0, 1, 0)
+	local body = Instance.new("Part")
+	body.Name = "Body"
+	body.Size = Vector3.new(len * 0.18, len, len * 0.38)
+	body.CFrame = CFrame.new(top - Vector3.new(0, len / 2, 0))
+	body.Color = species.color
+	body.Material = Enum.Material.SmoothPlastic
+	body.Anchored = true
+	body.CanCollide = false
+	body.CanQuery = false
+	body.CanTouch = false
+	local mesh = Instance.new("SpecialMesh")
+	mesh.MeshType = Enum.MeshType.Sphere
+	mesh.Parent = body
+	body.Parent = m
+	local tail = Instance.new("WedgePart")
+	tail.Name = "Tail"
+	tail.Size = Vector3.new(len * 0.06, len * 0.3, len * 0.36)
+	tail.CFrame = CFrame.new(top - Vector3.new(0, len + len * 0.12, 0)) * CFrame.Angles(math.rad(180), 0, 0)
+	tail.Color = species.color
+	tail.Anchored = true
+	tail.CanCollide = false
+	tail.CanQuery = false
+	tail.CanTouch = false
+	tail.Parent = m
+	local a = Instance.new("Attachment")
+	a.Position = Vector3.new(0, len / 2, 0)
+	a.Parent = body
+	local line = Instance.new("Beam")
+	line.Attachment0 = tip
+	line.Attachment1 = a
+	line.Width0 = 0.04
+	line.Width1 = 0.04
+	line.Color = ColorSequence.new(Color3.fromRGB(235, 235, 235))
+	line.FaceCamera = true
+	line.Parent = body
+	m.Parent = workspace
+	task.spawn(function()
+		for i = 1, 25 do -- a little wiggle
+			local swing = math.sin(i * 0.9) * math.rad(12)
+			body.CFrame = CFrame.new(top - Vector3.new(0, len / 2, 0)) * CFrame.Angles(0, 0, swing)
+			task.wait(0.1)
+		end
+		m:Destroy()
+	end)
+end
+
 local function onFightResult(player: Player, won: any)
 	local s = session(player)
 	local data = PlayerData.get(player)
@@ -306,6 +367,7 @@ local function onFightResult(player: Player, won: any)
 	print(string.format("[Fishing] %s caught %s %.1f cm %.2f kg worth %d at %s (%s, %s)", player.Name, fish.name, cm, kg, fish.price, fish.spot, fish.period, fish.bait))
 	send(player, "Caught", { fish = fish, best = best, first = first, habit = species.habit })
 	cleanup(s)
+	showCatch(player, species, cm)
 	PlayerData.changed(player)
 end
 

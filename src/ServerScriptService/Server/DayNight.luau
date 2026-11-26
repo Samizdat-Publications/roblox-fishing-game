@@ -12,6 +12,7 @@ function DayNight.start()
 	Lighting.ClockTime = Config.START_CLOCK
 	Lighting.Brightness = 2
 	Lighting.OutdoorAmbient = Color3.fromRGB(110, 110, 120)
+	Lighting.Ambient = Color3.fromRGB(60, 60, 75) -- night stays readable; lamps light the dock
 	RunService.Heartbeat:Connect(function(dt)
 		Lighting.ClockTime = (Lighting.ClockTime + dt * HOURS_PER_SECOND) % 24
 	end)

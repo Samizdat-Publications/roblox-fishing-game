@@ -250,7 +250,8 @@ function UI.init(cbs: { [string]: (...any) -> () })
 	refs.toasts = toasts
 
 	-- Catch card (center)
-	local card = frame(gui, "CatchCard", UDim2.fromOffset(420, 200), UDim2.new(0.5, -210, 0.42, -100), C.panel, 0.05)
+	-- Right of center so the fish held up on the line stays in view.
+	local card = frame(gui, "CatchCard", UDim2.fromOffset(420, 200), UDim2.new(0.5, 70, 0.5, -110), C.panel, 0.05)
 	corner(card, 14)
 	pad(card, 14)
 	card.Visible = false

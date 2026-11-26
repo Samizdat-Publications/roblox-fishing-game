@@ -13,8 +13,8 @@ Config.CHARGE_TIME = 1.2 -- seconds to reach full power
 
 -- Biting
 Config.BITE_MIN = 3 -- fastest bite (great combo)
-Config.BITE_MAX = 14 -- slowest bite (weak combo)
-Config.NOTHING_WAIT = 12 -- seconds before a "nothing is biting" hint
+Config.BITE_MAX = 11 -- slowest bite (weak combo)
+Config.NOTHING_WAIT = 10 -- seconds before a "nothing is biting" hint
 Config.HOOK_WINDOW = 2.0 -- seconds to press after a bite
 
 -- Fight (bar minigame)

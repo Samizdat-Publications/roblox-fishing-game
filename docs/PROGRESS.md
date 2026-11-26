@@ -73,12 +73,20 @@ Stewart: "several occasions where no matter how hard I clicked it didn't move th
 - Touch (phone simulator): a touch near the top of the screen, away from any button, lifted the zone 0.20 to the top in about 0.6 s; the button turned into a green REEL button; the jump button hid during the fight.
 - Stewart's save loaded with reel assist back on.
 
+### Polish pass (same evening)
+- **Tuning:** weak combos now bite within 11 s instead of 14; "nothing here" hint after 10 s instead of 12. Prices left as they are until real play says otherwise.
+- **Night you can fish in:** brighter night ambient, lamp posts at the dock end and both stands, and a small light on the bobber. Night screenshot: the dock end sits in a pool of lamp light.
+- **Visible fish:** dark fish shadows cruise under the surface, and how many each spot shows follows the real bite rules. Measured in play: at dawn dock 4, weed bed 3, logs 2, deep hole 1; at 10 PM weed bed 0, logs 3, deep hole 2, dock 2. So reading the water now teaches where to fish.
+- **Catch on the line:** a landed fish hangs from the rod tip for about 2.5 s, colored by species and sized by length, with a little wiggle (screenshot: a yellow perch). The catch card moved right of center so it doesn't cover the fish.
+- **Rod pose:** the rod now points forward and about 35 degrees up from the character's facing, instead of nearly straight up.
+- **Signs:** the stand signs read from 400 studs instead of 120. The lake model always loads in full (it's small), which also fixed the fish shadows missing from the spots on first load.
+- **Nicer water:** a little more wave, reflection and clarity.
+
 ## What works now
 A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shore, wait for a bite, hook it, fight it on the bar, land it, sell at the Fish Buyer, buy bait at Bait and Tackle, and fill the journal. Eight species follow real habits (spot, time of day, bait), the day runs 16 minutes, and progress saves to Roblox.
 
 ## What's left (next version, after Stewart and Liam playtest)
-- Tuning from real play: bite times, fight difficulty, prices, how dark night is.
-- Visible fish and nicer water, a better rod pose (the rod points almost straight up), names on the stands' prompts.
+- More tuning once Stewart and Liam have played more (prices, fight lengths).
 - Later versions from `DESIGN.md`: home pond, better rods and a boat, a second fishing spot, weather, co-op, art pass.
 - The test save on Stewart's account has 21 coins and 14 fish from Claude's playtests. Ask Claude to wipe it if you want a fresh start.
 
