@@ -6,6 +6,7 @@ local Config = require(Shared.Config)
 local FishData = require(Shared.FishData)
 local FishLogic = require(Shared.FishLogic)
 local Rarity = require(Shared.Rarity)
+local Units = require(Shared.Units)
 
 export type PondFish = {
 	id: string,
@@ -117,7 +118,7 @@ function PondLogic.sell(data: any, pondIndex: any): (boolean, string, number)
 	end
 	local f = table.remove(pond.fish, pondIndex) :: PondFish
 	data.coins += f.price
-	return true, string.format("Sold your %s (%.1f cm) for %d coins.", f.name, f.cm, f.price), f.price
+	return true, string.format("Sold your %s (%s) for %d coins.", f.name, Units.length(f.cm), f.price), f.price
 end
 
 -- Let a pond fish go.

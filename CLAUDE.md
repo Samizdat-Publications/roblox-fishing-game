@@ -1,6 +1,6 @@
 # Fishing Game (Roblox)
 
-Stewart's Roblox fishing game, built by Claude through Roblox Studio's MCP server. Liam (his son, 11) joins later as creative director. Read these first, in order: `docs/PROGRESS.md` (where things stand), `docs/superpowers/plans/2026-11-26-next-leg.md` (the current leg, L0 to L7), `docs/DIRECTION.md` (wins over DESIGN), `docs/DESIGN.md` (approved design), `docs/ROUTING.md` (who does what), `docs/RESEARCH.md` (context only).
+Stewart's Roblox fishing game, built by Claude through Roblox Studio's MCP server. His son joins later as creative director. Read these first, in order: `docs/PROGRESS.md` (where things stand), `docs/superpowers/plans/2026-11-26-next-leg.md` (the current leg, L0 to L7), `docs/DIRECTION.md` (wins over DESIGN), `docs/DESIGN.md` (approved design), `docs/ROUTING.md` (who does what), `docs/RESEARCH.md` (context only).
 
 ## How we work here
 

@@ -13,6 +13,7 @@ local FishData = require(Shared.FishData)
 local BaitData = require(Shared.BaitData)
 local FishLogic = require(Shared.FishLogic)
 local FightModel = require(Shared.FightModel)
+local Units = require(Shared.Units)
 local Inventory = require(Shared.Inventory)
 local RodData = require(Shared.RodData)
 local Rarity = require(Shared.Rarity)
@@ -539,7 +540,7 @@ local function onFightResult(player: Player, won: any)
 	send(player, "Caught", { fish = fish, best = best, first = first, habit = species.habit, tier = Rarity.of(species), sizeClass = class })
 	if class == "monster" then
 		for _, p in Players:GetPlayers() do
-			toast(p, string.format("%s landed a MONSTER %s: %.0f cm, %.1f kg!", player.DisplayName, species.name, cm, kg))
+			toast(p, string.format("%s landed a MONSTER %s: %s, %s!", player.DisplayName, species.name, Units.length(cm, 0), Units.weight(kg)))
 			if p ~= player then
 				send(p, "Announce", { sound = "server-horn" }) -- a foghorn for everyone else (UNVERIFIED in Studio)
 			end

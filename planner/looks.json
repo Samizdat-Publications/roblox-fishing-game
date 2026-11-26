@@ -1,0 +1,212 @@
+{
+ "looks": [
+  {
+   "id": "golden",
+   "name": "Golden Afternoon",
+   "line": "Late sun, long shadows, warm light dancing on real water.",
+   "build": "Lighting presets by hour, Terrain water and sloped banks, low-poly hills and treeline ring.",
+   "critic": {
+    "beauty": 8.0,
+    "mood": 8.8,
+    "readability": 6.5,
+    "kids_fit": 8.5,
+    "buildable": 7.0,
+    "overall": 7.7,
+    "one_line": "It feels like a warm, peaceful summer evening at a real lake just before sunset, where the water sparkles and a big fish could bite any second.",
+    "strengths": [
+     "The warm golden light paired with cool teal water elevates chunky, flat-colored low-poly trees, stalls, and docks without needing new artwork.",
+     "Long shadows, hazy hills, and calm skies nail a cozy late-afternoon fishing trip mood that feels inviting and exciting for kids aged 8 to 13.",
+     "The overall composition respects the real layout and plays directly to Roblox's native Terrain water, Terrain grass, Atmosphere, and ClockTime lighting presets."
+    ],
+    "risks": [
+     "Bright sun glare stretching across the water in the bite, creek, and logs views can hide the white-and-red bobber and fishing line on a small phone screen.",
+     "The yellow bite exclamation mark risks getting lost against the bright golden sky and sunlit water sparkles whenever the player looks toward the sun.",
+     "Mobile Roblox automatically reduces shadow distance, water reflections, and grass density, which can leave large flat hillsides looking plain if lighting does all the heavy lifting.",
+     "When the sun sits low behind the shoreline, the dock, trees, and player avatar can drop into dark silhouettes."
+    ],
+    "made_up": [
+     "True 3D volumetric light shafts slicing across the hills and treeline; Roblox's SunRaysEffect only fakes a screen-space glow around the sun itself.",
+     "Crisp wavy reflections of the red buoy, realistic fine surface ripples, and detailed transparent splash droplets and expanding ripple rings around the biting bobber.",
+     "Razor-sharp narrow creek banks and the tiny neat stone-bordered pond; Roblox Terrain uses 4-stud voxels that make narrow channels and small pools blobby unless built from extra parts.",
+     "Clean underwater refraction showing sharp sunken logs and wet shoreline mud transitions, which simplify or turn murky on Roblox mobile graphics.",
+     "Full-distance, crisp cast shadows reaching all the way across the lake and distant fields, which mobile Roblox clips close to the camera.",
+     "Fine wavy sand-ripple texture detail across the flat creekside path."
+    ],
+    "model": "gemini-4-neon",
+    "images": [
+     "bite.jpg",
+     "creek.jpg",
+     "lake.jpg",
+     "logs.jpg"
+    ]
+   }
+  },
+  {
+   "id": "summer",
+   "name": "Bright Summer Day",
+   "line": "Clear blue sky, puffy clouds, bright and easy to read.",
+   "build": "Sky with clouds, ColorCorrection, water colour by depth from Terrain, a brighter bobber and line.",
+   "critic": {
+    "beauty": 8.2,
+    "mood": 7.4,
+    "readability": 8.5,
+    "kids_fit": 8.8,
+    "buildable": 6.4,
+    "overall": 7.8,
+    "one_line": "It feels like a sunny Saturday morning at a clear summer lake where you can easily spot the deep dark holes where the big fish hide.",
+    "strengths": [
+     "The red and white bobber, brown dock, sandy paths, and blocky player stand out cleanly against the blue water and green grass, making the game easy to read on a small phone screen.",
+     "The color shift from bright turquoise shallows to dark navy deep spots looks great and naturally teaches players where deeper fishing spots are without needing extra text.",
+     "The existing chunky low-poly trees, stalls, and logs fit naturally next to Terrain water and sloped banks instead of looking out of place.",
+     "The clear blue sky, fluffy clouds, and bright daylight feel friendly and classic for 8 to 13 year old Roblox players."
+    ],
+    "risks": [
+     "Roblox on phones lowers graphics quality automatically, which will simplify the water shine, shorten grass draw distance, and make the scene look flatter than these images.",
+     "Heavy white sun glare on the water, like on the left side of bite.jpg, can hide the bobber and splash when the player faces the sun.",
+     "The thin fishing line in logs.jpg and creek.jpg will nearly disappear on a phone screen unless it stays thicker and brighter like in bite.jpg.",
+     "Because the lighting is cheerful and even, the tense feeling of waiting for a bite will have to rely on sound, the glowing exclamation mark, and bobber motion rather than moody lighting."
+    ],
+    "made_up": [
+     "Crisp white concentric ripple rings around the bobber in creek.jpg, logs.jpg, and bite.jpg, since Roblox Terrain water does not automatically create ripples around small parts and would need custom effects.",
+     "Crystal clear underwater refraction showing submerged logs cleanly beneath the surface in logs.jpg and sharp mirror reflections of the red buoy in bite.jpg, which mobile Roblox Terrain water heavily simplifies.",
+     "A smooth turquoise-to-navy depth gradient purely from water settings, whereas real Roblox Terrain water only approximates this if you also paint bright sand in the shallows and dark rock in the deep pits.",
+     "Rolling distant hills, far-off pine forests, and soft atmospheric horizon haze in bite.jpg, creek.jpg, and logs.jpg, while lake.jpg reveals the real map currently ends in a sharp square drop-off and you did not list an Atmosphere effect or background hills.",
+     "Tiny colorful wildflowers scattered across the grass in lake.jpg and logs.jpg, since built-in Roblox Terrain Decoration grass only generates plain green blades.",
+     "Detailed shadows on individual grass blades and glossy high-resolution water ripples that exceed what typical phones render in Roblox."
+    ],
+    "model": "gemini-4-neon",
+    "images": [
+     "bite.jpg",
+     "creek.jpg",
+     "lake.jpg",
+     "logs.jpg"
+    ]
+   }
+  },
+  {
+   "id": "dawn",
+   "name": "Misty Dawn",
+   "line": "Cool pink morning, mist on the water, the lake waking up.",
+   "build": "Atmosphere density by hour, a mist particle layer on the water, the same shoreline and hills as Golden.",
+   "critic": {
+    "beauty": 8,
+    "mood": 8.5,
+    "readability": 6.5,
+    "kids_fit": 7.5,
+    "buildable": 6,
+    "overall": 7.5,
+    "one_line": "It feels like sneaking out to the lake super early before anyone else is awake, when the sky is pink and the water is quiet and misty.",
+    "strengths": [
+     "The cool pink sunrise against slate-blue water and dark pine silhouettes gives the lake an instant waking-up feeling.",
+     "Warm glowing lanterns on the dock and path act as cozy landmarks that draw your eye straight to where you want to fish.",
+     "Your chunky low-poly trees, stalls, and docks look charming in soft dawn haze without needing realistic detail.",
+     "In the close-up bite view, the red bobber ring, buoy, and bright yellow alert mark stand out clearly against the darker foreground water."
+    ],
+    "risks": [
+     "Bright sunrise glare and milky pale water in the lake and logs views can hide a white bobber top, fishing line, or small splash on a phone screen.",
+     "Too many mist particle layers over the water can slow down older phones and look like awkward drifting puffs up close.",
+     "Low morning sunlight puts characters and grassy banks into deep shadow, making the player blend into the shore at medium distance.",
+     "Because the palette is very soft and pastel, staying in this look too long could feel a bit sleepy instead of tense when a big fish strikes."
+    ],
+    "made_up": [
+     "Crisp real-time reflections of the buoy, bobber, and shoreline trees on the water in the bite shot, which Roblox Terrain water does not render on phones.",
+     "A smooth, continuous blanket of valley fog hugging the far creek and trees, whereas Roblox Atmosphere is even haze and particles break into visible puffs.",
+     "Sharp volumetric sunbeams slicing through the mist and pine trees in the creek and logs shots, which Roblox SunRays simplify or turn off on mobile graphics.",
+     "Soft glowing pools of light scattering inside the water under the dock lanterns in the lake view, which Roblox PointLights cannot do on Terrain water.",
+     "Smooth underwater fading and clear depth refraction along the sunken halves of the logs.",
+     "Very dense Terrain grass blades, finely rippled path sand, and richly eroded muddy banks in the creek shot that get heavily simplified on phones."
+    ],
+    "model": "gemini-4-neon",
+    "images": [
+     "bite.jpg",
+     "creek.jpg",
+     "lake.jpg",
+     "logs.jpg"
+    ]
+   }
+  },
+  {
+   "id": "night",
+   "name": "Moonlit Night",
+   "line": "Blue moonlight, lamp light on the dock, fireflies, a glowing bobber.",
+   "build": "Night Lighting preset with moon and stars, lamp PointLights, a firefly particle, a glowing bobber tip.",
+   "critic": {
+    "beauty": 8.2,
+    "mood": 8.8,
+    "readability": 6.2,
+    "kids_fit": 8.5,
+    "buildable": 7.4,
+    "overall": 7.8,
+    "one_line": "It feels like a cozy summer night fishing trip under a big bright moon with warm dock lamps and floating fireflies.",
+    "strengths": [
+     "The warm golden dock lamps against the deep blue moonlit water create an instant, appealing focal point.",
+     "The glowing bobber and bite icon read clearly in the close-up view when surrounded by dark water.",
+     "Fireflies, stars, and moonlight give the game a calm and slightly mysterious night vibe that still feels safe and welcoming for kids.",
+     "The overall geometry stays close to chunky low-poly models and standard Roblox Terrain water and grass, so the concept does not feel completely disconnected from the real game."
+    ],
+    "risks": [
+     "Dark terrain banks, floating logs, and players standing away from the lamps can blur into muddy silhouettes on a small or dim phone screen.",
+     "The bright white streak of moonlight glare on the water is very high contrast and could swallow the glowing bobber or bite cues when players cast into it.",
+     "Roblox automatically lowers lighting and shadow quality on phones, which could leave the dark areas looking flat or hard to navigate.",
+     "Dense clusters of bright fireflies near the shoreline can pull attention away from the bobber while waiting for a bite."
+    ],
+    "made_up": [
+     "Smooth, painterly yellow pools of lamp light spreading across the water surface in bite.jpg and lake.jpg; real Roblox Terrain water does not scatter PointLight illumination that softly, especially on mobile.",
+     "Clean concentric water ripples around the bobber in bite.jpg; Roblox Terrain water will not create local splash rings around a bobber unless the team adds custom animated meshes or decals.",
+     "Sharp shimmering reflections of the dock lanterns on the water in logs.jpg and creek.jpg; mobile Roblox water mainly reflects the skybox rather than real-time local lamps.",
+     "Crisp long shadows cast by distant pine trees and shoreline props across the whole map; on phones Roblox typically trims shadow range and softens or disables them.",
+     "Selective soft bloom halos on the fireflies and bobber without washing out the bright moon or UI; global Roblox Bloom tends to blow out all bright objects together unless carefully faked with transparent glow sprites."
+    ],
+    "model": "gemini-4-neon",
+    "images": [
+     "bite.jpg",
+     "creek.jpg",
+     "lake.jpg",
+     "logs.jpg"
+    ]
+   }
+  },
+  {
+   "id": "autumn",
+   "name": "Autumn Lake",
+   "line": "Orange and red trees, leaves on the water, cozy fall colours.",
+   "build": "Recolour the leafy trees, a leaf particle and floating leaf decals, a warm overcast Lighting preset.",
+   "critic": {
+    "beauty": 8.2,
+    "mood": 8.5,
+    "readability": 7.0,
+    "kids_fit": 8.4,
+    "buildable": 6.4,
+    "overall": 7.7,
+    "one_line": "It feels like a cozy, crisp fall afternoon where bright orange trees and drifting leaves make the cool blue lake feel calm and a little mysterious.",
+    "strengths": [
+     "The cool teal water gives strong colour contrast against the warm orange trees, golden grass, and red-and-white bobber so the screen does not turn muddy.",
+     "The chunky low-poly tree models look charming and intentional under the soft overcast haze.",
+     "In bite.jpg, the crisp white fishing line, bright bobber, and yellow exclamation mark stand out cleanly against the darker water.",
+     "The misty hills and gentle warm sky create a clear sense of place that feels inviting right away."
+    ],
+    "risks": [
+     "Bright red and orange floating leaf decals near the casting zone could compete with the bobber on a small phone screen.",
+     "The golden-brown grass, wooden docks, and dirt paths sit in similar warm tones, making small characters on the bank harder to spot from far away.",
+     "On Roblox mobile at lower graphics levels, Terrain water will lose the glossy shimmer and look much flatter than in these concepts.",
+     "Because the images rely heavily on extra autumn props to sell the cozy feeling, the real build could feel sparser if you only recolour existing trees and add leaves."
+    ],
+    "made_up": [
+     "Sharp real-time reflections of trees and the red buoy on the water in bite.jpg, which Roblox Terrain water on phones cannot render.",
+     "Dozens of extra fall props not listed in the plan, including pumpkins, hay bales, barrels, wooden crates, glowing dock lanterns, and a detailed stone-and-wood fence.",
+     "Concentric ripple rings around the bobber in bite.jpg and translucent underwater log shadows fading into the water in logs.jpg.",
+     "Volumetric light beams across the lake surface and soft lantern glow pooling on the water in lake.jpg.",
+     "Dense multi-toned grass blades, extra cattails and lily pads, and smoothly painted dirt, mud, and moss transitions along the sloped banks."
+    ],
+    "model": "gemini-4-neon",
+    "images": [
+     "bite.jpg",
+     "creek.jpg",
+     "lake.jpg",
+     "logs.jpg"
+    ]
+   }
+  }
+ ],
+ "pick": "<p><strong>Made before you picked Real-ish.</strong> These keep the old flat low-poly models, so read them for light, water, shoreline and time of day, not for materials. I can redo the same five in Real-ish.</p><p><strong>My pick: one lake that changes through the day.</strong> Golden Afternoon, Bright Summer Day, Misty Dawn and Moonlit Night are not rivals: the game already has a clock, so one build of real water, natural shores and hills can show all four as the day passes. I would build Golden Afternoon first, take Summer Day's water (light in the shallows, dark over the deep hole, which also shows where the fish are) and Night's glowing bobber, then add Dawn's mist.</p><p>Autumn Lake is the one real alternative. It is a lovely look, but it means recolouring every leafy tree, so it fits better as a fall event later.</p><p>You and Liam choose. Tell me which look should lead, and anything you want to borrow from the others.</p>"
+}

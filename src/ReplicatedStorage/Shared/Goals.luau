@@ -8,6 +8,7 @@
 local Shared = script.Parent
 local FishData = require(Shared.FishData)
 local Rarity = require(Shared.Rarity)
+local Units = require(Shared.Units)
 
 local Goals = {}
 
@@ -140,7 +141,7 @@ function Goals.forDay(day: number, creek: boolean, boat: boolean?): { Goal }
 		table.insert(list, {
 			id = "medium",
 			kind = "catchSize",
-			text = string.format("Catch a %s at least %d cm long (try %s)", sp.name, cm, where),
+			text = string.format("Catch a %s at least %s long (try %s)", sp.name, Units.atLeast(cm), where),
 			target = 1,
 			progress = 0,
 			reward = Goals.REWARDS.medium,

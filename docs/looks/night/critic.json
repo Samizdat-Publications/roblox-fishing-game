@@ -1,0 +1,35 @@
+{
+  "beauty": 8.2,
+  "mood": 8.8,
+  "readability": 6.2,
+  "kids_fit": 8.5,
+  "buildable": 7.4,
+  "overall": 7.8,
+  "one_line": "It feels like a cozy summer night fishing trip under a big bright moon with warm dock lamps and floating fireflies.",
+  "strengths": [
+    "The warm golden dock lamps against the deep blue moonlit water create an instant, appealing focal point.",
+    "The glowing bobber and bite icon read clearly in the close-up view when surrounded by dark water.",
+    "Fireflies, stars, and moonlight give the game a calm and slightly mysterious night vibe that still feels safe and welcoming for kids.",
+    "The overall geometry stays close to chunky low-poly models and standard Roblox Terrain water and grass, so the concept does not feel completely disconnected from the real game."
+  ],
+  "risks": [
+    "Dark terrain banks, floating logs, and players standing away from the lamps can blur into muddy silhouettes on a small or dim phone screen.",
+    "The bright white streak of moonlight glare on the water is very high contrast and could swallow the glowing bobber or bite cues when players cast into it.",
+    "Roblox automatically lowers lighting and shadow quality on phones, which could leave the dark areas looking flat or hard to navigate.",
+    "Dense clusters of bright fireflies near the shoreline can pull attention away from the bobber while waiting for a bite."
+  ],
+  "made_up": [
+    "Smooth, painterly yellow pools of lamp light spreading across the water surface in bite.jpg and lake.jpg; real Roblox Terrain water does not scatter PointLight illumination that softly, especially on mobile.",
+    "Clean concentric water ripples around the bobber in bite.jpg; Roblox Terrain water will not create local splash rings around a bobber unless the team adds custom animated meshes or decals.",
+    "Sharp shimmering reflections of the dock lanterns on the water in logs.jpg and creek.jpg; mobile Roblox water mainly reflects the skybox rather than real-time local lamps.",
+    "Crisp long shadows cast by distant pine trees and shoreline props across the whole map; on phones Roblox typically trims shadow range and softens or disables them.",
+    "Selective soft bloom halos on the fireflies and bobber without washing out the bright moon or UI; global Roblox Bloom tends to blow out all bright objects together unless carefully faked with transparent glow sprites."
+  ],
+  "model": "gemini-4-neon",
+  "images": [
+    "bite.jpg",
+    "creek.jpg",
+    "lake.jpg",
+    "logs.jpg"
+  ]
+}

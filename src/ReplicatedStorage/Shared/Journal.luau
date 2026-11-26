@@ -8,6 +8,7 @@ local FishLogic = require(Shared.FishLogic)
 local Rarity = require(Shared.Rarity)
 local Weather = require(Shared.Weather)
 local BaitData = require(Shared.BaitData)
+local Config = require(Shared.Config)
 
 local Journal = {}
 
@@ -53,6 +54,24 @@ function Journal.rumour(species: any, totalCaught: number): string?
 		end
 	end
 	return text
+end
+
+-- Big Lake water, reached only by boat.
+Journal.BOAT_SPOTS = { Basin = true, IslandPoint = true, DropOff = true }
+
+-- Whether the journal shows this species: always once caught, otherwise only when the
+-- player's world has its water (Big Lake fish stay hidden while boats are switched off,
+-- so no rumour sends a kid looking for a lake that isn't there).
+function Journal.listed(species: any, caught: boolean?): boolean
+	if caught or Config.boatsOn() then
+		return true
+	end
+	for spot, w in species.spots do
+		if w > 0 and not Journal.BOAT_SPOTS[spot] then
+			return true
+		end
+	end
+	return false
 end
 
 -- How many more catches until the next rumour is heard (0 when every rumour is out).

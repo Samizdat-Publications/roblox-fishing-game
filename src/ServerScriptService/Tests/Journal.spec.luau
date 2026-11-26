@@ -22,6 +22,35 @@ return function(t, Shared)
 		end
 	end)
 
+	t.test("Big Lake fish stay out of the journal until boats are on, unless already caught", function()
+		local Config = require(Shared.Config)
+		local old = Config.BOATS_ON
+		local oldLake = Config.BIG_LAKE_ON
+		Config.BOATS_ON, Config.BIG_LAKE_ON = false, false
+		local ok, err = pcall(function()
+			t.ok(Journal.listed(FishData.byId.Bluegill), "home fish always listed")
+			local hidden = 0
+			for _, s in FishData.list do
+				if not Journal.listed(s) then
+					hidden += 1
+					for spot in s.spots do
+						t.ok(Journal.BOAT_SPOTS[spot] or s.spots[spot] == 0, s.id .. " hidden but lives at " .. spot)
+					end
+				end
+				t.ok(Journal.listed(s, true), s.id .. " shows once caught")
+			end
+			t.ok(hidden >= 5, "Big Lake fish hidden: " .. hidden)
+			Config.BOATS_ON, Config.BIG_LAKE_ON = true, true
+			for _, s in FishData.list do
+				t.ok(Journal.listed(s), s.id .. " listed with boats on")
+			end
+		end)
+		Config.BOATS_ON, Config.BIG_LAKE_ON = old, oldLake
+		if not ok then
+			error(err, 0)
+		end
+	end)
+
 	t.test("counts down to the next rumour", function()
 		t.eq(Journal.nextRumourIn(0), 5)
 		t.eq(Journal.nextRumourIn(14), 1)

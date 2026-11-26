@@ -50,6 +50,9 @@ Config.POND_TICK = 30 -- seconds between pond updates while playing
 -- Switches for the second overnight run's features (leg plan L0): each lands switched off
 -- and is turned on and proven by itself. Boats need the Big Lake (its slips and channel).
 -- With weather off the sky stays clear and weather-only fish (Mythics) don't bite.
+-- What players read for fish sizes: "imperial" (inches, pounds) or "metric". Data stays metric.
+Config.UNITS = "imperial"
+
 Config.WEATHER_ON = false
 Config.FRENZIES_ON = false
 Config.GOALS_ON = false

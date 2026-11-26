@@ -1,0 +1,36 @@
+{
+  "beauty": 8,
+  "mood": 8.5,
+  "readability": 6.5,
+  "kids_fit": 7.5,
+  "buildable": 6,
+  "overall": 7.5,
+  "one_line": "It feels like sneaking out to the lake super early before anyone else is awake, when the sky is pink and the water is quiet and misty.",
+  "strengths": [
+    "The cool pink sunrise against slate-blue water and dark pine silhouettes gives the lake an instant waking-up feeling.",
+    "Warm glowing lanterns on the dock and path act as cozy landmarks that draw your eye straight to where you want to fish.",
+    "Your chunky low-poly trees, stalls, and docks look charming in soft dawn haze without needing realistic detail.",
+    "In the close-up bite view, the red bobber ring, buoy, and bright yellow alert mark stand out clearly against the darker foreground water."
+  ],
+  "risks": [
+    "Bright sunrise glare and milky pale water in the lake and logs views can hide a white bobber top, fishing line, or small splash on a phone screen.",
+    "Too many mist particle layers over the water can slow down older phones and look like awkward drifting puffs up close.",
+    "Low morning sunlight puts characters and grassy banks into deep shadow, making the player blend into the shore at medium distance.",
+    "Because the palette is very soft and pastel, staying in this look too long could feel a bit sleepy instead of tense when a big fish strikes."
+  ],
+  "made_up": [
+    "Crisp real-time reflections of the buoy, bobber, and shoreline trees on the water in the bite shot, which Roblox Terrain water does not render on phones.",
+    "A smooth, continuous blanket of valley fog hugging the far creek and trees, whereas Roblox Atmosphere is even haze and particles break into visible puffs.",
+    "Sharp volumetric sunbeams slicing through the mist and pine trees in the creek and logs shots, which Roblox SunRays simplify or turn off on mobile graphics.",
+    "Soft glowing pools of light scattering inside the water under the dock lanterns in the lake view, which Roblox PointLights cannot do on Terrain water.",
+    "Smooth underwater fading and clear depth refraction along the sunken halves of the logs.",
+    "Very dense Terrain grass blades, finely rippled path sand, and richly eroded muddy banks in the creek shot that get heavily simplified on phones."
+  ],
+  "model": "gemini-4-neon",
+  "images": [
+    "bite.jpg",
+    "creek.jpg",
+    "lake.jpg",
+    "logs.jpg"
+  ]
+}

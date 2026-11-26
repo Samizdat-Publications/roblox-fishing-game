@@ -39,7 +39,7 @@
 
 ### M5 Journal and saving: done
 - J opened the Fish Journal: 5 of 8 species found, 12 fish caught; each card shows count, best weight and length, bait and spot, and the habit line after the first catch; uncaught species show "???". The Reel assist button toggled On to Off.
-- Studio API access is on, so the DataStore is live: stopping play logged `saved ProBabyTurtle`; restarting loaded `21 coins, 12 caught`, bag 6 fish (173), Minnows x7.
+- Studio API access is on, so the DataStore is live: stopping play logged the save for the test account; restarting loaded `21 coins, 12 caught`, bag 6 fish (173), Minnows x7.
 - Memory fallback checked earlier in an unsaved place: `DataStore unavailable (...). Using memory only; progress will not save.`
 
 ### M6 Controls and polish: done
@@ -174,13 +174,6 @@ Nothing below has been seen in Studio. All of it is on the branch `claude/overni
 - Still to do in L0: the 29 model imports another session is doing.
 - Found: the repo folder `C:\Users\stewa\Documents\Claude\Roblox` is checked out on an old commit of the PR #2 branch with main's newer files untracked, and another session works in it. L0 work was done in a separate worktree and pushed to main. Put the folder back on main when no other session is using it: everything in it is either already on main or older than main.
 
-## 2026-11-26: All the art models in the game
-
-- The other 29 models are uploaded (ids in `art/README.md`) and in `ServerStorage.Art`; 69 copies dress the world: the Fish Buyer stand, the stone pond rim, five logs, the buoy, 18 reed clumps and 7 lily pads at the weed bed, 7 leafy trees on the shore, 8 pines and 19 rocks at the creek, plus the dock and Bait and Tackle from before. The bobber on every cast is the new model, and every species hangs on the line as its own model, sized to the catch. The rods and the boat are uploaded but not placed yet (the rods in hand are still the gray box).
-- `WorldBuilder.dress` now takes many places per model: an exact spot, a spot scattered with a fixed seed, or fitted over a gray-box part (centred or standing on it, optionally scaled to its width).
-- **Found and fixed:** the whole gray-box Lake had been moved by 6 studs west, 10 up and 55 north (most likely an accidental drag in Studio while it was selected), away from its terrain water and from the fixed coordinates the fishing code uses. It is back where the code expects it (ground top at y = 1); logged in `DECISIONS.md`.
-- Verified in a playtest: spawn feet on the deck (1.50), a night cast from the dock end showed the new bobber pulled under by a catfish bite, the catfish hung as its model (6.8 studs), selling at the new Fish Buyer paid out (5 fish, 110 coins), the pond panel opened at the new rim, and the riffle gave a rainbow trout that hung as its model. 73 tests pass in Studio and with Lune; checksums match.
-
 ## Overnight 2, unverified (2026-11-26, Claude in the cloud)
 
 Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6f` in draft pull request #2, with main (sound pass included) merged in; `main` and the place are unchanged. Compiles (`lune run tools/test/syntax.luau`, 57 files) and 135 tests pass with Lune. Full list and open design questions: `docs/OVERNIGHT-SUMMARY-2026-11-26.md`.
@@ -211,6 +204,22 @@ Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6
 5. Give coins, buy the dinghy: it waits at slip 1; E to drive (keyboard, touch, gamepad; try it in a local server too, the controls travel through a remote); the buoy line turns it back; cast while stopped in the basin; F to tie up.
 6. Command bar: `require(game.ServerScriptService.Server.WeatherService).force("Fog")` and `require(game.ServerScriptService.Server.FrenzyService).start("Dock")`.
 7. Two-player local server: the Deep-V won't move alone, moves with a rider, the fish finder shows only for the navigator, a blue-water catch lands in both journals.
+
+## 2026-11-26: All the art models in the game
+
+- The other 29 models are uploaded (ids in `art/README.md`) and in `ServerStorage.Art`; 69 copies dress the world: the Fish Buyer stand, the stone pond rim, five logs, the buoy, 18 reed clumps and 7 lily pads at the weed bed, 7 leafy trees on the shore, 8 pines and 19 rocks at the creek, plus the dock and Bait and Tackle from before. The bobber on every cast is the new model, and every species hangs on the line as its own model, sized to the catch. The rods and the boat are uploaded but not placed yet (the rods in hand are still the gray box).
+- `WorldBuilder.dress` now takes many places per model: an exact spot, a spot scattered with a fixed seed, or fitted over a gray-box part (centred or standing on it, optionally scaled to its width).
+- **Found and fixed:** the whole gray-box Lake had been moved by 6 studs west, 10 up and 55 north (most likely an accidental drag in Studio while it was selected), away from its terrain water and from the fixed coordinates the fishing code uses. It is back where the code expects it (ground top at y = 1); logged in `DECISIONS.md`.
+- Verified in a playtest: spawn feet on the deck (1.50), a night cast from the dock end showed the new bobber pulled under by a catfish bite, the catfish hung as its model (6.8 studs), selling at the new Fish Buyer paid out (5 fish, 110 coins), the pond panel opened at the new rim, and the riffle gave a rainbow trout that hung as its model. 73 tests pass in Studio and with Lune; checksums match.
+
+## 2026-11-26: L1 rare fish, first Studio pass (switches off)
+
+- PR #2 (the second overnight run) is merged onto main with weather, frenzies, goals, the Big Lake and boats all switched off in `Config`. Pushed every script into Studio; checksums match `src/` byte for byte; 143 tests pass in Studio and with Lune. Place saved as version 44.
+- Sizes now read in inches and pounds everywhere a player sees them (catch card, journal, pond, sell message, size goals, the monster announcement): `Shared/Units.luau`, with `Config.UNITS = "imperial"`; the data and saves stay metric. Switch back with `Config.UNITS = "metric"`.
+- Verified in a playtest: no errors at server start; the old save loaded (492 coins, 56 caught) and kept counting (59). A Common Carp on worms at the deep hole showed "Uncommon. 22.9 in, 6 lb 8 oz" with the name in the Uncommon green (95, 200, 110). Forced trophy (`DebugSizeClass`): "This one feels big!" at the hook, landed, "TROPHY! Common Carp", 31.5 in, 16.9 lb, personal best. Forced monster: the server message "landed a MONSTER Common Carp: 43 in, 41.7 lb!", the banner and the card. The journal shows Common grey, Uncommon green, Rare blue, Epic purple, Legendary gold and Mythic pink; uncaught Mythics read "Catch more fish to hear rumours about this one", not broken.
+- **Bug found and fixed:** with boats switched off, the journal still listed the seven Big Lake fish and their rumours sent players to "the blue-water drop-off" and "the open basin", which don't exist yet. `Journal.listed` now hides a species until its water can be reached (or once it has been caught); the journal reads "10 of 19 species found" and every rumour points at home water.
+- Still to do in L1: a Lake Sturgeon at the deep hole in its real conditions, the journal on the smallest phone (the simulated mouse wheel zoomed the camera instead of scrolling the journal; check with a real wheel), the 15 new fish models (they hang as the old shape until then), a Neon reveal clip, the StyLua reformat, and Liam's 20 minutes.
+- Look mockups for the beauty pass: five looks (Golden Afternoon, Bright Summer Day, Misty Dawn, Moonlit Night, Autumn Lake) from the all-models stills, page https://claude.ai/artifact/DjMRLNSn6t91zKmR93sGr6 (source `planner/looks.html`, images `docs/looks/`, script `tools/looks/mockup.py`). They were made in the old flat low-poly style before Stewart picked Real-ish, so treat them as light and time-of-day moods, not materials.
 
 ## What works now
 A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shore, wait for a bite, hook it, fight it on the bar (hold or click anywhere), land it, sell at the Fish Buyer, buy bait at Bait and Tackle, fill the journal, raise fish in your home pond, buy better rods, and unlock Cedar Creek. Eleven species follow real habits (spot, time of day, bait), fish shadows show where they're active, the day runs 16 minutes, and progress saves to Roblox.
