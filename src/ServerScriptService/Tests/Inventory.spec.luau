@@ -92,10 +92,11 @@ return function(t, Shared)
 		local d = Inventory.new()
 		t.eq(d.rod, "Willow")
 		t.eq(d.rods.Willow, true)
-		d.coins = 100
+		local price = RodData.byId.Fiberglass.price
+		d.coins = price - 1
 		t.eq(Inventory.buyRod(d, "Fiberglass"), false, "too poor")
-		t.eq(d.coins, 100)
-		d.coins = 200
+		t.eq(d.coins, price - 1)
+		d.coins = price + 80
 		t.eq(Inventory.buyRod(d, "Fiberglass"), true)
 		t.eq(d.coins, 80)
 		t.eq(d.rod, "Fiberglass", "buying equips")

@@ -44,6 +44,14 @@ function FishLogic.biteWeights(spot: string, period: string, baitId: string): { 
 	table.sort(out, function(a, b)
 		return a.w > b.w
 	end)
+	-- Combos so weak they'd take longer than BITE_SLOWEST count as "nothing wants this".
+	local t = 0
+	for _, x in out do
+		t += x.w
+	end
+	if t < Config.BITE_MIN / Config.BITE_SLOWEST then
+		return {}
+	end
 	return out
 end
 
@@ -70,14 +78,15 @@ function FishLogic.pickSpecies(weights: { Weight }, rng: Random): string?
 	return weights[#weights].id
 end
 
--- Seconds until a bite. A strong match (total weight near 1) bites fast, a weak one slow.
+-- Seconds until a bite: BITE_MIN divided by how much the fish here want this (the total
+-- weight), from BITE_MIN to BITE_SLOWEST. So a rare fish that is the only taker is slow to
+-- bite, and the right time and bait matter for every fish, not just which one you get.
 function FishLogic.biteDelay(weights: { Weight }, rng: Random): number?
 	local t = total(weights)
 	if t <= 0 then
 		return nil
 	end
-	local quality = math.clamp(t, 0, 1)
-	local base = Config.BITE_MAX - (Config.BITE_MAX - Config.BITE_MIN) * quality
+	local base = math.clamp(Config.BITE_MIN / t, Config.BITE_MIN, Config.BITE_SLOWEST)
 	return base * (0.75 + rng:NextNumber() * 0.5)
 end
 

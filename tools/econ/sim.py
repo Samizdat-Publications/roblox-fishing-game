@@ -77,8 +77,10 @@ def period_from_clock(c):
     return "Night"
 
 
-BITE_RULE = "current"  # "proposed" = bite time follows how much the fish want it (see ECONOMY.md)
-BITE_SLOWEST = 40  # proposed rule: slowest bite in seconds; weaker combos count as "nothing here"
+# The game switched to the new bite rule on 2026-11-26 (Config.BITE_SLOWEST); the old one is
+# kept here so the "before" numbers in docs/ECONOMY.md can be reproduced.
+BITE_RULE = "proposed" if "BITE_SLOWEST" in CFG else "current"
+BITE_SLOWEST = CFG.get("BITE_SLOWEST", 40)  # slowest bite; weaker combos count as "nothing here"
 
 
 def bite_weights(spot, period, bait):
@@ -181,6 +183,8 @@ def fight_once(profile, assist, skill, rng, dt=1 / 30):
     lag = max(1, int(skill.reaction / dt))
     holding = False
     lapse = 0.0
+    idle = math.inf  # seconds since the last press or hold (the game's slack-line rule)
+    grace = CFG.get("FIGHT_IDLE_GRACE")
     k = CFG["ZONE_RESPONSE"]
     while t < CFG["FIGHT_MAX_SECONDS"]:
         history.append(fish)
@@ -192,9 +196,12 @@ def fight_once(profile, assist, skill, rng, dt=1 / 30):
             if rng.random() < skill.lapse_rate * dt:
                 lapse = skill.lapse_len
             want = seen > zone + skill.deadband if not holding else seen > zone - skill.deadband
+            if grace is not None and idle > grace - 0.5 and skill.deadband < 1:
+                want = True  # the "Keep reeling!" cue: a real player taps
         if want and not holding:
             vel = max(vel, CFG["PRESS_KICK"] * climb)
         holding = want
+        idle = 0.0 if holding else idle + dt
         t += dt
         tgt = CFG["ZONE_UP_SPEED"] * climb if holding else -CFG["ZONE_DOWN_SPEED"]
         decay = math.exp(-k * dt)
@@ -212,7 +219,10 @@ def fight_once(profile, assist, skill, rng, dt=1 / 30):
         mv = p["speed"] * dt
         fish = target if abs(d) <= mv else fish + math.copysign(mv, d)
         if abs(fish - zone) <= half:
-            prog += p["gain"] * dt
+            if grace is None or idle <= grace:
+                prog += p["gain"] * dt
+            else:
+                prog -= loss * 0.5 * dt
         else:
             prog -= loss * dt
         if prog >= 1:
@@ -643,8 +653,10 @@ def run_career(strat, seed, sessions=12, log=None, stop_early=True):
 
 # ---------------------------------------------------------------- proposal
 
-# The changes suggested in docs/ECONOMY.md. Applied only inside this script.
-PROPOSAL = {
+# The six changes in docs/ECONOMY.md were applied to the game on 2026-11-26, so the sim now
+# reads them from src/. To try new ideas, put them here and run with --only proposal.
+PROPOSAL = {}
+APPLIED_2026_11_26 = {
     "bite_rule": "proposed",
     "fish_price": {
         "Bluegill": 6, "Pumpkinseed": 6, "YellowPerch": 10, "BlackCrappie": 12,
@@ -747,7 +759,7 @@ def report_careers(runs):
         row.append(f"{statistics.median(bait_share) * 100:.0f}%")
         rows.append(row)
         summary[strat.name] = row
-    heads = ["Player", "coins/min, 1st session"] + [("+ " if i else "") + f"{g} ({c})" for i, (g, c) in enumerate(GOALS)]
+    heads = ["Player", "coins/min, 1st session"] + [("+ " if i else "") + f"{g} ({c:g})" for i, (g, c) in enumerate(GOALS)]
     return table(rows, heads + ["bait spend"]), summary
 
 
@@ -796,7 +808,7 @@ def main():
     print(f"Day {CFG['DAY_LENGTH'] / 60:.0f} real minutes; sessions of {SESSION_MIN} minutes, one a day; {runs} runs per player type.")
     if args.only != "proposal":
         section("Current numbers", runs, trials)
-    if args.only != "current":
+    if PROPOSAL and args.only != "current":
         use_proposal()
         section("With the proposed changes", runs, trials)
     if args.log:

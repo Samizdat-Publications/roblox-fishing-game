@@ -15,8 +15,8 @@ local list: { Bait } = {
 	{ id = "Cricket", name = "Crickets", kind = "live", pack = 10, price = 12, blurb = "Sunfish can't resist a cricket near weeds." },
 	{ id = "Minnow", name = "Minnows", kind = "live", pack = 10, price = 20, blurb = "Small fish for bigger fish: perch, crappie, bass." },
 	{ id = "Stinkbait", name = "Stinkbait", kind = "live", pack = 10, price = 16, blurb = "Smelly. Bottom feeders find it in the dark." },
-	{ id = "Spinner", name = "Spinner", kind = "lure", pack = 1, price = 60, blurb = "Flashing blade. Hunters chase it in daylight." },
-	{ id = "PlasticWorm", name = "Plastic Worm", kind = "lure", pack = 1, price = 80, blurb = "Slow and wiggly. Bass grab it around cover." },
+	{ id = "Spinner", name = "Spinner", kind = "lure", pack = 1, price = 100, blurb = "Flashing blade. Hunters chase it in daylight." },
+	{ id = "PlasticWorm", name = "Plastic Worm", kind = "lure", pack = 1, price = 100, blurb = "Slow and wiggly. Bass grab it around cover." },
 }
 
 local byId: { [string]: Bait } = {}

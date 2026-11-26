@@ -36,7 +36,7 @@ return function(t, Shared)
 
 	t.test("good combo bites faster than weak combo", function()
 		local good = FishLogic.biteDelay(FishLogic.biteWeights("Dock", "Day", "Worm"), Random.new(5)) :: number
-		local weak = FishLogic.biteDelay(FishLogic.biteWeights("OpenWater", "Night", "Worm"), Random.new(5)) :: number
+		local weak = FishLogic.biteDelay(FishLogic.biteWeights("Dock", "Night", "Worm"), Random.new(5)) :: number
 		t.ok(good < weak, "good " .. good .. " weak " .. weak)
 	end)
 
@@ -96,5 +96,34 @@ return function(t, Shared)
 		t.ok(FishLogic.isOnWaterAny(Vector3.new(-230, 0, 50), boxes), "riffle")
 		t.ok(not FishLogic.isOnWaterAny(Vector3.new(-245, 0, 50), boxes), "bank")
 		t.ok(FishLogic.isOnWaterAny(Vector3.new(10, 0, 10), boxes), "lake")
+	end)
+
+	t.test("a rare fish that is the only taker bites slowly", function()
+		-- Only the pike wants a spinner in open water; by day it is rare, at night barely there.
+		local day = FishLogic.biteWeights("OpenWater", "Day", "Spinner")
+		t.eq(#day, 1, "only the pike")
+		local delay = FishLogic.biteDelay(day, Random.new(2)) :: number
+		t.ok(delay > 20, "pike delay " .. delay)
+		t.eq(#FishLogic.biteWeights("OpenWater", "Night", "Spinner"), 0, "no pike at night")
+	end)
+
+	t.test("catfish bite at night, not at noon", function()
+		t.eq(#FishLogic.biteWeights("Logs", "Day", "Stinkbait"), 0, "noon")
+		local night = FishLogic.biteDelay(FishLogic.biteWeights("DeepHole", "Night", "Stinkbait"), Random.new(3)) :: number
+		t.ok(night < 10, "night " .. night)
+	end)
+
+	t.test("bite delays stay between the fastest and slowest", function()
+		local rng = Random.new(9)
+		for _, spot in { "Dock", "WeedBed", "Logs", "DeepHole", "OpenWater", "Riffle", "Rocks", "Pool" } do
+			for _, period in { "Dawn", "Day", "Dusk", "Night" } do
+				for _, bait in { "Worm", "Cricket", "Minnow", "Stinkbait", "Spinner", "PlasticWorm" } do
+					local d = FishLogic.biteDelay(FishLogic.biteWeights(spot, period, bait), rng)
+					if d then
+						t.ok(d >= 3 * 0.75 - 1e-9 and d <= 40 * 1.25 + 1e-9, spot .. period .. bait .. " " .. d)
+					end
+				end
+			end
+		end
 	end)
 end

@@ -1,6 +1,8 @@
 # Economy check
 
-Written overnight 2026-11-26 by Claude in the cloud. **Unverified in game**: these are simulation results, not playtests. Nothing in the game has been changed; the numbers below are proposals for Stewart to approve.
+Written overnight 2026-11-26 by Claude in the cloud. **Unverified in game**: these are simulation results, not playtests.
+
+**Applied 2026-11-26:** Stewart approved all of the changes below ("Apply all of the above and apply them now"), and they are now in the game's code on the overnight branch, still to be playtested in Studio. One differs from the wording he approved: the idle rule (change 6) gives 2.5 seconds, not 1, and is explained there. `tools/econ/sim.py` now reads the new numbers; "Results with today's numbers" below is the before picture.
 
 The simulation is `tools/econ/sim.py` (run `python3 tools/econ/sim.py`, about two minutes; `--quick` for a fast check). It reads the real numbers straight from `src/ReplicatedStorage/Shared` (fish, bait, rods, `Config`), copies the bite, size, price, fight and pond rules into Python, and plays three kinds of player through 25 minute sessions, one a day, 60 times each. The full output of the last run is in `tools/econ/last-run.md`.
 
@@ -93,19 +95,22 @@ Spinner 60 to 100, Plastic Worm 80 to 100.
 ### 6. A fish only comes in while you're reeling
 
 Today progress fills whenever the fish is inside the catch zone, even if the player hasn't touched anything.
-Proposed: progress fills only if the player has pressed or held within the last second (`Config.FIGHT_IDLE_GRACE = 1.0`, checked in `FightModel.step`, which already knows when the button is held). Missing the fish still loses progress as now.
+Proposed: progress fills only if the player has pressed or held recently. Missing the fish still loses progress as now.
 
-- Why: it keeps "you caught it" true, stops idle catching, and costs an active kid nothing (the kid bot presses many times a second).
-- Where: `FightModel.step` and its spec; the server's `minSeconds` check is unchanged. This is a rule change, not a price, so it needs a quick playtest feel check.
+- Why: it keeps "you caught it" true, stops idle catching, and costs an active kid nothing.
+- **As applied:** `Config.FIGHT_IDLE_GRACE = 2.5` seconds, not 1. With 1 second the tests showed a real problem: when a heavy fish sits at the bottom of the bar, the right play is to let go and keep the zone at the bottom, and a 1 second rule punished that. Now nothing fills until the player first presses; after 2.5 seconds without a press the line goes slack and progress drains slowly even inside the zone; one tap fixes it. `FightModel.slack(state)` tells the UI when to show a "Keep reeling!" cue (the UI part is for tomorrow's Studio session).
+- Where: `FightModel.step` and its spec; the server's `minSeconds` check is unchanged.
 
-## Results with the first five changes
+## Results with the changes (now the game's numbers)
 
 | Player | Coins per minute, first session | Fiberglass Rod (150) | then Creek Pass (500) | then Graphite Rod (900) |
 |---|---|---|---|---|
-| Smart | 79 | 5 min | 11 min | 22 min |
-| Smart, no pond | 91 | 2 min | 9 min | 19 min |
+| Smart | 79 | 4 min | 11 min | 22 min |
+| Smart, no pond | 87 | 2 min | 9 min | 20 min |
 | Dock and worms | 31 | 4 min | 22 min | 54 min |
-| Random | 33 | 3 min | 20 min | 49 min |
+| Random | 32 | 4 min | 19 min | 50 min |
+
+Rerun after applying all six (including the slack-line rule): a bot that never touches the button now lands 0 percent of fish, and the kid-reflex bot still lands 100 percent.
 
 Best spot by time of day, with the changes (coins per minute, Willow Rod): dawn weed bed on minnows (90), day weed bed on minnows (72) or the creek rocks on crickets (103), dusk deep hole on stinkbait (90) or the creek pool on minnows (129), night deep hole on stinkbait (110). Every period now has a different best answer, and the creek is the reward for buying the pass.
 

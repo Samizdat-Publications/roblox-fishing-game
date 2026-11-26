@@ -109,7 +109,6 @@ end
 -- Tests whose result hangs on Roblox's exact random draws for one fixed seed. They pass
 -- in Studio; here they're reported as skipped instead of failed.
 local NEEDS_ROBLOX_RANDOM = {
-	["FightModel.spec.luau > doing nothing loses a bluegill"] = true,
 }
 local skipped = {}
 

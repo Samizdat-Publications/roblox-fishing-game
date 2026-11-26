@@ -43,3 +43,9 @@ Notable design and build calls, newest last.
 - **No deprecated body movers.** The boat uses `LinearVelocity`, `AngularVelocity`, `AlignOrientation` and `AlignPosition`; the `VehicleSeat` is read for input only.
 - **Tests also run outside Studio** with Lune (`lune run tools/test/run.luau`), using a small `Random` stand-in. One existing test depends on Roblox's exact random draws for its seed and is reported as skipped there.
 - **Models are one mesh with vertex colours.** Roblox allows one material per mesh, so each model's flat-coloured parts are baked into vertex colours and joined. One MeshPart per model, no textures to upload.
+
+## 2026-11-26 (Stewart approved the economy changes; still unverified in Studio)
+
+- **All six economy changes applied** (`docs/ECONOMY.md`): bite time = 3 s / total weight, 3 to 40 s, weaker combos give the "nothing here" hint; panfish prices up and big-fish prices down; Fiberglass Rod 150, Creek Pass 500, Graphite Rod 900; Spinner and Plastic Worm 100; pond, bait and bag left alone; the slack-line rule.
+- **Slack line is 2.5 seconds, not 1.** Stewart approved "pressed in the last second", but a 1 second rule punishes the right play against a fish that sits at the bottom of the bar (let go and rest the zone there). Nothing fills until the first press; after 2.5 s without one the line goes slack and progress drains slowly. A tap fixes it; the UI should say "Keep reeling!" (`FightModel.slack`).
+- **Players who already bought the Creek Pass at 250 keep it.** Prices only affect new purchases.

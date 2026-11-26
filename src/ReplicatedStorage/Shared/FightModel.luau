@@ -22,6 +22,7 @@ export type State = {
 	loss: number,
 	progress: number,
 	t: number,
+	idle: number, -- seconds since the player last pressed or held
 }
 
 local FightModel = {}
@@ -40,6 +41,7 @@ function FightModel.new(profile: FishData.FightProfile, assist: boolean, seed: n
 		loss = profile.loss * (if assist then Config.ASSIST_LOSS else 1),
 		progress = Config.FIGHT_START,
 		t = 0,
+		idle = math.huge, -- nothing counts until the player first presses or holds
 	}
 end
 
@@ -50,6 +52,7 @@ end
 -- A fresh press (mouse down, tap, trigger pull): the zone starts climbing at once.
 -- It sets a minimum speed rather than adding, so mashing can't fling the zone.
 function FightModel.press(s: State)
+	s.idle = 0
 	s.zoneVel = math.max(s.zoneVel, Config.PRESS_KICK * climbFactor(s.profile))
 end
 
@@ -57,6 +60,7 @@ end
 function FightModel.step(s: State, dt: number, holding: boolean): string?
 	local p = s.profile
 	s.t += dt
+	s.idle = if holding then 0 else s.idle + dt
 
 	-- Zone: velocity eases toward the target speed; position integrates that curve exactly,
 	-- so the result is the same at 15 or 120 frames per second.
@@ -88,9 +92,16 @@ function FightModel.step(s: State, dt: number, holding: boolean): string?
 		s.fishPos += math.sign(d) * maxMove
 	end
 
-	-- Progress fills while the fish is in the zone.
+	-- Progress fills while the fish is in the zone and the line is tight: the player has
+	-- pressed or held within FIGHT_IDLE_GRACE. Leave it longer and the line goes slack, so
+	-- the fish slowly works free even inside the zone. (A player resting the zone at the
+	-- bottom for a sinking fish just taps now and then; the client should show a cue.)
 	if math.abs(s.fishPos - s.zonePos) <= half then
-		s.progress += s.gain * dt
+		if s.idle <= Config.FIGHT_IDLE_GRACE then
+			s.progress += s.gain * dt
+		else
+			s.progress -= s.loss * 0.5 * dt
+		end
 	else
 		s.progress -= s.loss * dt
 	end
@@ -102,6 +113,12 @@ function FightModel.step(s: State, dt: number, holding: boolean): string?
 		return "lost"
 	end
 	return nil
+end
+
+-- True while the line has gone slack (no press or hold for FIGHT_IDLE_GRACE): the UI should
+-- say "Keep reeling!" so the player knows to tap.
+function FightModel.slack(s: State): boolean
+	return s.idle > Config.FIGHT_IDLE_GRACE
 end
 
 -- True while the fish sits inside the catch zone (the UI turns the zone green).

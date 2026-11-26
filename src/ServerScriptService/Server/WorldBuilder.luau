@@ -6,6 +6,8 @@
 --   Lake 220 x 160 centered on the origin. Ground ring top at y = 1.
 --   South shore (z = +80) has the dock, spawn, sell stand and shop.
 --   Weed bed in the south-west, fallen logs in the south-east, deep hole north of the dock.
+local Config = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Config"))
+
 local WorldBuilder = {}
 
 local WATER_SIZE = Vector3.new(220, 1, 160)
@@ -202,7 +204,7 @@ function WorldBuilder.buildCreek(lake: Model)
 	local prompt = Instance.new("ProximityPrompt")
 	prompt.Name = "CreekPrompt"
 	prompt.ActionText = "Buy Creek Pass"
-	prompt.ObjectText = "Cedar Creek, 250 coins"
+	prompt.ObjectText = string.format("Cedar Creek, %d coins", Config.CREEK_PASS_PRICE)
 	prompt.HoldDuration = 1 -- a hold, so nobody buys it by accident
 	prompt.MaxActivationDistance = 12
 	prompt.RequiresLineOfSight = false

@@ -22,8 +22,10 @@ return function(t, Shared)
 		return "timeout", s.t
 	end
 
+	-- Holds while the fish is above the zone; taps if the line has been slack a while
+	-- (a real player sees the "Keep reeling!" cue).
 	local function tracker(s)
-		return s.zonePos < s.fishPos
+		return s.zonePos < s.fishPos or s.idle > 2
 	end
 
 	-- Move the zone only (progress frozen) to measure how input feels.
@@ -137,5 +139,16 @@ return function(t, Shared)
 		local a2, s2 = run(FishData.byId.LargemouthBass.fight, false, 9, tracker)
 		t.eq(a1, a2)
 		t.eq(s1, s2)
+	end)
+
+	t.test("doing nothing never lands a fish, even with assist", function()
+		for _, sp in FishData.list do
+			for seed = 1, 8 do
+				local r = run(sp.fight, true, seed, function()
+					return false
+				end)
+				t.ok(r ~= "won", sp.id .. " seed " .. seed .. " was landed with no input")
+			end
+		end
 	end)
 end
