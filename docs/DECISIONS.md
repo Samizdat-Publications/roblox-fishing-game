@@ -108,3 +108,11 @@ Notable design and build calls, newest last.
 - **The driver's client sends the helm's controls (`BoatInput`), and the server still drives the boat.** A VehicleSeat only copies Throttle and Steer to the server when the driver owns the physics, and these boats stay server-owned so nobody can fly one. Inputs are clamped and go stale after half a second.
 - **A save that couldn't be read is never written over.** The player plays on fresh data that session with a message to rejoin; before, three failed reads gave fresh data that autosave then wrote over the real save.
 - **The switches are plain booleans in `Config`, all off,** and a switched-off feature leaves no trace a player can find: no Goals button, no boats in the shop (the server still answers the shop so it never waits), clear skies. Boats count as on only when the Big Lake is on, since the slips and channel are part of the Big Lake build.
+
+## 2026-11-26 (all models)
+
+- **The lake was moved back to its coordinates.** After a Studio restart the whole `Workspace.Lake` model sat 6 studs west, 10 up and 55 north of where `WorldBuilder` builds it, while the terrain water, the fishing zones and the cast checks stayed put. Nothing in the game wants that offset, so it was moved back exactly (ground top at y = 1) and the art re-dressed. If you ever drag the lake on purpose, tell Claude: the zone and water boxes in `WorldBuilder` would need to move with it.
+- **Placement stays in code, with three kinds of place:** an exact spot, a seeded scatter (reeds, lily pads) that comes out the same on every rebuild, or fitted over a gray-box part (logs, pines, rocks). The gray-box parts stay as invisible collision, so the creek boulders still block wading.
+- **Rods in hand stay gray-box for now.** The rod models are uploaded, but swapping the held rod touches the weld, the tip attachment the line hangs from, and every device's camera view; it gets its own step with a playtest.
+- **Fish shadows stay as soft blobs.** They are shadows under the water; real fish models there would read as fish floating in plain sight and give away the species.
+

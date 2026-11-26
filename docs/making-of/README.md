@@ -4,6 +4,24 @@ A Roblox fishing game where real fishing knowledge matters: the right bait, spot
 
 Newest first. The live page with before and after sliders is `docs/making-of/index.html` (published as a Claude artifact).
 
+## Art: The whole lake in our own models
+
+2026-11-26 16:30 · commit `f883e07`
+
+The rest of the art is in: a Fish Buyer stand, a stone rim for the home pond, mossy logs half sunk in the water, a red and white buoy over the deep hole, reed clumps and lily pads in the weed bed, leafy trees round the lake, pines and rocks along Cedar Creek, a new bobber, and every fish hangs on the line as itself. While checking, the whole lake turned out to have been knocked 55 studs sideways and 10 up in Studio, away from its own water; it is back in place. Walking, casting, selling and the pond all work as before.
+
+![The lake with every model in](stills/2026-11-26-all-models-overview.jpg)
+*The lake with every model in*
+
+![Night at the deep hole: a catfish pulls the new bobber under, the new buoy behind](stills/2026-11-26-all-models-bobber-bite.jpg)
+*Night at the deep hole: a catfish pulls the new bobber under, the new buoy behind*
+
+![Pines and rocks along Cedar Creek](stills/2026-11-26-all-models-creek.jpg)
+*Pines and rocks along Cedar Creek*
+
+![Mossy logs in the east shallows](stills/2026-11-26-all-models-logs.jpg)
+*Mossy logs in the east shallows*
+
 ## Art: Our first models in the game
 
 2026-11-26 13:30 · commit `c4041a7`

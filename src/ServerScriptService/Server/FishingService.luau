@@ -102,36 +102,57 @@ local function reset(player: Player, s: Session)
 end
 
 local function makeBobber(player: Player, pos: Vector3): BasePart
-	local b = Instance.new("Part")
-	b.Name = "Bobber_" .. player.Name
-	b.Shape = Enum.PartType.Ball
-	b.Size = Vector3.new(0.8, 0.8, 0.8)
-	b.Color = Color3.fromRGB(230, 60, 50)
-	b.Material = Enum.Material.SmoothPlastic
-	b.Anchored = true
-	b.CanCollide = false
-	b.CanQuery = false
-	b.CanTouch = false
-	b.Position = pos
-	local top = Instance.new("Part")
-	top.Name = "Top"
-	top.Shape = Enum.PartType.Ball
-	top.Size = Vector3.new(0.5, 0.5, 0.5)
-	top.Color = Color3.new(1, 1, 1)
-	top.Anchored = true
-	top.CanCollide = false
-	top.CanQuery = false
-	top.CanTouch = false
-	top.Position = pos + Vector3.new(0, 0.4, 0)
-	top.Parent = b
+	local b: BasePart
+	local glowOn: BasePart
+	local lineY = 0.4
+	local art = ServerStorage:FindFirstChild("Art")
+	local model = art and art:FindFirstChild("Bobber")
+	local mesh = model and model:FindFirstChildWhichIsA("MeshPart", true)
+	if mesh then
+		-- Our bobber model (art/README.md), riding with its middle on the waterline.
+		b = mesh:Clone()
+		b:ClearAllChildren()
+		b.Name = "Bobber_" .. player.Name
+		b.Anchored = true
+		b.CanCollide = false
+		b.CanQuery = false
+		b.CanTouch = false
+		b.Position = pos
+		glowOn = b
+		lineY = b.Size.Y / 2
+	else
+		b = Instance.new("Part")
+		b.Name = "Bobber_" .. player.Name
+		b.Shape = Enum.PartType.Ball
+		b.Size = Vector3.new(0.8, 0.8, 0.8)
+		b.Color = Color3.fromRGB(230, 60, 50)
+		b.Material = Enum.Material.SmoothPlastic
+		b.Anchored = true
+		b.CanCollide = false
+		b.CanQuery = false
+		b.CanTouch = false
+		b.Position = pos
+		local top = Instance.new("Part")
+		top.Name = "Top"
+		top.Shape = Enum.PartType.Ball
+		top.Size = Vector3.new(0.5, 0.5, 0.5)
+		top.Color = Color3.new(1, 1, 1)
+		top.Anchored = true
+		top.CanCollide = false
+		top.CanQuery = false
+		top.CanTouch = false
+		top.Position = pos + Vector3.new(0, 0.4, 0)
+		top.Parent = b
+		glowOn = top
+	end
 	local glow = Instance.new("PointLight") -- so the bobber shows at night
 	glow.Range = 7
 	glow.Brightness = 1.2
 	glow.Color = Color3.fromRGB(255, 240, 220)
-	glow.Parent = top
+	glow.Parent = glowOn
 	local att = Instance.new("Attachment")
 	att.Name = "LineEnd"
-	att.Position = Vector3.new(0, 0.4, 0)
+	att.Position = Vector3.new(0, lineY, 0)
 	att.Parent = b
 	local tip = RodService.tip(player)
 	if tip then
