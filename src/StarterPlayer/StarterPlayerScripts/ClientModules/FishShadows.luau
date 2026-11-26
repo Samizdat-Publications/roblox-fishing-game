@@ -76,6 +76,9 @@ local function refresh()
 		local list = shadows[area]
 		local spotName = if area.name:match("^OpenWater") then "OpenWater" else area.name
 		local want = math.clamp(math.floor(activity(spotName, period) * MAX_PER_SPOT + 0.5), 0, MAX_PER_SPOT)
+		if workspace:GetAttribute("Frenzy") == spotName then
+			want = MAX_PER_SPOT -- a feeding frenzy: the water is full of fish (UNVERIFIED in Studio)
+		end
 		while #list < want do
 			table.insert(list, spawnShadow(area))
 		end
@@ -94,6 +97,17 @@ function FishShadows.start()
 		local z = zones:WaitForChild(name, 15)
 		if z and z:IsA("BasePart") then
 			table.insert(areas, { name = z.Name, cframe = z.CFrame, size = z.Size })
+		end
+	end
+	-- The Big Lake's spots, when it exists (UNVERIFIED in Studio, 2026-11-26).
+	local big = workspace:WaitForChild("BigLake", 15)
+	local bigZones = big and big:WaitForChild("Zones", 15)
+	if bigZones then
+		for _, name in { "Basin", "IslandPoint", "DropOff" } do
+			local z = bigZones:WaitForChild(name, 15)
+			if z and z:IsA("BasePart") then
+				table.insert(areas, { name = z.Name, cframe = z.CFrame, size = z.Size })
+			end
 		end
 	end
 	-- Two patches of open water away from the shore features.
