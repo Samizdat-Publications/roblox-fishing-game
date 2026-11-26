@@ -3,7 +3,8 @@
 -- UNVERIFIED: written overnight 2026-11-26 without Studio. Kept out of FishData.list on
 -- purpose so the journal doesn't show three fish nobody can catch yet; the boat plan
 -- (docs/superpowers/plans/2026-11-26-boat.md, Task 3) appends these to FishData.list once
--- the Big Lake's zones exist. Prices use today's scale; see docs/ECONOMY.md.
+-- the Big Lake's zones exist. The basin and island point are dinghy water; the drop-off is
+-- in the blue water, reachable only on the two-person Deep-V boat.
 local Shared = script.Parent
 local FishData = require(Shared.FishData)
 
@@ -61,7 +62,7 @@ local list: { FishData.Species } = {
 -- Spot names for the journal and hints (merge into FishLogic.SPOT_NAMES with the fish).
 local spotNames = {
 	Basin = "the open basin",
-	DropOff = "the drop-off",
+	DropOff = "the blue-water drop-off",
 	IslandPoint = "the island point",
 }
 

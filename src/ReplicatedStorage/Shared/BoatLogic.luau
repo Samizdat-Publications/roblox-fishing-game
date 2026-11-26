@@ -68,6 +68,24 @@ function BoatLogic.moveOk(fromPos: Vector3, toPos: Vector3, dt: number, boatId: 
 	return flat.Magnitude <= b.maxSpeed * 1.3 * dt + 2
 end
 
+-- Will the boat move? A two-person boat needs its whole crew aboard.
+function BoatLogic.canDrive(boatId: string, aboard: number): (boolean, string?)
+	local b = assert(BoatData.byId[boatId], "unknown boat")
+	if aboard < b.crew then
+		return false, string.format("The %s needs %d people aboard. Get a friend to hop in.", b.name, b.crew)
+	end
+	return true, nil
+end
+
+-- May this boat be in blue water? Small boats are turned back at the edge.
+function BoatLogic.canEnterBlueWater(boatId: string): (boolean, string?)
+	local b = assert(BoatData.byId[boatId], "unknown boat")
+	if not b.blueWater then
+		return false, "The " .. b.name .. " is too small for blue water. Turn back toward the shore."
+	end
+	return true, nil
+end
+
 -- Casting from a boat: only when it is nearly stopped (no trolling at full speed).
 function BoatLogic.canCast(speed: number, boatId: string): (boolean, string?)
 	local b = assert(BoatData.byId[boatId], "unknown boat")

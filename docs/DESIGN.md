@@ -24,10 +24,13 @@ A fishing game with a garden-game style economy: catch fish, earn coins, buy bet
 
 ## Later versions (in order)
 
-1. Home pond: keep live fish; they grow and breed while you're away, with a cap on offline growth.
-2. Better rods and reels, a boat, a second fishing spot to unlock.
-3. Weather that acts like the real thing, special fish versions, a two-person boat with team catches (for when Liam plays).
-4. Art pass: replace gray blocks with their own models (Blender, Meshy, Creator Store).
+1. Home pond: keep live fish; they grow and breed while you're away, with a cap on offline growth. (Done.)
+2. Better rods and reels and a second fishing spot to unlock. (Done: three rods, Cedar Creek.)
+3. Core fishing mechanics: every species bites and fights in its own way. (Stewart, 2026-11-26: "get the fishing core mechanics (different for different fish etc)" first.)
+4. A single-player boat: an inflatable dinghy that reaches the Big Lake.
+5. A boat that needs two players to pilot, and rewards them by reaching the deep "blue water" (for when Liam plays).
+6. Weather that acts like the real thing, special fish versions.
+7. Art pass: replace gray blocks with their own models (Blender, Meshy, Creator Store). A first set of 32 models exists in `art/`.
 
 ## Non-goals and anti-goals
 
