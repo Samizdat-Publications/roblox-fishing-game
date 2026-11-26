@@ -144,8 +144,8 @@ end
 -- How a fish takes the bait, so the bobber tells you what's down there before you see it.
 -- predips: small dips before the real bite; depth: how far the bobber goes under (studs);
 -- hookWindow: seconds to press after the real bite (never under Config.HOOK_WINDOW - 0.2,
--- so younger players still make it). UNVERIFIED in Studio (added 2026-11-26); the server
--- and client still use one plain bite until the core-mechanics task wires this in.
+-- so younger players still make it). FishingService plays it at every bite (verified in a
+-- Studio playtest 2026-11-26).
 export type BitePattern = { style: string, predips: number, dipGap: number, depth: number, hookWindow: number }
 
 local BITE_PATTERNS: { [string]: BitePattern } = {

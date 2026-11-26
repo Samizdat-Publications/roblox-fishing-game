@@ -4,6 +4,18 @@ A Roblox fishing game where real fishing knowledge matters: the right bait, spot
 
 Newest first. The live page with before and after sliders is `docs/making-of/index.html` (published as a Claude artifact).
 
+## Fix: Every fish bites and fights its own way
+
+2026-11-26 10:30
+
+Panfish now nibble the bobber before they take it, perch and trout tap, bass and pike slam it under, and catfish pull it slowly down. On the bar each kind moves differently: bass run back and forth, pike make huge jumps and dive, catfish stay low and steady, trout sit low and then leap. A fish left alone slips the hook, and the bar flashes KEEP REELING! once you stop. Prices were rebalanced so a good spot pays and the Creek Pass now costs 500. The playtest also found that the best rod cast too far to fish the narrow creek; soft casts are short again with any rod.
+
+![Stop reeling and the bar warns you before the fish slips away](stills/2026-11-26-fish-feel-keep-reeling.jpg)
+*Stop reeling and the bar warns you before the fish slips away*
+
+![Bait and Tackle with the new prices](stills/2026-11-26-fish-feel-shop.jpg)
+*Bait and Tackle with the new prices*
+
 ## Art preview: Our own models, first set (Blender previews)
 
 2026-11-26 01:50 · commit `368c415`

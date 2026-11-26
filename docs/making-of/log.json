@@ -2,7 +2,7 @@
   "project": "Fishing Game",
   "pitch": "A Roblox fishing game where real fishing knowledge matters: the right bait, spot and time of day decide what bites.",
   "status": "in-development",
-  "updated": "2026-11-26T01:50:00",
+  "updated": "2026-11-26T10:30:00",
   "entries": [
     {
       "id": "start",
@@ -293,6 +293,26 @@
         {
           "src": "stills/2026-11-26-art-dock.jpg",
           "caption": "The new dock, the same size as the gray-box one"
+        }
+      ]
+    },
+    {
+      "id": "fish-feel",
+      "tag": "Fix",
+      "date": "2026-11-26",
+      "time": "10:30",
+      "commit": "",
+      "title": "Every fish bites and fights its own way",
+      "summary": "Panfish now nibble the bobber before they take it, perch and trout tap, bass and pike slam it under, and catfish pull it slowly down. On the bar each kind moves differently: bass run back and forth, pike make huge jumps and dive, catfish stay low and steady, trout sit low and then leap. A fish left alone slips the hook, and the bar flashes KEEP REELING! once you stop. Prices were rebalanced so a good spot pays and the Creek Pass now costs 500. The playtest also found that the best rod cast too far to fish the narrow creek; soft casts are short again with any rod.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-26-fish-feel-keep-reeling.jpg",
+          "caption": "Stop reeling and the bar warns you before the fish slips away"
+        },
+        {
+          "src": "stills/2026-11-26-fish-feel-shop.jpg",
+          "caption": "Bait and Tackle with the new prices"
         }
       ]
     }

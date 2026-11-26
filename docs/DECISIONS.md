@@ -59,3 +59,8 @@ Notable design and build calls, newest last.
 - **Art house style:** Duet's chunky low-poly, flat-colour, vertex-coloured look. Blender by script (`art/scripts/`) for all props, environment, fish, rods and boats; Meshy only for one-off organic shapes, decimated and recoloured to the palette in Blender; UI icons rendered from the same models; no PixelLab or CadQuery for in-game art. The palette lives in `art/scripts/palette.py`. Details in `art/README.md`.
 - **Critic tooling** (`tools/critic/`): standard library Python only (no SDK to install), Files API for clips and audio, small images sent inline, uploaded files deleted after each review. Verdicts are JSON (score, per-point scores, top 3 fixes, strengths, broken) written as Markdown to `docs/critic/`, each with an "Action taken" line. The model ids were checked against the API's model list (gemini-4-hydrogen, -neon, -carbon all exist).
 - **The beauty bar:** Neon scored the gray box 3/10 on the first review; a beauty pass is done at 7/10 or better on stills plus a golden-hour clip, with no agreed "broken" items left.
+
+## 2026-11-26 (PR #1 in Studio)
+
+- **A rod's extra reach scales with cast power.** The flat bonus made the Graphite Rod's shortest cast 24 studs, longer than the creek is wide, so the best rod couldn't fish the riffle. Now cast length = 8 + power x (32 + rod bonus): full power reaches exactly as far as before, a soft cast is 8 studs with any rod.
+- **The "Keep reeling!" warning waits for the first press.** It showed the instant a fish was hooked, which reads as "you already messed up". Before the first press the bar says "HOLD TO REEL"; the fish still slips away if the player never reels.

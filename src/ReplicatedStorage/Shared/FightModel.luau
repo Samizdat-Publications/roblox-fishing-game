@@ -14,8 +14,8 @@
 --   jumper  sudden leaps to the top, then a drop (trout, smallmouth)
 --   diver   keeps pulling for the bottom, with the odd surge up (catfish, carp)
 --   shaker  fast head shakes on top of wild runs (pike, muskie)
--- UNVERIFIED in Studio (added 2026-11-26): the tests below check each style's shape and that
--- a tracking player still lands every species.
+-- Verified in a Studio playtest 2026-11-26 (bass, pike, catfish and trout traces); the tests
+-- check each style's shape and that a tracking player still lands every species.
 local Shared = script.Parent
 local Config = require(Shared.Config)
 local FishData = require(Shared.FishData)
@@ -164,10 +164,11 @@ function FightModel.step(s: State, dt: number, holding: boolean): string?
 	return nil
 end
 
--- True while the line has gone slack (no press or hold for FIGHT_IDLE_GRACE): the UI should
--- say "Keep reeling!" so the player knows to tap.
+-- True while the line has gone slack (no press or hold for FIGHT_IDLE_GRACE since the last
+-- one): the UI should say "Keep reeling!" so the player knows to tap. Before the very first
+-- press the hook prompt already says what to do, so the cue stays quiet.
 function FightModel.slack(s: State): boolean
-	return s.idle > Config.FIGHT_IDLE_GRACE
+	return s.idle ~= math.huge and s.idle > Config.FIGHT_IDLE_GRACE
 end
 
 -- True while the fish sits inside the catch zone (the UI turns the zone green).

@@ -138,6 +138,16 @@ Nothing below has been seen in Studio. All of it is on the branch `claude/overni
 - Art look: Duet's chunky low-poly, flat-colour style is the house style (palette in `art/scripts/palette.py`, rules in `art/README.md`).
 - Still open: do the six fight styles feel right once you play them? Each has one or two numbers to tune.
 
+## 2026-11-26: PR #1 verified in Studio and merged
+
+- Pushed every PR file into Studio; checksums match `src/` and 69 tests pass in Studio (68 from the PR plus one new one for the slack cue). The creek gate was rebuilt and now reads "Cedar Creek, 500 coins".
+- Bites: at the dock at dawn on worms the bobber dipped and the fish took it in 3 to 4 s (a bluegill nibbled twice first, perch tapped). Stinkbait at the dock by day gave the "nothing wants it" hint after 10 s. Pressing during a nibble now says "Too early, that was just a nibble."
+- Slack line: hooking a fish and then doing nothing loses it in 2.5 to 4.8 s; normal play lands it. The "KEEP REELING!" warning showed the moment a fish was hooked, before the player could react, so it now waits for the first press (before that the bar says "HOLD TO REEL").
+- Fight styles, traced from the fish marker in the game: largemouth bass (weed bed, dawn, minnows) runs back and forth fast and stays up; northern pike (weed bed, noon, spinner) makes the biggest single jumps of all (more than twice the bass's) and spends most of the fight deep; channel catfish (deep hole, night, stinkbait) moves slowly, smoothly and low, no jumps at all; rainbow trout (riffle, dawn, crickets) sits low and then shoots up in sudden leaps. All four move differently.
+- Shop prices match the new data (worms 8, crickets 12, minnows 20, stinkbait 16, lures 100). Touch and gamepad: the input code is untouched by the PR and the slack rule treats holding and tapping the same on every device.
+- **Bug found and fixed:** with the Graphite Rod even the softest cast flew 24 studs, clean over the 12 stud riffle, so trout were impossible to reach from the bank. A rod's extra reach now grows with cast power, so a soft cast stays short with any rod.
+- **Models not imported yet:** uploading the dock, stand and fish to Roblox needs an approved upload folder in Studio (see Waiting on Stewart). The scopes are already granted.
+
 ## What works now
 A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shore, wait for a bite, hook it, fight it on the bar (hold or click anywhere), land it, sell at the Fish Buyer, buy bait at Bait and Tackle, fill the journal, raise fish in your home pond, buy better rods, and unlock Cedar Creek. Eleven species follow real habits (spot, time of day, bait), fish shadows show where they're active, the day runs 16 minutes, and progress saves to Roblox.
 
@@ -148,6 +158,8 @@ A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shor
 - The test save on Stewart's account has 21 coins and 14 fish from Claude's playtests. Ask Claude to wipe it if you want a fresh start.
 
 ## Waiting on Stewart
+- **Approve an upload folder** so Claude can put the models and sounds into the game: in Studio, Assistant panel, "...", Settings, MCP Permissions, add `C:\Users\stewa\Documents\Claude\Roblox` to the approved upload folders.
+- **Check two experience settings** (Creator Dashboard, the Fishing Game experience): the age rating reads 13+ and voice chat is on. The game aims at Minimal or Mild for Liam's age; turn voice chat off and redo the maturity questionnaire if you agree.
 - Playtest it: open Fishing Game in Studio and press Play (F5).
 - Optional, speeds up Claude's builds: in Studio, Assistant Settings, MCP Permissions, Connect to the internet, add `localhost:8765` to the HTTP domain allow list.
 - Done already: the place is saved to Roblox and Studio API access is on.
