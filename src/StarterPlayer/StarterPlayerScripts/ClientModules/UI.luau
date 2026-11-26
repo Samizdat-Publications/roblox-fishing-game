@@ -359,7 +359,7 @@ local function reelHowTo(): string
 	return "Hold anywhere on the screen."
 end
 
-function UI.showFight(s: any?, note: string?, holding: boolean?)
+function UI.showFight(s: any?, note: string?, holding: boolean?, slack: boolean?)
 	if not s then
 		refs.fight.Visible = false
 		refs.reelPrompt.Visible = false
@@ -404,6 +404,10 @@ function UI.showFight(s: any?, note: string?, holding: boolean?)
 	if holding then
 		refs.reelTitle.Text = "REELING!"
 		refs.reelTitle.TextColor3 = C.green
+	elseif slack then
+		-- No press for a while: the line has gone slack and the fish is working free.
+		refs.reelTitle.Text = "KEEP REELING!"
+		refs.reelTitle.TextColor3 = if (os.clock() % 0.5) < 0.25 then C.red else C.gold
 	else
 		refs.reelTitle.Text = "HOLD TO REEL"
 		refs.reelTitle.TextColor3 = if (os.clock() % 0.8) < 0.4 then C.gold else C.text

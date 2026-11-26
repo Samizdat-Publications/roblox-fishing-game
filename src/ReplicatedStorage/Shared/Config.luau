@@ -12,8 +12,8 @@ Config.CAST_RANGE = 32 -- extra studs at full power
 Config.CHARGE_TIME = 1.2 -- seconds to reach full power
 
 -- Biting
-Config.BITE_MIN = 3 -- fastest bite (great combo)
-Config.BITE_MAX = 11 -- slowest bite (weak combo)
+Config.BITE_MIN = 3 -- fastest bite (a combo fish really want)
+Config.BITE_SLOWEST = 40 -- slowest bite; weaker combos count as "nothing here" (see docs/ECONOMY.md)
 Config.NOTHING_WAIT = 10 -- seconds before a "nothing is biting" hint
 Config.HOOK_WINDOW = 2.0 -- seconds to press after a bite
 
@@ -23,6 +23,7 @@ Config.ZONE_UP_SPEED = 1.25 -- bar heights per second while holding
 Config.ZONE_DOWN_SPEED = 0.85 -- bar heights per second while not holding
 Config.ZONE_RESPONSE = 9 -- how quickly the zone reaches those speeds (per second)
 Config.PRESS_KICK = 0.7 -- instant upward speed from each fresh click or tap
+Config.FIGHT_IDLE_GRACE = 2.5 -- seconds without a press or hold before the line goes slack and progress stops filling
 Config.FIGHT_GRACE = 0.8 -- seconds after a fight ends before the button can cast again
 Config.FIGHT_MAX_SECONDS = 90 -- server gives up after this
 Config.ASSIST_ZONE = 1.4 -- zone size multiplier with assist on
@@ -36,7 +37,7 @@ Config.BAG_LIMIT = 30 -- fish carried before you must sell
 Config.JOURNAL_KEEP = 100 -- most recent catches kept in the journal
 
 -- Cedar Creek
-Config.CREEK_PASS_PRICE = 250
+Config.CREEK_PASS_PRICE = 500
 
 -- Home pond
 Config.POND_CAPACITY = 6

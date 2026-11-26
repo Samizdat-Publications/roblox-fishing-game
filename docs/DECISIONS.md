@@ -35,3 +35,27 @@ Notable design and build calls, newest last.
 - **Pond fish are per player:** the pond is shared scenery, but each player sees only their own fish in it (drawn on their own screen).
 - **Rods include the reel** (one item, not two) to keep the shop simple for kids. Three tiers: Willow (free), Fiberglass (120), Graphite (350). Bonuses are cast distance, catch zone size and, for Graphite, less pull from heavy fish; they never change which fish bite, so knowledge still beats gear.
 - **Cedar Creek is a stream, not a second lake,** so it plays differently: three short stretches (riffle, rocks, pool) each with one signature fish, all real stream species (rainbow trout, smallmouth bass, walleye). The Creek Pass costs 250 coins once, bought with a one second hold at the gate. The gate opens on the owner's screen only; the server also refuses creek casts without a pass, so it can't be skipped by casting over the fence.
+
+## 2026-11-26 (overnight, cloud, unverified in Studio)
+
+- **Big Lake fish sit in their own data file until the Big Lake exists.** The boat plan asked for new species in `FishData.luau`, but the journal lists every species in it, so three fish nobody can catch yet would show as "???" the moment this merged. They live in `BigLakeFishData.luau` with the same shape; boat plan Task 5 appends them to `FishData` with the zones.
+- **The boat starts server-owned.** Roblox's own example hands a driven vehicle to the driver, but it also says the server can't check physics a client owns. A fishing boat is slow, so the server keeps it and checks every move; switch to driver ownership plus checks only if the playtest feels laggy.
+- **No deprecated body movers.** The boat uses `LinearVelocity`, `AngularVelocity`, `AlignOrientation` and `AlignPosition`; the `VehicleSeat` is read for input only.
+- **Tests also run outside Studio** with Lune (`lune run tools/test/run.luau`), using a small `Random` stand-in. One existing test depends on Roblox's exact random draws for its seed and is reported as skipped there.
+- **Models are one mesh with vertex colours.** Roblox allows one material per mesh, so each model's flat-coloured parts are baked into vertex colours and joined. One MeshPart per model, no textures to upload.
+
+## 2026-11-26 (Stewart approved the economy changes; still unverified in Studio)
+
+- **All six economy changes applied** (`docs/ECONOMY.md`): bite time = 3 s / total weight, 3 to 40 s, weaker combos give the "nothing here" hint; panfish prices up and big-fish prices down; Fiberglass Rod 150, Creek Pass 500, Graphite Rod 900; Spinner and Plastic Worm 100; pond, bait and bag left alone; the slack-line rule.
+- **Slack line is 2.5 seconds, not 1.** Stewart approved "pressed in the last second", but a 1 second rule punishes the right play against a fish that sits at the bottom of the bar (let go and rest the zone there). Nothing fills until the first press; after 2.5 s without one the line goes slack and progress drains slowly. A tap fixes it; the UI should say "Keep reeling!" (`FightModel.slack`).
+- **Players who already bought the Creek Pass at 250 keep it.** Prices only affect new purchases.
+- **Fish fight in six styles, chosen from how the real fish fight.** Trout and smallmouth jump, largemouth make runs, catfish and carp bulldog to the bottom, pike and muskie shake their heads, panfish dart, perch and walleye wander. A style only changes how the fish moves on the bar; zone size, gain and loss stay per species, so the economy numbers hold. The test bot that tracks the fish still beats every species, so no style is unfair.
+- **Bites have four shapes, and none shortens the hook window below 1.8 s.** Nibble, tap, slam, pull. A pull (catfish, carp) gives a longer window because the real thing is slow. The window floor keeps it fair for younger players.
+
+## 2026-11-26
+
+- **Boat prices stay for now** (Stewart): Inflatable Dinghy 1,200 coins, Deep-V 4,000. Retune after playtests.
+- **StyLua:** reformat once, after PR #1 is merged and nothing else is in flight, in a commit of its own ("Format with StyLua, no behavior changes"), pushed into Studio with checksums and tests confirmed. Then the format check in `.github/workflows/checks.yml` becomes enforcing instead of report-only, and Selene's error (and its warnings, if cheap) get fixed.
+- **Art house style:** Duet's chunky low-poly, flat-colour, vertex-coloured look. Blender by script (`art/scripts/`) for all props, environment, fish, rods and boats; Meshy only for one-off organic shapes, decimated and recoloured to the palette in Blender; UI icons rendered from the same models; no PixelLab or CadQuery for in-game art. The palette lives in `art/scripts/palette.py`. Details in `art/README.md`.
+- **Critic tooling** (`tools/critic/`): standard library Python only (no SDK to install), Files API for clips and audio, small images sent inline, uploaded files deleted after each review. Verdicts are JSON (score, per-point scores, top 3 fixes, strengths, broken) written as Markdown to `docs/critic/`, each with an "Action taken" line. The model ids were checked against the API's model list (gemini-4-hydrogen, -neon, -carbon all exist).
+- **The beauty bar:** Neon scored the gray box 3/10 on the first review; a beauty pass is done at 7/10 or better on stills plus a golden-hour clip, with no agreed "broken" items left.

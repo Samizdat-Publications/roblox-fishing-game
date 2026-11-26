@@ -28,7 +28,7 @@ local list: { Rod } = {
 	{
 		id = "Fiberglass",
 		name = "Fiberglass Rod",
-		price = 120,
+		price = 150,
 		castBonus = 8,
 		zoneMult = 1.15,
 		heavyResist = 0,
@@ -39,7 +39,7 @@ local list: { Rod } = {
 	{
 		id = "Graphite",
 		name = "Graphite Rod",
-		price = 350,
+		price = 900,
 		castBonus = 16,
 		zoneMult = 1.3,
 		heavyResist = 0.5,

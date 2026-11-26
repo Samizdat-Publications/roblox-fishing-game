@@ -1,0 +1,3 @@
+# Selene lint settings (https://kampfkarren.github.io/selene/). Roblox globals come from
+# Selene's built-in Roblox standard library.
+std = "roblox"

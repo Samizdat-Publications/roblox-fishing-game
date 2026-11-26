@@ -44,6 +44,14 @@ function FishLogic.biteWeights(spot: string, period: string, baitId: string): { 
 	table.sort(out, function(a, b)
 		return a.w > b.w
 	end)
+	-- Combos so weak they'd take longer than BITE_SLOWEST count as "nothing wants this".
+	local t = 0
+	for _, x in out do
+		t += x.w
+	end
+	if t < Config.BITE_MIN / Config.BITE_SLOWEST then
+		return {}
+	end
 	return out
 end
 
@@ -70,14 +78,15 @@ function FishLogic.pickSpecies(weights: { Weight }, rng: Random): string?
 	return weights[#weights].id
 end
 
--- Seconds until a bite. A strong match (total weight near 1) bites fast, a weak one slow.
+-- Seconds until a bite: BITE_MIN divided by how much the fish here want this (the total
+-- weight), from BITE_MIN to BITE_SLOWEST. So a rare fish that is the only taker is slow to
+-- bite, and the right time and bait matter for every fish, not just which one you get.
 function FishLogic.biteDelay(weights: { Weight }, rng: Random): number?
 	local t = total(weights)
 	if t <= 0 then
 		return nil
 	end
-	local quality = math.clamp(t, 0, 1)
-	local base = Config.BITE_MAX - (Config.BITE_MAX - Config.BITE_MIN) * quality
+	local base = math.clamp(Config.BITE_MIN / t, Config.BITE_MIN, Config.BITE_SLOWEST)
 	return base * (0.75 + rng:NextNumber() * 0.5)
 end
 
@@ -130,6 +139,24 @@ function FishLogic.isOnWaterAny(pos: Vector3, boxes: { { cframe: CFrame, size: V
 		end
 	end
 	return false
+end
+
+-- How a fish takes the bait, so the bobber tells you what's down there before you see it.
+-- predips: small dips before the real bite; depth: how far the bobber goes under (studs);
+-- hookWindow: seconds to press after the real bite (never under Config.HOOK_WINDOW - 0.2,
+-- so younger players still make it). UNVERIFIED in Studio (added 2026-11-26); the server
+-- and client still use one plain bite until the core-mechanics task wires this in.
+export type BitePattern = { style: string, predips: number, dipGap: number, depth: number, hookWindow: number }
+
+local BITE_PATTERNS: { [string]: BitePattern } = {
+	nibble = { style = "nibble", predips = 2, dipGap = 0.45, depth = 0.35, hookWindow = Config.HOOK_WINDOW },
+	tap = { style = "tap", predips = 0, dipGap = 0, depth = 0.3, hookWindow = Config.HOOK_WINDOW - 0.2 },
+	slam = { style = "slam", predips = 0, dipGap = 0, depth = 1.0, hookWindow = Config.HOOK_WINDOW },
+	pull = { style = "pull", predips = 0, dipGap = 0, depth = 0.8, hookWindow = Config.HOOK_WINDOW + 0.6 },
+}
+
+function FishLogic.bitePattern(species: FishData.Species): BitePattern
+	return BITE_PATTERNS[species.bite or "slam"] or BITE_PATTERNS.slam
 end
 
 -- Spots that need the Creek Pass.

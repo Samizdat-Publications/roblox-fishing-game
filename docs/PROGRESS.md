@@ -103,6 +103,41 @@ Plan: `docs/superpowers/plans/2026-11-25-rods-and-creek.md`.
 - Verified: 42 unit tests pass (new: each creek fish tops its spot, none of them bite anywhere in the lake, creek water counts as water and its banks don't). Playtest: walking at the closed gate stopped at it and pathfinding found no route; holding E with 141 coins said "A Creek Pass costs 250 coins. You have 141."; after selling, holding E paid 250 (254 to 4) and the gate went see-through; walked in. Riffle at 6:12 AM on crickets: three rainbow trout (37.2, 35.8, 40.6 cm). Pool at 9:30 PM on minnows: three walleye (57.0, 70.0, 65.4 cm, up to 72 coins). Rocks at noon on minnows: two smallmouth bass. The journal now shows 11 species.
 - Found and fixed in the playtest: the riffle's water didn't show (Roblox terrain works in 4 stud cells and a 1.5 stud fill was too thin), and clear shallow water over a gray bed looked dry. The water now fills whole cells and the streambed is blue-gray.
 
+## Overnight, unverified (2026-11-26, Claude in the cloud)
+
+Nothing below has been seen in Studio. All of it is on the branch `claude/overnight-duet-kpkf6f` in draft pull request #1; `main` and the place are unchanged.
+
+### Finished
+- **Economy check** (`docs/ECONOMY.md`, `tools/econ/sim.py`): before the changes, a player who knows one good spot buys every shop item inside 10 minutes; worms at the dock earns about a sixth of a big-fish spot; a rare fish that is the only taker bites as fast as a common one, so time of day barely matters for money; with reel assist on, doing nothing at all lands about half the fish. Stewart approved all six and they are now applied in the shared modules (see "Applied after Stewart's go-ahead" below).
+- **Boat plan** (`docs/superpowers/plans/2026-11-26-boat.md`): six tasks, each with its Studio playtest. Pure modules with tests, not used by the game yet: `BoatData.luau`, `BoatLogic.luau`, `BigLakeFishData.luau` (white bass, lake trout, muskellunge), `BoatLogic.spec.luau`, `BigLakeFish.spec.luau`.
+- **Art pass** (`art/`): 32 models built by script in Blender 5.1.2: dock, both stands, pond rim, three logs, buoy, reeds, lily pads, two pines, a leafy tree, three rocks, all 11 fish, three rods, the bobber, and a Jon Boat for the boat plan. Each is one mesh with vertex colours (no textures), at most about 1,400 triangles, sized in studs to drop onto its gray-box part. Previews and `art/previews/contact-sheet.png`; sizes, triangles and what each replaces in `art/README.md`.
+- **Weather spec** (`docs/WEATHER.md`): six kinds that change bites like real weather, how to read each, what is never sold, and a data table.
+- **Tests outside Studio**: `lune run tools/test/run.luau` runs every spec with Lune (56 pass and 1 is skipped because it depends on Roblox's exact random draws). `.github/workflows/checks.yml` runs them on every pull request and every push to main; StyLua and Selene report only.
+
+### Applied after Stewart's go-ahead (same night)
+- **Economy changes in the code**: bite time rule (`FishLogic.biteDelay`, `Config.BITE_SLOWEST = 40`), new fish, rod, bait and Creek Pass prices, and the slack-line rule in `FightModel` (2.5 s, see `docs/DECISIONS.md`). The simulator now reads these values from the code; results are in `docs/ECONOMY.md`. The creek gate's sign text comes from `Config.CREEK_PASS_PRICE`, but the gate in the place still needs rebuilding in Studio to show 500.
+- **Boats reordered** to Stewart's order: first the one-person Inflatable Dinghy (1,200 coins, can't enter blue water), then the two-person Deep-V (4,000 coins, needs two aboard, the only way into the blue-water drop-off). `BoatData`, `BoatLogic.canDrive` and `canEnterBlueWater`, the boat plan (Phase 1 dinghy, Phase 2 Deep-V) and the roadmap in `docs/DESIGN.md`.
+- **Fish feel different** (core mechanics, part 1): every species has a fight style and a bite style. Fight styles in `FightModel`: panfish dart (tugger), perch and walleye wander slowly (steady), largemouth make long runs then rest (runner), trout and smallmouth leap to the top (jumper), catfish and carp keep pulling down (diver), pike and muskie shake hard on top of wild runs (shaker). Bite styles in `FishLogic.bitePattern`: panfish nibble the bobber twice first, perch and trout tap lightly, bass and pike slam it under, catfish and carp pull it slowly down with a longer hook window. Tests check that each style shows up, a tracking player still lands every fish, kids with assist still land panfish, and idling never lands anything. The server and client still show one plain bite; wiring the bite patterns into the bobber and the hook window is for the next Studio session. The economy simulator does not model the styles yet.
+- Tests: 68 pass outside Studio.
+
+### Half done
+- Models are not imported. The `.glb` files should drop in, but vertex colours and scale need a first look in Studio.
+- The format check would change 15 existing files (StyLua wraps lines over 120 characters). Nothing was reformatted.
+- Selene's first run on GitHub found 1 error and 3 warnings, all in existing client code: two identical `goIdle()` branches in `Controller.luau` (lines 432 and 436, harmless but could be one branch) and three `UDim2.new` calls in `UI.luau` that could be `UDim2.fromScale`. The new files are clean. First GitHub run: unit tests passed, both report-only checks ran.
+
+### Test first in Studio tomorrow
+1. Run `TestRunner.runAll` in Studio: all 68 existing and new tests should pass there too.
+2. Import `art/models/Dock.glb` with the 3D Importer (Scale Unit Stud, Merge Meshes on, Upload to Roblox off): check its size against the gray-box dock and that the colours show.
+3. Import one fish (`Bluegill.glb`) and one stand, same checks.
+4. Fight a trout, a bass, a catfish and a pike with DebugAutoFish off: each should move differently on the bar.
+5. Then pick up the boat plan at Task 1 (the dinghy).
+
+### Questions for Stewart (answered 2026-11-26, see `docs/DECISIONS.md`)
+- Boat prices: keep the dinghy at 1,200 and the Deep-V at 4,000, retune after playtests.
+- StyLua: reformat once after PR #1 is merged, in its own commit, then make the format check enforcing.
+- Art look: Duet's chunky low-poly, flat-colour style is the house style (palette in `art/scripts/palette.py`, rules in `art/README.md`).
+- Still open: do the six fight styles feel right once you play them? Each has one or two numbers to tune.
+
 ## What works now
 A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shore, wait for a bite, hook it, fight it on the bar (hold or click anywhere), land it, sell at the Fish Buyer, buy bait at Bait and Tackle, fill the journal, raise fish in your home pond, buy better rods, and unlock Cedar Creek. Eleven species follow real habits (spot, time of day, bait), fish shadows show where they're active, the day runs 16 minutes, and progress saves to Roblox.
 
