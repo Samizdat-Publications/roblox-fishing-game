@@ -22,6 +22,7 @@ local Remotes = require(Shared.Remotes)
 
 local UI = require(script.Parent.UI)
 local PondView = require(script.Parent.PondView)
+local SoundFX = require(script.Parent.SoundFX)
 
 local Controller = {}
 
@@ -53,8 +54,6 @@ local REEL_KEYS = {
 local sounds: { [string]: Sound } = {}
 local SOUND_IDS = {
 	cast = "rbxasset://sounds/swoosh.wav",
-	splash = "rbxasset://sounds/impact_water.mp3",
-	bite = "rbxasset://sounds/electronicpingshort.wav",
 	catch = "rbxasset://sounds/collide.wav",
 	click = "rbxasset://sounds/button.wav",
 }
@@ -91,6 +90,7 @@ end
 local function setState(s: string)
 	state = s
 	stateSince = os.clock()
+	SoundFX.setPhase(s)
 end
 
 local function isReelInput(input: InputObject): boolean
@@ -234,14 +234,12 @@ local function onReelInput(input: InputObject, began: boolean)
 end
 
 local function onFishingEvent(kind: string, payload: any)
+	SoundFX.event(kind, payload)
 	if kind == "Landed" then
 		setState("Waiting")
-		playId("bobber-plop", "splash")
 		UI.status("Waiting for a bite at " .. tostring(payload.spotName) .. "...")
 	elseif kind == "Bite" then
 		setState("Bite")
-		local style = payload and payload.style
-		playId(if style == "pull" then "bite-deep-pull" elseif style == "nibble" then "bite-nibble" elseif style == "tap" then "bite-tap" else "bite-slam", "bite")
 		UI.closePanels()
 		UI.setLocked(true)
 		freezeCharacter(true)
@@ -271,12 +269,6 @@ local function onFishingEvent(kind: string, payload: any)
 			UI.toast("This one feels big!", Color3.fromRGB(250, 175, 40))
 		end
 	elseif kind == "Caught" then
-		local tier = string.lower(payload.tier or "Common")
-		local cls = payload.fish and payload.fish.sizeClass
-		playId(if cls == "monster" then "sting-monster" elseif cls == "trophy" then "sting-trophy" else "sting-" .. tier, "catch")
-		if payload.first then
-			playId("sting-new-species")
-		end
 		UI.catchCard(payload)
 		goIdleAfterFight()
 	elseif kind == "Escaped" then
@@ -329,6 +321,7 @@ local function cycleBait()
 end
 
 function Controller.start()
+	SoundFX.start()
 	for name, id in SOUND_IDS do
 		local s = Instance.new("Sound")
 		s.Name = "Fish_" .. name
@@ -491,6 +484,7 @@ function Controller.start()
 			local hold = holding()
 			local result = FightModel.step(fight, math.min(dt, 0.1), hold)
 			UI.showFight(fight, nil, hold, FightModel.slack(fight))
+			SoundFX.fight(fight, hold, dt)
 			if result then
 				setState("Resolving")
 				UI.showFight(nil)

@@ -4,6 +4,15 @@ A Roblox fishing game where real fishing knowledge matters: the right bait, spot
 
 Newest first. The live page with before and after sliders is `docs/making-of/index.html` (published as a Claude artifact).
 
+## Sound: The lake comes alive with sound
+
+2026-11-26 11:30 · commit `f132de3`
+
+Twenty-seven sounds made with ElevenLabs are now in the game. Birds at dawn, a loon at dusk, frogs at night, and running water that gets louder as you walk to the creek. While you wait, the world goes quiet and the bobber ticks; every kind of bite has its own sound, from a light tap to a deep pull for a catfish. The reel clicks faster when a fish is about to get away, the drag zips when it runs, and a catch ends on a splash sized by the fish and a little tune. A critic model listened to playtest clips and scored it 6 out of 10; after fixing the heavy cast splash, the quiet bites and a late chime it scored 7.
+
+![The quiet wait at dawn, where the bobber ticking does the work](stills/2026-11-26-sound-wait.jpg)
+*The quiet wait at dawn, where the bobber ticking does the work*
+
 ## Fix: Every fish bites and fights its own way
 
 2026-11-26 10:30 · commit `c0f7a77`

@@ -148,6 +148,14 @@ Nothing below has been seen in Studio. All of it is on the branch `claude/overni
 - **Bug found and fixed:** with the Graphite Rod even the softest cast flew 24 studs, clean over the 12 stud riffle, so trout were impossible to reach from the bank. A rod's extra reach now grows with cast power, so a soft cast stays short with any rod.
 - **Models not imported yet:** uploading the dock, stand and fish to Roblox needs an approved upload folder in Studio (see Waiting on Stewart). The scopes are already granted.
 
+## 2026-11-26: Sound pass
+
+- All 27 ElevenLabs sounds are on Roblox (asset ids in `audio/README.md` and `src/ReplicatedStorage/Shared/SoundIds.luau`), uploaded through Open Cloud once Stewart approved the upload folder. A few were still in Roblox's moderation review at upload, but all 27 loaded and played in the playtest.
+- New: `Shared/SoundMix.luau` (the rules, with 4 tests), `ClientModules/SoundFX.luau` (plays them). The server now tells the client about each nibble dip so it can be heard.
+- What you hear: the lake's ambience crossfades with the clock (birds at dawn, wind by day, a loon at dusk, frogs and crickets at night); the creek's running water rises as you walk toward it and the lake steps back. While the line is in, everything quiets a little and the bobber ticks; each bite style has its own cue (tap, slam, a deep pull for catfish and carp) with a crisp snap on top. Reel clicks while you reel, rising in pitch when the fish is close to breaking free; the drag zips when it runs, it thrashes when it jumps, the line strains when you're about to lose it; heavy fish bring in a low tension music layer. A catch ends on a splash sized by weight, a stinger by rarity (all Common until the rarity tiers from PR #2 land) and a discovery chime for a first-ever species. A calm theme plays now and then, only after 10 s with no line in.
+- Verified: 73 tests pass in Studio and with Lune; checksums match. Playtest logs showed every cue at the right moment (dawn dock: tap, reel, splash, stinger; night deep hole: deep pull, tension music up to 0.8 and back to 0, big splash; creek: creek ambience at full and lake dawn at a quarter; a trout left to run: drag, thrash, line strain, small splash as it got away).
+- Critic (Gemini Neon, `sound` rubric, clips with audio): 6/10 on the first pass (heavy cast splash, quiet bites, late chime, theme cut off), 7/10 after fixes. Reports and actions in `docs/critic/`.
+
 ## What works now
 A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shore, wait for a bite, hook it, fight it on the bar (hold or click anywhere), land it, sell at the Fish Buyer, buy bait at Bait and Tackle, fill the journal, raise fish in your home pond, buy better rods, and unlock Cedar Creek. Eleven species follow real habits (spot, time of day, bait), fish shadows show where they're active, the day runs 16 minutes, and progress saves to Roblox.
 
@@ -158,7 +166,6 @@ A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shor
 - The test save on Stewart's account has 21 coins and 14 fish from Claude's playtests. Ask Claude to wipe it if you want a fresh start.
 
 ## Waiting on Stewart
-- **Approve an upload folder** so Claude can put the models and sounds into the game: in Studio, Assistant panel, "...", Settings, MCP Permissions, add `C:\Users\stewa\Documents\Claude\Roblox` to the approved upload folders.
 - **Check two experience settings** (Creator Dashboard, the Fishing Game experience): the age rating reads 13+ and voice chat is on. The game aims at Minimal or Mild for Liam's age; turn voice chat off and redo the maturity questionnaire if you agree.
 - Playtest it: open Fishing Game in Studio and press Play (F5).
 - Optional, speeds up Claude's builds: in Studio, Assistant Settings, MCP Permissions, Connect to the internet, add `localhost:8765` to the HTTP domain allow list.

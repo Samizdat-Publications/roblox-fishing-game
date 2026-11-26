@@ -65,6 +65,14 @@ Notable design and build calls, newest last.
 - **A rod's extra reach scales with cast power.** The flat bonus made the Graphite Rod's shortest cast 24 studs, longer than the creek is wide, so the best rod couldn't fish the riffle. Now cast length = 8 + power x (32 + rod bonus): full power reaches exactly as far as before, a soft cast is 8 studs with any rod.
 - **The "Keep reeling!" warning waits for the first press.** It showed the instant a fish was hooked, which reads as "you already messed up". Before the first press the bar says "HOLD TO REEL"; the fish still slips away if the player never reels.
 
+## 2026-11-26 (sound pass)
+
+- **Sound ids live in code, not in the place.** `Shared/SoundIds.luau` maps each sound name to its asset id and the client builds the Sound objects at start, so the sound setup is in `src/` and survives a world rebuild. An empty id is skipped, so a sound can be swapped or removed without breaking anything.
+- **The music is sparing.** A place's theme plays at most once every 4 minutes, only after 10 s with no line in, and fades out the moment you cast. The waiting is meant to be quiet; the bobber and the bites carry it.
+- **The tension layer follows the fish's weight, not its species.** The species stays secret until it's landed, so the client uses the fight's heaviness (catfish, carp, pike, walleye) to bring in the low music.
+- **Stingers read the species' rarity tier and fall back to Common.** Main has no tiers yet; when PR #2's tiers merge, the right stinger plays without a code change.
+- **Uploads go through Open Cloud** from `C:\Users\stewa\Documents\Claude\Roblox` (approved by Stewart in Studio's MCP Permissions). Each sound was uploaded once; ids are recorded right away so nothing is uploaded twice.
+
 ## 2026-11-26 (second overnight run, cloud, all unverified in Studio)
 
 - **Size class is rolled at the hook, on the server.** As the rarity plan says: trophies and monsters fight harder, so the fight has to know first. Studio-only test hook: set the player attribute `DebugSizeClass` to `trophy` or `monster`.
@@ -77,4 +85,5 @@ Notable design and build calls, newest last.
 - **Boats: one boat per owner waits at the slip, the one chosen in the shop.** Four slips cover a small server; a fifth owner waits for a free slip. Buying a boat makes it the one at the slip.
 - **Big Lake fish are now in `FishData.list`** (the journal shows all 26 species), because the Big Lake exists in code (`BoatWorld`). Its fish shadows aren't drawn yet.
 - **Team catches split coins evenly with the odd coin to whoever landed it,** and the fish finder shows each mark's tier colour and size, never its name.
-- **Sounds play from `Shared/SoundIds.luau` once uploaded;** until an id is pasted in, the game keeps its built-in sounds.
+- **The 25 new sound prompts slot into the sound pass's `Shared/SoundIds.luau` with empty ids,** so `SoundFX` skips them until they're generated and uploaded; a trophy or monster plays its own stinger once uploaded and the tier stinger until then.
+- **A boat's heading is held by one AlignOrientation that the server turns each frame,** not an AngularVelocity next to it. Two constraints on the same axis fight each other; one target also rights the hull after a bump.
