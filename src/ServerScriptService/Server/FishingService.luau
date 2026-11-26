@@ -264,7 +264,9 @@ local function onCast(player: Player, dir: any, power: any)
 	flat = flat.Unit
 	local p = math.clamp(power, 0, 1)
 	local rod = RodData.byId[data.rod] or RodData.byId.Willow
-	local dist = Config.CAST_MIN + p * Config.CAST_RANGE + rod.castBonus
+	-- The rod's extra reach grows with power, so a soft cast stays short with any rod
+	-- (the creek is only 12 studs wide).
+	local dist = Config.CAST_MIN + p * (Config.CAST_RANGE + rod.castBonus)
 	local landing = hrp.Position + flat * dist
 	landing = Vector3.new(landing.X, 0.3, landing.Z)
 	if not FishLogic.isOnWaterAny(landing, waters) then

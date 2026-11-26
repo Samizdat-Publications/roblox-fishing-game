@@ -152,7 +152,7 @@ return function(t, Shared)
 		end
 	end)
 
-	-- Fight styles (UNVERIFIED in Studio, added 2026-11-26).
+	-- Fight styles (added 2026-11-26, pass in Studio).
 	local BigLake = require(Shared.BigLakeFishData)
 
 	-- Watch a fish for 30 seconds with progress frozen, tracking what its style does.
@@ -225,5 +225,21 @@ return function(t, Shared)
 			end
 		end
 		t.eq(FishLogic.bitePattern({ bite = nil } :: any).style, "slam", "old data falls back")
+	end)
+
+	t.test("the slack cue waits for the first press, then shows after the idle grace", function()
+		local Config = require(Shared.Config)
+		local s = FightModel.new(FishData.byId.Bluegill.fight, false, 1)
+		for _ = 1, 90 do
+			FightModel.step(s, DT, false)
+		end
+		t.ok(not FightModel.slack(s), "quiet before the first press")
+		FightModel.press(s)
+		FightModel.step(s, DT, true)
+		t.ok(not FightModel.slack(s), "tight right after a press")
+		for _ = 1, math.ceil((Config.FIGHT_IDLE_GRACE + 0.2) / DT) do
+			FightModel.step(s, DT, false)
+		end
+		t.ok(FightModel.slack(s), "slack after the grace")
 	end)
 end
