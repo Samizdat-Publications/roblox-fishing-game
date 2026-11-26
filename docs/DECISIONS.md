@@ -73,3 +73,10 @@ Notable design and build calls, newest last.
 - **Stingers read the species' rarity tier and fall back to Common.** Main has no tiers yet; when PR #2's tiers merge, the right stinger plays without a code change.
 - **Uploads go through Open Cloud** from `C:\Users\stewa\Documents\Claude\Roblox` (approved by Stewart in Studio's MCP Permissions). Each sound was uploaded once; ids are recorded right away so nothing is uploaded twice.
 
+## 2026-11-26 (first models)
+
+- **Models sit over the gray box instead of replacing it.** The gray-box parts stay as invisible collision and cast-check shapes and the models never collide or block a raycast. Walking, casting, zones and prompts don't change at all, and a model can be swapped or removed without touching gameplay.
+- **Placement lives in code** (`WorldBuilder.dress` and its `ART` list), the models live in `ServerStorage.Art`. Rebuilding the lake keeps the art.
+- **Colours are converted outside Blender** (`art/scripts/roblox_colors.py`) so the Blender scripts and previews stay true to glTF; only the uploaded copy is changed.
+- **Only the bluegill hangs as a model so far.** Every other species keeps the old shape until its model is uploaded; adding one is an upload plus an insert into `ServerStorage.Art`, no code.
+

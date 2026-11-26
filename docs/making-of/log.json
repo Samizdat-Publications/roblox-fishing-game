@@ -2,7 +2,7 @@
   "project": "Fishing Game",
   "pitch": "A Roblox fishing game where real fishing knowledge matters: the right bait, spot and time of day decide what bites.",
   "status": "in-development",
-  "updated": "2026-11-26T11:30:00",
+  "updated": "2026-11-26T13:30:00",
   "entries": [
     {
       "id": "start",
@@ -329,6 +329,37 @@
         {
           "src": "stills/2026-11-26-sound-wait.jpg",
           "caption": "The quiet wait at dawn, where the bobber ticking does the work"
+        }
+      ]
+    },
+    {
+      "id": "models",
+      "tag": "Art",
+      "date": "2026-11-26",
+      "time": "13:30",
+      "commit": "",
+      "title": "Our first models in the game",
+      "summary": "The dock, the Bait and Tackle stand and the bluegill, built by script in Blender, are now in the game. The dock has planks, posts, bollards and two lanterns at the far end; the shop has a striped awning, bait tubs and a rod rack. A landed bluegill now hangs on the line as the real fish. The first import came in nearly black because Blender and Roblox store colours differently, so a small converter now fixes every model before upload. Everything still walks, casts and shops exactly as before, because the old gray blocks stay underneath as invisible floors and walls.",
+      "pairs": [
+        {
+          "before": "stills/2026-11-26-models-dock-before.jpg",
+          "after": "stills/2026-11-26-models-dock-after.jpg",
+          "caption": "The dock, gray box and model"
+        },
+        {
+          "before": "stills/2026-11-26-models-shop-before.jpg",
+          "after": "stills/2026-11-26-models-shop-after.jpg",
+          "caption": "Bait and Tackle, gray box and model"
+        }
+      ],
+      "stills": [
+        {
+          "src": "stills/2026-11-26-models-dock-end.jpg",
+          "caption": "Standing at the end of the new dock"
+        },
+        {
+          "src": "stills/2026-11-26-models-bluegill-on-line.jpg",
+          "caption": "A bluegill as it hangs on the line"
         }
       ]
     }
