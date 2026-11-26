@@ -1,6 +1,6 @@
 # Overnight summary, 2026-11-26 (second cloud run)
 
-Input for tomorrow's master plan. Everything here is on draft pull request #2 (branch `claude/overnight-duet-kpkf6f`), written in the cloud **without Studio**: it compiles, 131 tests pass outside Studio, and none of it has been played. `main` is unchanged; main's sound pass is merged into the branch.
+Input for tomorrow's master plan. Everything here is on draft pull request #2 (branch `claude/overnight-duet-kpkf6f`), written in the cloud **without Studio**: it compiles, 135 tests pass outside Studio, and none of it has been played. `main` is unchanged; main's sound pass is merged into the branch.
 
 ## What was built
 
@@ -33,19 +33,29 @@ Input for tomorrow's master plan. Everything here is on draft pull request #2 (b
 - **A read-through of the new server scripts** by a second reviewer found 12 real problems (boat heading fighting itself, boats not at the water line, seats grabbing anyone who bumped them, riders casting off, a full bag losing a team share, and more); all fixed.
 - **A compile check for every script** (`lune run tools/test/syntax.luau`), also on GitHub.
 
+### Second round (after the first report, same night)
+- **The full loop with boats in the economy check** (`python3 tools/econ/sim.py --boats`): the dinghy is a side step (a little better by day and at dusk, poor at night), blue water pays about a quarter more per person, and the dinghy arrives sooner than the boat plan aimed for (half a session after the Graphite Rod for a smart player). Prices left at 1,200 and 4,000 as Stewart decided; 1,800 would put the dinghy on the plan.
+- **Goals and frenzies in the economy check** (`python3 tools/econ/loop.py`): goals add about a quarter to a new player's session and under a tenth to an expert's; a frenzy adds 33 to 56 coins if you're there.
+- **More kinds of daily goals:** catch on a given bait, catch a good-sized fish of a species, catch 2 fish during a feeding frenzy, and Big Lake spots for boat owners. Hints only name spots the player can reach.
+- **Journal rumours get sharper:** ten catches after a tier's first rumour, it names a bait ("Old-timers swear by stinkbait").
+- **Frenzies are easier to spot:** gulls circle and dive over the boil (local, visual only), and the boil's position is shared so the gulls and the sound line up with it.
+- **20 new sounds hooked up** to play once uploaded (Big Lake and blue-water ambience, motors by speed, rain, thunder, gusts, frenzy boil, a monster foghorn, coins, goals, a line snap).
+- **A second independent read-through** found that a server-owned boat never gets the helm's controls from a VehicleSeat, so the client now sends them through a `BoatInput` remote (the most important thing to check in Studio). Also fixed: characters get their own physics back when they stand up, riders are put on the dock whenever a boat goes home or is removed, a boat that runs from its bobber loses the line, casting into blue water needs the full crew, no boat is built for a player who left while loading, and a save that couldn't be read is never written over.
+
 ## Test first in Studio
 1. `TestRunner.runAll`: everything passes.
 2. Play: the server output shows no errors at start (BigLake built, weather started, goals filled in).
 3. Fish a few minutes: the catch card shows the tier colour; set the player attribute `DebugSizeClass` to `monster` and land one (banner, server message, journal count).
 4. Open Goals and the journal (26 cards, rumours on the uncaught ones, it still scrolls on a phone).
-5. Buy the dinghy (give coins in Studio): it waits at slip 1; press E, drive with WASD, a thumbstick and a gamepad; drive at the buoy line; cast while stopped in the basin; tie up with F.
-6. Force weather from the command bar (`require(game.ServerScriptService.Server.WeatherService).force("Fog")`) and a frenzy (`require(game.ServerScriptService.Server.FrenzyService).start("Dock")`).
+5. Buy the dinghy (give coins in Studio): it waits at slip 1; press E, drive with WASD (test in a local server with a player, not only solo Play, since the controls now travel through a remote), a thumbstick and a gamepad; drive at the buoy line; cast while stopped in the basin; tie up with F.
+6. Watch a frenzy: gulls should circle and dive over the boil, and a frenzy goal should count catches made during it. Force weather from the command bar (`require(game.ServerScriptService.Server.WeatherService).force("Fog")`) and a frenzy (`require(game.ServerScriptService.Server.FrenzyService).start("Dock")`).
 7. Two-player local server: the Deep-V won't move alone, does with a rider, the fish finder shows for the navigator only, a blue-water catch lands in both journals.
 
 ## Open design questions for the master plan
 - **Godlike fish:** none yet. The direction says one or two hidden across the game. What are they, and how are they found? A good one for Liam.
 - **Is +15 percent for experts the right ceiling,** or should Legendaries pay less and stay a trophy-and-story reward?
-- **Daily goal rewards and variety:** three goals, flat 25, 60 and 120 coins. More kinds (catch at a new place, a personal best, a frenzy)? Streak bonuses?
+- **Daily goal rewards:** flat 25, 60 and 120 coins, eight kinds now. Streak bonuses? (Careful: streaks can feel like pressure for a kid.)
+- **Dinghy price:** 1,200 lands sooner than the boat plan aimed for; try 1,800 after playtests? And should something in dinghy water feed at night?
 - **Weather sharing:** each server has its own weather. Should every server share one forecast so a "storm tonight" is something friends plan around?
 - **Boats:** one boat at the slip per owner and four slips. Enough? Should a dinghy owner be able to borrow a friend's Deep-V seat as navigator (allowed now), and should the Deep-V helm need its owner?
 - **Frenzies:** only Common and Uncommon schooling fish. Should rarer fish ever school (white bass are already Uncommon)?

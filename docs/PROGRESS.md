@@ -158,7 +158,7 @@ Nothing below has been seen in Studio. All of it is on the branch `claude/overni
 
 ## Overnight 2, unverified (2026-11-26, Claude in the cloud)
 
-Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6f` in draft pull request #2, with main (sound pass included) merged in; `main` and the place are unchanged. Compiles (`lune run tools/test/syntax.luau`, 57 files) and 131 tests pass with Lune. Full list and open design questions: `docs/OVERNIGHT-SUMMARY-2026-11-26.md`.
+Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6f` in draft pull request #2, with main (sound pass included) merged in; `main` and the place are unchanged. Compiles (`lune run tools/test/syntax.luau`, 57 files) and 135 tests pass with Lune. Full list and open design questions: `docs/OVERNIGHT-SUMMARY-2026-11-26.md`.
 
 ### Built
 - **Rarity:** seven tiers on every fish with colours on the catch card and journal; trophy (2 percent) and monster (0.2 percent) catches rolled on the server at the hook, with harder fights, warnings, banners, a server message for monsters and journal counts. The sound pass's stingers now get real tiers.
@@ -169,12 +169,18 @@ Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6
 - **Economy:** expert +15 percent, dock kid unchanged, weather averages within 2 percent (`docs/ECONOMY.md`).
 - **Read-through fixes** after an independent review of the new server scripts: one AlignOrientation holds the boat's heading, boats sit at the water line, seats only by prompt, only the helm casts off, the storm check applies near the slip, no buying a boat while aboard, a mate with a full bag gets paid their share.
 
+### Second round (same night)
+- Economy check of the full loop with boats (`sim.py --boats`) and of goals and frenzies (`loop.py`); numbers in `docs/ECONOMY.md`. No prices changed.
+- Daily goals: eight kinds now (new: catch on a bait, a good-sized fish, fish during a frenzy, Big Lake spots for boat owners).
+- Journal rumours name a bait after ten more catches; gulls circle and dive over a frenzy.
+- Second read-through fixes: helm controls now reach the server through a `BoatInput` remote; riders always land on the dock; a boat that runs from its bobber loses the line; blue-water casts need the full crew; a save that couldn't be read is never overwritten.
+
 ### Test first in Studio
 1. Push `src/` into Studio and run `TestRunner.runAll`: everything passes.
 2. Play: no errors in the server output at start (BigLake built, weather started, goals filled).
 3. Catch card shows tier colours; set the player attribute `DebugSizeClass` to `monster` and land one (banner, server message, journal count, stinger).
 4. Goals panel and journal (26 cards, rumours, still scrolls on a phone).
-5. Give coins, buy the dinghy: it waits at slip 1; E to drive (keyboard, touch, gamepad); the buoy line turns it back; cast while stopped in the basin; F to tie up.
+5. Give coins, buy the dinghy: it waits at slip 1; E to drive (keyboard, touch, gamepad; try it in a local server too, the controls travel through a remote); the buoy line turns it back; cast while stopped in the basin; F to tie up.
 6. Command bar: `require(game.ServerScriptService.Server.WeatherService).force("Fog")` and `require(game.ServerScriptService.Server.FrenzyService).start("Dock")`.
 7. Two-player local server: the Deep-V won't move alone, moves with a rider, the fish finder shows only for the navigator, a blue-water catch lands in both journals.
 

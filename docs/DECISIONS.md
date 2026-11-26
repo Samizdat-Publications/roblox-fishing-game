@@ -87,3 +87,8 @@ Notable design and build calls, newest last.
 - **Team catches split coins evenly with the odd coin to whoever landed it,** and the fish finder shows each mark's tier colour and size, never its name.
 - **The 25 new sound prompts slot into the sound pass's `Shared/SoundIds.luau` with empty ids,** so `SoundFX` skips them until they're generated and uploaded; a trophy or monster plays its own stinger once uploaded and the tier stinger until then.
 - **A boat's heading is held by one AlignOrientation that the server turns each frame,** not an AngularVelocity next to it. Two constraints on the same axis fight each other; one target also rights the hull after a bump.
+- **Goals never send anyone to blue water,** because it needs a full crew; boat owners can get Big Lake basin and island goals. A frenzy goal counts catches made while the server's frenzy is on at that spot, decided on the server.
+- **Journal rumours sharpen with play:** ten catches after a tier's first rumour, the rumour also names the best bait. Knowledge stays earned, not bought.
+- **Gulls over a frenzy are client-only visuals,** placed at the server's boil (`workspace` attribute `FrenzyAt`), so every player sees them in the same place without the server moving parts.
+- **The driver's client sends the helm's controls (`BoatInput`), and the server still drives the boat.** A VehicleSeat only copies Throttle and Steer to the server when the driver owns the physics, and these boats stay server-owned so nobody can fly one. Inputs are clamped and go stale after half a second.
+- **A save that couldn't be read is never written over.** The player plays on fresh data that session with a message to rejoin; before, three failed reads gave fresh data that autosave then wrote over the real save.
