@@ -37,7 +37,7 @@ local Inventory = {}
 
 function Inventory.new(): Data
 	return {
-		v = 1,
+		v = 2,
 		coins = Config.START_COINS,
 		bait = { Worm = Config.START_WORMS },
 		lures = {},
@@ -64,6 +64,11 @@ function Inventory.reconcile(saved: any): Data
 		if saved.journal[k] == nil then
 			saved.journal[k] = v
 		end
+	end
+	-- v2: reel assist back on for everyone (early test saves had it switched off).
+	if (saved.v or 1) < 2 then
+		saved.assist = true
+		saved.v = 2
 	end
 	return saved
 end

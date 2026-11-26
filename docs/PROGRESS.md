@@ -50,6 +50,29 @@
 - The game is locked to landscape (fishing plays sideways).
 - Studio reset to the default viewport after testing.
 
+## 2026-11-25 (evening): fixes from Stewart's first playtest
+
+Stewart: "several occasions where no matter how hard I clicked it didn't move that much, also clicking certain parts of the screen cause you to lose the fish, make it more clear where you should be clicking."
+
+### Root causes (measured, not guessed)
+1. **Clicks did almost nothing.** The catch zone only rose while the button was held and had to build speed from zero. Measured: 2 s of quick clicks lifted it 0.00 to 0.04 of the bar; even half a second of holding lifted it only 0.19 to 0.25.
+2. **Some screen spots ate the clicks.** Clicking the left-side Journal button (or pressing J) opened the journal mid-fight, and while any panel was open the game ignored every fishing click, so the fish swam off. Reproduced in a playtest: with the journal open, clicks on open water and on the fight bar did not reach the game.
+3. **Reel assist was off on Stewart's save.** Claude switched it off during the M5 journal test and it saved, so Stewart played the harder mode.
+
+### Fixes
+- New fight model: holding drives the zone to a steady climb within a fraction of a second, every fresh click or tap starts it climbing at once, and the motion is computed exactly so frame rate doesn't matter. Heavy fish only slow the climb a little. Now: half a second of holding lifts the zone 0.52 to 0.59 of the bar; 2 s of quick clicks lifts it 0.29 to 0.42. Species still differ (catfish take almost twice as long to land as bluegill). Fights start a bit easier (progress starts at 40%).
+- From the bite to the end of the fight, a click or touch anywhere on screen reels, read straight from the input service so nothing under the cursor can swallow it. Space, F, gamepad R2, A and R1 reel too. Panels can't open, the side buttons hide, and the character stands still (so jump keys reel instead of jumping).
+- Clear prompts: a big "HOLD TO REEL" box beside the bar with how to do it on this device ("Hold the mouse anywhere, or Space", "Hold anywhere on the screen", "Hold R2 or A"); it turns green and says "REELING!" while you hold. A cue rides beside the catch zone: "HOLD" (fish above), "LET GO" (fish below), "Nice!" (fish inside). The zone gets a white outline while held; on touch the Fish button becomes a gold REEL button that turns green when pressed.
+- No stray recasts or cancels: after a fight the button must be let go and 0.8 s must pass before it can cast again; a press in the first 0.6 s after the bobber lands doesn't reel it back in; if the server never answers a hook or result, the client returns to idle after 4 s instead of getting stuck.
+- Saves from before this change get reel assist turned back on (data version 2).
+
+### Verified in playtests
+- Unit tests: 29 pass, including new ones: holding half a second lifts at least a third of the bar for every species, quick clicks lift at least a quarter, 15 vs 120 fps differ by under 0.04, a player who only clicks lands panfish, a player who reacts a quarter second late lands bluegill with assist, species still differ, old saves get assist back.
+- Mouse: four quick clicks on the spot where the Journal button sits lifted the zone 0.20 to 0.66; holding over the top bar took it to the top, with "REELING!", the outline and "Nice!" on screen. A Yellow Perch was landed; letting go of the button afterwards did not recast. Mid-fight J and B did nothing, Space reeled, the character had walk speed 0 and jump 0, and both came back (16 and 50) after a Bluegill was landed.
+- Gamepad codes: R2 hold lifted the zone 0.21 to 0.79 in half a second; A taps lifted it too.
+- Touch (phone simulator): a touch near the top of the screen, away from any button, lifted the zone 0.20 to the top in about 0.6 s; the button turned into a green REEL button; the jump button hid during the fight.
+- Stewart's save loaded with reel assist back on.
+
 ## What works now
 A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shore, wait for a bite, hook it, fight it on the bar, land it, sell at the Fish Buyer, buy bait at Bait and Tackle, and fill the journal. Eight species follow real habits (spot, time of day, bait), the day runs 16 minutes, and progress saves to Roblox.
 

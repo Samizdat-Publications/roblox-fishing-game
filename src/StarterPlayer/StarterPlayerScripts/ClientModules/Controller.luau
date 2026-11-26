@@ -2,8 +2,15 @@
 -- Client fishing flow and input. One "Fish" action on every device:
 --   hold and release to cast, press on a bite to hook, hold to reel during the fight,
 --   press while waiting to reel back in.
+--
+-- From the bite until the fight ends, input is read straight from UserInputService, so a
+-- click or touch ANYWHERE on screen (even over a panel or button) hooks and reels. Panels
+-- can't open, the character stands still (so Space and gamepad A reel too), and after the
+-- fight the button has to be let go and a short pause passes before it can cast again.
 local ContextActionService = game:GetService("ContextActionService")
+local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
 local Lighting = game:GetService("Lighting")
 local SoundService = game:GetService("SoundService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -18,11 +25,29 @@ local UI = require(script.Parent.UI)
 local Controller = {}
 
 local state = "Idle" -- Idle, Charging, Casting, Waiting, Bite, Hooking, Fighting, Resolving
+local stateSince = 0
 local chargeStart = 0
-local holding = false
 local fight: FightModel.State? = nil
 local snapshot: any = nil
 local castTimeout = 0
+local graceUntil = 0 -- after a fight: no new cast until this time...
+local needRelease = false -- ...and until every reel input is let go
+local heldInputs: { [InputObject]: boolean } = {}
+local autoHolding = false
+local savedMove: { walk: number, jumpPower: number, jumpHeight: number }? = nil
+
+-- Inputs that count as "reel" during a bite or fight, on every device.
+local REEL_TYPES = {
+	[Enum.UserInputType.MouseButton1] = true,
+	[Enum.UserInputType.Touch] = true,
+}
+local REEL_KEYS = {
+	[Enum.KeyCode.ButtonR2] = true,
+	[Enum.KeyCode.ButtonA] = true,
+	[Enum.KeyCode.ButtonR1] = true,
+	[Enum.KeyCode.Space] = true,
+	[Enum.KeyCode.F] = true,
+}
 
 local sounds: { [string]: Sound } = {}
 local SOUND_IDS = {
@@ -42,39 +67,103 @@ end
 
 local function setState(s: string)
 	state = s
+	stateSince = os.clock()
 end
 
--- Studio-only test hook: when the server sets DebugAutoFish on the player, the client presses
--- the Fish button on a bite and reels perfectly, through the same handler as real input.
+local function isReelInput(input: InputObject): boolean
+	return REEL_TYPES[input.UserInputType] == true or REEL_KEYS[input.KeyCode] == true
+end
+
+local function anyHeld(): boolean
+	return next(heldInputs) ~= nil
+end
+
+local function holding(): boolean
+	return anyHeld() or autoHolding
+end
+
+-- Studio-only test hook: when DebugAutoFish is set on the player, the client presses the
+-- button on a bite and reels perfectly, through the same paths as real input.
 local function autoFish(): boolean
-	return RunService:IsStudio() and game:GetService("Players").LocalPlayer:GetAttribute("DebugAutoFish") == true
+	return RunService:IsStudio() and Players.LocalPlayer:GetAttribute("DebugAutoFish") == true
+end
+
+-- Keep the character still while a fish is on, so jump and move keys can't interfere.
+local function freezeCharacter(on: boolean)
+	local char = Players.LocalPlayer.Character
+	local hum = char and char:FindFirstChildOfClass("Humanoid")
+	if not hum then
+		return
+	end
+	if on and not savedMove then
+		savedMove = { walk = hum.WalkSpeed, jumpPower = hum.JumpPower, jumpHeight = hum.JumpHeight }
+		hum.WalkSpeed = 0
+		hum.JumpPower = 0
+		hum.JumpHeight = 0
+	elseif not on and savedMove then
+		hum.WalkSpeed = savedMove.walk
+		hum.JumpPower = savedMove.jumpPower
+		hum.JumpHeight = savedMove.jumpHeight
+		savedMove = nil
+	end
 end
 
 local function idleStatus()
 	UI.status("Face the water. Hold " .. UI.inputName() .. " and let go to cast.")
 end
 
+local function endFishOn()
+	UI.setLocked(false)
+	freezeCharacter(false)
+	autoHolding = false
+end
+
 local function goIdle()
 	setState("Idle")
-	holding = false
 	fight = nil
+	endFishOn()
 	UI.bite(false)
 	UI.showPower(nil)
 	UI.showFight(nil)
 	idleStatus()
 end
 
+-- After a fight: ignore the button until it is released and a short pause has passed.
+local function goIdleAfterFight()
+	goIdle()
+	graceUntil = os.clock() + Config.FIGHT_GRACE
+	needRelease = anyHeld()
+end
+
 local function chargePower(): number
 	return math.clamp((os.clock() - chargeStart) / Config.CHARGE_TIME, 0, 1)
 end
 
-local function onFish(_name: string, inputState: Enum.UserInputState, _input: InputObject): Enum.ContextActionResult
+local function hook()
+	if state ~= "Bite" then
+		return
+	end
+	setState("Hooking")
+	UI.bite(false)
+	Remotes.event("Hook"):FireServer()
+end
+
+-- Casting and reeling back in (Idle, Charging, Waiting). Bite and fight input is handled by
+-- onReelInput below; this path only hooks as a fallback.
+local function onFish(_name: string, inputState: Enum.UserInputState, _input: InputObject?): Enum.ContextActionResult
+	local began = inputState == Enum.UserInputState.Begin
+	local ended = inputState == Enum.UserInputState.End or inputState == Enum.UserInputState.Cancel
+	if state == "Bite" and began then
+		hook()
+		return Enum.ContextActionResult.Sink
+	end
 	if UI.isPanelOpen() then
 		return Enum.ContextActionResult.Pass
 	end
-	local began = inputState == Enum.UserInputState.Begin
-	local ended = inputState == Enum.UserInputState.End or inputState == Enum.UserInputState.Cancel
 	if state == "Idle" and began then
+		if os.clock() < graceUntil or needRelease then
+			return Enum.ContextActionResult.Sink
+		end
 		setState("Charging")
 		chargeStart = os.clock()
 		UI.showPower(0)
@@ -88,21 +177,37 @@ local function onFish(_name: string, inputState: Enum.UserInputState, _input: In
 		Remotes.event("Cast"):FireServer(cam.CFrame.LookVector, power)
 		play("cast")
 		UI.status("Casting...")
-	elseif state == "Waiting" and began then
+	elseif state == "Waiting" and began and os.clock() - stateSince > 0.6 then
 		Remotes.event("CancelCast"):FireServer()
 		UI.status("Reeling in...")
-	elseif state == "Bite" and began then
-		setState("Hooking")
-		UI.bite(false)
-		Remotes.event("Hook"):FireServer()
-	elseif state == "Fighting" then
-		if began then
-			holding = true
-		elseif ended then
-			holding = false
-		end
 	end
 	return Enum.ContextActionResult.Sink
+end
+
+-- Global input: counts held reel inputs everywhere on screen, whatever is under the cursor.
+local function onReelInput(input: InputObject, began: boolean)
+	if not isReelInput(input) then
+		return
+	end
+	if began then
+		heldInputs[input] = true
+		if state == "Bite" then
+			hook()
+		elseif state == "Fighting" and fight then
+			FightModel.press(fight)
+		end
+	else
+		heldInputs[input] = nil
+		-- Touch and some mouse paths end with a new InputObject; drop stale entries of that type.
+		for other in heldInputs do
+			if other.UserInputType == input.UserInputType and other.KeyCode == input.KeyCode then
+				heldInputs[other] = nil
+			end
+		end
+		if not anyHeld() then
+			needRelease = false
+		end
+	end
 end
 
 local function onFishingEvent(kind: string, payload: any)
@@ -113,26 +218,35 @@ local function onFishingEvent(kind: string, payload: any)
 	elseif kind == "Bite" then
 		setState("Bite")
 		play("bite")
+		UI.closePanels()
+		UI.setLocked(true)
+		freezeCharacter(true)
 		UI.bite(true)
 		UI.status("Bite! Press " .. UI.inputName() .. " now!")
 	elseif kind == "Missed" then
 		setState("Waiting")
+		endFishOn()
 		UI.bite(false)
 		UI.toast(payload.text)
 		UI.status("Waiting for another bite...")
 	elseif kind == "Hooked" then
 		setState("Fighting")
-		holding = false
+		UI.closePanels()
+		UI.setLocked(true)
+		freezeCharacter(true)
 		fight = FightModel.new(payload.fight, payload.assist, payload.seed)
-		UI.status("Fish on! Keep it in the green.")
-		UI.showFight(fight, payload.note)
+		if anyHeld() then
+			FightModel.press(fight :: FightModel.State)
+		end
+		UI.status("") -- the reel prompt says what to do; keeps small screens clear
+		UI.showFight(fight, payload.note, holding())
 	elseif kind == "Caught" then
 		play("catch")
 		UI.catchCard(payload)
-		goIdle()
+		goIdleAfterFight()
 	elseif kind == "Escaped" then
 		UI.toast(payload.text)
-		goIdle()
+		goIdleAfterFight()
 	elseif kind == "Reset" then
 		goIdle()
 	elseif kind == "Hint" then
@@ -176,13 +290,23 @@ function Controller.start()
 	end
 
 	UI.init({
+		-- The touch Fish button. During a bite or fight the global input path already
+		-- handles the touch, so this only casts and reels in.
 		fishDown = function()
-			onFish("Fish", Enum.UserInputState.Begin, (nil :: any))
+			if state ~= "Fighting" then
+				onFish("Fish", Enum.UserInputState.Begin, nil)
+			end
 		end,
 		fishUp = function()
-			onFish("Fish", Enum.UserInputState.End, (nil :: any))
+			if state ~= "Fighting" then
+				onFish("Fish", Enum.UserInputState.End, nil)
+			end
 		end,
-		cycleBait = cycleBait,
+		cycleBait = function()
+			if not UI.isLocked() then
+				cycleBait()
+			end
+		end,
 		toggleJournal = function()
 			UI.toggleJournal()
 		end,
@@ -217,17 +341,28 @@ function Controller.start()
 		end
 	end)
 
-	-- Main action on mouse, F key and gamepad R2. Touch uses the big Fish button in the UI.
+	-- Casting on mouse, F key and gamepad R2. Touch uses the big Fish button in the UI.
 	ContextActionService:BindAction("Fish", onFish, false, Enum.UserInputType.MouseButton1, Enum.KeyCode.F, Enum.KeyCode.ButtonR2)
 
+	-- Reeling: every click, tap or reel button anywhere, even over the UI (gameProcessed ignored).
+	UserInputService.InputBegan:Connect(function(input)
+		onReelInput(input, true)
+	end)
+	UserInputService.InputEnded:Connect(function(input)
+		onReelInput(input, false)
+	end)
+	UserInputService.WindowFocusReleased:Connect(function()
+		table.clear(heldInputs)
+	end)
+
 	ContextActionService:BindAction("Journal", function(_, st)
-		if st == Enum.UserInputState.Begin then
+		if st == Enum.UserInputState.Begin and not UI.isLocked() then
 			UI.toggleJournal()
 		end
 		return Enum.ContextActionResult.Sink
 	end, false, Enum.KeyCode.J, Enum.KeyCode.ButtonY)
 	ContextActionService:BindAction("CycleBait", function(_, st)
-		if st == Enum.UserInputState.Begin and not UI.isPanelOpen() then
+		if st == Enum.UserInputState.Begin and not UI.isPanelOpen() and not UI.isLocked() then
 			cycleBait()
 		end
 		return Enum.ContextActionResult.Sink
@@ -244,7 +379,7 @@ function Controller.start()
 
 	-- The shop opens from its stand's prompt (the server hands out free worms if you're stuck).
 	game:GetService("ProximityPromptService").PromptTriggered:Connect(function(prompt)
-		if prompt.Name == "ShopPrompt" then
+		if prompt.Name == "ShopPrompt" and not UI.isLocked() then
 			UI.openShop()
 		end
 	end)
@@ -256,13 +391,20 @@ function Controller.start()
 		elseif state == "Casting" and os.clock() > castTimeout then
 			goIdle()
 		elseif state == "Bite" and autoFish() then
-			onFish("Fish", Enum.UserInputState.Begin, (nil :: any))
+			hook()
+		elseif (state == "Hooking" or state == "Resolving") and os.clock() - stateSince > 4 then
+			goIdle() -- the server never answered; don't leave the player stuck
 		elseif state == "Fighting" and fight then
 			if autoFish() then
-				holding = fight.zonePos < fight.fishPos
+				local want = fight.zonePos < fight.fishPos
+				if want and not autoHolding then
+					FightModel.press(fight)
+				end
+				autoHolding = want
 			end
-			local result = FightModel.step(fight, math.min(dt, 0.1), holding)
-			UI.showFight(fight)
+			local hold = holding()
+			local result = FightModel.step(fight, math.min(dt, 0.1), hold)
+			UI.showFight(fight, nil, hold)
 			if result then
 				setState("Resolving")
 				UI.showFight(nil)
@@ -272,15 +414,6 @@ function Controller.start()
 	end)
 
 	goIdle()
-end
-
--- Exposed for automated playtests.
-function Controller.debug(): any
-	return { state = state, holding = holding, fight = fight and { fishPos = fight.fishPos, zonePos = fight.zonePos, progress = fight.progress } }
-end
-
-function Controller.setHolding(on: boolean)
-	holding = on
 end
 
 return Controller

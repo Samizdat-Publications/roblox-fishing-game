@@ -18,10 +18,12 @@ Config.NOTHING_WAIT = 12 -- seconds before a "nothing is biting" hint
 Config.HOOK_WINDOW = 2.0 -- seconds to press after a bite
 
 -- Fight (bar minigame)
-Config.FIGHT_START = 0.35 -- starting progress
-Config.FIGHT_LIFT = 2.6 -- zone acceleration while holding
-Config.FIGHT_GRAVITY = 2.0 -- zone acceleration while not holding
-Config.FIGHT_DAMPING = 2.2
+Config.FIGHT_START = 0.4 -- starting progress
+Config.ZONE_UP_SPEED = 1.25 -- bar heights per second while holding
+Config.ZONE_DOWN_SPEED = 0.85 -- bar heights per second while not holding
+Config.ZONE_RESPONSE = 9 -- how quickly the zone reaches those speeds (per second)
+Config.PRESS_KICK = 0.7 -- instant upward speed from each fresh click or tap
+Config.FIGHT_GRACE = 0.8 -- seconds after a fight ends before the button can cast again
 Config.FIGHT_MAX_SECONDS = 90 -- server gives up after this
 Config.ASSIST_ZONE = 1.4 -- zone size multiplier with assist on
 Config.ASSIST_LOSS = 0.6 -- progress loss multiplier with assist on

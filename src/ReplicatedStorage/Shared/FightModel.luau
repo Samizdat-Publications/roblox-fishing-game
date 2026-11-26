@@ -1,6 +1,11 @@
 --!strict
 -- The reel-in minigame as a deterministic simulation. The client steps it every frame
 -- and draws it; tests step it with bots. Positions run 0 (bottom) to 1 (top).
+--
+-- Feel: the player's input always wins. Holding drives the catch zone up at a steady
+-- climb speed within a fraction of a second, and every fresh press (a click or tap) gives
+-- an instant kick upward, so clicking works as well as holding. Heavy fish only slow the
+-- climb a little; species differ mostly in how the fish moves and how fast you land it.
 local Shared = script.Parent
 local Config = require(Shared.Config)
 local FishData = require(Shared.FishData)
@@ -28,7 +33,7 @@ function FightModel.new(profile: FishData.FightProfile, assist: boolean, seed: n
 		rng = rng,
 		fishPos = 0.5,
 		fishTarget = 0.5,
-		zonePos = 0.3,
+		zonePos = 0.4,
 		zoneVel = 0,
 		zoneSize = profile.zone * (if assist then Config.ASSIST_ZONE else 1),
 		gain = profile.gain,
@@ -38,24 +43,36 @@ function FightModel.new(profile: FishData.FightProfile, assist: boolean, seed: n
 	}
 end
 
+local function climbFactor(p: FishData.FightProfile): number
+	return 1 - p.heavy * 0.2
+end
+
+-- A fresh press (mouse down, tap, trigger pull): the zone starts climbing at once.
+-- It sets a minimum speed rather than adding, so mashing can't fling the zone.
+function FightModel.press(s: State)
+	s.zoneVel = math.max(s.zoneVel, Config.PRESS_KICK * climbFactor(s.profile))
+end
+
 -- Advance by dt seconds. Returns "won", "lost" or nil while the fight goes on.
 function FightModel.step(s: State, dt: number, holding: boolean): string?
 	local p = s.profile
 	s.t += dt
 
-	-- Player's catch zone: lift while holding, fall otherwise. Heavy fish fight the lift.
-	local lift = Config.FIGHT_LIFT * (1 - p.heavy * 0.4)
-	local accel = if holding then lift else -Config.FIGHT_GRAVITY
-	s.zoneVel += accel * dt
-	s.zoneVel -= s.zoneVel * math.min(1, Config.FIGHT_DAMPING * dt)
-	s.zonePos += s.zoneVel * dt
+	-- Zone: velocity eases toward the target speed; position integrates that curve exactly,
+	-- so the result is the same at 15 or 120 frames per second.
+	local target = if holding then Config.ZONE_UP_SPEED * climbFactor(p) else -Config.ZONE_DOWN_SPEED
+	local k = Config.ZONE_RESPONSE
+	local decay = math.exp(-k * dt)
+	local v0 = s.zoneVel
+	s.zonePos += target * dt + (v0 - target) * (1 - decay) / k
+	s.zoneVel = target + (v0 - target) * decay
 	local half = s.zoneSize / 2
 	if s.zonePos < half then
 		s.zonePos = half
-		s.zoneVel = 0
+		s.zoneVel = math.max(s.zoneVel, 0)
 	elseif s.zonePos > 1 - half then
 		s.zonePos = 1 - half
-		s.zoneVel = 0
+		s.zoneVel = math.min(s.zoneVel, 0)
 	end
 
 	-- Fish: picks a new target now and then, sinkers prefer the bottom.
@@ -85,6 +102,11 @@ function FightModel.step(s: State, dt: number, holding: boolean): string?
 		return "lost"
 	end
 	return nil
+end
+
+-- True while the fish sits inside the catch zone (the UI turns the zone green).
+function FightModel.inside(s: State): boolean
+	return math.abs(s.fishPos - s.zonePos) <= s.zoneSize / 2
 end
 
 -- The fastest a fight can possibly be won. The server rejects wins that come sooner.

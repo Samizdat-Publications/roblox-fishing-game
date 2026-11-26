@@ -22,3 +22,11 @@ Notable design and build calls, newest last.
 - **Landscape only.** The game sets the screen to landscape; fishing reads better sideways.
 - **Pushing code without localhost.** After a Studio update the Assistant blocks localhost HTTP unless the user allow-lists it, so changes go in with `multi_edit` and `tools/sync/verify.py` checks Studio against `src/` by checksum.
 - **Pike made a little gentler** (zone 0.24, speed 1.5, loss 0.20) after the unit test showed a perfect player could still lose one.
+
+## 2026-11-25 (evening)
+
+- **Input wins the fight.** The catch zone now aims for a steady climb speed while held (1.25 bar heights a second) and falls at 0.85 when released, reaching those speeds in about a tenth of a second; each fresh click or tap sets an immediate climb. Clicking and holding both work. Species differ by how the fish moves, how long it takes to land, and a small slowdown for heavy fish (up to 12 percent).
+- **During a bite or fight, the whole screen is the button.** Input comes from UserInputService, ignoring whether the UI handled it, so no panel or button can steal a reel. Panels are locked and the character stands still for the duration.
+- **No accidental recast.** After a fight the button must be released and 0.8 s pass before the next cast.
+- **Data version 2** turns reel assist back on for older saves (a test had switched it off on Stewart's save).
+- **Pushing code:** `tools/sync/push_snippet.py` builds a paste-ready Luau snippet for whole files when the localhost sync is blocked; `multi_edit` for small edits; `tools/sync/verify.py` confirms the result.

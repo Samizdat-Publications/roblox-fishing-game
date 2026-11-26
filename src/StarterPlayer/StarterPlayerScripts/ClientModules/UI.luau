@@ -31,6 +31,7 @@ local refs: { [string]: any } = {}
 local callbacks: { [string]: (...any) -> () } = {}
 local lastState: any = nil
 local openPanel: string? = nil
+local locked = false -- true from a bite until the fight ends: no panels, no side buttons
 
 local function corner(parent: Instance, r: number?)
 	local c = Instance.new("UICorner")
@@ -214,6 +215,24 @@ function UI.init(cbs: { [string]: (...any) -> () })
 	refs.progFill = frame(prog, "Fill", UDim2.fromScale(1, 0.35), UDim2.fromScale(0, 0.65), C.gold, 0)
 	corner(refs.progFill, 6)
 	refs.fightHelp = label(fight, "Help", "Hold to reel in", UDim2.fromOffset(150, 26), UDim2.fromOffset(0, 288), 15, C.text)
+	local zoneStroke = Instance.new("UIStroke")
+	zoneStroke.Color = Color3.new(1, 1, 1)
+	zoneStroke.Thickness = 0
+	zoneStroke.Parent = refs.zone
+	refs.zoneStroke = zoneStroke
+	-- Cue that rides beside the catch zone and says what to do right now.
+	local cue = label(fight, "Cue", "", UDim2.fromOffset(150, 40), UDim2.new(1, 10, 0.5, -20), 26, C.gold, Enum.Font.GothamBlack)
+	cue.TextXAlignment = Enum.TextXAlignment.Left
+	cue.TextStrokeTransparency = 0.2
+	refs.cue = cue
+
+	-- Big reel prompt right of the fight bar: where and how to press, and feedback while holding.
+	local prompt = frame(gui, "ReelPrompt", UDim2.fromOffset(360, 80), UDim2.new(0.5, 70, 0.5, -40), C.panel, 0.15)
+	corner(prompt, 14)
+	prompt.Visible = false
+	refs.reelTitle = label(prompt, "Title", "HOLD TO REEL", UDim2.new(1, 0, 0, 40), UDim2.fromOffset(0, 4), 30, C.gold, Enum.Font.GothamBlack)
+	refs.reelSub = label(prompt, "Sub", "", UDim2.new(1, -16, 0, 30), UDim2.fromOffset(8, 44), 17, C.text)
+	refs.reelPrompt = prompt
 	refs.fight = fight
 
 	-- Toasts (top center, under the bar)
@@ -324,16 +343,32 @@ function UI.bite(on: boolean)
 	end
 end
 
-function UI.showFight(s: any?, note: string?)
+-- What to tell the player to press, for the device they're using.
+local function reelHowTo(): string
+	local name = UI.inputName()
+	if name == "R2" then
+		return "Hold R2 or A. Let go to drop."
+	elseif name == "click" then
+		return "Hold the mouse anywhere, or Space."
+	end
+	return "Hold anywhere on the screen."
+end
+
+function UI.showFight(s: any?, note: string?, holding: boolean?)
 	if not s then
 		refs.fight.Visible = false
-		refs.baitBtn.Visible = true
-		refs.journalBtn.Visible = true
+		refs.reelPrompt.Visible = false
+		if refs.touchFish then
+			refs.touchFish.Text = "Fish"
+			refs.touchFish.BackgroundColor3 = C.blue
+		end
 		return
 	end
+	if not refs.fight.Visible then
+		refs.reelSub.Text = reelHowTo()
+	end
 	refs.fight.Visible = true
-	refs.baitBtn.Visible = false
-	refs.journalBtn.Visible = false
+	refs.reelPrompt.Visible = true
 	if note then
 		refs.fightNote.Text = note
 	end
@@ -344,6 +379,34 @@ function UI.showFight(s: any?, note: string?)
 	refs.zone.BackgroundColor3 = if inside then C.green else C.red
 	refs.progFill.Size = UDim2.fromScale(1, s.progress)
 	refs.progFill.Position = UDim2.fromScale(0, 1 - s.progress)
+
+	-- Cue beside the zone (the track sits 46 px down and is 236 px tall).
+	local cueY = 46 + (1 - s.zonePos) * 236 - 20
+	refs.cue.Position = UDim2.new(1, 10, 0, cueY)
+	if inside then
+		refs.cue.Text = "Nice!"
+		refs.cue.TextColor3 = C.green
+	elseif s.fishPos > s.zonePos then
+		refs.cue.Text = "HOLD"
+		refs.cue.TextColor3 = C.gold
+	else
+		refs.cue.Text = "LET GO"
+		refs.cue.TextColor3 = C.blue
+	end
+
+	-- Feedback while holding: bright outline, prompt turns green, touch button lights up.
+	refs.zoneStroke.Thickness = if holding then 3 else 0
+	if holding then
+		refs.reelTitle.Text = "REELING!"
+		refs.reelTitle.TextColor3 = C.green
+	else
+		refs.reelTitle.Text = "HOLD TO REEL"
+		refs.reelTitle.TextColor3 = if (os.clock() % 0.8) < 0.4 then C.gold else C.text
+	end
+	if refs.touchFish then
+		refs.touchFish.Text = "REEL"
+		refs.touchFish.BackgroundColor3 = if holding then C.green else C.gold
+	end
 end
 
 function UI.toast(text: string, color: Color3?)
@@ -525,6 +588,20 @@ function UI.refreshJournal()
 	refs.journalSummary.Text = string.format("%d of %d species found. %d fish caught in all.", kinds, #FishData.list, st.totalCaught)
 end
 
+-- From a bite until the fight ends nothing else may take the player's clicks.
+function UI.setLocked(on: boolean)
+	locked = on
+	refs.baitBtn.Visible = not on
+	refs.journalBtn.Visible = not on
+	if on then
+		UI.closePanels()
+	end
+end
+
+function UI.isLocked(): boolean
+	return locked
+end
+
 function UI.isPanelOpen(): boolean
 	return openPanel ~= nil
 end
@@ -537,6 +614,9 @@ function UI.closePanels()
 end
 
 function UI.openShop()
+	if locked then
+		return
+	end
 	UI.closePanels()
 	openPanel = "Shop"
 	UI.refreshShop()
@@ -547,6 +627,9 @@ function UI.openShop()
 end
 
 function UI.toggleJournal()
+	if locked then
+		return
+	end
 	if openPanel == "Journal" then
 		UI.closePanels()
 		return
