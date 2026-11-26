@@ -1,4 +1,16 @@
 {
+  "AlbinoCatfish": {
+    "name": "AlbinoCatfish",
+    "studs": [
+      7.37,
+      1.74,
+      1.24
+    ],
+    "triangles": 964,
+    "parts": 16,
+    "replaces": "FishShadows blobs and the catch held on the line (FishingService.showCatch)",
+    "notes": "Built at the species' average length, 75.0 cm = 6.25 studs (1 stud = 12 cm). Scale by caught cm / average cm. Head along +X."
+  },
   "BaitShopStand": {
     "name": "BaitShopStand",
     "studs": [
@@ -212,6 +224,18 @@
     ],
     "triangles": 924,
     "parts": 11,
+    "replaces": "FishShadows blobs and the catch held on the line (FishingService.showCatch)",
+    "notes": "Built at the species' average length, 42.5 cm = 3.54 studs (1 stud = 12 cm). Scale by caught cm / average cm. Head along +X."
+  },
+  "GoldenTrout": {
+    "name": "GoldenTrout",
+    "studs": [
+      4.11,
+      1.23,
+      0.52
+    ],
+    "triangles": 916,
+    "parts": 12,
     "replaces": "FishShadows blobs and the catch held on the line (FishingService.showCatch)",
     "notes": "Built at the species' average length, 42.5 cm = 3.54 studs (1 stud = 12 cm). Scale by caught cm / average cm. Head along +X."
   },
@@ -502,6 +526,18 @@
     "parts": 11,
     "replaces": "FishShadows blobs and the catch held on the line (FishingService.showCatch)",
     "notes": "Built at the species' average length, 35.0 cm = 2.92 studs (1 stud = 12 cm). Scale by caught cm / average cm. Head along +X."
+  },
+  "TigerMuskie": {
+    "name": "TigerMuskie",
+    "studs": [
+      12.47,
+      2.12,
+      1.24
+    ],
+    "triangles": 908,
+    "parts": 11,
+    "replaces": "FishShadows blobs and the catch held on the line (FishingService.showCatch)",
+    "notes": "Built at the species' average length, 110.0 cm = 9.17 studs (1 stud = 12 cm). Scale by caught cm / average cm. Head along +X."
   },
   "Walleye": {
     "name": "Walleye",

@@ -114,6 +114,25 @@ local list: { any } = {
 		fightNote = "Eel-like twisting.",
 		bite = "pull",
 	},
+	{
+		id = "TigerMuskie",
+		tier = "Mythic",
+		name = "Tiger Muskie",
+		spots = { IslandPoint = 1 },
+		periods = { Day = 0.6, Dusk = 1 },
+		baits = { Spinner = 1 },
+		weather = { PreStorm = 1 },
+		rarity = 0.03,
+		minCm = 80,
+		maxCm = 140,
+		weightCoef = 8.3e-6,
+		basePrice = 200,
+		color = Color3.fromRGB(170, 160, 90),
+		fight = { zone = 0.22, speed = 1.6, dart = 1.1, range = 0.9, sink = 0.2, heavy = 0.6, gain = 0.14, loss = 0.18, style = "shaker" },
+		habit = "A striped cross of pike and muskie that hunts the island point in the feeding rush before a storm. Spinners.",
+		fightNote = "Savage head shakes.",
+		bite = "slam",
+	},
 }
 
 -- Spot names for the journal and hints (merge into FishLogic.SPOT_NAMES with the fish).

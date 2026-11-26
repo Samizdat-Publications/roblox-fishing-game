@@ -86,6 +86,8 @@ BITE_SLOWEST = CFG.get("BITE_SLOWEST", 40)  # slowest bite; weaker combos count 
 def bite_weights(spot, period, bait):
     out = []
     for s in FISH:
+        if s.get("weather"):  # Mythics only bite in their weather; the sim plays clear days
+            continue
         w = s["rarity"] * s["spots"].get(spot, 0) * s["periods"].get(period, 0) * s["baits"].get(bait, 0)
         if w > 0:
             out.append((s["id"], w))

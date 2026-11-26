@@ -35,6 +35,7 @@ export type Species = {
 	habit: string,
 	fightNote: string,
 	bite: BiteStyle?,
+	weather: { [string]: number }?, -- if set, bites only in these weathers (Weather.luau ids); Mythics use this
 	tier: string?, -- rarity tier, see Rarity.luau: "Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic", "Godlike"
 }
 
@@ -220,6 +221,25 @@ local list: { Species } = {
 		bite = "pull",
 	},
 	{
+		id = "AlbinoCatfish",
+		tier = "Mythic",
+		name = "Albino Catfish",
+		spots = { DeepHole = 1 },
+		periods = { Night = 1, Dusk = 0.4 },
+		baits = { Stinkbait = 1, Worm = 0.5 },
+		weather = { Storm = 1 },
+		rarity = 0.03,
+		minCm = 50,
+		maxCm = 100,
+		weightCoef = 1.25e-5,
+		basePrice = 120,
+		color = Color3.fromRGB(245, 225, 225),
+		fight = { zone = 0.23, speed = 0.7, dart = 0.7, range = 0.5, sink = 0.6, heavy = 0.6, gain = 0.14, loss = 0.13, style = "diver" },
+		habit = "A pale ghost of the deep hole that only feeds in the dark of a thunderstorm. Stinkbait.",
+		fightNote = "Heavy, rolling pulls.",
+		bite = "pull",
+	},
+	{
 		id = "RainbowTrout",
 		tier = "Rare",
 		name = "Rainbow Trout",
@@ -344,6 +364,25 @@ local list: { Species } = {
 		habit = "Wary and old, it leaves the undercut bank of the deep pool only after dark. Minnows.",
 		fightNote = "Long, powerful runs.",
 		bite = "slam",
+	},
+	{
+		id = "GoldenTrout",
+		tier = "Mythic",
+		name = "Golden Trout",
+		spots = { Riffle = 1, Pool = 0.5 },
+		periods = { Dawn = 1 },
+		baits = { Cricket = 1, Spinner = 0.6 },
+		weather = { Fog = 1 },
+		rarity = 0.03,
+		minCm = 30,
+		maxCm = 55,
+		weightCoef = 1.2e-5,
+		basePrice = 90,
+		color = Color3.fromRGB(240, 200, 60),
+		fight = { zone = 0.24, speed = 1.4, dart = 1.4, range = 0.6, sink = 0, heavy = 0.3, gain = 0.17, loss = 0.17, style = "jumper" },
+		habit = "A gleaming gold trout that shows itself in the riffle only on foggy mornings. Crickets.",
+		fightNote = "Flashing gold leaps.",
+		bite = "tap",
 	},
 }
 

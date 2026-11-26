@@ -72,7 +72,7 @@ return function(t, Shared)
 						here = true
 					end
 				end
-				if here then
+				if here and (Rarity.rank[s.tier or "Common"] or 1) <= 5 then -- Mythics and up are extra
 					count += 1
 					legend = legend or (Rarity.rank[s.tier or "Common"] or 1) >= 5
 				end

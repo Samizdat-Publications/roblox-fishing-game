@@ -46,6 +46,9 @@ function FishLogic.biteWeights(spot: string, period: string, baitId: string, now
 		local p = Weather.periodFor(now, s.id, period)
 		local w = s.rarity * (s.spots[spot] or 0) * (s.periods[p] or 0) * (s.baits[baitId] or 0)
 		w *= Weather.multiplier(now, s.id, spot, period)
+		if s.weather then -- Mythics: only in their weather
+			w *= s.weather[if now then now.weather else "Clear"] or 0
+		end
 		if w > 0 then
 			table.insert(out, { id = s.id, w = w })
 		end

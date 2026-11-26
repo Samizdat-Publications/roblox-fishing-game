@@ -129,4 +129,25 @@ return function(t, Shared)
 		t.ok(string.find(Weather.forecast({ day = 1, kind = "Clear" }, Weather.FULL), "Full moon") ~= nil)
 		t.ok(Weather.hint(now("ColdFront")) ~= nil and Weather.hint(now("Clear")) == nil)
 	end)
+
+	t.test("Mythics bite only in their weather, one per place", function()
+		local Rarity = require(Shared.Rarity)
+		t.eq(weightOf(FishLogic.biteWeights("DeepHole", "Night", "Stinkbait"), "AlbinoCatfish"), 0, "not on a clear night")
+		t.ok(weightOf(FishLogic.biteWeights("DeepHole", "Night", "Stinkbait", now("Storm")), "AlbinoCatfish") > 0, "in a storm")
+		t.ok(weightOf(FishLogic.biteWeights("Riffle", "Dawn", "Cricket", now("Fog")), "GoldenTrout") > 0, "golden trout in fog")
+		t.eq(weightOf(FishLogic.biteWeights("Riffle", "Dawn", "Cricket", now("Overcast")), "GoldenTrout"), 0, "not when it's just cloudy")
+		t.ok(weightOf(FishLogic.biteWeights("IslandPoint", "Dusk", "Spinner", now("PreStorm")), "TigerMuskie") > 0, "tiger muskie in the rush")
+		local mythics = 0
+		for _, s in FishData.list do
+			if s.tier == "Mythic" then
+				mythics += 1
+				t.ok(s.weather ~= nil, s.id .. " is tied to weather")
+				for w in s.weather :: any do
+					t.ok(Weather.byId[w] ~= nil, s.id .. " weather " .. w)
+				end
+			end
+		end
+		t.eq(mythics, 3, "one Mythic per place")
+		t.ok(Rarity.byId.Mythic ~= nil)
+	end)
 end

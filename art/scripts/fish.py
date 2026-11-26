@@ -308,6 +308,20 @@ def species(sid):
                 return (60, 50, 30)  # mottling
             return base
         return dict(cm=57.5, depth=0.15, width=0.14, fin=(110, 95, 55), paint=p, dorsal=(-0.05, -0.85, 0.2), fork=0.05, barbels=True, short_barbels=True)
+    # Mythics (tied to weather): pale, golden and striped versions of real fish.
+    if sid == "AlbinoCatfish":
+        base = lambda c, n, u, v: mix((250, 240, 240), (235, 205, 205), smooth(-0.5, 0.4, v))
+        return dict(cm=75, depth=0.2, width=0.2, fin=(240, 200, 200), paint=base, barbels=True, flat_head=0.4, adipose=True, fork=0.9, eye_iris=(200, 50, 60), barbel_color=(235, 190, 190))
+    if sid == "GoldenTrout":
+        base = lambda c, n, u, v: (235, 120, 50) if -0.18 < v < 0.14 else mix((250, 225, 120), (235, 180, 40), smooth(-0.6, 0.5, v))
+        return dict(cm=42.5, depth=0.25, width=0.15, fin=(240, 170, 60), paint=base, adipose=True, fork=0.3)
+    if sid == "TigerMuskie":
+        def p(c, n, u, v):
+            base = mix((230, 225, 190), (165, 150, 80), smooth(-0.6, 0.3, v))
+            if v > -0.5 and math.sin(u * 18 + math.sin(v * 6) * 1.2) > 0.25:
+                return (60, 55, 30)  # bold wavy tiger bars
+            return base
+        return dict(cm=110, depth=0.16, width=0.13, fin=(170, 120, 70), paint=p, snout=1.4, dorsal=(-0.45, -0.75, 0.6), flat_head=0.3)
     raise KeyError(sid)
 
 
@@ -335,7 +349,7 @@ def build_fish(sid):
         for k in range(n):
             sgn = 1 if k % 2 else -1
             ln = L * (0.06 if s.get("short_barbels") else 0.16)
-            cyl(L * 0.006 + 0.01, ln, (L * 0.5 - ln * 0.3, sgn * W * 0.25, -H * 0.1 - (k // 2) * H * 0.1), mat("barbel", (50, 50, 55)), rot=(0, 1.9, sgn * 0.6), verts=4)
+            cyl(L * 0.006 + 0.01, ln, (L * 0.5 - ln * 0.3, sgn * W * 0.25, -H * 0.1 - (k // 2) * H * 0.1), mat("barbel" + sid, s.get("barbel_color", (50, 50, 55))), rot=(0, 1.9, sgn * 0.6), verts=4)
     return L
 
 
@@ -344,7 +358,8 @@ if __name__ == "__main__":
     ids = [a for a in args if not a.startswith("-") and not a.endswith(".py")] or ["Bluegill", "Pumpkinseed", "YellowPerch", "BlackCrappie", "LargemouthBass", "ChannelCatfish",
                            "CommonCarp", "NorthernPike", "RainbowTrout", "SmallmouthBass", "Walleye",
                            "Bowfin", "LakeSturgeon", "CreekChub", "RockBass", "BrookTrout", "BrownTrout",
-                           "WhiteBass", "LakeTrout", "Muskellunge", "LakeWhitefish", "FreshwaterDrum", "Burbot"]
+                           "WhiteBass", "LakeTrout", "Muskellunge", "LakeWhitefish", "FreshwaterDrum", "Burbot",
+                           "AlbinoCatfish", "GoldenTrout", "TigerMuskie"]
     for sid in ids:
         L = build_fish(sid)
         finish(sid, replaces="FishShadows blobs and the catch held on the line (FishingService.showCatch)",
