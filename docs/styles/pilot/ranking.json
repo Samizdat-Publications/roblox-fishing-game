@@ -1,0 +1,45 @@
+{
+  "ranking": [
+    {
+      "file": "golden-lowpoly-dock-nano.jpg",
+      "score": 7.2,
+      "note": "Faithful camera and objects, authentic mobile-ready Roblox low-poly style, and very inviting."
+    },
+    {
+      "file": "storybook-dock-nano.jpg",
+      "score": 6.9,
+      "note": "Vibrant, kid-friendly look with faithful layout, though missing the foreground lamp and bobber."
+    },
+    {
+      "file": "golden-lowpoly-lake-nano.jpg",
+      "score": 6.6,
+      "note": "Cozy and clearly buildable in Roblox; slightly shifts the camera angle and player position."
+    },
+    {
+      "file": "golden-lowpoly-lake-pro.jpg",
+      "score": 6.3,
+      "note": "Accurate layout and realistic mobile low-poly look, though the bobber is missing and water glare is strong."
+    },
+    {
+      "file": "storybook-lake-pro.jpg",
+      "score": 5.8,
+      "note": "Preserves camera and UI with simple assets, but looks washed out and loses the colored stall roofs."
+    },
+    {
+      "file": "storybook-dock-pro.jpg",
+      "score": 5.4,
+      "note": "Matches the foreground and dock with feasible assets, but drops the Cedar Creek sign and feels hazy."
+    },
+    {
+      "file": "storybook-lake-nano.jpg",
+      "score": 4.7,
+      "note": "Charming visuals, but changes to a steeper top-down view and uses painterly outlines hard to run on mobile Roblox."
+    },
+    {
+      "file": "golden-lowpoly-dock-pro.jpg",
+      "score": 3.8,
+      "note": "Nice low-poly Roblox aesthetic, but flips the scene layout horizontally and breaks camera faithfulness."
+    }
+  ],
+  "summary": "The golden-lowpoly restyles best fit mobile Roblox development, with nano generally offering warmer visuals and better faithfulness than pro, which suffered from washed-out lighting or a flipped layout."
+}
