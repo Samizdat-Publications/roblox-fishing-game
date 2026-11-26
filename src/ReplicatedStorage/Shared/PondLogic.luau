@@ -5,6 +5,7 @@ local Shared = script.Parent
 local Config = require(Shared.Config)
 local FishData = require(Shared.FishData)
 local FishLogic = require(Shared.FishLogic)
+local Rarity = require(Shared.Rarity)
 
 export type PondFish = {
 	id: string,
@@ -30,7 +31,8 @@ function PondLogic.grow(f: PondFish, species: FishData.Species, hours: number)
 		local gap = species.maxCm - f.cm
 		f.cm = species.maxCm - gap * math.exp(-Config.POND_GROW_RATE * hours)
 	end
-	f.cm = math.min(math.floor(f.cm * 10 + 0.5) / 10, species.maxCm)
+	-- A trophy or monster can already be past maxCm: it never shrinks back down.
+	f.cm = math.min(math.floor(f.cm * 10 + 0.5) / 10, math.max(species.maxCm, f.cm))
 	local kg = species.weightCoef * f.cm * f.cm * f.cm
 	f.kg = math.max(0.01, math.floor(kg * 100 + 0.5) / 100)
 	f.price = FishLogic.priceFor(species, f.kg)
@@ -49,7 +51,9 @@ local function rollBreeding(pond: Pond, rng: Random, born: { string })
 		end
 	end
 	for _, s in FishData.list do -- fixed order keeps results repeatable for a seed
-		if (grown[s.id] or 0) >= 2 and #pond.fish < pond.capacity and rng:NextNumber() < Config.POND_BREED_CHANCE then
+		-- Legendary fish and rarer never breed in a home pond: they stay a story, not a farm.
+		local breeds = (Rarity.rank[Rarity.of(s)] or 1) < (Rarity.rank.Legendary :: number)
+		if breeds and (grown[s.id] or 0) >= 2 and #pond.fish < pond.capacity and rng:NextNumber() < Config.POND_BREED_CHANCE then
 			local young: PondFish = { id = s.id, name = s.name, cm = s.minCm, kg = 0, price = 0, bornHere = true }
 			PondLogic.grow(young, s, 0)
 			table.insert(pond.fish, young)

@@ -54,6 +54,22 @@ return function(t, Shared)
 		t.ok(young.bornHere, "young fish marked")
 	end)
 
+	t.test("a monster in the pond keeps its size (UNVERIFIED in Studio, 2026-11-26)", function()
+		local s = FishData.byId.LargemouthBass
+		local f = { id = s.id, name = s.name, cm = s.maxCm * 1.4, kg = 0, price = 0, bornHere = false }
+		PondLogic.grow(f, s, 5)
+		t.ok(math.abs(f.cm - s.maxCm * 1.4) < 0.11, "cm " .. f.cm)
+		t.ok(f.price > 0, "priced")
+	end)
+
+	t.test("Legendary fish never breed in the pond", function()
+		local s = FishData.byId.LakeSturgeon
+		local pond = { fish = { pondFish("LakeSturgeon", s.maxCm), pondFish("LakeSturgeon", s.maxCm) }, lastTick = 0, capacity = 6 }
+		local born = PondLogic.tick(pond, 8 * HOUR, Random.new(7))
+		t.eq(#born, 0)
+		t.eq(#pond.fish, 2)
+	end)
+
 	t.test("a single fish never breeds", function()
 		local pond = { fish = { pondFish("Bluegill", 24) }, lastTick = 0, capacity = 6 }
 		local born = PondLogic.tick(pond, 8 * HOUR, Random.new(7))

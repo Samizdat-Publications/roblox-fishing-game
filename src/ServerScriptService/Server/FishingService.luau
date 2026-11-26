@@ -24,6 +24,8 @@ local RodService = require(Server.RodService)
 local GoalService = require(Server.GoalService)
 local WeatherService = require(Server.WeatherService)
 local Weather = require(Shared.Weather)
+local Frenzy = require(Shared.Frenzy)
+local FrenzyService = require(Server.FrenzyService)
 local BoatService = require(Server.BoatService)
 local BoatRules = require(Shared.BoatRules)
 
@@ -171,6 +173,9 @@ end
 function scheduleBite(player: Player, s: Session)
 	local token = s.token
 	local delay = FishLogic.biteDelay(s.weights or {}, rng)
+	if delay and FrenzyService.at(s.spot) then
+		delay *= Frenzy.BITE_SPEED -- the school is boiling: bites come back to back
+	end
 	if not delay then
 		task.delay(Config.NOTHING_WAIT, function()
 			if s.token == token and s.phase == "Waiting" then
@@ -296,6 +301,9 @@ local function onCast(player: Player, dir: any, power: any)
 	s.period = FishLogic.periodFromClock(Lighting.ClockTime)
 	s.bait = baitId
 	s.weights = FishLogic.biteWeights(s.spot :: string, s.period :: string, baitId, WeatherService.now())
+	if FrenzyService.at(s.spot) then
+		s.weights = Frenzy.weights(s.weights :: { FishLogic.Weight }, s.spot :: string)
+	end
 	s.bobber = makeBobber(player, landing)
 	send(player, "Landed", {
 		pos = landing,
