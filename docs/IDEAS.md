@@ -16,3 +16,9 @@ Raw ideas to plan later. Not approved designs: the Fable 5.2 planning session (s
 ## Found while testing
 
 - 2026-11-26 Automated playtests wasted most of their time facing land. Fix in progress: a test shortcut to stand at each spot facing the water, plus a player cast assist that turns a near-miss toward the water.
+
+## From the overnight build (11/27/2026)
+
+- 2026-11-27 **The real rod in your hands.** The Willow, Fiberglass and Graphite rod models are uploaded (art/README.md) but the rod in hand is still the gray box. Weld the model along the invisible logical rod (it keeps the RodTip and RodFeel's bend), and hide the model while RodFeel draws the bending copy. Tried overnight but the meshes weren't loading in Studio that night, so it waits for a check by eye.
+- 2026-11-27 **Look critic's remaining asks (6/10):** a stronger, angled noon sun; trees in clumps on the hills instead of single trees; the stall signs as boards on the awnings (no clipping from behind); a rounder, stone-edged home pond; shorter grass where it hides the riffle from a low camera; Lighting.Technology (a Studio setting) to Future for crisper shadows, checked on a phone first.
+- 2026-11-27 **Buy line, not just rods.** Now that lines have pound ratings (L4d), a spool of heavier line at the bait shop could let a Willow rod handle bigger fish, a cheaper step before the next rod.
