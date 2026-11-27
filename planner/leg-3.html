@@ -1,0 +1,695 @@
+<title>Fishing Game Leg 3</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Figtree:wght@400;600;700&display=swap">
+<style>
+/* Layout: one reading column (same system as the last leg page), picture pairs up top, a to-scale map for the boats, a fishing line down the left of the milestones with a bobber at each stop. */
+:root {
+  --bg: #eaf1ef;
+  --surface: #f8fbfa;
+  --ink: #14302e;
+  --muted: #4a6562;
+  --line: #c2d2ce;
+  --soft: #dbe7e3;
+  --water: #1f6673;
+  --on-water: #f3fbfa;
+  --bobber: #cf3d29;
+  --amber: #a86a12;
+  --font-display: "Fredoka", "Trebuchet MS", "Segoe UI", sans-serif;
+  --font-body: "Figtree", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f2024; --surface: #162c31; --ink: #e3efec; --muted: #9bb5b0; --line: #2c474c;
+    --soft: #1e393e; --water: #77bdc8; --on-water: #0c1c20; --bobber: #f26b55; --amber: #e3ad52;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f2024; --surface: #162c31; --ink: #e3efec; --muted: #9bb5b0; --line: #2c474c;
+  --soft: #1e393e; --water: #77bdc8; --on-water: #0c1c20; --bobber: #f26b55; --amber: #e3ad52;
+  color-scheme: dark;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+.page {
+  max-width: 54rem;
+  margin: 0 auto;
+  padding-block: 2.5rem 4rem;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.15; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(2rem, 6vw, 3.1rem); letter-spacing: -0.01em; }
+h2 { font-size: 1.65rem; }
+h3 { font-size: 1.2rem; }
+p { margin: 0; max-width: 65ch; }
+ul, ol { margin: 0; padding-left: 1.15rem; display: flex; flex-direction: column; gap: 0.3rem; max-width: 68ch; }
+a { color: var(--water); text-underline-offset: 3px; }
+a:focus-visible { outline: 2px solid var(--bobber); outline-offset: 3px; border-radius: 3px; }
+.eyebrow { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--water); }
+.muted { color: var(--muted); }
+.stack { display: flex; flex-direction: column; gap: 1rem; }
+.stack-lg { display: flex; flex-direction: column; gap: 1.5rem; }
+
+/* header */
+.lede { font-size: 1.15rem; max-width: 60ch; }
+.decided { display: grid; grid-template-columns: repeat(auto-fit, minmax(11.5rem, 1fr)); gap: 0.75rem 1.5rem; border-top: 2px solid var(--ink); padding-top: 1rem; }
+.decided div { min-width: 0; }
+.decided dt { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.decided dd { margin: 0.15rem 0 0; }
+dl { margin: 0; }
+
+/* three week bar */
+.weeks { display: grid; grid-template-columns: 2fr 2fr 3fr 3fr 2fr 4fr 2fr 3fr; gap: 3px; }
+.weeks div { background: var(--soft); padding: 0.45rem 0.25rem; text-align: center; min-width: 0; border-radius: 3px; }
+.weeks div.core { background: var(--water); color: var(--on-water); }
+.weeks b { display: block; font-family: var(--font-display); font-weight: 600; font-size: 1rem; }
+.weeks span { display: block; font-size: 0.72rem; font-variant-numeric: tabular-nums; opacity: 0.85; }
+.key { display: flex; flex-wrap: wrap; gap: 0.4rem 1.25rem; font-size: 0.88rem; color: var(--muted); }
+.key i { display: inline-block; width: 0.8rem; height: 0.8rem; border-radius: 2px; margin-right: 0.4rem; vertical-align: -1px; background: var(--soft); }
+.key i.core { background: var(--water); }
+@media (max-width: 560px) { .weeks span { display: none; } }
+
+/* findings */
+.findings { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1.5rem; }
+.findings > div { min-width: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+
+/* milestones on the line */
+.stops { list-style: none; padding: 0; max-width: none; gap: 0; position: relative; }
+.stops::before { content: ""; position: absolute; left: 10px; top: 6px; bottom: 6px; width: 2px; background: var(--line); }
+.stop { position: relative; padding: 0 0 2.25rem 2.5rem; display: flex; flex-direction: column; gap: 0.75rem; }
+.stop:last-child { padding-bottom: 0; }
+.stop::before {
+  content: ""; position: absolute; left: 0; top: 3px; width: 22px; height: 22px; border-radius: 50%;
+  box-sizing: border-box; border: 2px solid var(--ink);
+  background: linear-gradient(to bottom, var(--bobber) 0 50%, var(--surface) 50% 100%);
+}
+.stop header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.9rem; }
+.code { font-family: var(--font-display); font-weight: 600; color: var(--bobber); }
+.dates { font-size: 0.9rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.gets { font-size: 1.05rem; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem 2rem; }
+.cols > div { min-width: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.label { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
+.cols ul { font-size: 0.95rem; }
+.small { font-size: 0.93rem; }
+
+/* rarity chips */
+.tiers { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; font-size: 0.9rem; }
+.tiers span { display: inline-flex; align-items: center; gap: 0.4rem; }
+.tiers i { width: 0.85rem; height: 0.85rem; border-radius: 50%; border: 1px solid var(--ink); display: inline-block; }
+
+/* figures and tables */
+figure { margin: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+.scroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+.scroll svg { display: block; width: 100%; min-width: 640px; height: auto; }
+figcaption { font-size: 0.9rem; color: var(--muted); max-width: 65ch; }
+.dg { color: var(--ink); }
+.dg text { font-family: var(--font-body); font-size: 12.5px; fill: currentColor; stroke: none; }
+.dg .st { stroke: currentColor; fill: none; stroke-width: 1.5; }
+.dg .land { fill: var(--soft); stroke: none; }
+.dg .wood { fill: var(--soft); stroke: currentColor; stroke-width: 1.5; }
+.dg .acc { stroke: var(--bobber); fill: none; stroke-width: 3; }
+.dg .accfill { fill: var(--bobber); stroke: none; }
+.dg .amb { fill: var(--amber); fill-opacity: 0.3; stroke: var(--amber); stroke-width: 1.5; }
+.dg .ambring { stroke: var(--amber); fill: none; stroke-width: 2.5; }
+.dg .dash { stroke: currentColor; fill: none; stroke-width: 1.2; stroke-dasharray: 5 5; opacity: 0.75; }
+.dg .ink { fill: currentColor; stroke: none; }
+.dg .shade { fill: currentColor; fill-opacity: 0.34; stroke: none; }
+.dg .faint { fill: currentColor; fill-opacity: 0.16; stroke: none; }
+.dg .none { fill: var(--surface); stroke: currentColor; stroke-width: 1.5; }
+
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 34rem; font-size: 0.95rem; }
+th, td { text-align: left; vertical-align: top; padding: 0.55rem 0.9rem 0.55rem 0; border-bottom: 1px solid var(--line); }
+th { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); border-bottom: 2px solid var(--ink); }
+td:first-child { font-weight: 600; white-space: nowrap; }
+
+.grades { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 1rem 1.5rem; }
+.grades > div { min-width: 0; border-top: 3px solid var(--line); padding-top: 0.6rem; display: flex; flex-direction: column; gap: 0.25rem; }
+.grades > div.best { border-top-color: var(--bobber); }
+.grades b { font-family: var(--font-display); font-weight: 600; font-size: 1.1rem; }
+
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 2rem 2.5rem; }
+.two > div { min-width: 0; display: flex; flex-direction: column; gap: 0.75rem; }
+.note { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 1rem 1.15rem; }
+footer { border-top: 1px solid var(--line); padding-top: 1rem; font-size: 0.88rem; color: var(--muted); }
+footer p { max-width: none; overflow-wrap: anywhere; }
+
+/* leg 3 additions */
+.weeks.plan3 { grid-template-columns: 1fr 2fr 1fr 1fr 2fr 2fr 3fr 3fr 2fr 1fr; }
+.weeks div.wk { background: transparent; outline: 1.5px dashed var(--bobber); outline-offset: -1.5px; color: var(--ink); }
+.weeks.plan3 b { font-size: 0.95rem; }
+.key i.wk { background: transparent; outline: 1.5px dashed var(--bobber); outline-offset: -1.5px; }
+.pairs { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 1.25rem 1.5rem; }
+.pairs figure { min-width: 0; }
+.pairs img { display: block; width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--line); background: var(--soft); }
+.six { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 0.6rem 2.5rem; max-width: none; padding-left: 1.3rem; }
+.six li { min-width: 0; padding-left: 0.2rem; }
+.six li::marker { font-family: var(--font-display); font-weight: 600; color: var(--bobber); }
+.pal { display: flex; flex-wrap: wrap; gap: 0.35rem 0.9rem; font-size: 0.85rem; color: var(--muted); }
+.pal span { display: inline-flex; align-items: center; gap: 0.4rem; }
+.pal i { width: 1.05rem; height: 1.05rem; border-radius: 3px; border: 1px solid var(--ink); display: inline-block; }
+table.fleet { min-width: 46rem; }
+table.fleet th:first-child, table.fleet td:first-child { width: 7.5rem; }
+.stop.wkstop::before { background: var(--surface); border-style: dashed; border-color: var(--bobber); }
+.stop.wkstop .code { color: var(--water); }
+.dg .wat { fill: var(--water); fill-opacity: 0.2; stroke: var(--water); stroke-width: 1.5; }
+.dg .deep { fill: var(--water); fill-opacity: 0.45; stroke: var(--water); stroke-width: 1.5; }
+.dg .isl { fill: var(--surface); stroke: currentColor; stroke-width: 1.5; }
+.dg .lead { stroke: currentColor; fill: none; stroke-width: 1; opacity: 0.55; }
+.dg .route { stroke: var(--bobber); stroke-width: 2; opacity: 1; }
+.dg text.sub { font-size: 11.5px; opacity: 0.8; }
+.scroll svg.map { min-width: 680px; }
+</style>
+
+<div class="page">
+
+  <header class="stack-lg">
+    <div class="stack">
+      <p class="eyebrow">Fishing Game plan, 11/28/2026 to 12/15/2026</p>
+      <h1>The look and the boats</h1>
+      <p class="lede">First make the game stop looking like Roblox. Then give the boats somewhere worth going. Eight steps, two weekends with Liam in the middle, built overnight by Opus with Fable ruling on every picture.</p>
+    </div>
+    <dl class="decided">
+      <div><dt>What leads</dt><dd>Visuals first, then vehicles.</dd></div>
+      <div><dt>Frame rate</dt><dd>60 on Stewart's PC, 30 on his phone.</dd></div>
+      <div><dt>Boats</dt><dd>Each works with one player and better with two.</dd></div>
+      <div><dt>Spending</dt><dd>No Robux. Tools keep running as now.</dd></div>
+    </dl>
+    <div class="stack">
+      <div class="weeks plan3" role="img" aria-label="Order of the leg: N0 one day, N1 two days, N2 one day, N3 one day, N4 two days, a weekend with Liam, N5 three days, N6 three days, a weekend with Liam, N7 one day.">
+        <div class="core"><b>N0</b><span>11/28</span></div>
+        <div class="core"><b>N1</b><span>11/29</span></div>
+        <div class="core"><b>N2</b><span>12/01</span></div>
+        <div class="core"><b>N3</b><span>12/02</span></div>
+        <div class="core"><b>N4</b><span>12/03</span></div>
+        <div class="wk"><b>Liam</b><span>12/05</span></div>
+        <div class="core"><b>N5</b><span>12/07</span></div>
+        <div class="core"><b>N6</b><span>12/10</span></div>
+        <div class="wk"><b>Liam</b><span>12/12</span></div>
+        <div><b>N7</b><span>12/14</span></div>
+      </div>
+      <p class="key"><span><i class="core"></i>Does not slip</span><span><i></i>First to cut</span><span><i class="wk"></i>A weekend with Liam</span></p>
+      <p class="small muted">The last leg was planned for three weeks and was built in two nights, so read these dates as an order with two anchors.</p>
+    </div>
+  </header>
+
+  <section class="stack-lg">
+    <div class="stack">
+      <h2>Where the picture is today, and where it is going</h2>
+      <p>The look critic went from 3 to 7.2 out of 10 last leg, on light, water and layout alone. These are today's game and the mockups Stewart approved on 11/26/2026.</p>
+    </div>
+    <div class="pairs">
+      <figure>
+        <img src="leg-3/now-shore.jpg" alt="The home lake shore today: stock Roblox grass with white specks, a straight sand strip for a path, flat-coloured plastic rocks and trees." width="880" height="550">
+        <figcaption><strong>Today, the shore.</strong> Stock grass, a straight sand strip, plastic rocks, a gray-box post.</figcaption>
+      </figure>
+      <figure>
+        <img src="leg-3/target-lake.jpg" alt="Approved concept art of the same lake at golden hour: textured grass, a dirt path, sunlit water with pale shallows, dense trees." width="880" height="550">
+        <figcaption><strong>The target, golden hour.</strong> Concept art, not the game. Same simple shapes, real ground, real light.</figcaption>
+      </figure>
+      <figure>
+        <img src="leg-3/now-biglake.jpg" alt="The Big Lake today from a boat: turquoise water, orange cube buoys, bare green hills close behind them." width="880" height="550">
+        <figcaption><strong>Today, the Big Lake from a boat.</strong> The far shore is 22 seconds away. The buoys are orange cubes.</figcaption>
+      </figure>
+      <figure>
+        <img src="leg-3/target-dawn.jpg" alt="Approved concept art of the lake at dawn: mist on still water, a treeline to the water's edge, hills fading into haze." width="880" height="550">
+        <figcaption><strong>The target, dawn.</strong> Trees to the waterline, hills fading into haze.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="stack-lg">
+    <h2>What the review found</h2>
+    <div class="findings">
+      <div>
+        <h3>The lighting is on Roblox's retro setting</h3>
+        <p class="small">Roblox has two lighting styles. The game is on Soft, which Roblox's own reference describes as a flat, retro look. The other one, Realistic, can be switched on by script. That is the first thing to try.</p>
+      </div>
+      <div>
+        <h3>Nothing has a material of our own</h3>
+        <p class="small">848 of 1,163 parts are plain Plastic, the ground is stock grass and sand, and there is not one custom texture in the place. The style is simple shapes with real materials, and the materials half was never built.</p>
+      </div>
+      <div>
+        <h3>The ground can now be ours, area by area</h3>
+        <p class="small">Roblox terrain now has 62 slots for a game's own ground materials. Each island can have its own ground, and a season later is a repaint.</p>
+      </div>
+      <div>
+        <h3>One look for everyone</h3>
+        <p class="small">The server sets the light and water for all players at once. So the whole world has one water colour, and a phone gets the same extras as the PC. The look moves to each player's own screen.</p>
+      </div>
+      <div>
+        <h3>The Big Lake is small</h3>
+        <p class="small">A faster boat would cross the blue water in 6 seconds. Boats need distance and somewhere to arrive.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="stack-lg">
+    <div class="stack">
+      <p class="eyebrow">Part one</p>
+      <h2>The look: a toy-simple world shot with a real camera</h2>
+      <p>Shapes stay chunky and few. Materials, light, water and composition are true. Six rules hold in every area.</p>
+    </div>
+    <ol class="six">
+      <li><b>Real light.</b> The sun leads, shadows are long at dawn and golden hour, lanterns are few and warm. Night is moonlit navy, never black.</li>
+      <li><b>True materials.</b> Nothing you can see is Plastic. About 22 families of our own: planks, bark, canvas, rope, granite, fish skin.</li>
+      <li><b>Ground you could kneel on.</b> Meadow, forest floor, gravel paths, dry sand, and a dark wet band where water meets the bank.</li>
+      <li><b>Water with depth.</b> Pale over the shallows, dark over the deep, and different in each place.</li>
+      <li><b>A dense edge and a long view.</b> Trees to the waterline, then ridgelines in haze. Three layers in every shot.</li>
+      <li><b>Things made by hand.</b> Signs are painted boards. The screens are a field guide and a tackle box. Nothing floats.</li>
+    </ol>
+
+    <h3>Area by area</h3>
+    <div class="two">
+      <div>
+        <h3>Home lake</h3>
+        <p class="small">The pine lake at the end of the road. Warm and lived-in.</p>
+        <p class="pal"><span><i style="background:rgb(26,66,62)"></i>water</span><span><i style="background:rgb(104,122,62)"></i>meadow</span><span><i style="background:rgb(92,72,48)"></i>forest floor</span><span><i style="background:rgb(122,104,86)"></i>dock timber</span><span><i style="background:rgb(255,190,120)"></i>lantern</span></p>
+        <p class="small">New ground everywhere. The sand strip becomes a wandering gravel path. Stones, driftwood and a leaning birch at the waterline. Twice the trees on the far shore. Planks with nail heads, rope coils, a tin roof on the bait shack.</p>
+      </div>
+      <div>
+        <h3>Cedar Creek</h3>
+        <p class="small">The cold stream in the woods. Shaded and moving.</p>
+        <p class="pal"><span><i style="background:rgb(64,84,58)"></i>clear water</span><span><i style="background:rgb(78,104,52)"></i>moss</span><span><i style="background:rgb(70,78,84)"></i>wet slate</span><span><i style="background:rgb(110,70,50)"></i>cedar bark</span></p>
+        <p class="small">The critic reads it today as an open ditch in a meadow. The trees close over it, the light goes dappled, the rocks get moss, the riffle gets white water and you can see the pebbles.</p>
+      </div>
+      <div>
+        <h3>Big Lake</h3>
+        <p class="small">Big water. Scale, weather, a little awe.</p>
+        <p class="pal"><span><i style="background:rgb(40,70,74)"></i>basin</span><span><i style="background:rgb(16,38,66)"></i>blue water</span><span><i style="background:rgb(150,140,134)"></i>granite</span><span><i style="background:rgb(170,162,150)"></i>driftwood</span><span><i style="background:rgb(178,44,36)"></i>buoy</span></p>
+        <p class="small">Four times as long. Rocky headlands and wind-bent pines in place of green domes. Real buoys and a bell you hear before you see it. A marina. Far ridges so the lake seems to go on.</p>
+      </div>
+      <div>
+        <h3>The first island</h3>
+        <p class="small">The far rock. Clean, cold, windy.</p>
+        <p class="pal"><span><i style="background:rgb(176,142,132)"></i>pink granite</span><span><i style="background:rgb(150,160,120)"></i>lichen</span><span><i style="background:rgb(204,130,48)"></i>orange lichen</span><span><i style="background:rgb(52,84,66)"></i>juniper</span><span><i style="background:rgb(22,60,84)"></i>water</span></p>
+        <p class="small">Its own ground, its own small kit of models, its own water and haze, and one landmark you can read from far off: a single bent pine.</p>
+      </div>
+    </div>
+
+    <div class="two">
+      <div>
+        <h3>The screens: a field guide and a tackle box</h3>
+        <ul>
+          <li>Paper and ink for anything you read. Canvas, leather and brass for the shop.</li>
+          <li>The catch card becomes a field-guide plate: the fish on paper, a ruled length line, the weight on a hanging tag, the rarity as a stamped seal.</li>
+          <li>The clock becomes a small sun-and-moon dial. Coins are a brass coin.</li>
+          <li>The fight bar and cast ring keep their size and timing. Only the skin changes.</li>
+          <li>World signs become painted boards lit by a lantern. No labels in the sky.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Two versions of the look</h3>
+        <ul>
+          <li><strong>PC:</strong> Realistic lighting, lantern shadows, full trees, sun rays, moving grass.</li>
+          <li><strong>Phone:</strong> the same world with softer light, fewer far trees and fewer extras, chosen automatically.</li>
+          <li>A Graphics choice in the journal: Auto, High or Low.</li>
+        </ul>
+        <p class="small muted">Built now so seasons are cheap later: the ground goes through repaintable slots, leaf colours come from one table, and every tree's top is its own piece.</p>
+      </div>
+    </div>
+
+    <h3>How we will know it worked</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Check</th><th>Today</th><th>Target</th></tr></thead>
+        <tbody>
+          <tr><td>Look critic, home lake and creek</td><td>7.2</td><td>8.0</td></tr>
+          <tr><td>Look critic, Big Lake</td><td>Not scored yet (expect 5 to 6)</td><td>8.0</td></tr>
+          <tr><td>Look critic, boats and island</td><td>None yet</td><td>8.0</td></tr>
+          <tr><td>Screens critic</td><td>Not scored yet</td><td>7.5, and 8 for phone reading</td></tr>
+          <tr><td>Plastic parts you can see</td><td>848 parts in all</td><td>0</td></tr>
+          <tr><td>Materials of our own</td><td>0</td><td>20 or more</td></tr>
+          <tr><td>Labels floating in the world</td><td>Every sign</td><td>0</td></tr>
+          <tr><td>Triangles on screen</td><td>342,000</td><td>700,000 at most on PC, 350,000 on phone</td></tr>
+          <tr><td>Texture memory</td><td>60 MB</td><td>200 MB at most on PC, 130 on phone</td></tr>
+          <tr><td>Frame rate</td><td>Inside budget</td><td>60 on the PC, 30 on the phone</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note small">A score is the median of three critic runs on fixed camera shots, so before and after can be compared. When eyes and score disagree, eyes win: Fable over the critic, Stewart over both. If the look costs too much on a phone, it steps down in a set order, and the old fallback style (Cozy Diorama) is only ever used with Stewart's yes.</p>
+  </section>
+
+  <section class="stack-lg">
+    <div class="stack">
+      <p class="eyebrow">Part two</p>
+      <h2>The boats</h2>
+      <p>Every boat works with one player and is better with two. Every boat is a different way to fish, and every boat keeps a job after you buy the next one.</p>
+    </div>
+    <div class="tablewrap">
+      <table class="fleet">
+        <thead><tr><th></th><th>Cedar Canoe (new)</th><th>Inflatable Dinghy (in the game)</th><th>Deep-V (written, never played)</th></tr></thead>
+        <tbody>
+          <tr><td>Price</td><td>350 coins</td><td>1,200</td><td>4,000</td></tr>
+          <tr><td>Speed</td><td>7 studs a second alone, 11 with two paddling</td><td>12</td><td>26</td></tr>
+          <tr><td>Where it goes</td><td>Home lake, the basin, Lily Cove</td><td>Home lake and the basin</td><td>The Big Lake only, blue water included</td></tr>
+          <tr><td>Its own job</td><td>Quiet: wary fish bite better. The only boat into Lily Cove.</td><td>Quick and nimble. Small enough to beach on the lighthouse island.</td><td>The far island, trolling, the fish finder.</td></tr>
+          <tr><td>Alone</td><td>Paddle and fish</td><td>Drive and fish</td><td>Drive, troll with a speed lock, read the finder when stopped</td></tr>
+          <tr><td>With two</td><td>Faster, both fish, net each other's catch</td><td>One fishes while one holds the boat</td><td>One steers the troll line, one holds the rod; a live finder and marker buoys</td></tr>
+          <tr><td>The look</td><td>Cedar strip, ribs, cane seats</td><td>Orange rubber tubes, a small outboard</td><td>White hull, console, red and green running lights</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="two">
+      <div>
+        <h3>How a boat should feel</h3>
+        <ul>
+          <li>The bow lifts as it gets going and settles on plane. It leans into turns.</li>
+          <li>It bobs at rest, twice as much in blue water.</li>
+          <li>A V of foam behind, spray at the bow, a wake that fades.</li>
+          <li>The engine's pitch follows the throttle. A horn on H.</li>
+          <li>Running lights come on at dusk.</li>
+          <li>It can't tip, sink or run out of fuel. Left alone, it goes home.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Better with two</h3>
+        <ul>
+          <li><strong>Net.</strong> When someone next to you has a fish nearly in, you can net it. A miss costs nothing. It works on the dock too.</li>
+          <li><strong>Paddle.</strong> A second paddler takes the canoe from 7 to 11.</li>
+          <li><strong>Navigate.</strong> In the Deep-V the second seat reads the fish finder and drops marker buoys.</li>
+        </ul>
+        <p class="small">Coins are no longer split on a shared catch. The angler gets full price and the helper gets a 10 percent bonus on top.</p>
+      </div>
+    </div>
+
+    <figure>
+      <div class="scroll">
+        <svg class="dg map" viewBox="-20 0 820 700" role="img" aria-label="Map of the planned world, north at the top. The home lake is at the bottom with Cedar Creek to its west. A channel runs north to the basin. Past the buoy line the Big Lake opens out into blue water about four times as long as today, with a granite island far to the north. A dashed outline shows where the Big Lake ends today. A marina sits on the basin's south shore.">
+          <rect x="-20" y="0" width="820" height="700" class="land"/>
+          <!-- blue water -->
+          <rect x="135" y="40" width="450" height="436" rx="34" class="deep"/>
+          <!-- basin -->
+          <rect x="260" y="466" width="200" height="79" rx="16" class="wat"/>
+          <!-- channel -->
+          <rect x="352" y="540" width="16" height="40" class="wat"/>
+          <!-- home lake -->
+          <rect x="305" y="575" width="110" height="80" rx="15" class="wat"/>
+          <!-- creek -->
+          <rect x="237" y="580" width="12" height="72" rx="5" class="wat"/>
+          <!-- lily cove -->
+          <ellipse cx="254" cy="508" rx="12" ry="9" class="wat"/>
+          <!-- today's edge -->
+          <path d="M260 470 L260 395 L460 395 L460 470" class="dash"/>
+          <!-- buoy line -->
+          <line x1="262" y1="470" x2="458" y2="470" class="acc"/>
+          <!-- islands -->
+          <circle cx="410" cy="140" r="11" class="isl"/>
+          <circle cx="316" cy="497" r="6" class="isl"/>
+          <circle cx="285" cy="315" r="3.5" class="isl"/>
+          <circle cx="470" cy="255" r="3.5" class="isl"/>
+          <circle cx="330" cy="190" r="3.5" class="isl"/>
+          <!-- marina and dock -->
+          <rect x="386" y="533" width="5" height="12" class="ink"/>
+          <rect x="358" y="632" width="4" height="23" class="ink"/>
+          <!-- route -->
+          <path d="M389 532 C 400 480, 372 300, 406 152" class="dash route"/>
+          <!-- labels -->
+          <text x="360" y="28" text-anchor="middle">north: out of reach, ridges in haze</text>
+          <text x="424" y="132">the first island</text>
+          <text x="424" y="148" class="sub">five fish found only here</text>
+          <text x="250" y="258" text-anchor="middle">blue water</text>
+          <text x="250" y="274" text-anchor="middle" class="sub">Deep-V only: navy, swell, trolling</text>
+          <text x="406" y="330" class="sub">about 800 studs,</text>
+          <text x="406" y="345" class="sub">31 seconds at full speed</text>
+          <text x="600" y="399">today the lake ends here</text>
+          <line x1="596" y1="395" x2="464" y2="395" class="lead"/>
+          <text x="600" y="474">buoy line and bell</text>
+          <line x1="596" y1="470" x2="462" y2="470" class="lead"/>
+          <text x="600" y="512">the basin</text>
+          <text x="600" y="527" class="sub">canoe and dinghy water</text>
+          <line x1="596" y1="508" x2="462" y2="508" class="lead"/>
+          <text x="600" y="549">marina</text>
+          <line x1="596" y1="545" x2="394" y2="540" class="lead"/>
+          <text x="120" y="512" text-anchor="end">Lily Cove</text>
+          <text x="120" y="527" text-anchor="end" class="sub">paddle in, no motors</text>
+          <line x1="124" y1="508" x2="242" y2="508" class="lead"/>
+          <text x="120" y="484" text-anchor="end">lighthouse island</text>
+          <line x1="124" y1="481" x2="311" y2="494" class="lead"/>
+          <text x="120" y="620" text-anchor="end">Cedar Creek</text>
+          <line x1="124" y1="616" x2="236" y2="616" class="lead"/>
+          <text x="600" y="620">home lake and dock</text>
+          <line x1="596" y1="616" x2="417" y2="616" class="lead"/>
+          <text x="600" y="567">channel and footbridge</text>
+          <line x1="596" y1="563" x2="370" y2="560" class="lead"/>
+          <!-- scale -->
+          <line x1="40" y1="672" x2="140" y2="672" class="st"/>
+          <line x1="40" y1="667" x2="40" y2="677" class="st"/>
+          <line x1="140" y1="667" x2="140" y2="677" class="st"/>
+          <text x="90" y="662" text-anchor="middle" class="sub">200 studs</text>
+        </svg>
+      </div>
+      <figcaption>The planned map, to scale, north at the top. The dashed outline is where the Big Lake ends today. Crossing the red buoy line is something you feel: the water turns navy, the swell doubles and the wind comes up.</figcaption>
+    </figure>
+  </section>
+
+  <section class="stack-lg">
+    <div class="stack">
+      <h2>The eight steps</h2>
+      <p class="muted">The full checklists are in the plan file. These are the checks that matter most.</p>
+    </div>
+    <ol class="stops">
+
+      <li class="stop">
+        <header><span class="code">N0</span><h3>Steady ground and the proof corner</h3><span class="dates">11/28</span></header>
+        <p class="gets">Nothing new to play. One corner of the lake (the dock, both stands, a stretch of bank) built at full quality and measured, so the rest is built to a known cost.</p>
+        <div class="cols">
+          <div><span class="label">Done when a playtest shows</span>
+            <ul>
+              <li>Eight engine questions answered yes or no, each with a fallback ready.</li>
+              <li>A before and after sheet of the corner that Fable passes.</li>
+              <li>Frame numbers for the PC version and the phone version, and a budget written from them.</li>
+              <li>Nothing else changed: all tests pass, cast, bite, fight and sell.</li>
+            </ul>
+          </div>
+          <div><span class="label">Built by</span><p class="small">Opus runs Studio. Fable's modeler makes the first materials and the dock. Sonnet downloads, uploads and measures.</p>
+            <span class="label">Watch out for</span><p class="small">The new lighting may cost too much on a phone. That is why there are two versions and a set order for stepping down.</p>
+          </div>
+        </div>
+      </li>
+
+      <li class="stop">
+        <header><span class="code">N1</span><h3>The home lake, Real-ish</h3><span class="dates">11/29 to 11/30</span></header>
+        <p class="gets">The whole home lake with real wood, stone, ground and light. All 26 fish get a wet, scaled skin.</p>
+        <div class="cols">
+          <div><span class="label">Done when a playtest shows</span>
+            <ul>
+              <li>Look score 8.0 or better on the eight lake shots, and a pass from Fable.</li>
+              <li>No Plastic left at the home lake.</li>
+              <li>The bobber still reads at full reach in dawn fog and at night.</li>
+              <li>Every fishing spot still casts.</li>
+            </ul>
+          </div>
+          <div><span class="label">Built by</span><p class="small">Two Fable modelers on materials and hero models, Opus on the ground and the dressing.</p>
+            <span class="label">Watch out for</span><p class="small">Busy textures can hide the bobber, so every texture is softened and the bobber check is part of done.</p>
+          </div>
+        </div>
+      </li>
+
+      <li class="stop">
+        <header><span class="code">N2</span><h3>The handmade screens and painted signs</h3><span class="dates">12/01</span></header>
+        <p class="gets">A field-guide catch card, a tackle-box shop, a brass coin and a sun dial, and signs painted on boards.</p>
+        <div class="cols">
+          <div><span class="label">Done when a playtest shows</span>
+            <ul>
+              <li>Screens score 7.5 or better, and 8 for reading on the smallest phone.</li>
+              <li>The fight bar, cast ring and bait bench are the same size and timing as before.</li>
+              <li>With no labels in the sky, Liam walks to Sell Fish, Bait and Tackle and his pond without asking.</li>
+            </ul>
+          </div>
+          <div><span class="label">Built by</span><p class="small">Opus builds it from one style file. Fable makes the paper, canvas and brass and rules on the screens.</p>
+            <span class="label">Watch out for</span><p class="small">A restyle must not disturb a tuned minigame: skins only, sizes locked.</p>
+          </div>
+        </div>
+      </li>
+
+      <li class="stop">
+        <header><span class="code">N3</span><h3>Cedar Creek, the stream in the woods</h3><span class="dates">12/02</span></header>
+        <p class="gets">A shaded creek under cedars with mossy boulders, white water at the riffle and pebbles you can see.</p>
+        <div class="cols">
+          <div><span class="label">Done when a playtest shows</span>
+            <ul>
+              <li>Look score 8.0 or better on the four creek shots.</li>
+              <li>The riffle, the rocks and the pool still cast with every rod.</li>
+              <li>Walking from lake to creek, light and water change smoothly.</li>
+            </ul>
+          </div>
+          <div><span class="label">Built by</span><p class="small">Opus, with Fable's modeler on moss, ferns and roots.</p>
+            <span class="label">Watch out for</span><p class="small">Deep shade must not hide the bobber.</p>
+          </div>
+        </div>
+      </li>
+
+      <li class="stop">
+        <header><span class="code">N4</span><h3>The fleet</h3><span class="dates">12/03 to 12/04</span></header>
+        <p class="gets">A cedar canoe for two at 350 coins. A dinghy with a second seat. A boathouse with the boats for sale floating beside it. A horn. Netting each other's fish.</p>
+        <div class="cols">
+          <div><span class="label">Done when a playtest shows</span>
+            <ul>
+              <li>The canoe does 7 alone and 11 with two, and you can beach it on the island.</li>
+              <li>Paddling in quietly really does bring more wary fish (60 logged casts).</li>
+              <li>A netted fish lands, a missed net costs nothing.</li>
+              <li>A boat clip scores 7.5 or better for feel.</li>
+              <li>Coins still come at the planned pace.</li>
+            </ul>
+          </div>
+          <div><span class="label">Built by</span><p class="small">Two Opus builders, one on rules and one on feel. Fable's modeler builds the canoe and the boathouse.</p>
+            <span class="label">Watch out for</span><p class="small">Two real players can't be automated. Test dummies cover the rules, and the weekend with Liam covers the rest.</p>
+          </div>
+        </div>
+      </li>
+
+      <li class="stop wkstop">
+        <header><span class="code">Liam</span><h3>Weekend one</h3><span class="dates">12/05 to 12/06</span></header>
+        <p class="gets">Paddle the canoe together and net each other's fish. Try the gamepad and a phone. Confirm Liam's account so the two-player parts can be tested for real.</p>
+      </li>
+
+      <li class="stop">
+        <header><span class="code">N5</span><h3>Big water</h3><span class="dates">12/07 to 12/09</span></header>
+        <p class="gets">A Big Lake four times as long. Dark blue water with swell past a real buoy line. A marina. The Deep-V on sale, with trolling and a fish finder.</p>
+        <div class="cols">
+          <div><span class="label">Done when a playtest shows</span>
+            <ul>
+              <li>The Deep-V alone: bought, driven at 26, into blue water, a lake trout landed, home again.</li>
+              <li>A full-speed run with no stutter and no loading pause.</li>
+              <li>A spinner trolled at 4 studs a second gets strikes. At 10 it doesn't.</li>
+              <li>The dinghy is still turned back at the buoys. Only a canoe gets into Lily Cove.</li>
+              <li>Look score 7.5 or better on the six Big Lake shots.</li>
+            </ul>
+          </div>
+          <div><span class="label">Built by</span><p class="small">Opus rebuilds the lake and builds the Deep-V. Fable's modeler makes the boat, marina and buoys and rules on the look.</p>
+            <span class="label">Watch out for</span><p class="small">Open water can look empty. Islets, buoys, birds, haze and weather fill it.</p>
+          </div>
+        </div>
+      </li>
+
+      <li class="stop">
+        <header><span class="code">N6</span><h3>The first island</h3><span class="dates">12/10 to 12/12</span></header>
+        <p class="gets">A granite island far out, with five fish found nowhere else and a trout that bites only under the northern lights.</p>
+        <p class="tiers" aria-label="The island's fish by rarity">
+          <span><i style="background:#9aa3a3"></i>Cisco</span>
+          <span><i style="background:#3f9b52"></i>Kokanee</span>
+          <span><i style="background:#3b7fd9"></i>Arctic Grayling</span>
+          <span><i style="background:#8a4fc7"></i>Bull Trout</span>
+          <span><i style="background:#e0962b"></i>Inconnu</span>
+          <span><i style="background:#d9486e"></i>Aurora Trout</span>
+        </p>
+        <div class="cols">
+          <div><span class="label">Done when a playtest shows</span>
+            <ul>
+              <li>All five landed in their real conditions, and none of them anywhere else.</li>
+              <li>A forced aurora night: the sky lights up and an Aurora Trout is landed.</li>
+              <li>You can see the island from the buoy line, and the marina's lantern from the island.</li>
+              <li>Look score 8.0 or better on the four island shots.</li>
+            </ul>
+          </div>
+          <div><span class="label">Built by</span><p class="small">Two Fable modelers on the island and six fish, Opus on the rules and the sky.</p>
+            <span class="label">Watch out for</span><p class="small">New rare fish can make coins too easy. They are tuned in the money simulator before they go in.</p>
+          </div>
+        </div>
+      </li>
+
+      <li class="stop wkstop">
+        <header><span class="code">Liam</span><h3>Weekend two</h3><span class="dates">12/12 to 12/13</span></header>
+        <p class="gets">Run the Deep-V out to the island together. One reads the finder and calls the mark, one trolls it, one nets the other's fish.</p>
+      </li>
+
+      <li class="stop">
+        <header><span class="code">N7</span><h3>The trophy case</h3><span class="dates">12/14</span></header>
+        <p class="gets">The trophy wall becomes a glass case in a shed by the pond: twelve mounts, brass plaques with the date, a lantern at night. First thing to cut if the leg runs long.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section class="stack-lg">
+    <div class="stack">
+      <h2>What is in, what waits, and why</h2>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Idea</th><th>Call</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>Graphics</td><td>In, first</td><td>Stewart's first priority, and the biggest gain is unbuilt.</td></tr>
+          <tr><td>Vehicles</td><td>In</td><td>His second priority.</td></tr>
+          <tr><td>A bigger lake</td><td>In</td><td>Boats need distance to matter.</td></tr>
+          <tr><td>The two-person Deep-V</td><td>In</td><td>It is now a one-person boat that is better with two, so most of it can be proven before Liam's account is in.</td></tr>
+          <tr><td>Islands with their own fish</td><td>One, as the recipe</td><td>One done properly sets the pattern and the budget for the rest.</td></tr>
+          <tr><td>The trophy case</td><td>In last</td><td>Cheap once the materials exist. First to cut.</td></tr>
+          <tr><td>The ocean dock</td><td>Waits</td><td>A whole new place: saltwater fish, real waves, bigger boats. This leg builds what it will reuse.</td></tr>
+          <tr><td>Breeding genetics</td><td>Waits, next leg</td><td>It needs fish that can vary in look, which this leg makes possible. The colour morphs are a job for Liam.</td></tr>
+          <tr><td>Seasons</td><td>Wait</td><td>This leg makes them cheap. Autumn is first up next leg. Winter with ice fishing is a leg of its own.</td></tr>
+          <tr><td>The Godlike creature</td><td>Waits for Liam</td><td>The blue water, the storms and the Deep-V are its stage.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="stack-lg">
+    <h2>How it gets built without anyone watching</h2>
+    <div class="two">
+      <div>
+        <h3>Who does what</h3>
+        <ul>
+          <li><strong>Opus</strong> runs the whole build and drives Studio. It never rules on a look.</li>
+          <li><strong>Fable</strong> rules at every look gate, through an advisor, and makes the materials and hero models.</li>
+          <li><strong>Sonnet</strong> does downloads, uploads, pictures, tests and the money simulator.</li>
+          <li><strong>Gemini</strong> scores every picture, screen and clip.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>The rules of the run</h3>
+        <ul>
+          <li>It only stops for Stewart on five things: the fallback style, more spending, Liam's account, deleting saved data, publishing.</li>
+          <li>Every new system lands switched off and is switched on after its own playtest.</li>
+          <li>The place is saved before any rebuild of the world.</li>
+          <li>Coins: an expert earns no more than 15 percent over today, checked after the boats, the big water and the island.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="stack-lg">
+    <h2>Questions</h2>
+    <div class="two">
+      <div>
+        <h3>For Stewart</h3>
+        <p class="small muted">None of these block the start. The answer shown is used until you say otherwise.</p>
+        <ol>
+          <li>Free public-domain photo textures, credited in the project. <strong>Yes.</strong></li>
+          <li>The Deep-V goes on sale before you and Liam have tried its two-player extras. <strong>Yes.</strong></li>
+          <li>A cedar canoe at 350 coins as the first boat. <strong>Yes.</strong></li>
+          <li>No coin split on shared catches; the helper gets 10 percent. <strong>Yes.</strong></li>
+          <li>The Big Lake grows to about four times its length. <strong>Yes.</strong></li>
+          <li>Fable is called for look rulings and models during the Opus run. <strong>Yes.</strong></li>
+          <li>Read the frame counter on your PC and phone after N1 and after N6. Only you can.</li>
+        </ol>
+      </div>
+      <div>
+        <h3>For Liam, creative director</h3>
+        <ol>
+          <li>Name the island. And the game.</li>
+          <li>Pick six boat colours and the horn.</li>
+          <li>Which fish hide in Lily Cove?</li>
+          <li>What does the island's Legendary look like when it jumps?</li>
+          <li>Design the Godlike creature for the blue water: its name, its look, its legend.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>Plan file: C:\Users\stewa\Documents\Claude\Roblox\docs\superpowers\plans\2026-11-27-leg-3.md. Written 11/27/2026 by Fable 5.2 in a planning-only session. Nothing was built.</p>
+  </footer>
+
+</div>

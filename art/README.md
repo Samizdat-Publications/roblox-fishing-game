@@ -19,6 +19,8 @@ Unconfirmed: whether Studio shows the baked vertex colours exactly as in the pre
 
 ## House style: Real-ish (Stewart's pick, 2026-11-26)
 
+**Leg 3 (11/27/2026):** the full visual direction for Real-ish (the six signatures, the look kit, the palette per area, the checks and budgets) is in `docs/superpowers/plans/2026-11-27-leg-3.md`, section "Visual direction". Where it is more specific than this page, it wins.
+
 Chunky, simple shapes with realistic materials: wood grain on the dock, real grass, sand and stone, clear teal water, natural light. Stewart picked it from the six style options (PR #3, https://github.com/Samizdat-Publications/roblox-fishing-game/pull/3; voting page https://claude.ai/artifact/MJJUZdAHyNqWKE5TdgvX8d). It replaces the flat vertex-colour low-poly look decided earlier the same day. The models already in the game stay until they are re-dressed.
 
 - **Shapes stay simple.** Blender by script (`art/scripts/`) is still the main tool for props, environment, fish, rods and boats. Keep the chunky low-poly shapes: the realism comes from materials and light, not from polygon counts.
