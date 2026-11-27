@@ -533,6 +533,50 @@
       ]
     }
   },
+  "Bush1_lite_leaf": {
+    "name": "Bush1_lite_leaf",
+    "studs": [
+      5.02,
+      3.19,
+      3.68
+    ],
+    "triangles": 286,
+    "parts": 1,
+    "replaces": "Bush1 (the lighter twin: same box, pivot and bury)",
+    "notes": "Bank kit lite set, Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. The lighter twin of Bush1 (286 triangles for 864): the same plant with fewer faces, and the same box, pivot and bury (two corner specks pin the box), so it swaps in at the same CFrame. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/Bush1_lite_leaf.glb. Pivot at the bottom centre; the ground line is 0.13 studs above it, so place the pivot at ground (or water) height minus 0.13. It stands 3.1 studs above the ground line. On land at the feet of the treeline and between the trees.",
+    "model": "Bush1_lite",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.13,
+    "height_above_ground": 3.06,
+    "true_studs": [
+      5.02,
+      3.19,
+      3.68
+    ],
+    "model_triangles": 286,
+    "lite_of": "Bush1",
+    "full_model_triangles": 864,
+    "palette_seen_rgb": {
+      "bush": [
+        78,
+        108,
+        58
+      ],
+      "bush_sun": [
+        98,
+        126,
+        64
+      ],
+      "bush_deep": [
+        58,
+        84,
+        48
+      ]
+    }
+  },
   "Bush2_leaf": {
     "name": "Bush2_leaf",
     "studs": [
@@ -557,6 +601,50 @@
       3.65
     ],
     "model_triangles": 916,
+    "palette_seen_rgb": {
+      "bush": [
+        78,
+        108,
+        58
+      ],
+      "bush_sun": [
+        98,
+        126,
+        64
+      ],
+      "bush_deep": [
+        58,
+        84,
+        48
+      ]
+    }
+  },
+  "Bush2_lite_leaf": {
+    "name": "Bush2_lite_leaf",
+    "studs": [
+      5.53,
+      2.88,
+      3.65
+    ],
+    "triangles": 304,
+    "parts": 1,
+    "replaces": "Bush2 (the lighter twin: same box, pivot and bury)",
+    "notes": "Bank kit lite set, Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. The lighter twin of Bush2 (304 triangles for 916): the same plant with fewer faces, and the same box, pivot and bury (two corner specks pin the box), so it swaps in at the same CFrame. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/Bush2_lite_leaf.glb. Pivot at the bottom centre; the ground line is 0.17 studs above it, so place the pivot at ground (or water) height minus 0.17. It stands 2.7 studs above the ground line. On land, mixed with Bush1.",
+    "model": "Bush2_lite",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.17,
+    "height_above_ground": 2.71,
+    "true_studs": [
+      5.53,
+      2.88,
+      3.65
+    ],
+    "model_triangles": 304,
+    "lite_of": "Bush2",
+    "full_model_triangles": 916,
     "palette_seen_rgb": {
       "bush": [
         78,
@@ -809,6 +897,212 @@
       ]
     }
   },
+  "FarLeafy1_leaf": {
+    "name": "FarLeafy1_leaf",
+    "studs": [
+      10.08,
+      15.82,
+      7.85
+    ],
+    "triangles": 202,
+    "parts": 1,
+    "replaces": "LeafyTree where it is seen from far away",
+    "notes": "Bank kit lite set, Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. A far tree: one mesh, the trunk painted dark on it. For treelines seen from across the water; switch CastShadow off. The box is centred on the foot of the trunk (two corner specks). Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/FarLeafy1_leaf.glb. Pivot at the bottom centre; the ground line is 1.02 studs above it, so place the pivot at ground (or water) height minus 1.02. It stands 14.8 studs above the ground line. Distant treelines and far shores (about 60 studs and further), shadows off. Any turn, scale 0.85 to 1.2.",
+    "model": "FarLeafy1",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 1.02,
+    "height_above_ground": 14.8,
+    "true_studs": [
+      9.85,
+      15.82,
+      7.81
+    ],
+    "model_triangles": 202,
+    "lite_of": null,
+    "full_model_triangles": null,
+    "palette_seen_rgb": {
+      "leafy": [
+        92,
+        124,
+        62
+      ],
+      "leafy_sun": [
+        112,
+        142,
+        72
+      ],
+      "leafy_deep": [
+        68,
+        98,
+        52
+      ],
+      "leafy_trunk": [
+        82,
+        68,
+        56
+      ]
+    }
+  },
+  "FarLeafy2_leaf": {
+    "name": "FarLeafy2_leaf",
+    "studs": [
+      11.04,
+      13.46,
+      8.15
+    ],
+    "triangles": 202,
+    "parts": 1,
+    "replaces": "LeafyTree where it is seen from far away",
+    "notes": "Bank kit lite set, Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. A far tree: one mesh, the trunk painted dark on it. For treelines seen from across the water; switch CastShadow off. The box is centred on the foot of the trunk (two corner specks). Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/FarLeafy2_leaf.glb. Pivot at the bottom centre; the ground line is 1.04 studs above it, so place the pivot at ground (or water) height minus 1.04. It stands 12.4 studs above the ground line. Distant treelines and far shores, mixed with FarLeafy1. Lower and wider.",
+    "model": "FarLeafy2",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 1.04,
+    "height_above_ground": 12.42,
+    "true_studs": [
+      10.66,
+      13.46,
+      7.66
+    ],
+    "model_triangles": 202,
+    "lite_of": null,
+    "full_model_triangles": null,
+    "palette_seen_rgb": {
+      "leafy": [
+        92,
+        124,
+        62
+      ],
+      "leafy_sun": [
+        112,
+        142,
+        72
+      ],
+      "leafy_deep": [
+        68,
+        98,
+        52
+      ],
+      "leafy_trunk": [
+        82,
+        68,
+        56
+      ]
+    }
+  },
+  "FarPine1_leaf": {
+    "name": "FarPine1_leaf",
+    "studs": [
+      9.59,
+      25.31,
+      9.13
+    ],
+    "triangles": 158,
+    "parts": 1,
+    "replaces": "ShorePine1 in far treelines",
+    "notes": "Bank kit lite set, Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. A far tree: one mesh, the trunk painted dark on it. For treelines seen from across the water; switch CastShadow off. The box is centred on the foot of the trunk (two corner specks). Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/FarPine1_leaf.glb. Pivot at the bottom centre; the ground line is 1.01 studs above it, so place the pivot at ground (or water) height minus 1.01. It stands 24.3 studs above the ground line. Distant treelines only (about 60 studs and further), shadows off. A spire like ShorePine1. Any turn, scale 0.8 to 1.2.",
+    "model": "FarPine1",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 1.01,
+    "height_above_ground": 24.3,
+    "true_studs": [
+      9.13,
+      25.31,
+      8.47
+    ],
+    "model_triangles": 158,
+    "lite_of": null,
+    "full_model_triangles": null,
+    "palette_seen_rgb": {
+      "pine_needle": [
+        52,
+        84,
+        66
+      ],
+      "pine_needle_sun": [
+        60,
+        92,
+        58
+      ],
+      "pine_needle_deep": [
+        38,
+        62,
+        48
+      ],
+      "pine_bark": [
+        98,
+        80,
+        64
+      ],
+      "pine_bark_dark": [
+        76,
+        63,
+        52
+      ]
+    }
+  },
+  "FarPine2_leaf": {
+    "name": "FarPine2_leaf",
+    "studs": [
+      14.62,
+      20.68,
+      10.11
+    ],
+    "triangles": 158,
+    "parts": 1,
+    "replaces": "ShorePine2 in far treelines",
+    "notes": "Bank kit lite set, Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. A far tree: one mesh, the trunk painted dark on it. For treelines seen from across the water; switch CastShadow off. The box is centred on the foot of the trunk (two corner specks). Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/FarPine2_leaf.glb. Pivot at the bottom centre; the ground line is 1.05 studs above it, so place the pivot at ground (or water) height minus 1.05. It stands 19.6 studs above the ground line. Distant treelines only (about 60 studs and further), shadows off. Wind-shaped like ShorePine2; the long limbs point toward Roblox -X.",
+    "model": "FarPine2",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 1.05,
+    "height_above_ground": 19.63,
+    "true_studs": [
+      10.8,
+      20.68,
+      9.12
+    ],
+    "model_triangles": 158,
+    "lite_of": null,
+    "full_model_triangles": null,
+    "palette_seen_rgb": {
+      "pine_needle": [
+        52,
+        84,
+        66
+      ],
+      "pine_needle_sun": [
+        60,
+        92,
+        58
+      ],
+      "pine_needle_deep": [
+        38,
+        62,
+        48
+      ],
+      "pine_bark": [
+        98,
+        80,
+        64
+      ],
+      "pine_bark_dark": [
+        76,
+        63,
+        52
+      ]
+    }
+  },
   "Fern1_leaf": {
     "name": "Fern1_leaf",
     "studs": [
@@ -851,6 +1145,50 @@
       ]
     }
   },
+  "Fern1_lite_leaf": {
+    "name": "Fern1_lite_leaf",
+    "studs": [
+      3.14,
+      1.51,
+      3.52
+    ],
+    "triangles": 155,
+    "parts": 1,
+    "replaces": "Fern1 (the lighter twin: same box, pivot and bury)",
+    "notes": "Bank kit lite set, Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. The lighter twin of Fern1 (155 triangles for 492): the same plant with fewer faces, and the same box, pivot and bury (two corner specks pin the box), so it swaps in at the same CFrame. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/Fern1_lite_leaf.glb. Pivot at the bottom centre; the ground line is 0.2 studs above it, so place the pivot at ground (or water) height minus 0.2. It stands 1.1 studs above the ground line. On land under the trees and along the path, in groups of two to four.",
+    "model": "Fern1_lite",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.2,
+    "height_above_ground": 1.13,
+    "true_studs": [
+      3.14,
+      1.33,
+      3.52
+    ],
+    "model_triangles": 155,
+    "lite_of": "Fern1",
+    "full_model_triangles": 492,
+    "palette_seen_rgb": {
+      "fern": [
+        84,
+        118,
+        56
+      ],
+      "fern_tip": [
+        112,
+        140,
+        68
+      ],
+      "fern_deep": [
+        62,
+        90,
+        46
+      ]
+    }
+  },
   "Fern2_leaf": {
     "name": "Fern2_leaf",
     "studs": [
@@ -875,6 +1213,50 @@
       3.13
     ],
     "model_triangles": 372,
+    "palette_seen_rgb": {
+      "fern": [
+        84,
+        118,
+        56
+      ],
+      "fern_tip": [
+        112,
+        140,
+        68
+      ],
+      "fern_deep": [
+        62,
+        90,
+        46
+      ]
+    }
+  },
+  "Fern2_lite_leaf": {
+    "name": "Fern2_lite_leaf",
+    "studs": [
+      3.18,
+      1.73,
+      3.13
+    ],
+    "triangles": 137,
+    "parts": 1,
+    "replaces": "Fern2 (the lighter twin: same box, pivot and bury)",
+    "notes": "Bank kit lite set, Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. The lighter twin of Fern2 (137 triangles for 372): the same plant with fewer faces, and the same box, pivot and bury (two corner specks pin the box), so it swaps in at the same CFrame. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/Fern2_lite_leaf.glb. Pivot at the bottom centre; the ground line is 0.2 studs above it, so place the pivot at ground (or water) height minus 0.2. It stands 1.5 studs above the ground line. On land, mixed with Fern1.",
+    "model": "Fern2_lite",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.2,
+    "height_above_ground": 1.52,
+    "true_studs": [
+      3.18,
+      1.72,
+      3.13
+    ],
+    "model_triangles": 137,
+    "lite_of": "Fern2",
+    "full_model_triangles": 372,
     "palette_seen_rgb": {
       "fern": [
         84,
@@ -1358,6 +1740,65 @@
       ]
     }
   },
+  "ReedClump1_lite_leaf": {
+    "name": "ReedClump1_lite_leaf",
+    "studs": [
+      3.94,
+      7.34,
+      3.2
+    ],
+    "triangles": 410,
+    "parts": 1,
+    "replaces": "ReedClump1 (the lighter twin: same box, pivot and bury)",
+    "notes": "Bank kit lite set, Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. The lighter twin of ReedClump1 (410 triangles for 856): the same plant with fewer faces, and the same box, pivot and bury (two corner specks pin the box), so it swaps in at the same CFrame. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/ReedClump1_lite_leaf.glb. Pivot at the bottom centre; the ground line is 1.01 studs above it, so place the pivot at ground (or water) height minus 1.01. It stands 6.3 studs above the ground line. IN THE WATER: the shallows and the weed bed. The stems reach 1 stud under the surface.",
+    "model": "ReedClump1_lite",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 1.01,
+    "height_above_ground": 6.33,
+    "true_studs": [
+      3.66,
+      7.34,
+      3.19
+    ],
+    "model_triangles": 410,
+    "lite_of": "ReedClump1",
+    "full_model_triangles": 856,
+    "palette_seen_rgb": {
+      "reed": [
+        110,
+        120,
+        60
+      ],
+      "reed_tip": [
+        140,
+        130,
+        80
+      ],
+      "reed_base": [
+        84,
+        96,
+        52
+      ],
+      "rush": [
+        92,
+        110,
+        58
+      ],
+      "cattail_head": [
+        96,
+        64,
+        40
+      ],
+      "cattail_head_dark": [
+        70,
+        46,
+        30
+      ]
+    }
+  },
   "ReedClump2_leaf": {
     "name": "ReedClump2_leaf",
     "studs": [
@@ -1382,6 +1823,65 @@
       3.73
     ],
     "model_triangles": 928,
+    "palette_seen_rgb": {
+      "reed": [
+        110,
+        120,
+        60
+      ],
+      "reed_tip": [
+        140,
+        130,
+        80
+      ],
+      "reed_base": [
+        84,
+        96,
+        52
+      ],
+      "rush": [
+        92,
+        110,
+        58
+      ],
+      "cattail_head": [
+        96,
+        64,
+        40
+      ],
+      "cattail_head_dark": [
+        70,
+        46,
+        30
+      ]
+    }
+  },
+  "ReedClump2_lite_leaf": {
+    "name": "ReedClump2_lite_leaf",
+    "studs": [
+      3.76,
+      7.18,
+      3.73
+    ],
+    "triangles": 416,
+    "parts": 1,
+    "replaces": "ReedClump2 (the lighter twin: same box, pivot and bury)",
+    "notes": "Bank kit lite set, Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. The lighter twin of ReedClump2 (416 triangles for 928): the same plant with fewer faces, and the same box, pivot and bury (two corner specks pin the box), so it swaps in at the same CFrame. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/ReedClump2_lite_leaf.glb. Pivot at the bottom centre; the ground line is 1.01 studs above it, so place the pivot at ground (or water) height minus 1.01. It stands 6.2 studs above the ground line. IN THE WATER, mixed with ReedClump1; also right at the waterline.",
+    "model": "ReedClump2_lite",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 1.01,
+    "height_above_ground": 6.17,
+    "true_studs": [
+      3.49,
+      7.18,
+      3.71
+    ],
+    "model_triangles": 416,
+    "lite_of": "ReedClump2",
+    "full_model_triangles": 928,
     "palette_seen_rgb": {
       "reed": [
         110,
@@ -1625,6 +2125,94 @@
       10.37
     ],
     "model_triangles": 1288,
+    "palette_seen_rgb": {
+      "pine_needle": [
+        52,
+        84,
+        66
+      ],
+      "pine_needle_sun": [
+        60,
+        92,
+        58
+      ],
+      "pine_needle_deep": [
+        38,
+        62,
+        48
+      ]
+    }
+  },
+  "ShorePine2_lite_bark": {
+    "name": "ShorePine2_lite_bark",
+    "studs": [
+      15.11,
+      20.45,
+      10.93
+    ],
+    "triangles": 155,
+    "parts": 1,
+    "replaces": "ShorePine2 (the lighter twin: same box, pivot and bury)",
+    "notes": "Bank kit lite set, Layer B, bark family: MaterialVariant bark with its NEUTRAL colour map, normal and roughness. The lighter twin of ShorePine2 (697 triangles for 1288): the same plant with fewer faces, and the same box, pivot and bury (two corner specks pin the box), so it swaps in at the same CFrame. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/ShorePine2_lite_bark.glb. Pivot at the bottom centre; the ground line is 1.01 studs above it, so place the pivot at ground (or water) height minus 1.01. It stands 19.4 studs above the ground line. The treeline's front row and gaps: on land. The long limbs point toward Roblox -X.",
+    "model": "ShorePine2_lite",
+    "family": "bark",
+    "variant": "bark",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 1.01,
+    "height_above_ground": 19.4,
+    "true_studs": [
+      10.68,
+      20.41,
+      10.18
+    ],
+    "model_triangles": 697,
+    "lite_of": "ShorePine2",
+    "full_model_triangles": 1288,
+    "palette_seen_rgb": {
+      "pine_bark": [
+        98,
+        80,
+        64
+      ],
+      "pine_bark_dark": [
+        76,
+        63,
+        52
+      ],
+      "pine_bark_high": [
+        120,
+        92,
+        70
+      ]
+    }
+  },
+  "ShorePine2_lite_leaf": {
+    "name": "ShorePine2_lite_leaf",
+    "studs": [
+      15.11,
+      20.45,
+      10.93
+    ],
+    "triangles": 542,
+    "parts": 1,
+    "replaces": "ShorePine2 (the lighter twin: same box, pivot and bury)",
+    "notes": "Bank kit lite set, Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. The lighter twin of ShorePine2 (697 triangles for 1288): the same plant with fewer faces, and the same box, pivot and bury (two corner specks pin the box), so it swaps in at the same CFrame. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/ShorePine2_lite_leaf.glb. Pivot at the bottom centre; the ground line is 1.01 studs above it, so place the pivot at ground (or water) height minus 1.01. It stands 19.4 studs above the ground line. The treeline's front row and gaps: on land. The long limbs point toward Roblox -X.",
+    "model": "ShorePine2_lite",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 1.01,
+    "height_above_ground": 19.4,
+    "true_studs": [
+      10.68,
+      20.41,
+      10.18
+    ],
+    "model_triangles": 697,
+    "lite_of": "ShorePine2",
+    "full_model_triangles": 1288,
     "palette_seen_rgb": {
       "pine_needle": [
         52,

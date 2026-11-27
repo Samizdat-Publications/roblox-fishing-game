@@ -35,7 +35,7 @@ MaterialKit.FAMILIES = {
 	{ name = "Rope", base = Enum.Material.Fabric, color = 135935120374206, normal = 95650373015874, rough = 105660536950018, studs = 2 },
 	{ name = "Canvas", base = Enum.Material.Fabric, color = 118947593138172, normal = 86505477991598, rough = 124626230291622, studs = 3 },
 	{ name = "MeadowGrass", base = Enum.Material.Grass, color = 101241396464400, normal = 99613738695349, rough = 138017832448140, studs = 16, pattern = Enum.MaterialPattern.Organic },
-	{ name = "WetSand", base = Enum.Material.Sand, color = 135696601239441, normal = 138574749553165, rough = 96601916018034, studs = 16, pattern = Enum.MaterialPattern.Organic },
+	{ name = "WetSand", base = Enum.Material.Sand, color = 100073655363155, normal = 138574749553165, rough = 96601916018034, studs = 16, pattern = Enum.MaterialPattern.Organic },
 	{ name = "ShoreStone", base = Enum.Material.Slate, color = 89874330433856, normal = 111500464538293, rough = 80673120127218, studs = 8, pattern = Enum.MaterialPattern.Organic },
 	{ name = "ShoreStoneGround", base = Enum.Material.Rock, color = 77321670500551, normal = 111500464538293, rough = 80673120127218, studs = 12, pattern = Enum.MaterialPattern.Organic },
 	{ name = "FishSkin", base = Enum.Material.SmoothPlastic, color = 71877620575284, normal = 81839350043697, rough = 86528045576678, studs = 1 },
@@ -47,7 +47,7 @@ MaterialKit.FAMILIES = {
 	-- The mown lawns by the stands: the meadow maps on a LeafyGrass base, which grows no blades
 	-- (terrain Grass grows knee-high blades that hide the stand counters at eye height).
 	{ name = "MeadowLawn", base = Enum.Material.LeafyGrass, color = 101241396464400, normal = 99613738695349, rough = 138017832448140, studs = 16, pattern = Enum.MaterialPattern.Organic },
-	{ name = "ShoreSand", base = Enum.Material.Sand, color = 108907089517955, normal = 86859007204320, rough = 132693441658407, studs = 16, pattern = Enum.MaterialPattern.Organic },
+	{ name = "ShoreSand", base = Enum.Material.Sand, color = 89114552304847, normal = 86859007204320, rough = 132693441658407, studs = 16, pattern = Enum.MaterialPattern.Organic },
 	{ name = "DeepBed", base = Enum.Material.Basalt, color = 110490221392736, normal = 75840132113757, rough = 135764485636397, studs = 24, pattern = Enum.MaterialPattern.Organic },
 	{ name = "Bark", base = Enum.Material.Wood, color = 131285884539566, normal = 75468619984383, rough = 116447292242793, studs = 4 },
 	{ name = "LeafNeedle", base = Enum.Material.LeafyGrass, color = 77632184387333, normal = 106977982508439, rough = 101588155137944, studs = 8 },

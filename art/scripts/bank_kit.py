@@ -32,7 +32,22 @@ above the pivot: place the pivot at ground height minus bury. The two-mesh trees
 specks at opposite corners so both meshes share one box, and that box is centred on the foot
 of the trunk: both meshes go at the same CFrame and a turn spins the tree about its foot.
 
+The lite set (leg 3, N1 review 1): `--lite` builds lighter twins of the heavy ground cover and
+of ShorePine2, and the far trees. Nothing the full run writes is touched; every file is new.
+
+    Fern1_lite, Fern2_lite, Bush1_lite, Bush2_lite     leaf    about 150 and 300 triangles
+    ReedClump1_lite, ReedClump2_lite                   leaf    about 400
+    ShorePine2_lite                                    bark + leaf, about 700 in all
+    FarPine1 (a spire), FarPine2 (wind-shaped)         leaf only, about 150, trunk painted dark
+    FarLeafy1, FarLeafy2                               leaf only, about 200, a hint of trunk
+
+A lite twin is the same plant from the same random numbers with fewer faces, and it carries two
+corner specks at the full model's box, so its size, pivot and `bury` are the full model's: it
+swaps in at the same CFrame. The far trees are for treelines that cast no shadows.
+
     python art/scripts/bank_kit.py                 build, export, render, sheet
+    python art/scripts/bank_kit.py --lite          the lite set and art/previews/bank_kit_lite.png
+    python art/scripts/bank_kit.py --lite --no-render      lite models and manifest only
     python art/scripts/bank_kit.py --no-render     models and manifest only
     python art/scripts/bank_kit.py --compose-only  rebuild the sheet from the renders already made
     blender -b -P art/scripts/bank_kit.py -- --no-render       (the Blender half on its own)
@@ -40,7 +55,9 @@ of the trunk: both meshes go at the same CFrame and a turn spins the tree about 
 Writes art/models/<Name>_<family>.glb (linear colours, as Blender wants them),
 art/models/roblox/<Name>_<family>.glb (display colours, the copy to upload) and the sheet
 art/previews/bank_kit.png (plus bank_kit-lineup-*.png and bank_kit-bank-*.png). Scratch goes to
-artifacts/bank_kit/. Only this script's own entries in art/models/manifest.json are touched,
+artifacts/bank_kit/. With --lite the files are <Name>_lite_<family>.glb and Far*_leaf.glb (the
+family stays the last word of the name: BankDress reads it from there), the sheet is
+art/previews/bank_kit_lite.png, and its renders are artifacts/bank_kit/lite-*.png. Only this script's own entries in art/models/manifest.json are touched,
 and nothing in art/textures/ is written: the family maps are only read for the previews. A
 family whose maps are not there yet gets a stand-in map made in artifacts/bank_kit/standin/.
 """
@@ -131,6 +148,11 @@ PAL = {
     "stone_brown": (124, 110, 94),
     "stone_grey": (108, 108, 104),
     "stone_wet": (72, 70, 62),
+    # far broadleaf (between the pines' dark green and the birch's light green)
+    "leafy": (92, 124, 62),
+    "leafy_sun": (112, 142, 72),
+    "leafy_deep": (68, 98, 52),
+    "leafy_trunk": (82, 68, 56),
 }
 
 # name -> what it is for (the builders themselves are in the Blender half)
@@ -166,9 +188,43 @@ KIT = {
 }
 
 
+# The lite set: name -> the full model it stands in for (`of`), its triangle budget, its job.
+LITE = {
+    "Fern1_lite": {"kind": "fern", "of": "Fern1", "budget": 150, "where": KIT["Fern1"]["where"],
+                   "replaces": "Fern1 (the lighter twin: same box, pivot and bury)"},
+    "Fern2_lite": {"kind": "fern", "of": "Fern2", "budget": 150, "where": KIT["Fern2"]["where"],
+                   "replaces": "Fern2 (the lighter twin: same box, pivot and bury)"},
+    "Bush1_lite": {"kind": "bush", "of": "Bush1", "budget": 300, "where": KIT["Bush1"]["where"],
+                   "replaces": "Bush1 (the lighter twin: same box, pivot and bury)"},
+    "Bush2_lite": {"kind": "bush", "of": "Bush2", "budget": 300, "where": KIT["Bush2"]["where"],
+                   "replaces": "Bush2 (the lighter twin: same box, pivot and bury)"},
+    "ReedClump1_lite": {"kind": "reeds", "of": "ReedClump1", "budget": 400, "where": KIT["ReedClump1"]["where"],
+                        "replaces": "ReedClump1 (the lighter twin: same box, pivot and bury)"},
+    "ReedClump2_lite": {"kind": "reeds", "of": "ReedClump2", "budget": 400, "where": KIT["ReedClump2"]["where"],
+                        "replaces": "ReedClump2 (the lighter twin: same box, pivot and bury)"},
+    "ShorePine2_lite": {"kind": "pine", "of": "ShorePine2", "budget": 700, "where": KIT["ShorePine2"]["where"],
+                        "replaces": "ShorePine2 (the lighter twin: same box, pivot and bury)"},
+    "FarPine1": {"kind": "far pine", "of": None, "budget": 150,
+                 "where": "Distant treelines only (about 60 studs and further), shadows off. A spire like ShorePine1. Any turn, scale 0.8 to 1.2.",
+                 "replaces": "ShorePine1 in far treelines"},
+    "FarPine2": {"kind": "far pine", "of": None, "budget": 150,
+                 "where": "Distant treelines only (about 60 studs and further), shadows off. Wind-shaped like ShorePine2; the long limbs point toward Roblox -X.",
+                 "replaces": "ShorePine2 in far treelines"},
+    "FarLeafy1": {"kind": "far leafy", "of": None, "budget": 200,
+                  "where": "Distant treelines and far shores (about 60 studs and further), shadows off. Any turn, scale 0.85 to 1.2.",
+                  "replaces": "LeafyTree where it is seen from far away"},
+    "FarLeafy2": {"kind": "far leafy", "of": None, "budget": 200,
+                  "where": "Distant treelines and far shores, mixed with FarLeafy1. Lower and wider.",
+                  "replaces": "LeafyTree where it is seen from far away"},
+}
+LITE_SLACK = 1.08   # "about": how far over its budget a lite model may be
+
+
 def parse_args(argv):
     ap = argparse.ArgumentParser(description="Build the home lake bank kit (Layer B, one mesh per family).")
     ap.add_argument("--lift", type=float, default=1.25, help="how much lighter than the target the vertex colours are stored")
+    ap.add_argument("--lite", action="store_true",
+                    help="build the lite twins and the far trees (new files) and the sheet bank_kit_lite.png")
     ap.add_argument("--no-render", action="store_true", help="build and export only")
     ap.add_argument("--compose-only", action="store_true", help="rebuild the sheet from the renders already made")
     ap.add_argument("--check-faces", action="store_true",
@@ -324,11 +380,13 @@ def blender_main(argv):
         return T, N
 
     def tube(G, path, radii, sides=6, col=(128, 128, 128), cap0=None, cap1=None, ring_fn=None,
-             jag0=None, jag1=None, v0=0.0, u0=0.0, spin=0.0, smooth=True):
+             jag0=None, jag1=None, v0=0.0, u0=0.0, spin=0.0, smooth=True, point1=False):
         """A limb along `path`. Round the limb the UV runs out and back (mirrored), so there is
         no seam; V is the length in studs. `col` is a colour or fn(segment, side, mid, out).
-        cap0/cap1: None (open, for a tip or a hidden joint) or a dict for cap()."""
-        assert sides % 2 == 0, "even sides only: the mirrored UV needs it"
+        cap0/cap1: None (open, for a tip or a hidden joint) or a dict for cap().
+        An odd number of sides (the lite stems) wraps the UV once round instead, with a seam.
+        point1: the far end closes to a single point (triangles, no ring)."""
+        mirrored = sides % 2 == 0
         path = [Vector(p) for p in path]
         T, N = frames(path)
         n = len(path)
@@ -338,6 +396,11 @@ def blender_main(argv):
             arc.append(arc[-1] + (path[i] - path[i - 1]).length)
         rings, pos = [], []
         for i, (p, r) in enumerate(zip(path, radii)):
+            if point1 and i == n - 1:
+                tip = G.v(p)
+                rings.append([tip] * sides)
+                pos.append([p] * sides)
+                break
             B = T[i].cross(N[i])
             ring, ps = [], []
             for k in range(sides):
@@ -354,13 +417,17 @@ def blender_main(argv):
             pos.append(ps)
 
         def u(k):
-            return C / 2 - abs(k / sides * C - C / 2) + u0
+            return (C / 2 - abs(k / sides * C - C / 2) if mirrored else k / sides * C) + u0
 
         for i in range(n - 1):
             for k in range(sides):
                 k2 = (k + 1) % sides
-                idx = [rings[i][k], rings[i][k2], rings[i + 1][k2], rings[i + 1][k]]
-                uv = [(u(k), arc[i] + v0), (u(k + 1), arc[i] + v0), (u(k + 1), arc[i + 1] + v0), (u(k), arc[i + 1] + v0)]
+                if point1 and i == n - 2:
+                    idx = [rings[i][k], rings[i][k2], rings[i + 1][k]]
+                    uv = [(u(k), arc[i] + v0), (u(k + 1), arc[i] + v0), ((u(k) + u(k + 1)) / 2, arc[i + 1] + v0)]
+                else:
+                    idx = [rings[i][k], rings[i][k2], rings[i + 1][k2], rings[i + 1][k]]
+                    uv = [(u(k), arc[i] + v0), (u(k + 1), arc[i] + v0), (u(k + 1), arc[i + 1] + v0), (u(k), arc[i + 1] + v0)]
                 c = col
                 if callable(col):
                     mid = (pos[i][k] + pos[i][k2] + pos[i + 1][k2] + pos[i + 1][k]) / 4
@@ -390,12 +457,20 @@ def blender_main(argv):
                 G.flat([pts[k], pts[(k + 1) % n], c], col, inside)
 
     def blob(G, center, radii, col, subdiv=2, seed=0, jit=0.12, freq=1.3, rot=None, smooth=False,
-             floor=None, power=1.0, flat_top=None):
+             floor=None, power=1.0, flat_top=None, uv=None):
         """A lumpy ball: an icosphere pushed about by slow noise. `col` is fn(point, normal).
-        floor: cut it off flat at that height (and close it). power < 1 squares it up."""
+        floor: cut it off flat at that height (and close it). power < 1 squares it up.
+        uv = (round, up): start from a ball of rings instead (2 * round * (up - 1) triangles),
+        for the counts between an icosphere's 20 and 80; its rings are twisted so they do not
+        line up. The noise is the same field either way, so a seed gives the same lumps."""
         center = Vector(center)
         bm = bmesh.new()
-        bmesh.ops.create_icosphere(bm, subdivisions=subdiv, radius=1.0)
+        if uv:
+            bmesh.ops.create_uvsphere(bm, u_segments=uv[0], v_segments=uv[1], radius=1.0)
+            for v in bm.verts:
+                v.co = Matrix.Rotation(v.co.z * 2.2 * math.pi / uv[0] + seed, 3, "Z") @ v.co
+        else:
+            bmesh.ops.create_icosphere(bm, subdivisions=subdiv, radius=1.0)
         off = Vector((seed * 7.31 % 97, seed * 3.17 % 89, seed * 5.71 % 83))
         R = (rot.to_matrix() if isinstance(rot, Euler) else rot) if rot is not None else Matrix.Identity(3)
         for v in bm.verts:
@@ -407,6 +482,8 @@ def blender_main(argv):
             if flat_top is not None and p.z > radii[2] * flat_top:
                 p.z = radii[2] * flat_top + (p.z - radii[2] * flat_top) * 0.35
             v.co = center + R @ p
+        if uv:
+            bmesh.ops.triangulate(bm, faces=bm.faces[:])
         if floor is not None:
             geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
             res = bmesh.ops.bisect_plane(bm, geom=geom, plane_co=(0, 0, floor), plane_no=(0, 0, 1), clear_inner=True)
@@ -712,40 +789,58 @@ def blender_main(argv):
                      "leaf": ["pine_needle", "pine_needle_sun", "pine_needle_deep"]},
             "foot_centred": True}
 
-    def pine_wind():
+    def pine_wind(lite=False):
         """A wind-shaped shore pine, 19 studs: a bare bent trunk, a full crown and flat pads of
-        needles on a few long limbs, longest on the lee side (+X here)."""
+        needles on a few long limbs, longest on the lee side (+X here).
+        lite: the same tree from the same dice. The full-detail bark is still built (into a
+        spare, so the dice fall as they do for the full tree and every pad gets its own seed
+        and place), and the bark that is kept is a six-sided trunk on half the stations, three-
+        sided limbs and stubs; the pads are balls of 54 or 36 faces instead of 80."""
         rng = random.Random(407)
         bark, leaf = Geo(), Geo()
+        full_bark = Geo() if lite else bark
         n = 13
+        ctrl_r = [0.9, 0.7, 0.56, 0.43, 0.26, 0.07]
         path = spline([(0, 0, -1.0), (0.08, 0.0, 2.5), (0.5, 0.1, 7.0), (0.85, 0.0, 12.0), (1.0, -0.15, 16.0), (1.3, -0.2, 18.2)], n)
         col = pine_bark_col(rng, 18)
-        tube(bark, path, ramp([0.9, 0.7, 0.56, 0.43, 0.26, 0.07], n), 8, col, ring_fn=flare, cap0={"col": PAL["pine_bark_dark"]})
+        tube(full_bark, path, ramp(ctrl_r, n), 8, col, ring_fn=flare, cap0={"col": PAL["pine_bark_dark"]})
         at = path_at(path)
-        for z, az, length in ((3.8, 2.4, 1.2), (5.6, 5.6, 1.6), (6.9, 1.0, 1.1)):
-            stub(bark, rng, at(z), az, length, 0.12, col)
+        stubs = ((3.8, 2.4, 1.2), (5.6, 5.6, 1.6), (6.9, 1.0, 1.1))
+        for z, az, length in stubs:
+            stub(full_bark, rng, at(z), az, length, 0.12, col)
+        if lite:
+            col2 = pine_bark_col(random.Random(408), 18)
+            keep = (0, 1, 2, 4, 6, 8, 10, 12)   # the two lowest stations stay, so the root flare stays low
+            tube(bark, [path[i] for i in keep], [ramp(ctrl_r, n)[i] for i in keep], 6, col2, ring_fn=flare,
+                 cap0={"col": PAL["pine_bark_dark"]})
+            for z, az, length in stubs:
+                h = Vector((math.cos(az), math.sin(az), 0))
+                tube(bark, [at(z), at(z) + h * length - UP * 0.12 * length], [0.14, 0.05], 3, col2, point1=True, spin=0.6)
         rad = math.radians
         limbs = [(8.8, rad(12), 4.6, 0.5), (10.5, rad(170), 2.9, 0.6), (11.9, rad(-78), 3.7, 0.7), (13.2, rad(58), 3.6, 0.8),
                  (14.5, rad(205), 2.5, 0.8), (15.4, rad(-35), 2.9, 0.9)]
 
-        def pad(c, rx, ry, rz, az, tilt=0.0):
+        def pad(c, rx, ry, rz, az, tilt=0.0, small=False):
             fn = leaf_col(PAL["pine_needle_deep"], PAL["pine_needle"], PAL["pine_needle_sun"], c.z, rz, rng.uniform(0.95, 1.05))
-            blob(leaf, c, (rx, ry, rz), fn, 2, seed=rng.randrange(999), jit=0.22, freq=1.7, rot=Euler((0, tilt, az)), power=0.85)
+            blob(leaf, c, (rx, ry, rz), fn, 2, seed=rng.randrange(999), jit=0.22, freq=1.7, rot=Euler((0, tilt, az)), power=0.85,
+                 uv=((6, 4) if small else (9, 4)) if lite else None)
 
         for z, az, length, rise in limbs:
             p0 = at(z)
             h = Vector((math.cos(az), math.sin(az), 0))
             pts = spline([p0, p0 + h * length * 0.45 + UP * rise * 0.5, p0 + h * length * 0.8 + UP * rise * 1.0, p0 + h * length + UP * rise * 1.35], 4)
             r = 0.2 + 0.035 * length
-            tube(bark, pts, ramp([r, r * 0.7, 0.06], 4), 4, col, spin=0.5)
+            tube(full_bark, pts, ramp([r, r * 0.7, 0.06], 4), 4, col, spin=0.5)
+            if lite:
+                tube(bark, [pts[0], pts[2], pts[3]], [r, r * 0.6, 0.05], 3, col2, spin=0.5, point1=True)
             pad(pts[2] + h * length * 0.08 + UP * 0.45, length * 0.6, length * 0.46, 0.72, az, -0.08)
             if length > 3.6:
                 side = Vector((-h.y, h.x, 0)) * rng.choice((-1, 1))
-                pad(pts[1] + h * length * 0.15 + side * length * 0.3 + UP * 0.7, length * 0.36, length * 0.3, 0.58, az + 0.6)
+                pad(pts[1] + h * length * 0.15 + side * length * 0.3 + UP * 0.7, length * 0.36, length * 0.3, 0.58, az + 0.6, small=True)
         top = at(18.0)
         pad(top + Vector((0.4, 0.1, -1.3)), 2.9, 2.4, 1.05, 0.3)
         pad(top + Vector((-0.6, -0.5, -0.3)), 2.0, 1.7, 0.9, 1.2)
-        pad(top + Vector((0.5, 0.2, 0.6)), 1.25, 1.1, 0.85, 0.0)
+        pad(top + Vector((0.5, 0.2, 0.6)), 1.25, 1.1, 0.85, 0.0, small=True)
         return {"bark": bark, "leaf": leaf}, {
             "keys": {"bark": ["pine_bark", "pine_bark_dark", "pine_bark_high"],
                      "leaf": ["pine_needle", "pine_needle_sun", "pine_needle_deep"]},
@@ -753,9 +848,14 @@ def blender_main(argv):
 
     # ------------------------------------------------------------------ 4. undergrowth
     def frond(G, rng, az, length, e0, e1, width, stations=8, tone=1.0, pal=("fern_deep", "fern", "fern_tip"),
-              origin=None, teeth=True):
+              origin=None, teeth=True, point=False, like=None):
         """One arching frond (toothed for a fern, plain for a leafy spray): v runs along it.
-        It leaves `origin` at e0 degrees above level and ends at e1."""
+        It leaves `origin` at e0 degrees above level and ends at e1. point: the last stretch
+        closes to a single point (the lite fronds: three triangles instead of three quads).
+        like: the station count of the full frond this one stands in for; its few stretches
+        then take their slopes a little early, so it rises and reaches as far as the full one
+        (a coarse frond would otherwise cut under the arch and sit lower)."""
+        lead = stations / 2 - (stations - 1) * like / (2 * (like - 1)) if like else 0.0
         d = Vector((math.cos(az), math.sin(az), 0))
         side = Vector((-d.y, d.x, 0))
         p = Vector(origin) if origin is not None else d * 0.12 + UP * -0.2
@@ -763,7 +863,7 @@ def blender_main(argv):
         ds = length / (stations - 1)
         for i in range(stations):
             s = i / (stations - 1)
-            e = math.radians(e0 + (e1 - e0) * s ** 0.9)
+            e = math.radians(e0 + (e1 - e0) * (max(0.0, i - lead) / (stations - 1)) ** 0.9)
             if i:
                 p = p + (d * math.cos(e) + UP * math.sin(e)) * ds
             nrm = -d * math.sin(e) + UP * math.cos(e)
@@ -780,32 +880,46 @@ def blender_main(argv):
             c = shade(mix(PAL[pal[0]], PAL[pal[1]], s * 2.2) if s < 0.45 else mix(PAL[pal[1]], PAL[pal[2]], (s - 0.45) * 1.8), tone)
             wl, wl2 = (L[i] - Rr[i]).length / 2, (L[i + 1] - Rr[i + 1]).length / 2
             inside = (L[i] + Rr[i] + S[i] + L[i + 1] + Rr[i + 1] + S[i + 1]) / 6
+            if point and i == stations - 2:
+                tip = (L[i + 1] + Rr[i + 1]) / 2
+                G.flat([L[i], S[i], tip], c, inside, uvs=[(-wl, V[i]), (0, V[i]), (0, V[i + 1])])
+                G.flat([S[i], Rr[i], tip], shade(c, 0.94), inside, uvs=[(0, V[i]), (wl, V[i]), (0, V[i + 1])])
+                G.flat([L[i], tip, Rr[i]], shade(c, 0.7), inside, uvs=[(-wl, V[i]), (0, V[i + 1]), (wl, V[i])])
+                continue
             G.flat([L[i], S[i], S[i + 1], L[i + 1]], c, inside, uvs=[(-wl, V[i]), (0, V[i]), (0, V[i + 1]), (-wl2, V[i + 1])])
             G.flat([S[i], Rr[i], Rr[i + 1], S[i + 1]], shade(c, 0.94), inside, uvs=[(0, V[i]), (wl, V[i]), (wl2, V[i + 1]), (0, V[i + 1])])
             G.flat([L[i], L[i + 1], Rr[i + 1], Rr[i]], shade(c, 0.7), inside, uvs=[(-wl, V[i]), (-wl2, V[i + 1]), (wl2, V[i + 1]), (wl, V[i])])
-        G.flat([L[0], Rr[0], S[0]], PAL[pal[0]], (L[1] + Rr[1] + S[1]) / 3)
-        G.flat([L[-1], S[-1], Rr[-1]], PAL[pal[2]], (L[-2] + Rr[-2] + S[-2]) / 3)
+        if not point:   # a pointed (lite) frond has no tip to close, and its root is under the ground or in the bush's heart
+            G.flat([L[0], Rr[0], S[0]], PAL[pal[0]], (L[1] + Rr[1] + S[1]) / 3)
+            G.flat([L[-1], S[-1], Rr[-1]], PAL[pal[2]], (L[-2] + Rr[-2] + S[-2]) / 3)
 
-    def fern(variant):
+    def fern(variant, lite=False):
+        """lite: the same fronds (same directions, lengths and arch) on four stations instead of
+        eight, untoothed, closing to a point; the first fern keeps two of its three young fronds."""
         rng = random.Random(500 + variant)
         G = Geo()
         count = 9 if variant == 1 else 7
+        how = {"stations": 4, "teeth": False, "point": True, "like": 8} if lite else {}
+        wide = 1.05 if lite else 1.0
         a0 = rng.uniform(0, 6.28)
         for k in range(count):
             az = a0 + 2 * math.pi * k / count + rng.uniform(-0.3, 0.3)
             if variant == 1:   # a full arching clump, about 3 studs across and 1.5 high
-                frond(G, rng, az, rng.uniform(1.7, 2.1), rng.uniform(74, 84), rng.uniform(-22, 0), rng.uniform(0.36, 0.44),
-                      tone=rng.uniform(0.94, 1.05))
+                frond(G, rng, az, rng.uniform(1.7, 2.1), rng.uniform(74, 84), rng.uniform(-22, 0), rng.uniform(0.36, 0.44) * wide,
+                      tone=rng.uniform(0.94, 1.05), **how)
             else:              # a shuttlecock: taller and more upright, about 2.4 across and 2 high
-                frond(G, rng, az, rng.uniform(2.1, 2.5), rng.uniform(80, 86), rng.uniform(12, 34), rng.uniform(0.3, 0.38),
-                      tone=rng.uniform(0.94, 1.05))
-        for k in range(3 if variant == 1 else 2):   # young fronds standing in the middle
-            frond(G, rng, rng.uniform(0, 6.28), rng.uniform(1.2, 1.7), 88, 60, 0.24, stations=6, tone=1.06)
+                frond(G, rng, az, rng.uniform(2.1, 2.5), rng.uniform(80, 86), rng.uniform(12, 34), rng.uniform(0.3, 0.38) * wide,
+                      tone=rng.uniform(0.94, 1.05), **how)
+        young = 2 if lite else (3 if variant == 1 else 2)
+        for k in range(young):   # young fronds standing in the middle
+            frond(G, rng, rng.uniform(0, 6.28), rng.uniform(1.2, 1.7), 88, 60, 0.24 * wide, tone=1.06,
+                  **(dict(how, stations=3 if variant == 1 else 4, like=6) if lite else {"stations": 6}))
         return {"leaf": G}, {"keys": {"leaf": ["fern", "fern_tip", "fern_deep"]}}
 
-    def bush(variant):
+    def bush(variant, lite=False):
         """A dome of broad leaves over a dark heart: the heart is three lumps you only see between
-        the leaves, so the outline is a bush's and not a boulder's."""
+        the leaves, so the outline is a bush's and not a boulder's.
+        lite: the heart is three 20-face lumps and every leaf stays, wider, on three stations."""
         rng = random.Random(600 + variant)
         G = Geo()
         if variant == 1:   # rounded, about 4 studs across and 3 high
@@ -814,9 +928,10 @@ def blender_main(argv):
         else:              # low and sprawling, about 5 studs across and 2.4 high
             lumps = [(-1.1, 0.15, 0.75, 1.2, 1.05, 0.9), (0.45, 0.35, 0.95, 1.3, 1.1, 1.05), (1.5, -0.35, 0.65, 0.95, 0.9, 0.75)]
             leaves = 26
+        big = 1.1 if lite else 1.0   # a 20-face lump sits inside its radius, so it is drawn a little larger
         for x, y, z, rx, ry, rz in lumps:
             fn = leaf_col(PAL["bush_deep"], PAL["bush_deep"], PAL["bush"], z, rz, 1.0)
-            blob(G, (x, y, z), (rx, ry, rz), fn, 2, seed=rng.randrange(999), jit=0.2, freq=1.8,
+            blob(G, (x, y, z), (rx * big, ry * big, rz * big), fn, 1 if lite else 2, seed=rng.randrange(999), jit=0.2, freq=1.8,
                  rot=Euler((0, 0, rng.uniform(0, 3.1))), floor=-0.25)
         for k in range(leaves):
             x, y, z, rx, ry, rz = lumps[k % len(lumps)]
@@ -825,16 +940,23 @@ def blender_main(argv):
             dv = Vector((math.cos(az) * math.cos(el), math.sin(az) * math.cos(el), math.sin(el)))
             o = Vector((x, y, z)) + Vector((dv.x * rx, dv.y * ry, dv.z * rz)) * 0.8
             deg = math.degrees(el)
-            frond(G, rng, az, rng.uniform(0.9, 1.3), deg + rng.uniform(5, 20), deg - rng.uniform(35, 60), rng.uniform(0.34, 0.46),
-                  stations=5, tone=rng.uniform(0.97, 1.08), pal=("bush", "bush", "bush_sun"), origin=o, teeth=False)
+            length, e0, e1, width, tone = (rng.uniform(0.9, 1.3), deg + rng.uniform(5, 20), deg - rng.uniform(35, 60),
+                                           rng.uniform(0.34, 0.46), rng.uniform(0.97, 1.08))
+            if lite:
+                frond(G, rng, az, length * 1.05, e0, e1, width * 1.2, stations=3, tone=tone, pal=("bush", "bush", "bush_sun"),
+                      origin=o, teeth=False, point=True, like=5)
+            else:
+                frond(G, rng, az, length, e0, e1, width, stations=5, tone=tone, pal=("bush", "bush", "bush_sun"),
+                      origin=o, teeth=False)
         return {"leaf": G}, {"keys": {"leaf": ["bush", "bush_sun", "bush_deep"]}}
 
     # ------------------------------------------------------------------ 5. better reeds
-    def blade(G, rng, x, y, az, height, lean, width, kink=None, tone=1.0):
-        """A cattail leaf: a three-sided strip standing in the water, arching at the tip."""
+    def blade(G, rng, x, y, az, height, lean, width, kink=None, tone=1.0, lite=False):
+        """A cattail leaf: a three-sided strip standing in the water, arching at the tip.
+        lite: four stations instead of five, closing to a point."""
         d = Vector((math.cos(az), math.sin(az), 0))
         side = Vector((-d.y, d.x, 0))
-        stations = 5
+        stations = 4 if lite else 5
         p = Vector((x, y, -1.0))
         P, W, V = [], [], []
         ds = (height + 1.0) / (stations - 1)
@@ -857,13 +979,34 @@ def blender_main(argv):
             La, Ra, Ka = a - side * wa, a + side * wa, a - d * wa * 0.45
             Lb, Rb, Kb = b - side * wb, b + side * wb, b - d * wb * 0.45
             mid = (a + b) / 2 - d * (wa + wb) * 0.07
+            if lite and i == stations - 2:
+                G.flat([La, Ra, b], c, mid, uvs=[(-wa, V[i]), (wa, V[i]), (0, V[i + 1])])
+                G.flat([Ra, Ka, b], shade(c, 0.86), mid, uvs=[(wa, V[i]), (wa * 2, V[i]), (wa * 1.5, V[i + 1])])
+                G.flat([Ka, La, b], shade(c, 0.92), mid, uvs=[(-wa * 2, V[i]), (-wa, V[i]), (-wa * 1.5, V[i + 1])])
+                continue
             G.flat([La, Ra, Rb, Lb], c, mid, uvs=[(-wa, V[i]), (wa, V[i]), (wb, V[i + 1]), (-wb, V[i + 1])])
             G.flat([Ra, Ka, Kb, Rb], shade(c, 0.86), mid, uvs=[(wa, V[i]), (wa * 2, V[i]), (wb * 2, V[i + 1]), (wb, V[i + 1])])
             G.flat([Ka, La, Lb, Kb], shade(c, 0.92), mid, uvs=[(-wa * 2, V[i]), (-wa, V[i]), (-wb, V[i + 1]), (-wb * 2, V[i + 1])])
 
-    def cattail(G, rng, x, y, height, lean_az, lean):
+    def cattail(G, rng, x, y, height, lean_az, lean, lite=False):
         d = Vector((math.cos(lean_az), math.sin(lean_az), 0))
         top = Vector((x, y, height)) + d * math.sin(lean) * height
+        if lite:   # stem, head and spike as one four-sided limb that ends in a point (36 triangles for 80)
+            spin = rng.uniform(0, 1.5)
+            hl = rng.uniform(0.9, 1.2)
+            foot = Vector((x, y, -1.0))
+            t = (top - foot).normalized()
+
+            def col(i, k, mid, out):
+                if i == 0:
+                    return mix(PAL["reed_base"], PAL["reed"], clamp(mid.z / 2.0))
+                if i == 4:
+                    return PAL["reed_tip"]
+                return mix(PAL["cattail_head"], PAL["cattail_head_dark"], 0.5 - 0.5 * out.z + (0.25 if i == 3 else 0))
+
+            tube(G, [foot, top - t * 0.02, top + t * 0.12, top + t * (hl - 0.12), top + t * hl, top + t * (hl + 0.45)],
+                 [0.1, 0.085, 0.22, 0.21, 0.05, 0.012], 4, col, spin=spin, point1=True)
+            return
         pts = spline([(x, y, -1.0), Vector((x, y, height * 0.5)) + d * math.sin(lean) * height * 0.3, top], 4)
 
         def stem_col(i, k, mid, out):
@@ -880,8 +1023,11 @@ def blender_main(argv):
              cap0={"col": PAL["cattail_head_dark"]}, cap1={"col": PAL["cattail_head_dark"]})
         tube(G, [top + t * hl, top + t * (hl + 0.45)], [0.045, 0.012], 4, PAL["reed_tip"])
 
-    def rush(G, rng, x, y, count, height, spread):
-        """A tussock of round rush stems fanning out, some with a small brown tuft near the tip."""
+    def rush(G, rng, x, y, count, height, spread, keep=None):
+        """A tussock of round rush stems fanning out, some with a small brown tuft near the tip.
+        keep (the lite tussock): only the first `keep` stems are built, three-sided, a little
+        thicker and closing to a point; the rest are still drawn from the dice, so whatever is
+        built after the tussock stands where it does in the full clump."""
         for k in range(count):
             az = rng.uniform(0, 6.28)
             lean = rng.uniform(0.05, spread)
@@ -895,35 +1041,54 @@ def blender_main(argv):
             def col(i, kk, m, out, tone=tone):
                 return shade(mix(PAL["reed_base"], PAL["rush"], clamp(m.z / 1.5)) if i < 1 else mix(PAL["rush"], PAL["reed_tip"], 0.4), tone)
 
-            tube(G, [b, mid, tip], [0.08, 0.07, 0.015], 4, col, spin=rng.uniform(0, 1.5))
+            spin = rng.uniform(0, 1.5)
+            if keep is not None:
+                if k < keep:
+                    tube(G, [b, mid, tip], [0.1, 0.085, 0.015], 3, col, spin=spin, point1=True)
+                    if k % 4 == 0:
+                        c = mid.lerp(tip, 0.62)
+                        blob(G, c + d * 0.08, (0.16, 0.15, 0.27), lambda p, n: PAL["cattail_head"], seed=k, jit=0.1, uv=(3, 3))
+                continue
+            tube(G, [b, mid, tip], [0.08, 0.07, 0.015], 4, col, spin=spin)
             if k % 4 == 0:
                 c = mid.lerp(tip, 0.62)
                 blob(G, c + d * 0.08, (0.15, 0.13, 0.22), lambda p, n: PAL["cattail_head"], 1, seed=k, jit=0.1)
 
-    def reeds(variant):
+    def reeds(variant, lite=False):
+        """lite: every cattail stays (one limb each), two leaves in twelve go (two in eight in the
+        second clump), the leaves that stay are a fifth wider, and the tussocks thin out."""
         rng = random.Random(700 + variant)
         G = Geo()
+        wide = 1.2 if lite else 1.0
         if variant == 1:   # cattails: five heads, a stand of leaves, one rush tussock at the edge
             spots = [(0.0, 0.1), (0.75, -0.45), (-0.7, 0.55), (0.3, 0.9), (-0.45, -0.75)]
             for j, (x, y) in enumerate(spots):
-                cattail(G, rng, x, y, rng.uniform(3.9, 5.0), rng.uniform(0, 6.28), rng.uniform(0.02, 0.09))
+                cattail(G, rng, x, y, rng.uniform(3.9, 5.0), rng.uniform(0, 6.28), rng.uniform(0.02, 0.09), lite=lite)
             for k in range(12):
                 a = rng.uniform(0, 6.28)
                 r = rng.uniform(0.1, 1.2)
-                blade(G, rng, math.cos(a) * r, math.sin(a) * r, a + rng.uniform(-0.6, 0.6), rng.uniform(3.8, 6.0),
-                      rng.uniform(0.04, 0.17), rng.uniform(0.1, 0.14), kink=0.7 if k in (4, 9) else None, tone=rng.uniform(0.93, 1.06))
-            rush(G, rng, 1.25, 0.6, 8, 3.0, 0.4)
+                az, height, lean, width, tone = (a + rng.uniform(-0.6, 0.6), rng.uniform(3.8, 6.0), rng.uniform(0.04, 0.17),
+                                                 rng.uniform(0.1, 0.14), rng.uniform(0.93, 1.06))
+                if lite and k in (6, 11):
+                    continue
+                blade(G, rng, math.cos(a) * r, math.sin(a) * r, az, height, lean, width * wide,
+                      kink=0.7 if k in (4, 9) else None, tone=tone, lite=lite)
+            rush(G, rng, 1.25, 0.6, 8, 3.0, 0.4, keep=6 if lite else None)
         else:              # mostly rush, lower and wider, two cattails and a few leaves
-            rush(G, rng, -0.8, 0.2, 11, 4.0, 0.36)
-            rush(G, rng, 0.9, -0.5, 9, 3.4, 0.45)
-            rush(G, rng, 0.4, 1.1, 6, 2.6, 0.5)
-            cattail(G, rng, 0.1, 0.1, 4.6, 1.0, 0.07)
-            cattail(G, rng, -0.5, -0.7, 4.0, 4.0, 0.09)
+            rush(G, rng, -0.8, 0.2, 11, 4.0, 0.36, keep=8 if lite else None)
+            rush(G, rng, 0.9, -0.5, 9, 3.4, 0.45, keep=7 if lite else None)
+            rush(G, rng, 0.4, 1.1, 6, 2.6, 0.5, keep=5 if lite else None)
+            cattail(G, rng, 0.1, 0.1, 4.6, 1.0, 0.07, lite=lite)
+            cattail(G, rng, -0.5, -0.7, 4.0, 4.0, 0.09, lite=lite)
             for k in range(8):
                 a = rng.uniform(0, 6.28)
                 r = rng.uniform(0.1, 1.0)
-                blade(G, rng, math.cos(a) * r - 0.1, math.sin(a) * r, a + rng.uniform(-0.6, 0.6), rng.uniform(3.6, 5.4),
-                      rng.uniform(0.05, 0.2), rng.uniform(0.1, 0.14), kink=0.7 if k == 3 else None, tone=rng.uniform(0.93, 1.06))
+                az, height, lean, width, tone = (a + rng.uniform(-0.6, 0.6), rng.uniform(3.6, 5.4), rng.uniform(0.05, 0.2),
+                                                 rng.uniform(0.1, 0.14), rng.uniform(0.93, 1.06))
+                if lite and k in (5, 7):
+                    continue
+                blade(G, rng, math.cos(a) * r - 0.1, math.sin(a) * r, az, height, lean, width * wide,
+                      kink=0.7 if k == 3 else None, tone=tone, lite=lite)
         return {"leaf": G}, {"keys": {"leaf": ["reed", "reed_tip", "reed_base", "rush", "cattail_head", "cattail_head_dark"]}}
 
     # ------------------------------------------------------------------ 6. waterline stones
@@ -952,6 +1117,126 @@ def blender_main(argv):
                  smooth=True, floor=-0.4, power=0.78, flat_top=0.8)
         return {"stone": G}, {"keys": {"stone": ["stone", "stone_light", "stone_brown", "stone_grey", "stone_wet"]}}
 
+    # ------------------------------------------------------------------ 7. far trees
+    # One mesh each, leaf family, the trunk painted dark on the same mesh: for treelines seen
+    # from across the water, with shadows off. They keep the ShorePines' outlines.
+    def far_tier(G, rng, c, z0, R, h, N, wind_az, wind, tone):
+        """One skirt of the far spire: a ragged star of N drooping tips under a point, and its
+        dark underside. Four triangles a tip (the near pine's skirt has six, and more tips)."""
+        a0 = rng.uniform(0, 6.28)
+        inside = Vector((c.x, c.y, z0 + 0.35 * h))
+        apex = Vector((c.x + rng.uniform(-0.15, 0.15), c.y + rng.uniform(-0.15, 0.15), z0 + h))
+        under = Vector((c.x, c.y, z0 + 0.3 + 0.12 * R))
+        Tp, Nt = [], []
+        for k in range(N):
+            a = a0 + 2 * math.pi * k / N + rng.uniform(-0.22, 0.22)
+            w = 1 + wind * math.cos(a - wind_az)
+            rt = R * rng.uniform(0.8, 1.1) * w
+            droop = rng.uniform(0.25, 0.8) * (0.45 + R / 7)
+            Tp.append(Vector((c.x + math.cos(a) * rt, c.y + math.sin(a) * rt, z0 - droop)))
+            a2 = a + math.pi / N
+            Nt.append(Vector((c.x + math.cos(a2) * R * 0.66 * w, c.y + math.sin(a2) * R * 0.66 * w, z0 + 0.25 + 0.06 * R)))
+        sun, base, deep = (shade(PAL[k], tone) for k in ("pine_needle_sun", "pine_needle", "pine_needle_deep"))
+        for k in range(N):
+            k2 = (k + 1) % N
+            f = rng.uniform(0.93, 1.07)
+            G.flat([apex, Tp[k], Nt[k]], shade(mix(base, sun, 0.65), f), inside)
+            G.flat([apex, Nt[k], Tp[k2]], shade(mix(base, deep, 0.2), f), inside)
+            G.flat([under, Tp[k], Nt[k]], deep, inside)
+            G.flat([under, Nt[k], Tp[k2]], shade(deep, 0.92), inside)
+
+    def far_trunk_col(rng, z_hi, dark="pine_bark_dark", light="pine_bark"):
+        def fn(i, k, mid, out):
+            return shade(mix(PAL[dark], PAL[light], clamp(mid.z / z_hi)), 0.94 + 0.12 * rng.random())
+        return fn
+
+    def far_pine_spire():
+        """The far spire, 24 studs: ShorePine1's eight skirts at its heights and widths, on a
+        short bare trunk, each skirt a star of three to six tips."""
+        rng = random.Random(1101)
+        G = Geo()
+        tube(G, [(0, 0, -1.0), (0.05, 0.0, 6.4)], [1.05, 0.68], 4, far_trunk_col(rng, 6.0), spin=0.4)
+        zs = [5.2, 8.0, 10.7, 13.2, 15.5, 17.6, 19.5, 21.2]
+        Rs = [5.0, 4.65, 4.1, 3.4, 2.75, 2.15, 1.5, 0.95]
+        Ns = [6, 5, 5, 5, 5, 4, 4, 3]
+        for j, (z0, R, N) in enumerate(zip(zs, Rs, Ns)):
+            h = (zs[j + 1] - z0) * 1.85 if j + 1 < len(zs) else 3.1
+            c = Vector((0.012 * z0 + rng.uniform(-0.3, 0.3), 0.015 * z0 + rng.uniform(-0.3, 0.3), 0))
+            far_tier(G, rng, c, z0, R, h, N, 0.4, 0.1, rng.uniform(0.94, 1.05))
+        return {"leaf": G}, {"keys": {"leaf": ["pine_needle", "pine_needle_sun", "pine_needle_deep", "pine_bark", "pine_bark_dark"]},
+                             "foot_centred": True}
+
+    def far_pad(G, rng, c, rx, ry, rz, az, rim=6):
+        """A pad of needles in two fans: a ragged rim that steps up and down (so the pad has an
+        edge with some depth and is not a blade), a point above and a point below."""
+        c = Vector(c)
+        R = Matrix.Rotation(az, 3, "Z")
+        a0 = rng.uniform(0, 6.28)
+        pts = []
+        for k in range(rim):
+            a = a0 + 2 * math.pi * k / rim + rng.uniform(-0.25, 0.25)
+            f = rng.uniform(0.8, 1.12)
+            pts.append(c + R @ Vector((math.cos(a) * rx * f, math.sin(a) * ry * f, rz * ((0.42 if k % 2 else -0.42) + rng.uniform(-0.15, 0.15)))))
+        top = c + R @ Vector((rx * rng.uniform(-0.2, 0.2), ry * rng.uniform(-0.2, 0.2), rz * rng.uniform(0.95, 1.15)))
+        bot = c + R @ Vector((rx * rng.uniform(-0.15, 0.15), ry * rng.uniform(-0.15, 0.15), -rz * rng.uniform(0.85, 1.0)))
+        tone = rng.uniform(0.94, 1.05)
+        sun, base, deep = (shade(PAL[k], tone) for k in ("pine_needle_sun", "pine_needle", "pine_needle_deep"))
+        for k in range(rim):
+            k2 = (k + 1) % rim
+            G.flat([top, pts[k], pts[k2]], shade(mix(base, sun, rng.uniform(0.25, 0.85)), rng.uniform(0.95, 1.05)), c)
+            G.flat([bot, pts[k], pts[k2]], mix(deep, base, 0.3 * rng.random()), c)
+
+    def far_pine_wind():
+        """The far wind-shaped pine, 19 studs: ShorePine2's bent bare trunk, its limbs and its
+        crown, each pad of needles ten to fourteen faces."""
+        rng = random.Random(1202)
+        G = Geo()
+        col = far_trunk_col(rng, 14.0)
+        path = spline([(0, 0, -1.0), (0.08, 0.0, 2.5), (0.5, 0.1, 7.0), (0.85, 0.0, 12.0), (1.0, -0.15, 16.0), (1.3, -0.2, 18.2)], 13)
+        tube(G, [path[0], path[4], path[8], path[11]], [0.95, 0.64, 0.45, 0.1], 4, col, spin=0.4, point1=True)
+        at = path_at(path)
+        rad = math.radians
+        limbs = [(8.8, rad(12), 4.6, 0.5), (10.5, rad(170), 2.9, 0.6), (11.9, rad(-78), 3.7, 0.7), (13.2, rad(58), 3.6, 0.8),
+                 (14.5, rad(205), 2.5, 0.8), (15.4, rad(-35), 2.9, 0.9)]
+        for j, (z, az, length, rise) in enumerate(limbs):
+            p0 = at(z)
+            h = Vector((math.cos(az), math.sin(az), 0))
+            c = p0 + h * length * 0.8 + UP * (rise + 0.45)
+            if j < 4:   # the two highest limbs are lost in the crown
+                tube(G, [p0, c], [0.2 + 0.035 * length, 0.06], 3, col, spin=0.5, point1=True)
+            far_pad(G, rng, c, length * 0.62, length * 0.5, 1.0, az, rim=6 if j < 4 else 5)
+            if length > 3.6:   # the long limbs carry a second, smaller pad to one side
+                side = Vector((-h.y, h.x, 0)) * rng.choice((-1, 1))
+                far_pad(G, rng, p0 + h * length * 0.45 + side * length * 0.3 + UP * (rise * 0.5 + 0.7), length * 0.38, length * 0.32, 0.8, az + 0.6, rim=5)
+        top = at(18.0)
+        far_pad(G, rng, top + Vector((0.4, 0.1, -1.3)), 3.0, 2.5, 1.35, 0.3, rim=7)
+        far_pad(G, rng, top + Vector((-0.6, -0.5, -0.3)), 2.1, 1.8, 1.15, 1.2)
+        far_pad(G, rng, top + Vector((0.5, 0.2, 0.55)), 1.35, 1.2, 1.0, 0.0, rim=5)
+        return {"leaf": G}, {"keys": {"leaf": ["pine_needle", "pine_needle_sun", "pine_needle_deep", "pine_bark", "pine_bark_dark"]},
+                             "foot_centred": True}
+
+    def far_leafy(variant):
+        """A far broadleaf: a rounded crown of four soft lumps on a hint of trunk. The lumps
+        are smooth-shaded, so from far away the crown reads round, not faceted."""
+        rng = random.Random(1300 + variant)
+        G = Geo()
+        if variant == 1:   # about 15 studs, upright
+            trunk = [(0, 0, -1.0), (0.1, 0.05, 3.6), (0.35, 0.1, 8.2)]
+            lumps = [(0.3, 0.1, 10.5, 3.9, 3.6, 3.2, (9, 5)), (2.7, 0.7, 9.0, 2.6, 2.4, 2.2, (7, 4)),
+                     (-2.5, -0.6, 9.5, 2.7, 2.5, 2.3, (7, 4)), (0.4, 0.3, 13.0, 2.3, 2.2, 1.95, (7, 3))]
+        else:              # about 12.5 studs, lower and wider, leaning a little
+            trunk = [(0, 0, -1.0), (0.25, -0.05, 3.0), (0.8, -0.1, 6.6)]
+            lumps = [(0.7, 0.0, 8.3, 4.1, 3.7, 2.9, (9, 5)), (-2.6, 0.9, 7.2, 2.6, 2.4, 2.1, (7, 4)),
+                     (3.3, -0.6, 7.6, 2.5, 2.3, 2.0, (7, 4)), (0.1, -0.4, 10.6, 2.3, 2.2, 1.8, (7, 3))]
+        tube(G, trunk, [0.8, 0.58, 0.42], 4, far_trunk_col(rng, 7.0, "leafy_trunk", "leafy_trunk"), spin=0.4)
+        z_lo = min(l[2] - l[5] for l in lumps)
+        z_hi = max(l[2] + l[5] for l in lumps)
+        for x, y, z, rx, ry, rz, uv in lumps:
+            fn = leaf_col(PAL["leafy_deep"], PAL["leafy"], PAL["leafy_sun"], (z_lo + z_hi) / 2, (z_hi - z_lo) / 2, rng.uniform(0.96, 1.04))
+            blob(G, (x, y, z), (rx, ry, rz), fn, seed=rng.randrange(999), jit=0.2, freq=1.25,
+                 rot=Euler((rng.uniform(-0.2, 0.2), rng.uniform(-0.2, 0.2), rng.uniform(0, 3.1))), smooth=True, uv=uv)
+        return {"leaf": G}, {"keys": {"leaf": ["leafy", "leafy_sun", "leafy_deep", "leafy_trunk"]}, "foot_centred": True}
+
     BUILDERS = {
         "DriftwoodBranch": driftwood_branch, "DriftwoodStump": driftwood_stump, "DriftwoodLog": driftwood_log,
         "BirchLean1": lambda: birch(1), "BirchLean2": lambda: birch(2),
@@ -959,6 +1244,14 @@ def blender_main(argv):
         "Fern1": lambda: fern(1), "Fern2": lambda: fern(2), "Bush1": lambda: bush(1), "Bush2": lambda: bush(2),
         "ReedClump1": lambda: reeds(1), "ReedClump2": lambda: reeds(2),
         "ShoreStones1": lambda: stones(1), "ShoreStones2": lambda: stones(2),
+    }
+    LITE_BUILDERS = {
+        "Fern1_lite": lambda: fern(1, lite=True), "Fern2_lite": lambda: fern(2, lite=True),
+        "Bush1_lite": lambda: bush(1, lite=True), "Bush2_lite": lambda: bush(2, lite=True),
+        "ReedClump1_lite": lambda: reeds(1, lite=True), "ReedClump2_lite": lambda: reeds(2, lite=True),
+        "ShorePine2_lite": lambda: pine_wind(lite=True),
+        "FarPine1": far_pine_spire, "FarPine2": far_pine_wind,
+        "FarLeafy1": lambda: far_leafy(1), "FarLeafy2": lambda: far_leafy(2),
     }
 
     # ------------------------------------------------------------------ meshes and export
@@ -1008,39 +1301,75 @@ def blender_main(argv):
                 "glb": str(path.relative_to(REPO)).replace("\\", "/"),
                 "roblox_glb": str((ROBLOX / path.name).relative_to(REPO)).replace("\\", "/")}
 
-    kit = {}   # name -> {"objs": {fam: obj}, "lo": true bounds, "hi":, "bury":}
+    kit = {}   # name -> {"objs": {fam: obj}, "lo": true bounds, "hi":, "bury":, "box": the box as built}
+
+    def bounds_of(geos):
+        los, his = zip(*(g.bounds() for g in geos.values()))
+        return (Vector(tuple(min(v[i] for v in los) for i in range(3))),
+                Vector(tuple(max(v[i] for v in his) for i in range(3))))
+
+    def build_one(name, fn, kind, do_export=True, like=None):
+        """Build one model, give it its box and pivot, and (unless do_export is off) write it.
+        like: the full model whose box this one takes (a lite twin). The twin is built in the
+        full model's own coordinates; anything of it that pokes a little past the full box is
+        drawn back to the box's face, and two corner specks pin the box, so the twin's size,
+        pivot and bury are exactly the full model's."""
+        geos, info = fn()
+        lo, hi = bounds_of(geos)
+        drawn_in = 0.0
+        specks = bool(info.get("foot_centred"))
+        if like:
+            blo, bhi = (v.copy() for v in kit[like]["box"])
+            over = max(max(blo[i] - lo[i], hi[i] - bhi[i]) for i in range(3))
+            if over > 0.5:   # too far out to tuck in: the twin gets a bigger box, and says so
+                blo = Vector(tuple(min(blo[i], lo[i]) for i in range(3)))
+                bhi = Vector(tuple(max(bhi[i], hi[i]) for i in range(3)))
+                like = None
+                print(f"[bank_kit] {name}: {over:.2f} studs outside the full model's box, so it keeps its own box")
+            elif over > 0:
+                drawn_in = over
+                for g in geos.values():
+                    g.verts = [tuple(min(max(v[i], blo[i]), bhi[i]) for i in range(3)) for v in g.verts]
+                lo, hi = bounds_of(geos)
+            specks = True
+        elif info.get("foot_centred"):   # the box is centred on the trunk's foot
+            hx, hy = max(abs(lo.x), abs(hi.x)), max(abs(lo.y), abs(hi.y))
+            blo, bhi = Vector((-hx, -hy, lo.z)), Vector((hx, hy, hi.z))
+        else:
+            blo, bhi = lo, hi
+        if specks:
+            for fam, g in geos.items():
+                anchors(g, blo, bhi, PAL[info["keys"][fam][0]])
+        pivot = Vector(((blo.x + bhi.x) / 2, (blo.y + bhi.y) / 2, blo.z))
+        entry = {"kind": kind, "bury": round(-blo.z, 2), "height": round(hi.z, 2),
+                 "true_studs": [round(hi.x - lo.x, 2), round(hi.z - lo.z, 2), round(hi.y - lo.y, 2)],
+                 "studs": [round(bhi.x - blo.x, 2), round(bhi.z - blo.z, 2), round(bhi.y - blo.y, 2)],
+                 "foot_centred": bool(info.get("foot_centred")), "anchors": specks,
+                 "palette": {k: list(PAL[k]) for keys in info["keys"].values() for k in keys},
+                 "keys": info["keys"], "meshes": {}}
+        if name in LITE:
+            entry["same_box_as"] = like
+            entry["drawn_in"] = round(drawn_in, 2)
+        objs = {}
+        for fam, g in geos.items():
+            g.verts = [(x - pivot.x, y - pivot.y, z - pivot.z) for x, y, z in g.verts]
+            obj = to_object(g, f"{name}_{fam}")
+            objs[fam] = obj
+            entry["meshes"][fam] = {"triangles": g.triangles(), **(export(obj) if do_export else {})}
+            print(f"[bank_kit] {obj.name}: {g.triangles()} triangles")
+        kit[name] = {"objs": objs, "lo": lo - pivot, "hi": hi - pivot, "bury": -blo.z, "box": (blo, bhi)}
+        return entry
 
     def build_kit():
-        result = {}
-        for name, fn in BUILDERS.items():
-            geos, info = fn()
-            los, his = zip(*(g.bounds() for g in geos.values()))
-            lo = Vector(tuple(min(v[i] for v in los) for i in range(3)))
-            hi = Vector(tuple(max(v[i] for v in his) for i in range(3)))
-            if info.get("foot_centred"):   # the box is centred on the trunk's foot
-                hx, hy = max(abs(lo.x), abs(hi.x)), max(abs(lo.y), abs(hi.y))
-                blo, bhi = Vector((-hx, -hy, lo.z)), Vector((hx, hy, hi.z))
-                for fam, g in geos.items():
-                    anchors(g, blo, bhi, PAL[info["keys"][fam][0]])
-            else:
-                blo, bhi = lo, hi
-            pivot = Vector(((blo.x + bhi.x) / 2, (blo.y + bhi.y) / 2, blo.z))
-            entry = {"kind": KIT[name]["kind"], "bury": round(-blo.z, 2), "height": round(hi.z, 2),
-                     "true_studs": [round(hi.x - lo.x, 2), round(hi.z - lo.z, 2), round(hi.y - lo.y, 2)],
-                     "studs": [round(bhi.x - blo.x, 2), round(bhi.z - blo.z, 2), round(bhi.y - blo.y, 2)],
-                     "foot_centred": bool(info.get("foot_centred")), "anchors": bool(info.get("foot_centred")),
-                     "palette": {k: list(PAL[k]) for keys in info["keys"].values() for k in keys},
-                     "keys": info["keys"], "meshes": {}}
-            objs = {}
-            for fam, g in geos.items():
-                g.verts = [(x - pivot.x, y - pivot.y, z - pivot.z) for x, y, z in g.verts]
-                obj = to_object(g, f"{name}_{fam}")
-                objs[fam] = obj
-                entry["meshes"][fam] = {"triangles": g.triangles(), **export(obj)}
-                print(f"[bank_kit] {obj.name}: {g.triangles()} triangles")
-            kit[name] = {"objs": objs, "lo": lo - pivot, "hi": hi - pivot, "bury": -blo.z}
-            result[name] = entry
-        return result
+        return {name: build_one(name, fn, KIT[name]["kind"]) for name, fn in BUILDERS.items()}
+
+    def build_lite():
+        """The full models the twins copy (built for their boxes and for the sheet, not written),
+        then the lite set (written)."""
+        fulls = sorted({v["of"] for v in LITE.values() if v["of"]} | {"ShorePine1"})
+        full = {name: build_one(name, BUILDERS[name], KIT[name]["kind"], do_export=False) for name in fulls}
+        models = {name: build_one(name, fn, LITE[name]["kind"], like=LITE[name]["of"]) for name, fn in LITE_BUILDERS.items()}
+        return full, models
 
     # ------------------------------------------------------------------ preview
     def setup_cycles(w, h, exposure=-0.45):
@@ -1177,17 +1506,45 @@ def blender_main(argv):
     def dress_kit(material=None):
         for item in kit.values():
             for fam, obj in item["objs"].items():
-                obj.data.materials.clear()
-                obj.data.materials.append((material or preview_material)(fam))
+                if fam in FAMILIES:   # an older model brought in for the sheet keeps its own colours
+                    obj.data.materials.clear()
+                    obj.data.materials.append((material or preview_material)(fam))
                 obj.hide_render = True
 
-    def instance(name, loc=(0, 0, 0), yaw=0.0, scale=1.0):
+    def import_old(name):
+        """One of our older single-mesh models (vertex colours, no family map), read back from
+        art/models/ so the sheet can show it beside what replaces it. Returns its triangles."""
+        before = set(bpy.data.objects)
+        bpy.ops.import_scene.gltf(filepath=str(MODELS / f"{name}.glb"))
+        new = [o for o in bpy.data.objects if o not in before]
+        obj = next(o for o in new if o.type == "MESH")
+        bpy.context.view_layer.update()
+        world = obj.matrix_world.copy()
+        obj.parent = None
+        obj.data.transform(world)
+        obj.matrix_world = Matrix.Identity(4)
+        for o in new:
+            if o is not obj:
+                bpy.data.objects.remove(o, do_unlink=True)
+        m = plain_material(f"{name}_Old")
+        if obj.data.color_attributes:
+            m.node_tree.nodes["Color Attribute"].layer_name = obj.data.color_attributes[0].name
+        obj.data.materials.clear()
+        obj.data.materials.append(m)
+        lo = Vector(tuple(min(v.co[i] for v in obj.data.vertices) for i in range(3)))
+        hi = Vector(tuple(max(v.co[i] for v in obj.data.vertices) for i in range(3)))
+        kit[name] = {"objs": {"old": obj}, "lo": lo, "hi": hi, "bury": -lo.z, "box": (lo, hi)}
+        obj.data.calc_loop_triangles()
+        return len(obj.data.loop_triangles)
+
+    def instance(name, loc=(0, 0, 0), yaw=0.0, scale=1.0, shadow=True):
         """A copy of a kit model with its ground line at loc.z."""
         item = kit[name]
         out = []
         for obj in item["objs"].values():
             o = obj.copy()
             o.hide_render = False
+            o.visible_shadow = shadow
             o.location = (loc[0], loc[1], loc[2] - item["bury"] * scale)
             o.rotation_euler = (0, 0, yaw)
             o.scale = (scale, scale, scale)
@@ -1210,9 +1567,12 @@ def blender_main(argv):
             o.data.materials.append(m)
             o["_stage"] = True
 
-    def lineup(names, path, w, h, gap, view=(-22, 9), ground_rgb=(150, 150, 146), ground=True):
-        """The models in a row with the figure at the right, through a level camera."""
-        cam, _sun = setup_cycles(w, h)
+    def lineup(names, path, w=None, h=None, gap=1.6, view=(-22, 9), ground_rgb=(150, 150, 146), ground=True,
+               px=None, with_figure=True):
+        """The models in a row with the figure at the right, through a level camera.
+        px: draw at that many pixels a stud instead of fitting a given picture size (the
+        picture takes the size the row needs)."""
+        cam, _sun = setup_cycles(w or 64, h or 64)
         x = 0.0
         spots = []
         pts = []
@@ -1227,10 +1587,11 @@ def blender_main(argv):
                     for cz in (item["bury"], hi.z):   # from the ground line up
                         pts.append(Vector((x + cx, cy, cz - item["bury"])))
             x += hi.x + gap
-        x += 1.5
-        figure((x, 0, 0), yaw=0.35)
-        spots.append(("6 stud figure", Vector((x, 0, 0))))
-        pts += [Vector((x - 2, -1, 0)), Vector((x + 2, 1, 6.0))]
+        if with_figure:
+            x += 1.5
+            figure((x, 0, 0), yaw=0.35)
+            spots.append(("6 stud figure", Vector((x, 0, 0))))
+            pts += [Vector((x - 2, -1, 0)), Vector((x + 2, 1, 6.0))]
         if ground:
             bpy.ops.mesh.primitive_plane_add(size=1000, location=(x / 2, 0, 0))
             g = bpy.context.object
@@ -1243,7 +1604,13 @@ def blender_main(argv):
         us, vs = [p.dot(right) for p in pts], [p.dot(up) for p in pts]
         cu, cv = (min(us) + max(us)) / 2, (min(vs) + max(vs)) / 2
         cam.data.type = "ORTHO"
-        cam.data.ortho_scale = max(max(us) - min(us), (max(vs) - min(vs)) * w / h) * 1.06
+        if px:
+            w = 2 * int(math.ceil(((max(us) - min(us)) * 1.03 + 1.0) * px / 2))
+            h = 2 * int(math.ceil(((max(vs) - min(vs)) * 1.06 + 1.0) * px / 2))
+            scene_of().render.resolution_x, scene_of().render.resolution_y = w, h
+            cam.data.ortho_scale = max(w, h) / px
+        else:
+            cam.data.ortho_scale = max(max(us) - min(us), (max(vs) - min(vs)) * w / h) * 1.06
         cam.location = right * cu + up * cv + d * 400
         cam.rotation_euler = quat.to_euler()
         cam.data.clip_end = 2000
@@ -1422,11 +1789,82 @@ def blender_main(argv):
         scene_of().render.filepath = str(path)
         bpy.ops.render.render(write_still=True)
 
+    def far_treeline():
+        """The same treeline twice on one bank: west of the middle (x < 0) the near models
+        (ShorePine1, ShorePine2 and the old LeafyTree), east of it the far trees with their
+        shadows off."""
+        rng = random.Random(777)
+        placed = []
+        for _ in range(900):
+            x = rng.uniform(-86, 86)
+            d = 8.5 + 31 * rng.random() ** 1.3
+            leafy, spire, turn, scale, twin = rng.random() < 0.24, rng.random() < 0.62, rng.uniform(0, 6.28), rng.uniform(0.8, 1.2), rng.random() < 0.5
+            if rng.random() > 0.8 or abs(x) < 1.5:
+                continue
+            px_, py_ = x, shore_y(x) + d
+            if any((px_ - qx) ** 2 + (py_ - qy) ** 2 < 5.0 ** 2 for qx, qy in placed):
+                continue
+            placed.append((px_, py_))
+            pz_ = max(ground_h(px_, py_), 0.0)
+            if x < 0:
+                name = "LeafyTree" if leafy else "ShorePine1" if spire else "ShorePine2"
+            else:
+                name = ("FarLeafy1" if twin else "FarLeafy2") if leafy else "FarPine1" if spire else "FarPine2"
+            instance(name, (px_, py_, pz_), turn, scale, shadow=x < 0)
+
+    def run_lite():
+        full, models = build_lite()
+        result = {"lift": LIFT, "uv_studs": 1.0, "maps": maps, "full": full, "models": models, "old": {}, "lineups": {}, "shots": {}}
+        out = SCRATCH / "result_lite.json"
+        out.write_text(json.dumps(result, indent=1), encoding="utf-8")
+        if args.no_render:
+            return
+
+        def px_at(studs):   # pixels a stud on a 1080p screen through Roblox's 70 degree camera
+            return 1080 / (2 * studs * math.tan(math.radians(35)))
+
+        def pairs(*names):
+            return [n for name in names for n in (name, name + "_lite")]
+
+        far = ["ShorePine1", "FarPine1", "ShorePine2", "FarPine2", "LeafyTree", "FarLeafy1", "FarLeafy2"]
+        rows = {   # key: (models, studs away, gap, view, figure)
+            "near-ferns": (pairs("Fern1", "Fern2"), 10, 0.9, (-22, 22), False),
+            "near-reeds": (pairs("ReedClump1", "ReedClump2"), 10, 0.9, (-22, 12), False),
+            "near-bushes": (pairs("Bush1", "Bush2"), 10, 0.9, (-22, 22), False),
+            "near-pine": (pairs("ShorePine2"), 10, 2.0, (-22, 9), False),
+            "mid-all": (pairs("Fern1", "Fern2", "Bush1", "Bush2", "ReedClump1", "ReedClump2", "ShorePine2"), 40, 1.6, (-22, 9), True),
+            "far-40": (far, 40, 3.0, (-22, 9), True),
+            "far-120": (far, 120, 3.0, (-22, 5), True),
+        }
+        if args.check_faces:
+            dress_kit(face_check_material)
+            names = list(LITE_BUILDERS)
+            lineup(names, SCRATCH / "faces-lite-front.png", gap=1.6, px=14)
+            lineup(names, SCRATCH / "faces-lite-back.png", gap=1.6, px=14, view=(150, 40))
+            lineup(names, SCRATCH / "faces-lite-under.png", gap=1.6, px=14, view=(-40, -30), ground=False)
+            return
+        result["old"]["LeafyTree"] = import_old("LeafyTree")
+        dress_kit()
+        for key, (names, studs, gap, view, fig) in rows.items():
+            labels = lineup(names, SCRATCH / f"lite-{key}.png", gap=gap, view=view, px=px_at(studs), with_figure=fig)
+            result["lineups"][key] = {"labels": labels, "studs": studs, "w": scene_of().render.resolution_x, "h": scene_of().render.resolution_y}
+            out.write_text(json.dumps(result, indent=1), encoding="utf-8")
+        setup_cycles(1920, 1080)
+        bank_terrain()
+        far_treeline()
+        for studs in (60, 120):
+            shoot(SCRATCH / f"lite-treeline-{studs}.png", (0.0, shore_y(0.0) - studs, 6.0), (0.0, shore_y(0.0) + 20.0, 8.0), w=1920, h=1080)
+            result["shots"][f"treeline-{studs}"] = {"studs": studs, "w": 1920, "h": 1080}
+        out.write_text(json.dumps(result, indent=1), encoding="utf-8")
+
     # ------------------------------------------------------------------ run
     for d in (MODELS, ROBLOX, PREVIEWS, SCRATCH):
         d.mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     scene_of().unit_settings.system = "NONE"
+    if args.lite:
+        run_lite()
+        return
     result = {"lift": LIFT, "uv_studs": 1.0, "maps": maps, "models": build_kit(), "lineups": {}}
     (SCRATCH / "result.json").write_text(json.dumps(result, indent=1), encoding="utf-8")
     if args.no_render:
@@ -1529,6 +1967,153 @@ def check_glb(path: Path, want_studs, boxed: bool):
     return size, tris
 
 
+def driver_lite(args, Image, ImageDraw, ImageFont):
+    """The lite set's half of the driver: check the files, record them, compose the sheet."""
+    result = json.loads((SCRATCH / "result_lite.json").read_text(encoding="utf-8"))
+    maps = result["maps"]
+    manifest = json.loads(MANIFEST.read_text(encoding="utf-8")) if MANIFEST.exists() else {}
+    for key in [k for k in manifest if k.rsplit("_", 1)[0] in LITE and k.rsplit("_", 1)[-1] in FAMILIES]:
+        del manifest[key]
+    total, over = 0, []
+    for name, entry in result["models"].items():
+        spec = LITE[name]
+        model_tris = sum(m["triangles"] for m in entry["meshes"].values())
+        total += model_tris
+        if model_tris > spec["budget"] * LITE_SLACK:
+            over.append(f"{name}: {model_tris} triangles is over its budget of about {spec['budget']}")
+        if spec["of"] and entry.get("same_box_as") != spec["of"]:
+            over.append(f"{name}: it did not fit {spec['of']}'s box")
+        full_tris = sum(m["triangles"] for m in result["full"][spec["of"]]["meshes"].values()) if spec["of"] else None
+        for fam, mesh in entry["meshes"].items():
+            for sub in ("glb", "roblox_glb"):
+                size, tris = check_glb(REPO / mesh[sub], entry["studs"], entry["anchors"])
+            if tris != mesh["triangles"]:
+                raise SystemExit(f"{name}_{fam}: {tris} triangles in the file, {mesh['triangles']} in Blender")
+            if spec["of"]:
+                what = (f"The lighter twin of {spec['of']} ({model_tris} triangles for {full_tris}): the same plant with fewer faces, "
+                        f"and the same box, pivot and bury (two corner specks pin the box), so it swaps in at the same CFrame.")
+            else:
+                what = ("A far tree: one mesh, the trunk painted dark on it. For treelines seen from across the water; switch "
+                        "CastShadow off. The box is centred on the foot of the trunk (two corner specks).")
+            manifest[f"{name}_{fam}"] = {
+                "name": f"{name}_{fam}",
+                "studs": size,
+                "triangles": tris,
+                "parts": 1,
+                "replaces": spec["replaces"],
+                "notes": (f"Bank kit lite set, Layer B, {fam} family: MaterialVariant {WANTED[fam]} with its NEUTRAL colour map, normal "
+                          f"and roughness. {what} Vertex colours stored {result['lift']:g} times the colour wanted. UVs at 1 stud per "
+                          f"UV unit. Upload art/models/roblox/{name}_{fam}.glb. Pivot at the bottom centre; the ground line is "
+                          f"{entry['bury']:g} studs above it, so place the pivot at ground (or water) height minus {entry['bury']:g}. "
+                          f"It stands {entry['height']:.1f} studs above the ground line. {spec['where']}"),
+                "model": name,
+                "family": fam,
+                "variant": WANTED[fam],
+                "uv_studs": 1.0,
+                "lift": result["lift"],
+                "bury": entry["bury"],
+                "height_above_ground": entry["height"],
+                "true_studs": entry["true_studs"],
+                "model_triangles": model_tris,
+                "lite_of": spec["of"],
+                "full_model_triangles": full_tris,
+                "palette_seen_rgb": {k: entry["palette"][k] for k in entry["keys"][fam]},
+            }
+            print(f"{name}_{fam}: {size} studs, {tris} triangles, bury {entry['bury']:g}")
+    if over and not os.environ.get("BANK_KIT_WIP"):
+        raise SystemExit("\n".join(over))
+    MANIFEST.write_text(json.dumps(dict(sorted(manifest.items())), indent=2) + "\n", encoding="utf-8")
+    print(f"bank kit lite: {len(result['models'])} models, {sum(len(e['meshes']) for e in result['models'].values())} meshes, {total} triangles")
+    if args.no_render or args.check_faces:
+        return
+
+    def font(size, bold=False):
+        for f in (("segoeuib.ttf",) if bold else ()) + ("segoeui.ttf", "arial.ttf"):
+            try:
+                return ImageFont.truetype(f, size)
+            except OSError:
+                continue
+        return ImageFont.load_default()
+
+    def tris_of(name):
+        if name in result["models"]:
+            n = sum(m["triangles"] for m in result["models"][name]["meshes"].values())
+            return f"{n} tris"
+        if name in result["full"]:
+            return f"{sum(m['triangles'] for m in result['full'][name]['meshes'].values())} tris"
+        if name in result["old"]:
+            return f"{result['old'][name]} tris (old)"
+        return ""
+
+    pad, head = 16, 34
+    W = 2760
+    sheet = Image.new("RGB", (W, 16000), (24, 24, 27))
+    draw = ImageDraw.Draw(sheet)
+    draw.text((pad, 12), "Home lake bank kit: the lite twins and the far trees (11/27/2026)", font=font(30, True), fill=(240, 240, 240))
+    draw.text((pad, 50), "Every picture is drawn at the size a 1080p screen shows it from that distance through the game's 70 degree camera. "
+              "In each pair the full model is on the left and its lite twin on the right.", font=font(16), fill=(170, 170, 175))
+    y = 84
+
+    def panel(x, y, key, title):
+        info = result["lineups"][key]
+        im = Image.open(SCRATCH / f"lite-{key}.png").convert("RGB")
+        draw.text((x, y + 6), title, font=font(18, True), fill=(220, 220, 224))
+        sheet.paste(im, (x, y + head))
+        small_row = info["studs"] >= 40
+        for i, lab in enumerate(info["labels"]):
+            name = lab["name"]
+            lx = x + int(lab["x"] * info["w"])
+            lines = [name] if info["studs"] > 40 else [name, tris_of(name)]
+            step = (i % 2) * (34 if len(lines) > 1 else 17) if small_row else 0
+            for j, text in enumerate(lines):
+                if not text:
+                    continue
+                f = font(13 if small_row else 16, j == 0)
+                tw = draw.textlength(text, font=f)
+                draw.text((min(max(x, lx - tw / 2), x + info["w"] - tw), y + head + info["h"] + 4 + step + j * (16 if small_row else 20)),
+                          text, font=f, fill=(232, 232, 236) if j == 0 else (165, 165, 172))
+        return info["w"], head + info["h"] + (76 if small_row else 48)
+
+    for row in (
+        [("near-ferns", "Ferns, from 10 studs"), ("near-reeds", "Reeds, from 10 studs")],
+        [("near-bushes", "Bushes, from 10 studs")],
+        [("near-pine", "ShorePine2, from 10 studs")],
+        [("mid-all", "All seven pairs, from 40 studs")],
+        [("far-40", "The far trees beside the near pines and the old LeafyTree, from 40 studs"),
+         ("far-120", "The same row, from 120 studs")],
+    ):
+        x, tall = pad, 0
+        for key, title in row:
+            w, h = panel(x, y, key, title)
+            x += w + pad
+            tall = max(tall, h)
+        y += tall + pad
+    for studs, box in ((60, (0, 150, 1920, 700)), (120, (320, 330, 1600, 640))):
+        im = Image.open(SCRATCH / f"lite-treeline-{studs}.png").convert("RGB").crop(box)
+        draw.text((pad, y + 6), f"A treeline from {studs} studs out. Left of the line: ShorePine1, ShorePine2 and the old LeafyTree. "
+                  "Right of it: FarPine1, FarPine2, FarLeafy1 and FarLeafy2, casting no shadows.", font=font(17), fill=(210, 210, 214))
+        sheet.paste(im, (pad, y + head))
+        mid = pad + (960 - box[0])
+        draw.line((mid, y + head, mid, y + head + im.height), fill=(240, 240, 240), width=1)
+        y += head + im.height + pad
+    lines = []
+    for name, entry in result["models"].items():
+        spec = LITE[name]
+        n = sum(m["triangles"] for m in entry["meshes"].values())
+        parts = " + ".join(f"{fam} {m['triangles']}" for fam, m in entry["meshes"].items())
+        was = f", was {sum(m['triangles'] for m in result['full'][spec['of']]['meshes'].values())}" if spec["of"] else ""
+        lines.append(f"{name}: {n} triangles ({parts}){was}; box {entry['studs'][0]:g} x {entry['studs'][1]:g} x {entry['studs'][2]:g}, bury {entry['bury']:g}")
+    half = (len(lines) + 1) // 2
+    for i, text in enumerate(lines):
+        draw.text((pad + (i // half) * (W // 2), y + (i % half) * 24), text, font=font(16), fill=(200, 200, 205))
+    y += half * 24 + pad
+    out = PREVIEWS / "bank_kit_lite.png"
+    # 256 colours, as the other previews, so the sheet stays small in git (the full-colour
+    # renders it is made of stay in artifacts/bank_kit/lite-*.png)
+    sheet.crop((0, 0, W, y)).quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.FLOYDSTEINBERG).save(out, optimize=True)
+    print(f"sheet: {out}")
+
+
 def driver_main():
     import subprocess
 
@@ -1547,6 +2132,8 @@ def driver_main():
         if not (args.no_render or args.check_faces):
             make_standins(maps)
         subprocess.run([BLENDER, "-b", "--factory-startup", "-P", str(Path(__file__).resolve()), "--", *sys.argv[1:]], check=True)
+    if args.lite:
+        return driver_lite(args, Image, ImageDraw, ImageFont)
     result = json.loads((SCRATCH / "result.json").read_text(encoding="utf-8"))
     maps = result["maps"]
 

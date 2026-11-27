@@ -24,6 +24,8 @@ Usage (from the repo root; needs Python 3 with Pillow and numpy, nothing else):
                                                                   # artifacts/textures_candidates/
     python art/scripts/texture_pipeline.py meadow_grass --source Grass004 --out artifacts/tmp/g4
     python art/scripts/texture_pipeline.py wet_sand --set rough_mean=0.3 --set soften=0.6
+    python art/scripts/texture_pipeline.py shore_sand --keep-previous   # the json keeps the
+                                                                  # stats it replaces ("previous")
 
 The table of families is `art/scripts/texture_families.json`. Each family names its
 source, its size (1024 terrain, 512 props), its target palette colour and the knobs
@@ -47,7 +49,9 @@ Steps, in order:
      (flatten, flatten_sigma). Big grain stays.
   7. Palette pull: the mean colour becomes target_rgb exactly; brightness variation is
      kept as a ratio but capped (max_rel_std), speckles are soft-clipped (despeckle_k),
-     and hue variation is scaled down (hue_var).
+     and hue variation is scaled down (hue_var). `saturation` (1.0 = as asked) pulls the
+     target itself toward its own grey first, so 0.85 gives a colour map 15 percent less
+     saturated at the same brightness; the stats keep both colours.
   8. Neutral map: the same brightness ratio on pure grey, mean neutral_mean.
   9. Normal: soften, scale strength (normal_strength; below 1 flattens), re-normalize.
  10. Roughness: soften, move the mean to rough_mean, scale contrast, clamp.
@@ -415,7 +419,7 @@ def run_generator(script: str) -> None:
 
 def process(family: str, table: dict, source_override: str | None = None,
             out_dir: Path | None = None, overrides: dict | None = None,
-            fetch: bool = False) -> dict:
+            fetch: bool = False, keep_previous: bool = False) -> dict:
     cfg = dict(table.get("defaults", {}))
     cfg.update(table["families"][family])
     # a candidate can carry its own knobs (rotation, crop and so on)
@@ -489,6 +493,10 @@ def process(family: str, table: dict, source_override: str | None = None,
 
     # 7. palette pull
     target = np.array(cfg["target_rgb"], dtype=np.float64) / 255.0
+    sat = float(cfg.get("saturation", 1.0))
+    if sat != 1.0:                                 # the same brightness, closer to (or further from) grey
+        t_grey = float(target @ LUMA)
+        target = np.clip(t_grey + sat * (target - t_grey), 0.0, 1.0)
     luma = color @ LUMA
     mean_luma = float(luma.mean())
     ratio = luma / mean_luma                       # brightness as a ratio around 1
@@ -505,7 +513,7 @@ def process(family: str, table: dict, source_override: str | None = None,
     # hue variation: what is left of the colour once its own brightness is taken out
     mean_rgb = color.reshape(-1, 3).mean(axis=0)
     chroma = color / luma[..., None] - (mean_rgb / mean_luma)[None, None, :]
-    hue_var = float(cfg.get("hue_var", 0.4))
+    hue_var = float(cfg.get("hue_var", 0.4)) * sat
     t_luma = float(target @ LUMA)
     pulled = (target[None, None, :] + hue_var * chroma * t_luma) * ratio[..., None]
     pulled = np.clip(pulled, 0.0, 1.0)
@@ -609,6 +617,8 @@ def process(family: str, table: dict, source_override: str | None = None,
         "licence": info.get("licence", "CC0"),
         "studs_per_tile": cfg.get("studs_per_tile"),
         "target_rgb": cfg["target_rgb"],
+        "saturation": sat,
+        "target_rgb_used": [round(float(v) * 255.0, 1) for v in target],
         "mean_rgb": [round(float(v) * 255.0, 1) for v in pulled.reshape(-1, 3).mean(axis=0)],
         "luma_rel_std_in": round(rel_std_in, 4),
         "luma_rel_std_out": round(float(out_luma.std() / out_luma.mean()), 4),
@@ -628,6 +638,17 @@ def process(family: str, table: dict, source_override: str | None = None,
         },
         "settings": {k: cfg[k] for k in sorted(cfg) if k not in ("candidates", "note")},
     }
+    # What this run replaces: --keep-previous files the old stats under "previous"; without it
+    # a "previous" already on file is carried along untouched.
+    try:
+        old = json.loads((out / f"{family}.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        old = None
+    if old is not None:
+        if keep_previous:
+            stats["previous"] = {k: v for k, v in old.items() if k != "previous"}
+        elif "previous" in old:
+            stats["previous"] = old["previous"]
     with open(out / f"{family}.json", "w", encoding="utf-8") as f:
         json.dump(stats, f, indent=2)
         f.write("\n")
@@ -741,6 +762,8 @@ def main() -> None:
     ap.add_argument("--out", help="override the output folder")
     ap.add_argument("--fetch", action="store_true", help="download missing sources first")
     ap.add_argument("--set", action="append", metavar="KEY=VALUE", help="override a knob for this run")
+    ap.add_argument("--keep-previous", action="store_true",
+                    help="keep the stats this run replaces in the family's json, under \"previous\"")
     args = ap.parse_args()
 
     table = load_table()
@@ -754,7 +777,7 @@ def main() -> None:
     overrides = parse_set(args.set)
     if args.all:
         for name in fams:
-            process(name, table, fetch=args.fetch, overrides=overrides)
+            process(name, table, fetch=args.fetch, overrides=overrides, keep_previous=args.keep_previous)
         return
     if not args.family or args.family not in fams:
         raise SystemExit(f"pick a family: {', '.join(fams)}")
@@ -767,7 +790,7 @@ def main() -> None:
         return
     process(args.family, table, source_override=args.source,
             out_dir=Path(args.out).resolve() if args.out else None,
-            overrides=overrides, fetch=args.fetch)
+            overrides=overrides, fetch=args.fetch, keep_previous=args.keep_previous)
 
 
 if __name__ == "__main__":

@@ -1420,7 +1420,26 @@ def build_sheet(ims):
     print("  sheet.png, preview/mock_*.png")
 
 
+def firefly_dot():
+    """The fireflies' particle (N1 review 1): a 64 x 64 soft white dot, alpha falling off like a
+    glow (a hot core, a gaussian halo to the edge), white so the emitter's Color tints it."""
+    n = 64
+    y, x = np.mgrid[0:n, 0:n].astype(np.float64)
+    r = np.hypot(x - (n - 1) / 2, y - (n - 1) / 2) / (n / 2)  # 0 centre, 1 edge
+    a = 0.65 * np.exp(-(r / 0.42) ** 2) + 0.35 * np.exp(-(r / 0.16) ** 2)
+    a = np.clip(a * np.clip((1 - r) / 0.12, 0, 1), 0, 1)  # exactly clear at the rim
+    rgba = np.zeros((n, n, 4), np.uint8)
+    rgba[..., :3] = 255
+    rgba[..., 3] = np.round(a * 255).astype(np.uint8)
+    path = os.path.join(OUT, "firefly_dot.png")
+    Image.fromarray(rgba, "RGBA").save(path, optimize=True)
+    print("  firefly_dot.png")
+
+
 def main():
+    if "--firefly-dot" in sys.argv:  # python art/scripts/ui_art.py --firefly-dot (this one image only)
+        firefly_dot()
+        return
     print("UI art ->", OUT)
     ims = build_images()
     write_readme(ims)

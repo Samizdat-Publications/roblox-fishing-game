@@ -114,7 +114,7 @@
         110,
         96,
         74
-      ],
+      ], "saturation": 0.85,
       "rough_mean": 0.35,
       "studs_per_tile": 16,
       "ao_mix": 0.1,
@@ -247,7 +247,7 @@
         186,
         170,
         128
-      ],
+      ], "saturation": 0.85,
       "studs_per_tile": 16,
       "rough_mean": 0.9,
       "normal_strength": 0.6,
