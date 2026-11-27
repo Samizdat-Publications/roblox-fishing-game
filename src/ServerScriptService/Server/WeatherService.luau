@@ -1,6 +1,6 @@
 --!strict
--- Runs the weather (Shared/Weather.luau, docs/WEATHER.md). Each game day gets a plan at
--- midnight; the current weather, wind and moon are published as Workspace attributes so
+-- Runs the weather (Shared/Weather.luau, docs/WEATHER.md). Each game day plays the real
+-- date's plan (one forecast for every server, L6d); the current weather, wind and moon are published as Workspace attributes so
 -- every client draws the same sky and reads the same forecast. The server alone decides.
 -- UNVERIFIED in Studio: written 2026-11-26 in the cloud. The look is not drawn here: DayNight
 -- lays LookPresets.WEATHER over the time-of-day look from the "Weather" attribute (L6a), and
@@ -14,12 +14,15 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Weather = require(Shared.Weather)
 local Remotes = require(Shared.Remotes)
 local Config = require(Shared.Config)
+local Today = require(script.Parent.Today)
 
 local WeatherService = {}
 
-local seed = os.time() % 100000
+-- The plan comes from the real date (Weather.planForDate, L6d), the same on every server;
+-- every game day of that date plays it. `day` counts game days on this server, for the moon.
 local day = 0
-local plan: Weather.DayPlan = Weather.planDay(0, seed, nil)
+local date = Today.day()
+local plan: Weather.DayPlan = Weather.planForDate(date)
 local current: Weather.Now = Weather.at(plan, Lighting.ClockTime, Weather.moonOf(0))
 
 local function publish(announce: boolean)
@@ -77,9 +80,16 @@ function WeatherService.start()
 		end
 		timer = 0
 		local clock = Lighting.ClockTime
-		if clock < lastClock then -- past midnight: a new day and its plan
-			day += 1
-			plan = Weather.planDay(day, seed, plan)
+		local today = Today.day()
+		if clock < lastClock or today ~= date then -- past game midnight or a new real date: the date's plan
+			if clock < lastClock then
+				day += 1
+			end
+			date = today
+			plan = Weather.planForDate(date)
+			if clock >= lastClock then
+				publish(false) -- a new date mid game day: the forecast changes even if the sky doesn't yet
+			end
 		end
 		lastClock = clock
 		local nextNow = Weather.at(plan, clock, Weather.moonOf(day))

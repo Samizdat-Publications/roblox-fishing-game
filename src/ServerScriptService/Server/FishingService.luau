@@ -34,6 +34,8 @@ local GoalService = require(Server.GoalService)
 local WeatherService = require(Server.WeatherService)
 local Weather = require(Shared.Weather)
 local Frenzy = require(Shared.Frenzy)
+local Daily = require(Shared.Daily)
+local Today = require(Server.Today)
 local FrenzyService = require(Server.FrenzyService)
 local Teamwork = require(Shared.Teamwork)
 local BoatService = require(Server.BoatService)
@@ -669,6 +671,8 @@ local function onCast(player: Player, dir: any, power: any, clientLanding: any)
 	if FrenzyService.at(s.spot) then
 		s.weights = Frenzy.weights(s.weights :: { FishLogic.Weight }, s.spot :: string)
 	end
+	-- The fish of the day (the chalkboard, L6d) bites a little more readily, where it already bites.
+	s.weights = Daily.boost(s.weights :: { FishLogic.Weight }, Daily.fishOfDay(Today.day()))
 	-- A cast onto an open rise claims it: a quick bite, if anything here wants this bait.
 	if #(s.weights :: { FishLogic.Weight }) > 0 and RiseService.claim(player, landing) then
 		s.fastBite = Rises.biteDelay(rng)

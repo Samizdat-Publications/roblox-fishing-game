@@ -9,6 +9,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared.Config)
 local PondLogic = require(Shared.PondLogic)
 local Remotes = require(Shared.Remotes)
+local Daily = require(Shared.Daily)
 
 local Server = script.Parent
 local PlayerData = require(Server.PlayerData)
@@ -17,6 +18,8 @@ local PondService = {}
 
 local rng = Random.new()
 local started: { [Player]: boolean } = {}
+-- What the pond did while each player was away, until their client asks for it once (L6d).
+local away: { [Player]: Daily.AwayReport? } = {}
 
 local function sizes(pond: any): { number }
 	local out = {}
@@ -73,13 +76,18 @@ local function onLoaded(player: Player, data: any)
 		data.pond.lastTick = now -- first visit: nothing to catch up on
 		return
 	end
-	local away = now - data.pond.lastTick
+	local seconds = now - data.pond.lastTick
 	data.pond.lastTick = now
-	local grew, born = advance(data, away)
+	local before = {}
+	for i, f in data.pond.fish do
+		before[i] = { id = f.id, name = f.name, cm = f.cm }
+	end
+	local grew, born = advance(data, seconds)
 	local text = summary(grew, born, "Your pond while you were away: ")
+	-- The "While You Were Away" card (the client asks for it once its screen is up).
+	away[player] = Daily.awayReport(before, data.pond.fish, born)
 	if text then
-		Remotes.event("Toast"):FireClient(player, text)
-		print(string.format("[Pond] %s away %d s: %s", player.Name, away, text))
+		print(string.format("[Pond] %s away %d s: %s", player.Name, seconds, text))
 		PlayerData.changed(player)
 	end
 end
@@ -94,7 +102,20 @@ function PondService.start()
 	end
 	Players.PlayerRemoving:Connect(function(p)
 		started[p] = nil
+		away[p] = nil
 	end)
+
+	-- Once per join: the away card, or nil when nothing changed. Waits a little for the save
+	-- to load if the client asks first.
+	Remotes.func("AwayReport").OnServerInvoke = function(player: Player)
+		local waited = 0
+		while not started[player] and waited < 15 and player.Parent do
+			waited += task.wait(0.25)
+		end
+		local report = away[player]
+		away[player] = nil
+		return report
+	end
 
 	Remotes.func("PondAction").OnServerInvoke = function(player: Player, action: any, index: any)
 		local data = PlayerData.get(player)

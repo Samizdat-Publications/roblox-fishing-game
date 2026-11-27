@@ -133,6 +133,22 @@ function Weather.planDay(day: number, seed: number, previous: DayPlan?): DayPlan
 	return { day = day, kind = "Clear" }
 end
 
+-- One forecast for every server by real date (L6d): the date's day number (Goals.dayOf)
+-- picks the plan with a fixed seed, so "storm this afternoon" on the chalkboard is true on
+-- every server, and every game day of that date plays it (fog each morning, the storm each
+-- afternoon). The day after a storm date is a cold front: the chain starts a few dates back
+-- so yesterday's plan is known without a save.
+Weather.DATE_SEED = 1977
+Weather.DATE_LOOKBACK = 8
+
+function Weather.planForDate(date: number): DayPlan
+	local plan: DayPlan? = nil
+	for d = date - Weather.DATE_LOOKBACK, date do
+		plan = Weather.planDay(d, Weather.DATE_SEED, plan)
+	end
+	return plan :: DayPlan
+end
+
 -- What the weather is at this hour of a planned day (fog lifts; a storm day goes rush,
 -- storm, then clear).
 function Weather.at(plan: DayPlan, clock: number, moon: number): Now
@@ -203,7 +219,7 @@ end
 function Weather.forecast(plan: DayPlan, moon: number): string
 	local k = Weather.byId[plan.kind] or Weather.byId.Clear
 	local text = if plan.wind then string.format(k.forecast, plan.wind) else k.forecast
-	if moon == Weather.FULL then
+	if moon == Weather.FULL then -- pass -1 to leave the moon out (the chalkboard: moons are per server)
 		text ..= " Full moon tonight."
 	end
 	return text

@@ -1,4 +1,4 @@
--- Save migration (L2b): a save from every older version the code knows (v1 to v8) loads
+-- Save migration (L2b): a save from every older version the code knows (v1 to v9) loads
 -- through the real Inventory.reconcile with its coins, journal, pond and bag intact, and no
 -- feature switch changes what a migrated save keeps. Written 2026-11-26.
 return function(t, Shared)
@@ -61,6 +61,9 @@ return function(t, Shared)
 		if v >= 8 then
 			save.assistSet = true
 		end
+		if v >= 9 then
+			save.giftDay = 20419
+		end
 		return save
 	end
 
@@ -84,8 +87,8 @@ return function(t, Shared)
 		return true
 	end
 
-	t.test("the code's current save version is 8", function()
-		t.eq(CURRENT, 8, "bump this test (and add the new version below) when the save changes")
+	t.test("the code's current save version is 9", function()
+		t.eq(CURRENT, 9, "bump this test (and add the new version below) when the save changes")
 	end)
 
 	for v = 1, CURRENT do
@@ -157,6 +160,8 @@ return function(t, Shared)
 				-- v8: assist off in an older save was the player's own choice, so it stays set by hand.
 				t.eq(d.assistSet, true, "assist set by hand")
 			end
+			-- v9: the last day the shopkeeper's tackle box was taken; never, before v9.
+			t.eq(d.giftDay, if v >= 9 then 20419 else 0, "gift day")
 			-- Every field a new save has is filled in.
 			for k in Inventory.new() :: any do
 				t.ok((d :: any)[k] ~= nil, "has " .. k)
@@ -236,5 +241,17 @@ return function(t, Shared)
 		t.eq(d.tackle.perfects, 0, "perfects rebuilt")
 		local d2 = Inventory.reconcile({ v = 7, tackle = 5 })
 		t.eq(type(d2.tackle), "table", "tackle rebuilt")
+	end)
+
+	t.test("v9: a damaged gift day is repaired, and an old save can take today's gift", function()
+		local Daily = require(Shared.Daily)
+		local bad = Inventory.reconcile({ v = 9, giftDay = "yesterday" })
+		t.eq(bad.giftDay, 0, "a damaged gift day goes back to never")
+		local d = Inventory.reconcile(oldSave(8))
+		local worms = d.bait.Worm
+		local ok = Daily.claimGift(d, 20420)
+		t.ok(ok, "a migrated save gets today's gift")
+		t.eq(d.giftDay, 20420, "gift day stored")
+		t.ok(d.bait.Worm >= worms, "nothing taken away")
 	end)
 end

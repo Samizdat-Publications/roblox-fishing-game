@@ -15,12 +15,9 @@ local GoalService = {}
 
 local TURNOVER_CHECK = if RunService:IsStudio() then 5 else 60 -- seconds between new-day checks
 
--- Now, in seconds. Studio-only test hook: Workspace attribute DebugDayOffset (whole days)
--- moves the date forward, so "tomorrow's goals" can be checked without waiting.
-local function now(): number
-	local offset = if RunService:IsStudio() then workspace:GetAttribute("DebugDayOffset") else nil
-	return os.time() + (if type(offset) == "number" then math.floor(offset) * 86400 else 0)
-end
+-- Now, in seconds, with the Studio-only DebugDayOffset hook (shared with the weather, the
+-- chalkboard and the shopkeeper's gift in Server/Today.luau).
+local now = require(script.Parent.Today).now
 
 local function current(data: any): Goals.State
 	data.goals = Goals.ensure(data.goals, Goals.dayOf(now()), data.creekPass == true, next(data.boats or {}) ~= nil)

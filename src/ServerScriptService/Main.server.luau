@@ -26,6 +26,7 @@ require(Server.PlayerData).start()
 require(Server.RodService).start()
 require(Server.FishingService).start()
 require(Server.RiseService).start() -- rises: a fish breaks the surface (L2b, UNVERIFIED in Studio)
+require(Server.Chalkboard).start() -- Today on the Lake board and the tackle box crate (L6d); before EconomyService, which hooks the crate's prompt
 require(Server.EconomyService).start()
 require(Server.PondService).start()
 require(Server.GoalService).start() -- daily goals; does nothing while GOALS_ON is off

@@ -12,6 +12,8 @@ local Server = script.Parent
 local PlayerData = require(Server.PlayerData)
 local RodService = require(Server.RodService)
 local GoalService = require(Server.GoalService)
+local Today = require(Server.Today)
+local Daily = require(Shared.Daily)
 
 local EconomyService = {}
 
@@ -44,6 +46,23 @@ local function onShopOpened(player: Player)
 	if data and Inventory.freeWormsIfStuck(data) then
 		toast(player, "You look broke. The shopkeeper hands you a few free worms.")
 		PlayerData.changed(player)
+	end
+end
+
+-- The shopkeeper's tackle box (L6d): one small gift per real day, the first time a player
+-- opens it. A second ask the same day is turned down kindly; missed days lose nothing.
+local function onTackleBox(player: Player)
+	local data = PlayerData.get(player)
+	if not data then
+		return
+	end
+	local day = Today.day()
+	local given, msg = Daily.claimGift(data, day)
+	toast(player, msg)
+	if given then
+		print(string.format("[Economy] %s took the tackle box for day %d", player.Name, day))
+		PlayerData.changed(player)
+		PlayerData.saveNow(player)
 	end
 end
 
@@ -146,6 +165,12 @@ function EconomyService.start()
 		shop.Triggered:Connect(onShopOpened)
 	else
 		warn("[Economy] ShopPrompt missing")
+	end
+	local tackle = lake:FindFirstChild("TacklePrompt", true) :: ProximityPrompt? -- built by Chalkboard
+	if tackle then
+		tackle.Triggered:Connect(onTackleBox)
+	else
+		warn("[Economy] TacklePrompt missing (Chalkboard not built?)")
 	end
 	print("[Economy] ready")
 end

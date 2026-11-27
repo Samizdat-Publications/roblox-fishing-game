@@ -45,13 +45,14 @@ export type Data = {
 	quickBait: boolean, -- v7: skip the bait bench (always Okay)
 	tackle: { best: { [string]: string }, perfects: number }, -- v7: Tackle Box, best grade per bait
 	assistSet: boolean, -- v8: the player turned reel assist on or off by hand (it then never changes by itself)
+	giftDay: number, -- v9: the last day (Goals.dayOf) the shopkeeper's tackle box was taken; 0 for never (L6d)
 }
 
 local Inventory = {}
 
 function Inventory.new(): Data
 	return {
-		v = 8,
+		v = 9,
 		coins = Config.START_COINS,
 		bait = { Worm = Config.START_WORMS },
 		lures = {},
@@ -71,6 +72,7 @@ function Inventory.new(): Data
 		quickBait = false,
 		tackle = { best = {}, perfects = 0 },
 		assistSet = false,
+		giftDay = 0,
 	}
 end
 
@@ -136,6 +138,14 @@ function Inventory.reconcile(saved: any): Data
 	end
 	if type(saved.assistSet) ~= "boolean" then
 		saved.assistSet = false
+	end
+	-- v9: the shopkeeper's daily tackle box (L6d). Only the last gift day is kept: nothing
+	-- counts up and a missed day loses nothing. UNVERIFIED in Studio.
+	if type(saved.giftDay) ~= "number" then
+		saved.giftDay = 0
+	end
+	if saved.v < 9 then
+		saved.v = 9
 	end
 	return saved
 end

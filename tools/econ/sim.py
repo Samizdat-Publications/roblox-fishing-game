@@ -209,6 +209,12 @@ BENCH_SECONDS = {"Okay": 0.0, "Good": 3.5, "Perfect": 3.5}  # Okay is Quick Bait
 LURE_BENCH_SECONDS = {"Okay": 0.0, "Good": 4.5, "Perfect": 4.5}  # a knot or a Texas rig (L3b)
 RIG_ON = False  # --bait
 
+# The fish of the day (L6d), read from Shared/Daily.luau: one species bites a little more
+# readily. Off unless --fish-of-day names it.
+_daily_src = (_shared / "Daily.luau").read_text(encoding="utf-8")
+FISH_OF_DAY_BOOST = _const(_daily_src, "FISH_OF_DAY_BOOST")
+FISH_OF_DAY = None
+
 
 def hook_miss(hook, sid):
     m = MOUTHS.get(FISH_BY_ID[sid].get("mouth"))
@@ -238,6 +244,9 @@ def bite_weights(spot, period, bait, cover=False):
     out.sort(key=lambda x: -x[1])
     if BITE_RULE == "proposed" and sum(w for _, w in out) < CFG["BITE_MIN"] / BITE_SLOWEST:
         return []
+    if FISH_OF_DAY:  # Daily.boost, after the "nothing here" check, as FishingService does
+        out = [(sid, w * FISH_OF_DAY_BOOST if sid == FISH_OF_DAY else w) for sid, w in out]
+        out.sort(key=lambda x: -x[1])
     if cover and spot in COVER_SPOTS:  # Cover.applyCover, after the "nothing here" check
         out = [(sid, w * COVER_WEIGHT if sid in COVER_SPECIES else w) for sid, w in out]
         out.sort(key=lambda x: -x[1])
@@ -1270,8 +1279,10 @@ def main():
     ap.add_argument("--grace", action="store_true", help="only report kid landing rates against FIGHT_IDLE_GRACE (L4b)")
     ap.add_argument("--grace-value", type=float, help="play with this FIGHT_IDLE_GRACE instead of Config's, to compare")
     ap.add_argument("--assist-always", action="store_true", help="reel assist never turns itself off (the game before L4b)")
+    ap.add_argument("--fish-of-day", help="this species bites a little more readily all day (Daily.luau, L6d)")
     args = ap.parse_args()
-    global SIZE_CLASSES, WEATHER_ON, GOALS, ASSIST_ALWAYS
+    global SIZE_CLASSES, WEATHER_ON, GOALS, ASSIST_ALWAYS, FISH_OF_DAY
+    FISH_OF_DAY = args.fish_of_day
     ASSIST_ALWAYS = args.assist_always
     if args.grace_value is not None:
         CFG["FIGHT_IDLE_GRACE"] = args.grace_value

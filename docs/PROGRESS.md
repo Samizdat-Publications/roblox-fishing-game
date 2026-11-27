@@ -221,6 +221,16 @@ Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6
 - Still to do in L1: a Lake Sturgeon at the deep hole in its real conditions, the journal on the smallest phone (the simulated mouse wheel zoomed the camera instead of scrolling the journal; check with a real wheel), the 15 new fish models (they hang as the old shape until then), a Neon reveal clip, the StyLua reformat, and Liam's 20 minutes.
 - Look mockups for the beauty pass: five looks (Golden Afternoon, Bright Summer Day, Misty Dawn, Moonlit Night, Autumn Lake) from the all-models stills, page https://claude.ai/artifact/DjMRLNSn6t91zKmR93sGr6 (source `planner/looks.html`, images `docs/looks/`, script `tools/looks/mockup.py`). They were made in the old flat low-poly style before Stewart picked Real-ish, so treat them as light and time-of-day moods, not materials.
 
+## 2026-11-27 (night): L6d, reasons to come back tomorrow
+
+- **Today on the Lake:** a chalkboard beside the bait shop with today's forecast, a **fish of the day** that bites a little more readily (x1.3, only where it already bites) and a **rumour** about a Legendary, worded as hearsay ("Old-timers swear the Lake Sturgeon feeds best after dark. Could be a fish story."). Still: `docs/making-of/stills/2026-11-27-chalkboard.jpg`.
+- **One forecast for every server, by date:** the weather plan now comes from the real date, so what the board says is what happens on every server, every game day of that date (fog each morning on a fog date, the storm each afternoon on a storm date). The day after a storm date is a cold front.
+- **The shopkeeper's tackle box:** a red box on a crate next to the board; once per real day it gives a small gift (30 worms, 20 crickets, 15 minnows or 15 stinkbait, by date). A second ask: "Come back tomorrow, I'll have something for you." Nothing counts up; missing days loses nothing. Save v9 (only the last gift day).
+- **While You Were Away:** on join, a card shows what grew or was born in the pond while you were gone (it replaces the old toast).
+- Verified in Studio: the board read the date's forecast, Black Crappie as fish of the day and a sturgeon rumour; the tackle box gave its gift once and refused the second ask; moving the date a day forward changed the board, the forecast and the rumour together. 321 tests pass in Studio and with Lune; all 16 changed scripts match by checksum. Place version 74 or later.
+- Economy: fish of the day moves a smart player 2.8 percent at most (carp); gifts are worth 24 to 30 coins a day.
+- Not verified: the away card (needs real time away or the DebugPondHours hook), a gift on a new date after a rejoin by hand.
+
 ## 2026-11-27 (night): L5d, a lake that isn't a box
 
 - **The shore curves:** the lake's four corners are rounded (radius 30) and five grassy points jut into the water (Birch Point and Pine Point on the north bank, East Point, West Point, and Pond Point east of the dock), each with a tree. Every bank slopes into sandy shallows. You can walk out onto a point and fish from it (`Shared/Shore.luau`).

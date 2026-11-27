@@ -28,6 +28,7 @@ local FUNCTIONS = {
 	"BuyBoat", -- (boatId) -> (ok, message)
 	"FishFinder", -- () -> marks under the boat, for the Deep-V's navigator only
 	"PondAction", -- (action: "keep"|"sell"|"release", index) -> (ok, message)
+	"AwayReport", -- () -> what the pond did while you were away (Daily.AwayReport) or nil, once per join (L6d)
 }
 
 local Remotes = {}
