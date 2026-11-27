@@ -11,6 +11,8 @@ local EVENTS = {
 	"Wiggle", -- client: (), one press to work a snagged hook free (L2b)
 	"Equip", -- client: (baitId: string)
 	"SetAssist", -- client: (on: boolean)
+	"SetQuickBait", -- client: (on: boolean), skip the bait bench (L3)
+	"Rig", -- client: (baitId: string, hook: string, timeline: { {down, up} }, skipped: boolean), the bait bench result (L3)
 	"EquipRod", -- client: (rodId: string)
 	"ChooseBoat", -- client: (boatId: string), which owned boat waits at your slip
 	"BoatInput", -- client: (throttle: number, steer: number), the helm's controls, ~10 a second

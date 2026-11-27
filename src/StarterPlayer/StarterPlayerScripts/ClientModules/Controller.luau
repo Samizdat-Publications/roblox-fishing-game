@@ -1,7 +1,8 @@
 --!strict
 -- Client fishing flow and input. One "Fish" action on every device:
 --   hold and release to cast, press on a bite to hook, hold to reel during the fight,
---   press while waiting to reel back in.
+--   press while waiting to reel back in. With live bait and an empty hook, the press that
+--   would cast opens the bait bench first (L3, BaitBench); the same button works it.
 --
 -- From the bite until the fight ends, input is read straight from UserInputService, so a
 -- click or touch ANYWHERE on screen (even over a panel or button) hooks and reels. Panels
@@ -23,12 +24,16 @@ local CastLogic = require(Shared.CastLogic)
 local FishLogic = require(Shared.FishLogic)
 local WaterMap = require(Shared.WaterMap)
 local Cover = require(Shared.Cover)
+local BaitRig = require(Shared.BaitRig)
+local BaitData = require(Shared.BaitData)
 
 local UI = require(script.Parent.UI)
 local PondView = require(script.Parent.PondView)
 local SoundFX = require(script.Parent.SoundFX)
 local CastRing = require(script.Parent.CastRing)
 local RiseRipples = require(script.Parent.RiseRipples)
+local BaitBench = require(script.Parent.BaitBench)
+local BaitView = require(script.Parent.BaitView)
 
 -- The same water and spot boxes the server casts against (Shared/WaterMap).
 local castZones = WaterMap.castZones()
@@ -36,7 +41,7 @@ local castWaters = WaterMap.castWaters()
 
 local Controller = {}
 
-local state = "Idle" -- Idle, Charging, Casting, Waiting, Snagged, Bite, Hooking, Fighting, Resolving
+local state = "Idle" -- Idle, Baiting, Charging, Casting, Waiting, Snagged, Bite, Hooking, Fighting, Resolving
 local stateSince = 0
 local chargeStart = 0
 local fight: FightModel.State? = nil
@@ -47,6 +52,9 @@ local needRelease = false -- ...and until every reel input is let go
 local heldInputs: { [InputObject]: boolean } = {}
 local autoHolding = false
 local savedMove: { walk: number, jumpPower: number, jumpHeight: number }? = nil
+-- The live bait on the hook, as the server last said (L3). nil means an empty hook.
+local rig: { bait: string, hook: string, grade: string }? = nil
+local benchHeld: { [string]: boolean } = {} -- move inputs held down on the bait bench
 
 -- Inputs that count as "reel" during a bite or fight, on every device.
 local REEL_TYPES = {
@@ -152,6 +160,7 @@ local function endFishOn()
 end
 
 local function goIdle()
+	BaitBench.cancel()
 	setState("Idle")
 	fight = nil
 	endFishOn()
@@ -232,6 +241,87 @@ local function drawRing(power: number)
 	end
 end
 
+----------------------------------------------------------------------------------------
+-- The bait bench (L3)
+
+-- The bench opens when you go to cast with live bait, the hook is empty (or tied on a
+-- different bait or hook size), and Quick Bait is off.
+local function needsBench(): boolean
+	if not snapshot or snapshot.quickBait then
+		return false
+	end
+	local id = snapshot.equipped
+	local b = BaitData.byId[id]
+	if not b or b.kind ~= "live" or (snapshot.bait[id] or 0) <= 0 or not BaitRig.recipeFor(id) then
+		return false
+	end
+	local r = rig
+	return not (r and r.bait == id and r.hook == (snapshot.hook or BaitRig.DEFAULT_HOOK))
+end
+
+-- What's on the hook right now, for the bait shown at the rod tip.
+local function onHookNow(): string?
+	if not snapshot then
+		return nil
+	end
+	local b = BaitData.byId[snapshot.equipped]
+	if b and b.kind == "lure" then
+		return if snapshot.lures[b.id] then b.id else nil
+	end
+	local r = rig
+	if r and b and r.bait == b.id then
+		return r.bait
+	end
+	return nil
+end
+
+local function onBenchDone(result: BaitBench.Result)
+	Remotes.event("Rig"):FireServer(result.bait, result.hook, result.timeline, result.skipped)
+	rig = { bait = result.bait, hook = result.hook, grade = result.grade } -- until the server answers
+	table.clear(benchHeld)
+	goIdle()
+	graceUntil = os.clock() + 0.3
+	needRelease = anyHeld()
+	UI.status(string.format("Bait on (%s). Hold %s and let go to cast.", result.grade, UI.inputName()))
+end
+
+local function openBench()
+	local id = snapshot.equipped
+	setState("Baiting")
+	table.clear(benchHeld)
+	UI.setLocked(true)
+	freezeCharacter(true)
+	CastRing.hide()
+	UI.status("")
+	local learned = snapshot.tackle and snapshot.tackle.best and snapshot.tackle.best[id]
+	BaitBench.open({
+		bait = id,
+		hook = snapshot.hook or BaitRig.DEFAULT_HOOK,
+		firstTime = learned == nil,
+		auto = autoFish(),
+		onDone = onBenchDone,
+	})
+end
+
+-- One move input went down or up on the bench. Several inputs held at once count as one press.
+local function benchDown(key: string)
+	local was = next(benchHeld) ~= nil
+	benchHeld[key] = true
+	if not was then
+		BaitBench.press()
+	end
+end
+
+local function benchUp(key: string)
+	if not benchHeld[key] then
+		return
+	end
+	benchHeld[key] = nil
+	if next(benchHeld) == nil then
+		BaitBench.release()
+	end
+end
+
 local function hook()
 	if state ~= "Bite" then
 		return
@@ -250,11 +340,27 @@ local function onFish(_name: string, inputState: Enum.UserInputState, _input: In
 		hook()
 		return Enum.ContextActionResult.Sink
 	end
+	if state == "Baiting" then
+		-- Mouse, F and R2 reach the bench through onReelInput; only the touch Fish button
+		-- (no input object) comes this way.
+		if _input == nil then
+			if began then
+				benchDown("button")
+			elseif ended then
+				benchUp("button")
+			end
+		end
+		return Enum.ContextActionResult.Sink
+	end
 	if UI.isPanelOpen() then
 		return Enum.ContextActionResult.Pass
 	end
 	if state == "Idle" and began then
 		if os.clock() < graceUntil or needRelease then
+			return Enum.ContextActionResult.Sink
+		end
+		if needsBench() then
+			openBench()
 			return Enum.ContextActionResult.Sink
 		end
 		setState("Charging")
@@ -286,6 +392,17 @@ end
 local function onReelInput(input: InputObject, began: boolean)
 	if not isReelInput(input) then
 		return
+	end
+	if state == "Baiting" then
+		local key = input.UserInputType.Name .. ":" .. input.KeyCode.Name
+		if began then
+			local pointer = input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch
+			if not (pointer and BaitBench.overButton(input.Position)) then
+				benchDown(key) -- a click on a hook button or Skip is not a move
+			end
+		else
+			benchUp(key)
+		end
 	end
 	if began then
 		heldInputs[input] = true
@@ -348,7 +465,7 @@ local function onFishingEvent(kind: string, payload: any)
 		UI.closePanels()
 		UI.setLocked(true)
 		freezeCharacter(true)
-		fight = FightModel.new(payload.fight, payload.assist, payload.seed)
+		fight = FightModel.new(payload.fight, payload.assist, payload.seed, payload.start)
 		if anyHeld() then
 			FightModel.press(fight :: FightModel.State)
 		end
@@ -365,6 +482,15 @@ local function onFishingEvent(kind: string, payload: any)
 	elseif kind == "Escaped" then
 		UI.toast(payload.text)
 		goIdleAfterFight()
+	elseif kind == "Rigged" then
+		rig = { bait = payload.bait, hook = payload.hook, grade = payload.grade }
+		if payload.kept then
+			UI.toast("Perfect bait! It stayed on the hook.", Color3.fromRGB(250, 205, 80))
+		elseif payload.refused then
+			UI.toast("Bait on: Okay.")
+		end
+	elseif kind == "RigEmpty" then
+		rig = nil
 	elseif kind == "Reset" then
 		goIdle()
 	elseif kind == "Hint" then
@@ -447,6 +573,16 @@ function Controller.start()
 			if snapshot then
 				Remotes.event("SetAssist"):FireServer(not snapshot.assist)
 			end
+		end,
+		toggleQuickBait = function()
+			if snapshot then
+				Remotes.event("SetQuickBait"):FireServer(not snapshot.quickBait)
+			end
+		end,
+		setHook = function(size: string)
+			-- Only the hook size: the bait comes off, so the next cast baits up again.
+			Remotes.event("Rig"):FireServer("", size, {}, true)
+			play("click")
 		end,
 		pond = function(action: string, index: number)
 			local ok, msg = Remotes.func("PondAction"):InvokeServer(action, index)
@@ -544,6 +680,16 @@ function Controller.start()
 		end
 		return Enum.ContextActionResult.Pass
 	end, false, Enum.KeyCode.ButtonB, Enum.KeyCode.Backspace)
+	-- On the bait bench: the next hook size (gamepad L1 or X, keyboard H).
+	ContextActionService:BindAction("BenchHook", function(_, st)
+		if state == "Baiting" then
+			if st == Enum.UserInputState.Begin then
+				BaitBench.cycleHook()
+			end
+			return Enum.ContextActionResult.Sink
+		end
+		return Enum.ContextActionResult.Pass
+	end, false, Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonX, Enum.KeyCode.H)
 
 	-- The shop opens from its stand's prompt (the server hands out free worms if you're stuck).
 	game:GetService("ProximityPromptService").PromptTriggered:Connect(function(prompt)
@@ -556,6 +702,11 @@ function Controller.start()
 
 	RunService.RenderStepped:Connect(function(dt)
 		UI.setClock(Lighting.ClockTime)
+		BaitBench.step()
+		BaitView.update(onHookNow(), state)
+		if state == "Baiting" and not BaitBench.isOpen() then
+			goIdle() -- the bench closed without finishing (should not happen)
+		end
 		if state == "Charging" then
 			local power = chargePower()
 			UI.showPower(power)

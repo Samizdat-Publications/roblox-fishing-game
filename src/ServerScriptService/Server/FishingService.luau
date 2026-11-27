@@ -23,6 +23,7 @@ local WaterMap = require(Shared.WaterMap)
 local Cover = require(Shared.Cover)
 local Advice = require(Shared.Advice)
 local Rises = require(Shared.Rises)
+local BaitRig = require(Shared.BaitRig)
 
 local Server = script.Parent
 local PlayerData = require(Server.PlayerData)
@@ -37,6 +38,11 @@ local BoatService = require(Server.BoatService)
 local RiseService = require(Server.RiseService)
 
 local FishingService = {}
+
+-- The live bait on the hook (L3): which bait, the hook size it's on and how well it went on.
+-- It stays on through missed bites and lost fights' casts until a fish takes it, a snag
+-- strips it, or the player re-baits.
+type Rig = { bait: string, hook: string, grade: BaitRig.Grade }
 
 type Session = {
 	phase: string, -- Idle, Waiting, Snagged, Bite, Fighting
@@ -55,7 +61,13 @@ type Session = {
 	tight: boolean?, -- this cast landed tight to cover (L2b)
 	fastBite: number?, -- a claimed rise: the next bite comes this many seconds after the cast (L2b)
 	snag: Cover.Snag?, -- a snagged cast being wiggled free (L2b)
+	rig: Rig?, -- the bait on the hook (L3); not cleared by cleanup()
+	rigEmptyAt: number, -- os.clock() when the hook last went empty (a bench can't start sooner)
+	lastRigAt: number, -- os.clock() of the last Rig accepted (rate limit)
 }
+
+local RIG_MIN_GAP = 0.5 -- seconds between Rig messages the server will look at
+local RIG_LATENCY = 0.5 -- slack when checking a bench run against the server's clock
 
 local sessions: { [Player]: Session } = {}
 local rng = Random.new()
@@ -70,7 +82,7 @@ local toastEvent: RemoteEvent
 local function session(player: Player): Session
 	local s = sessions[player]
 	if not s then
-		s = { phase = "Idle", token = 0, fightStart = 0, minSecs = 0 }
+		s = { phase = "Idle", token = 0, fightStart = 0, minSecs = 0, rigEmptyAt = os.clock(), lastRigAt = 0 }
 		sessions[player] = s
 	end
 	return s
@@ -96,6 +108,36 @@ local function cleanup(s: Session)
 	s.tight = nil
 	s.fastBite = nil
 	s.snag = nil
+end
+
+-- The bait on the hook for a cast with `baitId`, or nil for a lure (or a stale rig).
+local function rigFor(s: Session, baitId: string?): Rig?
+	local bait = BaitData.byId[baitId or ""]
+	local r = s.rig
+	if bait and bait.kind == "live" and r and r.bait == bait.id then
+		return r
+	end
+	return nil
+end
+
+local function sendRig(player: Player, s: Session, extra: { [string]: any }?)
+	local r = s.rig
+	if r then
+		local payload: { [string]: any } = { bait = r.bait, hook = r.hook, grade = r.grade }
+		for k, v in extra or {} do
+			payload[k] = v
+		end
+		send(player, "Rigged", payload)
+	else
+		send(player, "RigEmpty")
+	end
+end
+
+-- The live bait came off (a fish took it, or a snag stripped it): the next cast opens the bench.
+local function emptyHook(player: Player, s: Session)
+	s.rig = nil
+	s.rigEmptyAt = os.clock()
+	send(player, "RigEmpty")
 end
 
 local function reset(player: Player, s: Session)
@@ -212,8 +254,15 @@ function scheduleBite(player: Player, s: Session)
 	if delay and FrenzyService.at(s.spot) then
 		delay *= Frenzy.BITE_SPEED -- the school is boiling: bites come back to back
 	end
+	local rig = rigFor(s, s.bait)
+	if delay and rig then
+		delay *= BaitRig.biteMult(rig.grade) -- well-baited hooks get bit sooner (L3); Okay is x1
+	end
 	if delay and s.fastBite then
 		delay = s.fastBite -- cast onto a rise: that fish takes it right away (first bite only)
+	end
+	if delay then
+		print(string.format("[Fishing] %s bite in %.1fs (%s, %s)", player.Name, delay, s.bait or "?", if rig then rig.grade else "lure"))
 	end
 	s.fastBite = nil
 	if not delay then
@@ -354,6 +403,13 @@ local function onCast(player: Player, dir: any, power: any, clientLanding: any)
 	s.period = FishLogic.periodFromClock(Lighting.ClockTime)
 	s.bait = baitId
 	s.bobber = makeBobber(player, landing)
+	-- Live bait goes on the hook now if the bench wasn't used (Quick Bait, a skip, or a bait
+	-- switch the client didn't bench): Okay, exactly the game before L3.
+	local current = rigFor(s, baitId)
+	if BaitData.byId[baitId].kind == "live" and (not current or current.hook ~= data.hook) then
+		s.rig = { bait = baitId, hook = data.hook, grade = "Okay" }
+		sendRig(player, s)
+	end
 
 	-- Right on a log, or deep in the weed bed with bait that isn't weedless: snagged (L2b).
 	-- Each press of the cast button sends a Wiggle; SNAG_WIGGLES of them in SNAG_TIME free it.
@@ -369,6 +425,9 @@ local function onCast(player: Player, dir: any, power: any, clientLanding: any)
 				if now and Cover.losesBait(bait and bait.kind, false, 1) then
 					Inventory.consumeBait(now, s.bait or "")
 					PlayerData.changed(player)
+					if rigFor(s, s.bait) then
+						emptyHook(player, s)
+					end
 				end
 				cleanup(s)
 				send(player, "Snapped", { text = "The line snapped on the snag." })
@@ -416,6 +475,9 @@ local function onWiggle(player: Player)
 		if lost then
 			Inventory.consumeBait(data, s.bait or "")
 			PlayerData.changed(player)
+			if rigFor(s, s.bait) then
+				emptyHook(player, s)
+			end
 		end
 		cleanup(s)
 		send(player, "Freed", {
@@ -426,6 +488,54 @@ local function onWiggle(player: Player)
 	-- "ignored" (too fast) and "expired" (the snap timer handles it) do nothing.
 end
 
+-- The bait bench's result (L3). The client sends its presses; the server grades them again
+-- with the same BaitRig rules and refuses a timeline no real player could make (refused is
+-- Okay). A skip (hold, or the Skip button) is Okay too, and just sets the hook size.
+local function onRig(player: Player, baitId: any, hook: any, timeline: any, skipped: any)
+	local s = session(player)
+	local data = PlayerData.get(player)
+	local now = os.clock()
+	if not data or now - s.lastRigAt < RIG_MIN_GAP then
+		return
+	end
+	if not BaitRig.isHook(hook) then
+		return
+	end
+	s.lastRigAt = now
+	data.hook = hook :: string
+	local bait = type(baitId) == "string" and BaitData.byId[baitId] or nil
+	if s.phase ~= "Idle" or not bait or bait.kind ~= "live" or not Inventory.hasBait(data, bait.id) then
+		-- Only the hook size changes (the Tackle Box, a lure, or mid-cast). A rig on the old
+		-- size comes off at the next cast (see onCast).
+		PlayerData.changed(player)
+		return
+	end
+	local grade: BaitRig.Grade = "Okay"
+	local refused: string? = nil
+	if skipped ~= true then
+		local firstTime = data.tackle.best[bait.id] == nil
+		grade, refused = BaitRig.grade(bait.id, timeline, firstTime)
+		-- The bench can't have taken longer than the time since the hook went empty.
+		if not refused and type(timeline) == "table" and #timeline > 0 then
+			local last = timeline[#timeline]
+			if type(last) == "table" and type(last.up) == "number" and last.up > now - s.rigEmptyAt + RIG_LATENCY then
+				refused = "longer than the hook has been empty"
+				grade = "Okay"
+			end
+		end
+		if refused then
+			warn(string.format("[Fishing] %s's %s bench refused (%s); counted as Okay", player.Name, bait.id, refused))
+		else
+			BaitRig.record(data.tackle, bait.id, grade)
+		end
+	end
+	s.rig = { bait = bait.id, hook = hook :: string, grade = grade }
+	s.rigEmptyAt = now
+	print(string.format("[Fishing] %s baited %s on a %s hook: %s%s", player.Name, bait.id, hook, grade, if skipped == true then " (skipped)" else ""))
+	sendRig(player, s, { refused = refused ~= nil, skipped = skipped == true })
+	PlayerData.changed(player)
+end
+
 local function onHook(player: Player)
 	local s = session(player)
 	local data = PlayerData.get(player)
@@ -433,8 +543,34 @@ local function onHook(player: Player)
 		return
 	end
 	local species = FishData.byId[s.species :: string]
-	Inventory.consumeBait(data, s.bait or "")
+	-- A hook that doesn't fit the fish's mouth can fail to set (L3). The fish swims off with
+	-- the bait still on the hook, like a slow strike: wait for another bite.
+	local rig = rigFor(s, s.bait)
+	if rig and rng:NextNumber() < BaitRig.missChance(rig.hook, species.mouth, true) then
+		s.token += 1 -- the bite's hook-window timer belongs to the fish that just left
+		s.phase = "Waiting"
+		s.species = nil
+		setBobberY(s, 0)
+		print(string.format("[Fishing] %s: %s spat a %s hook", player.Name, species.id, rig.hook))
+		send(player, "Missed", { text = BaitRig.spitText(rig.hook, species.mouth, species.name), hookSize = true })
+		scheduleBite(player, s)
+		return
+	end
+	-- The fish takes the live bait. A Perfect bait has an even chance of staying on (L3).
+	local kept = false
+	if rig then
+		kept = BaitRig.survives(rig.grade, rng:NextNumber())
+	end
+	if not kept then
+		Inventory.consumeBait(data, s.bait or "")
+	end
 	PlayerData.changed(player)
+	local start = BaitRig.fightStart(if rig then rig.grade else nil)
+	if rig and not kept then
+		emptyHook(player, s)
+	elseif rig and kept then
+		sendRig(player, s, { kept = true })
+	end
 	s.phase = "Fighting"
 	s.fightStart = os.clock()
 	-- Size class first (server random only), so trophies and monsters fight harder.
@@ -448,13 +584,15 @@ local function onHook(player: Player)
 	end
 	s.catch = { cm = cm, kg = kg, class = class }
 	local profile = FishLogic.fightFor(species.fight, class)
-	s.minSecs = FightModel.minSeconds(profile, data.assist)
+	s.minSecs = FightModel.minSeconds(profile, data.assist, start)
+	print(string.format("[Fishing] %s hooked %s, fight starts at %.2f (%s)", player.Name, species.id, start, if rig then rig.grade else "lure"))
 	setBobberY(s, -1)
 	local token = s.token
 	send(player, "Hooked", {
 		fight = RodData.applyFight(profile, data.rod),
 		assist = data.assist,
 		seed = rng:NextInteger(1, 1e6),
+		start = start,
 		note = species.fightNote,
 		sizeClass = class,
 		tier = Rarity.of(species),
@@ -656,7 +794,16 @@ end
 -- For tests: force the next bite to come right away.
 function FishingService.debugState(player: Player): any
 	local s = session(player)
-	return { phase = s.phase, spot = s.spot, period = s.period, bait = s.bait, species = s.species, tight = s.tight }
+	local r = s.rig
+	return {
+		phase = s.phase,
+		spot = s.spot,
+		period = s.period,
+		bait = s.bait,
+		species = s.species,
+		tight = s.tight,
+		rig = if r then { bait = r.bait, hook = r.hook, grade = r.grade } else nil,
+	}
 end
 
 function FishingService.start()
@@ -667,6 +814,7 @@ function FishingService.start()
 	Remotes.event("FightResult").OnServerEvent:Connect(onFightResult)
 	Remotes.event("CancelCast").OnServerEvent:Connect(onCancel)
 	Remotes.event("Wiggle").OnServerEvent:Connect(onWiggle)
+	Remotes.event("Rig").OnServerEvent:Connect(onRig)
 	Players.PlayerRemoving:Connect(function(player)
 		local s = sessions[player]
 		if s then
@@ -697,6 +845,7 @@ function FishingService.start()
 		end
 	end)
 	Players.PlayerAdded:Connect(function(player)
+		session(player) -- starts the clock the first bait bench is checked against (L3)
 		player.CharacterRemoving:Connect(function()
 			local s = sessions[player]
 			if s and s.phase ~= "Idle" then
@@ -705,6 +854,7 @@ function FishingService.start()
 		end)
 	end)
 	for _, player in Players:GetPlayers() do
+		session(player)
 		player.CharacterRemoving:Connect(function()
 			local s = sessions[player]
 			if s and s.phase ~= "Idle" then

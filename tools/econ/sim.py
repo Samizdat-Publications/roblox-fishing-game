@@ -11,6 +11,10 @@ player through 25 minute sessions:
 The smart players also fish tight to cover where a spot has it and cast onto rises (L2b);
 the dock kid and the random player don't.
 
+--bait adds the bait bench (L3): an always-Perfect player against an always-Okay one, and
+hook sizes (the smart player ties on the right hook for the fish it expects, the dock kid
+keeps the Medium hook it starts with).
+
 Run:  python3 tools/econ/sim.py            (full report, about a minute)
       python3 tools/econ/sim.py --quick    (fewer runs, for a fast check)
 
@@ -177,6 +181,42 @@ COVER_SPOTS = {"Logs", "WeedBed", "Dock", "Rocks"}  # spots with cover to fish t
 RISE_MIN, RISE_MAX = _const(_rises_src, "REACH_MIN"), _const(_rises_src, "REACH_MAX")  # rises one player can reach
 RISE_BITE_MIN, RISE_BITE_MAX = _const(_rises_src, "RISE_BITE_MIN"), _const(_rises_src, "RISE_BITE_MAX")
 
+# The bait bench and hook sizes (L3), read from Shared/BaitRig.luau. Off unless --bait.
+_rig_src = (_shared / "BaitRig.luau").read_text(encoding="utf-8")
+
+
+def _grade_table(name):
+    body = _re.search(r"BaitRig\." + name + r" = \{(.*?)\}", _rig_src).group(1)
+    out = {}
+    for k, v in _re.findall(r"(\w+) = ([\w.]+)", body):
+        out[k] = CFG["FIGHT_START"] if v == "Config.FIGHT_START" else float(v)
+    return out
+
+
+HOOK_MISS_ONE = _const(_rig_src, "HOOK_MISS_ONE")
+HOOK_MISS_TWO = _const(_rig_src, "HOOK_MISS_TWO")
+RIG_BITE_MULT = _grade_table("BITE_MULT")
+RIG_FIGHT_START = _grade_table("FIGHT_START")
+RIG_SURVIVE = _grade_table("SURVIVE")
+HOOKS = {"Small": 1, "Medium": 2, "Large": 3}
+MOUTHS = {"small": 1, "medium": 2, "large": 3}
+BENCH_SECONDS = {"Okay": 0.0, "Good": 3.5, "Perfect": 3.5}  # Okay is Quick Bait: no bench at all
+RIG_ON = False  # --bait
+
+
+def hook_miss(hook, sid):
+    m = MOUTHS.get(FISH_BY_ID[sid].get("mouth"))
+    if not hook or not m:
+        return 0.0
+    off = abs(HOOKS[hook] - m)
+    return HOOK_MISS_TWO if off >= 2 else HOOK_MISS_ONE if off == 1 else 0.0
+
+
+def best_hook(weights):
+    """The hook with the fewest expected misses for the fish that bite here."""
+    tot = sum(w for _, w in weights) or 1
+    return min(HOOKS, key=lambda h: (sum(w * hook_miss(h, sid) for sid, w in weights) / tot, abs(HOOKS[h] - 2)))
+
 
 def bite_weights(spot, period, bait, cover=False):
     out = []
@@ -324,14 +364,14 @@ def apply_rod(profile, rod_id):
     return p
 
 
-def fight_once(profile, assist, skill, rng, dt=1 / 30):
+def fight_once(profile, assist, skill, rng, dt=1 / 30, start=None):
     p = profile
     zone_size = p["zone"] * (CFG["ASSIST_ZONE"] if assist else 1)
     loss = p["loss"] * (CFG["ASSIST_LOSS"] if assist else 1)
     climb = 1 - p["heavy"] * 0.2
     fish = target = 0.5
     zone, vel = 0.4, 0.0
-    prog = CFG["FIGHT_START"]
+    prog = CFG["FIGHT_START"] if start is None else start
     t = 0.0
     history = []
     lag = max(1, int(skill.reaction / dt))
@@ -478,6 +518,8 @@ class Player:
         self.played = 0.0  # real seconds of play
         self.tiers = defaultdict(int)  # landed fish by rarity tier
         self.session_tiers = []  # per session: {tier: count}
+        self.rigged = {}  # live bait on the hook, by bait (L3)
+        self.spat = 0  # hook-size misses (L3)
 
     def has(self, bait):
         if BAIT_BY_ID[bait]["kind"] == "lure":
@@ -517,6 +559,8 @@ class Strategy:
     uses_pond = False
     uses_cover = False  # fishes tight to cover where the spot has it (L2b)
     uses_rises = False  # casts onto rises, about one per rise interval (L2b)
+    rig_grade = "Okay"  # bait bench grade every time (L3, --bait)
+    hook_rule = None  # "right" (best hook for the spot) or a fixed size; None: no hook sizes
 
     def spots(self, p):
         out = LAKE_SPOTS + (CREEK_SPOTS if p.creek else [])
@@ -755,8 +799,17 @@ def play_session(p, strat, rng, clock_start, minutes=SESSION_MIN, log=None):
             continue
         hooked = False
         first = True
+        live = BAIT_BY_ID[bait]["kind"] == "live"
+        grade = strat.rig_grade if RIG_ON and live else "Okay"
+        hook = None
+        if RIG_ON and live and strat.hook_rule:
+            hook = best_hook(w) if strat.hook_rule == "right" else strat.hook_rule
+        if RIG_ON and live and not p.rigged.get(bait):
+            t += BENCH_SECONDS[grade]  # bait the empty hook
+            p.rigged[bait] = True
+        sid = None
         while not hooked and t < end:
-            d = bite_delay(w, rng) * (COVER_DELAY if cover else 1)
+            d = bite_delay(w, rng) * (COVER_DELAY if cover else 1) * RIG_BITE_MULT[grade]
             # An attentive player casts onto a rise about once per rise interval (lake and creek).
             if first and strat.uses_rises and spot in LAKE_SPOTS + CREEK_SPOTS and t >= next_rise:
                 d = rng.uniform(RISE_BITE_MIN, RISE_BITE_MAX)
@@ -764,19 +817,26 @@ def play_session(p, strat, rng, clock_start, minutes=SESSION_MIN, log=None):
             first = False
             t += d
             if rng.random() < strat.hook_p:
-                hooked = True
                 t += HOOK_REACTION
+                sid = pick_species(w, rng)
+                if hook and rng.random() < hook_miss(hook, sid):
+                    p.spat += 1  # it spat the hook: bait stays on, wait again
+                    continue
+                hooked = True
             else:
                 t += CFG["HOOK_WINDOW"]
         if not hooked:
             break
-        sid = pick_species(w, rng)
-        if BAIT_BY_ID[bait]["kind"] == "live":
-            p.bait[bait] -= 1
+        if live:
+            if RIG_ON and rng.random() < RIG_SURVIVE[grade]:
+                pass  # a Perfect bait stayed on the hook
+            else:
+                p.bait[bait] -= 1
+                p.rigged[bait] = False
         s = FISH_BY_ID[sid]
         cm, kg, cls = roll_catch(s, rng)  # rolled at the hook, as on the server
         prof = apply_rod(fight_for(s["fight"], cls), p.rod)
-        won, ft = fight_once(prof, True, strat.skill, rng)
+        won, ft = fight_once(prof, True, strat.skill, rng, start=RIG_FIGHT_START[grade])
         t += ft
         if not won:
             t += AFTER_ESCAPE
@@ -1062,6 +1122,51 @@ def report_tiers(runs, sessions=20):
     print(table(rows, header))
 
 
+def report_bait(runs, sessions=10):
+    """L3: what the bait bench and hook sizes are worth (fixed sessions, no early stop)."""
+    global RIG_ON
+    print("\n## Bait bench and hook sizes (L3)\n")
+    print(f"Each career plays {sessions} sessions of {SESSION_MIN} minutes; {runs} careers each, same seeds.")
+    print("Coins per minute are every fish landed (gross) and gross minus bait bought (net). A bench")
+    print(f"costs {BENCH_SECONDS['Perfect']:.1f} s each time the hook is empty; Okay is Quick Bait (no bench).\n")
+    cases = [
+        ("smart, before L3 (no hooks, no bench)", lambda: Smart(pond=False), False, "Okay", None),
+        ("smart, always Okay, right hook", lambda: Smart(pond=False), True, "Okay", "right"),
+        ("smart, always Good, right hook", lambda: Smart(pond=False), True, "Good", "right"),
+        ("smart, always Perfect, right hook", lambda: Smart(pond=False), True, "Perfect", "right"),
+        ("dock kid, before L3", lambda: DockWorms(), False, "Okay", None),
+        ("dock kid, Okay, Medium hook", lambda: DockWorms(), True, "Okay", "Medium"),
+        ("dock kid, Okay, Small hook", lambda: DockWorms(), True, "Okay", "Small"),
+    ]
+    rows, results = [], {}
+    for label, make, on, grade, rule in cases:
+        RIG_ON = on
+        strat = make()
+        strat.rig_grade, strat.hook_rule, strat.name = grade, rule, label
+        gross, net, spat, caught = [], [], 0, 0
+        for i in range(runs):
+            p, per, _ = run_career(strat, seed=7000 + i, sessions=sessions, stop_early=False)
+            g = sum(per) / len(per)
+            gross.append(g)
+            net.append(g - p.spent["bait"] / (sessions * SESSION_MIN))
+            spat += p.spat
+            caught += p.catches
+        RIG_ON = False
+        results[label] = (statistics.mean(gross), statistics.mean(net))
+        rows.append([label, f"{statistics.mean(gross):.1f}", f"{statistics.mean(net):.1f}",
+                     f"{caught / runs / sessions:.0f}", f"{spat / runs / sessions:.1f}"])
+    print(table(rows, ["Player", "coins/min gross", "coins/min net", "fish landed per session", "spat hooks per session"]))
+    ok_g, ok_n = results["smart, always Okay, right hook"]
+    pf_g, pf_n = results["smart, always Perfect, right hook"]
+    old_g, _ = results["smart, before L3 (no hooks, no bench)"]
+    dk_old, _ = results["dock kid, before L3"]
+    dk_med, _ = results["dock kid, Okay, Medium hook"]
+    print()
+    print(f"Always Perfect over always Okay (smart): gross {100 * (pf_g / ok_g - 1):+.1f}%, net {100 * (pf_n / ok_n - 1):+.1f}% (target: no more than +10%)")
+    print(f"Smart, Okay with the right hook against before L3: {100 * (ok_g / old_g - 1):+.1f}%")
+    print(f"Dock kid with a Medium hook on worms against before L3: {100 * (dk_med / dk_old - 1):+.1f}%")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true", help="fewer runs")
@@ -1071,6 +1176,7 @@ def main():
     ap.add_argument("--only", choices=["current", "proposal"], help="run just one of the two")
     ap.add_argument("--boats", action="store_true", help="add the Dinghy and Deep-V to the purchases, and the Big Lake")
     ap.add_argument("--tiers", action="store_true", help="only report catches by rarity tier")
+    ap.add_argument("--bait", action="store_true", help="only report the bait bench and hook sizes (L3)")
     args = ap.parse_args()
     global SIZE_CLASSES, WEATHER_ON, GOALS
     if args.boats:
@@ -1082,6 +1188,9 @@ def main():
 
     if args.tiers:
         report_tiers(8 if args.quick else 30)
+        return
+    if args.bait:
+        report_bait(12 if args.quick else 60)
         return
     print("Fishing game economy simulation")
     print(f"Day {CFG['DAY_LENGTH'] / 60:.0f} real minutes; sessions of {SESSION_MIN} minutes, one a day; {runs} runs per player type.")

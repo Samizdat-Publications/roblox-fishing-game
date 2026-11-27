@@ -43,7 +43,9 @@ local SHAKE_RATE = 24 -- radians per second
 
 local FightModel = {}
 
-function FightModel.new(profile: FishData.FightProfile, assist: boolean, seed: number): State
+-- `start` is where the progress bar begins: Config.FIGHT_START, or higher for a well-baited
+-- hook (BaitRig.fightStart, L3).
+function FightModel.new(profile: FishData.FightProfile, assist: boolean, seed: number, start: number?): State
 	local rng = Random.new(seed)
 	return {
 		profile = profile,
@@ -55,7 +57,7 @@ function FightModel.new(profile: FishData.FightProfile, assist: boolean, seed: n
 		zoneSize = profile.zone * (if assist then Config.ASSIST_ZONE else 1),
 		gain = profile.gain,
 		loss = profile.loss * (if assist then Config.ASSIST_LOSS else 1),
-		progress = Config.FIGHT_START,
+		progress = start or Config.FIGHT_START,
 		t = 0,
 		idle = math.huge, -- nothing counts until the player first presses or holds
 		mode = "normal",
@@ -177,8 +179,8 @@ function FightModel.inside(s: State): boolean
 end
 
 -- The fastest a fight can possibly be won. The server rejects wins that come sooner.
-function FightModel.minSeconds(profile: FishData.FightProfile, _assist: boolean): number
-	return (1 - Config.FIGHT_START) / profile.gain
+function FightModel.minSeconds(profile: FishData.FightProfile, _assist: boolean, start: number?): number
+	return (1 - (start or Config.FIGHT_START)) / profile.gain
 end
 
 return FightModel

@@ -5,6 +5,7 @@ local Shared = script.Parent
 local Config = require(Shared.Config)
 local BaitData = require(Shared.BaitData)
 local RodData = require(Shared.RodData)
+local BaitRig = require(Shared.BaitRig)
 
 export type Fish = {
 	id: string,
@@ -40,13 +41,16 @@ export type Data = {
 	boats: { [string]: boolean }, -- v5: boats owned (BoatLogic.buy fills this in)
 	boat: string, -- v5: the boat waiting at your slip ("" for none yet)
 	goals: any, -- v6: today's daily goals (Goals.State); filled in by GoalService
+	hook: string, -- v7: the hook size tied on for live bait (BaitRig.HOOKS)
+	quickBait: boolean, -- v7: skip the bait bench (always Okay)
+	tackle: { best: { [string]: string }, perfects: number }, -- v7: Tackle Box, best grade per bait
 }
 
 local Inventory = {}
 
 function Inventory.new(): Data
 	return {
-		v = 6,
+		v = 7,
 		coins = Config.START_COINS,
 		bait = { Worm = Config.START_WORMS },
 		lures = {},
@@ -62,6 +66,9 @@ function Inventory.new(): Data
 		boats = {},
 		boat = "",
 		goals = {},
+		hook = BaitRig.DEFAULT_HOOK,
+		quickBait = false,
+		tackle = { best = {}, perfects = 0 },
 	}
 end
 
@@ -101,6 +108,22 @@ function Inventory.reconcile(saved: any): Data
 	-- v6: daily goals (an empty table; GoalService fills in today's). UNVERIFIED in Studio.
 	if saved.v < 6 then
 		saved.v = 6
+	end
+	-- v7: hook size, Quick Bait and the Tackle Box (L3). UNVERIFIED in Studio.
+	if type(saved.tackle) ~= "table" then
+		saved.tackle = { best = {}, perfects = 0 }
+	end
+	if type(saved.tackle.best) ~= "table" then
+		saved.tackle.best = {}
+	end
+	if type(saved.tackle.perfects) ~= "number" then
+		saved.tackle.perfects = 0
+	end
+	if not BaitRig.isHook(saved.hook) then
+		saved.hook = BaitRig.DEFAULT_HOOK
+	end
+	if saved.v < 7 then
+		saved.v = 7
 	end
 	return saved
 end
@@ -266,6 +289,9 @@ function Inventory.snapshot(data: Data): any
 		monsters = (data.journal :: any).monsters or {},
 		recent = { table.unpack(data.journal.entries, math.max(1, #data.journal.entries - 9)) },
 		assist = data.assist,
+		hook = data.hook,
+		quickBait = data.quickBait,
+		tackle = { best = table.clone(data.tackle.best), perfects = data.tackle.perfects },
 		totalCaught = data.totalCaught,
 		pond = { fish = data.pond.fish, capacity = data.pond.capacity },
 		rods = table.clone(data.rods),

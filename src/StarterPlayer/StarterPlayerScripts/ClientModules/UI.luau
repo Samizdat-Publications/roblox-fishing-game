@@ -17,6 +17,7 @@ local BoatData = require(Shared.BoatData)
 local Config = require(Shared.Config)
 local Journal = require(Shared.Journal)
 local Units = require(Shared.Units)
+local BaitRig = require(Shared.BaitRig)
 
 local UI = {}
 
@@ -157,7 +158,7 @@ function UI.init(cbs: { [string]: (...any) -> () })
 		end
 		-- Panels shrink to fit short phone screens (heights are in scaled units).
 		local h = gui.AbsoluteSize.Y / scale.Scale
-		for _, panel in { refs.shop, refs.journal, refs.pond } do
+		for _, panel in { refs.shop, refs.journal, refs.pond, refs.tackle } do
 			if panel then
 				panel.Size = UDim2.fromOffset(640, math.min(470, h - 70))
 			end
@@ -341,6 +342,7 @@ function UI.init(cbs: { [string]: (...any) -> () })
 	UI.buildShop()
 	UI.buildJournal()
 	UI.buildPond()
+	UI.buildTackle()
 	rescale()
 end
 
@@ -379,6 +381,8 @@ function UI.setState(state: any)
 		UI.refreshJournal()
 	elseif openPanel == "Pond" then
 		UI.refreshPond()
+	elseif openPanel == "Tackle" then
+		UI.refreshTackle()
 	end
 end
 
@@ -721,12 +725,22 @@ function UI.buildJournal()
 		habit.TextYAlignment = Enum.TextYAlignment.Top
 		refs.journalCards[s.id] = { name = name, stats = stats, habit = habit }
 	end
-	refs.assistBtn = button(p, "Assist", "Reel assist: On", UDim2.fromOffset(220, 40), UDim2.new(0, 12, 1, -48), C.panel2, function()
+	refs.assistBtn = button(p, "Assist", "Reel assist: On", UDim2.fromOffset(170, 40), UDim2.new(0, 12, 1, -48), C.panel2, function()
 		if callbacks.toggleAssist then
 			callbacks.toggleAssist()
 		end
 	end)
-	refs.journalSummary = label(p, "Summary", "", UDim2.new(1, -260, 0, 40), UDim2.new(0, 244, 1, -48), 15, C.dim)
+	-- Quick Bait (L3): skip the bait bench, always Okay. And the Tackle Box page.
+	refs.quickBtn = button(p, "QuickBait", "Quick Bait: Off", UDim2.fromOffset(170, 40), UDim2.new(0, 188, 1, -48), C.panel2, function()
+		if callbacks.toggleQuickBait then
+			callbacks.toggleQuickBait()
+		end
+	end)
+	refs.tackleBtn = button(p, "TackleBox", "Tackle Box", UDim2.fromOffset(130, 40), UDim2.new(0, 364, 1, -48), C.panel2, function()
+		UI.openTackle()
+	end)
+	-- The summary sits in the title row, so the three switches fit along the bottom.
+	refs.journalSummary = label(p, "Summary", "", UDim2.new(1, -330, 0, 44), UDim2.fromOffset(220, 6), 13, C.dim)
 	refs.journal = p
 end
 
@@ -767,6 +781,7 @@ function UI.refreshJournal()
 		end
 	end
 	refs.assistBtn.Text = "Reel assist: " .. (if st.assist then "On" else "Off")
+	refs.quickBtn.Text = "Quick Bait: " .. (if st.quickBait then "On" else "Off")
 	local nextIn = Journal.nextRumourIn(st.totalCaught)
 	refs.journalSummary.Text = string.format("%d of %d species found. %d fish caught in all.%s", kinds, shown, st.totalCaught, if nextIn > 0 then string.format(" New rumour in %d.", nextIn) else "")
 end
@@ -794,6 +809,9 @@ function UI.closePanels()
 	refs.journal.Visible = false
 	if refs.pond then
 		refs.pond.Visible = false
+	end
+	if refs.tackle then
+		refs.tackle.Visible = false
 	end
 	openPanel = nil
 	GuiService.SelectedObject = nil
@@ -935,6 +953,94 @@ function UI.openPond()
 	refs.pond.Visible = true
 	UI.refreshPond()
 	refs.pondList.CanvasPosition = Vector2.zero -- always open at the top
+end
+
+----------------------------------------------------------------------------------------
+-- Tackle Box (L3): the hook size, best grade per bait, and Perfects toward the gold hook.
+
+function UI.buildTackle()
+	local p, scroll = panelShell("Tackle", "Tackle Box")
+	local layout = Instance.new("UIListLayout")
+	layout.Padding = UDim.new(0, 6)
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Parent = scroll
+	refs.tackleList = scroll
+	button(p, "Back", "Back to journal", UDim2.fromOffset(170, 40), UDim2.new(0, 12, 1, -48), C.panel2, function()
+		UI.toggleJournal()
+	end)
+	refs.tackleHint = label(p, "Hint", "Lures carry their own hook. Changing hooks takes the bait off, so you bait up again.", UDim2.new(1, -200, 0, 40), UDim2.new(0, 190, 1, -48), 13, C.dim)
+	refs.tackle = p
+end
+
+function UI.refreshTackle()
+	local st = lastState
+	if not st or not refs.tackleList then
+		return
+	end
+	for _, c in refs.tackleList:GetChildren() do
+		if c:IsA("GuiObject") then
+			c:Destroy()
+		end
+	end
+	local order = 1
+	header(refs.tackleList, order, "Hook size (for live bait)")
+	order += 1
+	local hooks = frame(refs.tackleList, "Hooks", UDim2.new(1, -10, 0, 56), UDim2.new(), C.panel, 1)
+	hooks.LayoutOrder = order
+	local firstBtn: TextButton? = nil
+	for i, size in BaitRig.HOOKS do
+		local on = st.hook == size
+		local b = button(hooks, "Hook" .. size, BaitRig.HOOK_LINES[size], UDim2.new(1 / 3, -6, 1, 0), UDim2.new((i - 1) / 3, 0, 0, 0), if on then Color3.fromRGB(70, 90, 60) else C.panel2, function()
+			if callbacks.setHook and not on then
+				callbacks.setHook(size)
+			end
+		end)
+		b.TextSize = 15
+		if on then
+			local stroke = Instance.new("UIStroke")
+			stroke.Color = C.gold
+			stroke.Thickness = 2
+			stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+			stroke.Parent = b
+		end
+		firstBtn = firstBtn or b
+	end
+	order += 1
+	header(refs.tackleList, order, "Best bait job")
+	local tackle = st.tackle or { best = {}, perfects = 0 }
+	for _, b in BaitData.list do
+		if b.kind == "live" then
+			order += 1
+			local best = tackle.best[b.id]
+			local row = frame(refs.tackleList, "Row" .. b.id, UDim2.new(1, -10, 0, 34), UDim2.new(), C.panel2, 0.1)
+			row.LayoutOrder = order
+			corner(row, 8)
+			local name = label(row, "Name", b.name, UDim2.fromOffset(200, 34), UDim2.fromOffset(12, 0), 17, C.text, Enum.Font.GothamBold)
+			name.TextXAlignment = Enum.TextXAlignment.Left
+			local grade = label(row, "Grade", best or "Not tried on the bench yet", UDim2.new(1, -230, 1, 0), UDim2.fromOffset(220, 0), 16, if best == "Perfect" then C.gold elseif best == "Good" then C.green else C.dim, Enum.Font.GothamBold)
+			grade.TextXAlignment = Enum.TextXAlignment.Left
+		end
+	end
+	order += 1
+	local goal = BaitRig.GOLD_HOOK_PERFECTS
+	local n = tackle.perfects or 0
+	local badge = if n >= goal then string.format("Gold hook earned! %d Perfects.", n) else string.format("Perfects: %d of %d for the gold hook.", n, goal)
+	local l = label(refs.tackleList, "Perfects", badge, UDim2.new(1, -10, 0, 34), UDim2.new(), 18, C.gold, Enum.Font.GothamBlack)
+	l.TextXAlignment = Enum.TextXAlignment.Left
+	l.LayoutOrder = order
+	if UI.inputName() == "R2" and openPanel == "Tackle" and firstBtn then
+		GuiService.SelectedObject = firstBtn
+	end
+end
+
+function UI.openTackle()
+	if locked then
+		return
+	end
+	UI.closePanels()
+	openPanel = "Tackle"
+	refs.tackle.Visible = true
+	UI.refreshTackle()
 end
 
 function UI.shopHint(text: string)

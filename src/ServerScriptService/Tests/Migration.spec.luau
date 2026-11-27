@@ -1,4 +1,4 @@
--- Save migration (L2b): a save from every older version the code knows (v1 to v6) loads
+-- Save migration (L2b): a save from every older version the code knows (v1 to v7) loads
 -- through the real Inventory.reconcile with its coins, journal, pond and bag intact, and no
 -- feature switch changes what a migrated save keeps. Written 2026-11-26.
 return function(t, Shared)
@@ -53,6 +53,11 @@ return function(t, Shared)
 		if v >= 6 then
 			save.goals = { day = 19700, list = {} }
 		end
+		if v >= 7 then
+			save.hook = "Small"
+			save.quickBait = true
+			save.tackle = { best = { Worm = "Perfect", Minnow = "Good" }, perfects = 9 }
+		end
 		return save
 	end
 
@@ -76,8 +81,8 @@ return function(t, Shared)
 		return true
 	end
 
-	t.test("the code's current save version is 6", function()
-		t.eq(CURRENT, 6, "bump this test (and add the new version below) when the save changes")
+	t.test("the code's current save version is 7", function()
+		t.eq(CURRENT, 7, "bump this test (and add the new version below) when the save changes")
 	end)
 
 	for v = 1, CURRENT do
@@ -129,6 +134,18 @@ return function(t, Shared)
 			if v >= 6 then
 				t.eq(d.goals.day, 19700, "goals kept")
 			end
+			-- Hook, Quick Bait and the Tackle Box from v7; before that Medium, off and empty.
+			if v >= 7 then
+				t.eq(d.hook, "Small", "hook kept")
+				t.eq(d.quickBait, true, "quick bait kept")
+				t.eq(d.tackle.best.Worm, "Perfect", "best grade kept")
+				t.eq(d.tackle.best.Minnow, "Good", "best grade kept")
+				t.eq(d.tackle.perfects, 9, "perfects kept")
+			else
+				t.eq(d.hook, "Small", "default hook")
+				t.eq(d.quickBait, false, "bench on by default")
+				t.ok(next(d.tackle.best) == nil and d.tackle.perfects == 0, "empty tackle box")
+			end
 			-- Later saves keep the player's assist choice. (A v1 save has no `v`, and reconcile
 			-- fills `v` in from a fresh save before its version steps run, so the v2 "assist back
 			-- on" step never fires for it. Only early test saves were v1; logged 2026-11-26.)
@@ -143,6 +160,8 @@ return function(t, Shared)
 			local snap = Inventory.snapshot(d)
 			t.eq(snap.coins, 437, "snapshot coins")
 			t.eq(snap.bagCount, 2, "snapshot bag")
+			t.eq(snap.hook, d.hook, "snapshot hook")
+			t.eq(snap.tackle.perfects, d.tackle.perfects, "snapshot perfects")
 		end)
 	end
 
@@ -184,5 +203,17 @@ return function(t, Shared)
 		if not ok then
 			error(err, 0)
 		end
+	end)
+
+	t.test("a damaged v7 tackle box or hook is repaired", function()
+		local save = oldSave(7)
+		save.hook = "Gigantic"
+		save.tackle = { best = "oops" }
+		local d = Inventory.reconcile(save)
+		t.eq(d.hook, "Small", "bad hook back to the default")
+		t.eq(type(d.tackle.best), "table", "best rebuilt")
+		t.eq(d.tackle.perfects, 0, "perfects rebuilt")
+		local d2 = Inventory.reconcile({ v = 7, tackle = 5 })
+		t.eq(type(d2.tackle), "table", "tackle rebuilt")
 	end)
 end

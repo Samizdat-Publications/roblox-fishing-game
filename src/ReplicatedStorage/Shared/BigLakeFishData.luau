@@ -8,6 +8,7 @@
 local list: { any } = {
 	{
 		id = "WhiteBass",
+		mouth = "medium", -- hook size that fits (L3)
 		tier = "Uncommon",
 		name = "White Bass",
 		spots = { Basin = 1, DropOff = 0.4, IslandPoint = 0.5 }, -- schools chase spinners off the point too
@@ -26,6 +27,7 @@ local list: { any } = {
 	},
 	{
 		id = "LakeTrout",
+		mouth = "medium", -- hook size that fits (L3)
 		tier = "Epic",
 		name = "Lake Trout",
 		spots = { DropOff = 1, Basin = 0.3 },
@@ -44,6 +46,7 @@ local list: { any } = {
 	},
 	{
 		id = "Muskellunge",
+		mouth = "large", -- hook size that fits (L3)
 		tier = "Legendary",
 		name = "Muskellunge",
 		spots = { IslandPoint = 1, DropOff = 0.3 },
@@ -62,6 +65,7 @@ local list: { any } = {
 	},
 	{
 		id = "LakeWhitefish",
+		mouth = "medium", -- hook size that fits (L3)
 		tier = "Uncommon",
 		name = "Lake Whitefish",
 		spots = { DropOff = 1, Basin = 0.5 },
@@ -80,6 +84,7 @@ local list: { any } = {
 	},
 	{
 		id = "FreshwaterDrum",
+		mouth = "medium", -- hook size that fits (L3)
 		tier = "Uncommon",
 		name = "Freshwater Drum",
 		spots = { Basin = 1, IslandPoint = 0.4 },
@@ -98,6 +103,7 @@ local list: { any } = {
 	},
 	{
 		id = "Burbot",
+		mouth = "large", -- hook size that fits (L3)
 		tier = "Epic",
 		name = "Burbot",
 		spots = { DropOff = 1, Basin = 0.4 }, -- at night it comes up out of the deep to feed
@@ -116,6 +122,7 @@ local list: { any } = {
 	},
 	{
 		id = "TigerMuskie",
+		mouth = "large", -- hook size that fits (L3)
 		tier = "Mythic",
 		name = "Tiger Muskie",
 		spots = { IslandPoint = 1 },

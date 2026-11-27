@@ -100,6 +100,15 @@ function EconomyService.start()
 		end
 	end)
 
+	-- Quick Bait (L3): skip the bait bench; every live bait goes on at Okay.
+	Remotes.event("SetQuickBait").OnServerEvent:Connect(function(player: Player, on: any)
+		local data = PlayerData.get(player)
+		if data and type(on) == "boolean" then
+			data.quickBait = on
+			PlayerData.changed(player)
+		end
+	end)
+
 	local lake = workspace:WaitForChild("Lake")
 	local creekPrompt = lake:FindFirstChild("CreekPrompt", true) :: ProximityPrompt?
 	if creekPrompt then

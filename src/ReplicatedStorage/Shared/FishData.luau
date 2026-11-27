@@ -36,12 +36,14 @@ export type Species = {
 	fightNote: string,
 	bite: BiteStyle?,
 	weather: { [string]: number }?, -- if set, bites only in these weathers (Weather.luau ids); Mythics use this
+	mouth: string?, -- "small", "medium" or "large": the hook size that fits (BaitRig, L3)
 	tier: string?, -- rarity tier, see Rarity.luau: "Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic", "Godlike"
 }
 
 local list: { Species } = {
 	{
 		id = "Bluegill",
+		mouth = "small", -- hook size that fits (L3)
 		tier = "Common",
 		name = "Bluegill",
 		spots = { Dock = 1, WeedBed = 0.6 },
@@ -60,6 +62,7 @@ local list: { Species } = {
 	},
 	{
 		id = "Pumpkinseed",
+		mouth = "small", -- hook size that fits (L3)
 		tier = "Common",
 		name = "Pumpkinseed",
 		spots = { WeedBed = 1, Dock = 0.5 },
@@ -78,6 +81,7 @@ local list: { Species } = {
 	},
 	{
 		id = "YellowPerch",
+		mouth = "small", -- hook size that fits (L3)
 		tier = "Uncommon",
 		name = "Yellow Perch",
 		spots = { OpenWater = 1, Dock = 0.5 },
@@ -96,6 +100,7 @@ local list: { Species } = {
 	},
 	{
 		id = "BlackCrappie",
+		mouth = "small", -- hook size that fits (L3)
 		tier = "Uncommon",
 		name = "Black Crappie",
 		spots = { Logs = 1, Dock = 0.6 },
@@ -114,6 +119,7 @@ local list: { Species } = {
 	},
 	{
 		id = "LargemouthBass",
+		mouth = "medium", -- hook size that fits (L3)
 		tier = "Rare",
 		name = "Largemouth Bass",
 		spots = { WeedBed = 1, Logs = 1, Dock = 0.3 },
@@ -132,6 +138,7 @@ local list: { Species } = {
 	},
 	{
 		id = "ChannelCatfish",
+		mouth = "large", -- hook size that fits (L3)
 		tier = "Rare",
 		name = "Channel Catfish",
 		spots = { DeepHole = 1, Logs = 0.2 },
@@ -150,6 +157,7 @@ local list: { Species } = {
 	},
 	{
 		id = "CommonCarp",
+		mouth = "large", -- hook size that fits (L3)
 		tier = "Uncommon",
 		name = "Common Carp",
 		spots = { OpenWater = 1, DeepHole = 0.5 },
@@ -168,6 +176,7 @@ local list: { Species } = {
 	},
 	{
 		id = "NorthernPike",
+		mouth = "large", -- hook size that fits (L3)
 		tier = "Epic",
 		name = "Northern Pike",
 		spots = { WeedBed = 0.8, OpenWater = 0.6 },
@@ -186,6 +195,7 @@ local list: { Species } = {
 	},
 	{
 		id = "Bowfin",
+		mouth = "medium", -- hook size that fits (L3)
 		tier = "Epic",
 		name = "Bowfin",
 		spots = { WeedBed = 1 },
@@ -204,6 +214,7 @@ local list: { Species } = {
 	},
 	{
 		id = "LakeSturgeon",
+		mouth = "large", -- hook size that fits (L3)
 		tier = "Legendary",
 		name = "Lake Sturgeon",
 		spots = { DeepHole = 1 },
@@ -222,6 +233,7 @@ local list: { Species } = {
 	},
 	{
 		id = "AlbinoCatfish",
+		mouth = "large", -- hook size that fits (L3)
 		tier = "Mythic",
 		name = "Albino Catfish",
 		spots = { DeepHole = 1 },
@@ -241,6 +253,7 @@ local list: { Species } = {
 	},
 	{
 		id = "RainbowTrout",
+		mouth = "medium", -- hook size that fits (L3)
 		tier = "Rare",
 		name = "Rainbow Trout",
 		spots = { Riffle = 1, Rocks = 0.4 },
@@ -259,6 +272,7 @@ local list: { Species } = {
 	},
 	{
 		id = "SmallmouthBass",
+		mouth = "medium", -- hook size that fits (L3)
 		tier = "Rare",
 		name = "Smallmouth Bass",
 		spots = { Rocks = 1, Riffle = 0.3, Pool = 0.3 },
@@ -277,6 +291,7 @@ local list: { Species } = {
 	},
 	{
 		id = "Walleye",
+		mouth = "medium", -- hook size that fits (L3)
 		tier = "Epic",
 		name = "Walleye",
 		spots = { Pool = 1, Rocks = 0.3 },
@@ -295,6 +310,7 @@ local list: { Species } = {
 	},
 	{
 		id = "CreekChub",
+		mouth = "small", -- hook size that fits (L3)
 		tier = "Common",
 		name = "Creek Chub",
 		spots = { Riffle = 1, Rocks = 0.5 },
@@ -313,6 +329,7 @@ local list: { Species } = {
 	},
 	{
 		id = "RockBass",
+		mouth = "small", -- hook size that fits (L3)
 		tier = "Uncommon",
 		name = "Rock Bass",
 		spots = { Rocks = 1, Pool = 0.8 },
@@ -331,6 +348,7 @@ local list: { Species } = {
 	},
 	{
 		id = "BrookTrout",
+		mouth = "small", -- hook size that fits (L3)
 		tier = "Rare",
 		name = "Brook Trout",
 		spots = { Riffle = 1, Rocks = 0.5 },
@@ -349,6 +367,7 @@ local list: { Species } = {
 	},
 	{
 		id = "BrownTrout",
+		mouth = "medium", -- hook size that fits (L3)
 		tier = "Legendary",
 		name = "Brown Trout",
 		spots = { Pool = 1 },
@@ -367,6 +386,7 @@ local list: { Species } = {
 	},
 	{
 		id = "GoldenTrout",
+		mouth = "medium", -- hook size that fits (L3)
 		tier = "Mythic",
 		name = "Golden Trout",
 		spots = { Riffle = 1, Pool = 0.5 },
