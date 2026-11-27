@@ -852,5 +852,249 @@
       "docs\\critic\\2026-11-27-n0-baseline-U-ui-neon-2.md",
       "docs\\critic\\2026-11-27-n0-baseline-U-ui-neon-3.md"
     ]
+  },
+  {
+    "date": "2026-11-27",
+    "step": "n1-home-lake",
+    "set": "A",
+    "rubric": "look",
+    "run": "2026-11-27-1650",
+    "commit": "c5df8b9",
+    "shots": 12,
+    "median": 6.5,
+    "scores": [
+      6.8,
+      6.5,
+      6.5
+    ],
+    "points": {
+      "composition": 6.5,
+      "light": 6.5,
+      "water": 7,
+      "mood": 7,
+      "want_to_fish": 7,
+      "phone_readability": 7,
+      "broken_or_ugly": 5
+    },
+    "reports": [
+      "docs\\critic\\2026-11-27-n1-home-lake-neon.md",
+      "docs\\critic\\2026-11-27-n1-home-lake-neon-2.md",
+      "docs\\critic\\2026-11-27-n1-home-lake-neon-3.md"
+    ],
+    "audit": {
+      "floatingLabels": 0,
+      "alwaysOnTopLabelsNotPrompt": 0,
+      "wind": 4,
+      "stockMaterial": 151,
+      "lightingStyle": "Realistic",
+      "plastic": 711,
+      "surfaceAppearances": 1,
+      "heroSets": 1,
+      "stockTerrain_homeLake": 0.43539630836047777,
+      "materialVariants": 20,
+      "terrainCustomSlots": 4,
+      "plasticTop": "PineTall_Node 160, PineShort_Node 152, Reeds_Node 141, LeafyTree_Node 123, LilyPads_Node 33, BigLake 20, RockSmall_Node 18, RockMedium_Node 17, MyPondFish 12, ProBabyTurtle_Dinghy 7",
+      "stockTerrain_bigLakeBasin": 1,
+      "stockGround": 3,
+      "alwaysOnTopLabels": 0,
+      "parts": 1742
+    }
+  },
+  {
+    "date": "2026-11-27",
+    "step": "n1-home-lake",
+    "set": "A",
+    "rubric": "identity",
+    "run": "2026-11-27-1650",
+    "commit": "c5df8b9",
+    "shots": 12,
+    "median": 4.5,
+    "scores": [
+      4.5,
+      5,
+      4
+    ],
+    "points": {
+      "materials": 5,
+      "signature": 4,
+      "cohesion": 4,
+      "stock_free": 4,
+      "identity": 4.5
+    },
+    "reports": [
+      "docs\\critic\\2026-11-27-n1-home-lake-identity-neon.md",
+      "docs\\critic\\2026-11-27-n1-home-lake-identity-neon-2.md",
+      "docs\\critic\\2026-11-27-n1-home-lake-identity-neon-3.md"
+    ],
+    "stock_items": [
+      {
+        "item": "Stock Roblox Terrain Grass, LeafyGrass, Sand, Ground, and Terrain Decoration grass blades (01-dock-dawn.jpg foreground, 09-riffle-dawn.jpg throughout, 10-pool-golden.jpg banks and background hills, 11-gate-noon.jpg foreground dirt/grass/path and background hills)",
+        "reason": "Immediately recognizable default Roblox voxel terrain textures, splodgy material transitions, and uniform spiky grass decoration carpet.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Terrain Water (03-dockend-noon.jpg lower half, 04-dockend-night.jpg lower half, 08-stands-noon.jpg around dock, 10-pool-golden.jpg and 12-pool-night.jpg entire pool)",
+        "reason": "Unmistakable default Roblox swirling procedural water normal map and specular highlights.",
+        "runs": 1
+      },
+      {
+        "item": "Stacked-cone SmoothPlastic pine trees and faceted blocky deciduous trees (08-stands-noon.jpg left background, 09-riffle-dawn.jpg center hill and horizon, 10-pool-golden.jpg and 12-pool-night.jpg far bank, 11-gate-noon.jpg behind gate)",
+        "reason": "Untextured low-poly cone and lump primitives that read as generic Roblox free-model/starter trees and clash with the textured dock and boulders.",
+        "runs": 1
+      },
+      {
+        "item": "Faceted untextured SmoothPlastic grey rocks (09-riffle-dawn.jpg large rock mound at center, 10-pool-golden.jpg and 12-pool-night.jpg single rock on upper-right bank edge)",
+        "reason": "Flat-shaded smooth grey low-poly geometry with no stone surface grain, contrasting sharply against the PBR boulders in 05-weedbed-golden.jpg.",
+        "runs": 1
+      },
+      {
+        "item": "Blocky SmoothPlastic/Plastic cattails (05-weedbed-golden.jpg left and right foreground, 06-logs-dawn.jpg left and right banks, 08-stands-noon.jpg left and right shore)",
+        "reason": "Built from sharp rectangular green prisms and smooth brown cylinders that look like plain Roblox parts right next to detailed PBR rocks.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox 8-point sparkle particle texture used for fireflies (04-dockend-night.jpg across water and lower-left, 12-pool-night.jpg over pool and right bank)",
+        "reason": "Uses the instantly recognizable default Roblox starburst sparkle sprite.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox noon Skybox and Clouds (03-dockend-noon.jpg, 08-stands-noon.jpg, 11-gate-noon.jpg upper half)",
+        "reason": "Saturated default cyan-blue sky and standard dynamic Roblox cloud puffs give all noon shots a stock studio look.",
+        "runs": 1
+      },
+      {
+        "item": "Default blocky Roblox player avatar (01-dock-dawn.jpg and 02-dock-golden.jpg center dock, 08-stands-noon.jpg center dock)",
+        "reason": "Standard blocky Roblox character proportions wearing casual catalog items (Santa hat, hoodie, plaid pants) that stand out against the rustic fishing setting.",
+        "runs": 1
+      },
+      {
+        "item": "Bare Neon sphere on a plain brown cylinder lamp post (10-pool-golden.jpg and 12-pool-night.jpg right bank)",
+        "reason": "Reads as two unstyled Roblox primitives (a tilted brown cylinder and a glowing yellow Neon ball) rather than a crafted lantern.",
+        "runs": 1
+      },
+      {
+        "item": "Smooth untextured primitive lake props (01-dock-dawn.jpg and 02-dock-golden.jpg bright orange rectangular boat hull right of dock; 06-logs-dawn.jpg smooth dark cylinder logs with cone stubs in center water)",
+        "reason": "Simple smooth-shaded geometric blocks/cylinders lacking the wood grain and wear seen on the main dock.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox Terrain grass, leafy grass, mud, sand, and grass Decoration blades (01-dock-dawn.jpg foreground, 09-riffle-dawn.jpg foreground, 10-pool-golden.jpg banks, 11-gate-noon.jpg foreground and background)",
+        "reason": "Immediately recognizable default Roblox Terrain textures, blotchy mud-to-grass transitions, and uniform procedural grass blades.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Terrain water (03-dockend-noon.jpg, 04-dockend-night.jpg, 06-logs-dawn.jpg, 10-pool-golden.jpg, 12-pool-night.jpg)",
+        "reason": "Shows the signature swirly specular highlights and oily reflections of default Roblox water.",
+        "runs": 1
+      },
+      {
+        "item": "Default bright blue noon Sky and volumetric Clouds (03-dockend-noon.jpg, 08-stands-noon.jpg, 11-gate-noon.jpg upper half)",
+        "reason": "Unmodified cyan sky dome and standard Roblox Clouds look.",
+        "runs": 1
+      },
+      {
+        "item": "Flat SmoothPlastic blocky cattails (05-weedbed-golden.jpg foreground left and right, 01-dock-dawn.jpg shoreline, 08-stands-noon.jpg left and right banks)",
+        "reason": "Untextured rectangular green bars and blocky brown cylinders sitting directly next to realistic stone and wood.",
+        "runs": 1
+      },
+      {
+        "item": "Flat-shaded cone pines and faceted low-poly deciduous trees (08-stands-noon.jpg far left, 09-riffle-dawn.jpg center hill and right, 10-pool-golden.jpg center, 11-gate-noon.jpg behind fence)",
+        "reason": "Untextured SmoothPlastic geometric cones and poly-blob foliage that read as generic simulator free models.",
+        "runs": 1
+      },
+      {
+        "item": "Faceted untextured grey rock mound (09-riffle-dawn.jpg center under the three pines)",
+        "reason": "Plain flat-shaded grey SmoothPlastic mesh that clashes heavily with the textured boulders in 05-weedbed-golden.jpg.",
+        "runs": 1
+      },
+      {
+        "item": "Primitive lamp posts made of a brown pole and Neon sphere (10-pool-golden.jpg right bank, 11-gate-noon.jpg right of the Cedar Creek gate, 12-pool-night.jpg right bank)",
+        "reason": "Unmodeled basic cylinder and glowing Neon ball primitive instead of a real lantern prop.",
+        "runs": 1
+      },
+      {
+        "item": "Starburst firefly particle sprites (04-dockend-night.jpg over the lake, 12-pool-night.jpg over the pool)",
+        "reason": "Uses a stock 6-pointed star/sparkle texture that reads as default Roblox Sparkles rather than natural fireflies.",
+        "runs": 1
+      },
+      {
+        "item": "Plain untextured orange boat beside the dock (01-dock-dawn.jpg and 02-dock-golden.jpg center-right of dock)",
+        "reason": "Reads as a flat SmoothPlastic orange block floating beside weathered timber.",
+        "runs": 1
+      },
+      {
+        "item": "Default blocky Roblox avatar (01-dock-dawn.jpg, 02-dock-golden.jpg, 08-stands-noon.jpg center on dock)",
+        "reason": "Standard blocky player avatar in a Santa hat and plaid pants immediately signals default Roblox.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Terrain Grass, LeafyGrass, Sand, and Mud with default Terrain.Decoration blades",
+        "reason": "Dominates the ground in 01-dock-dawn.jpg (foreground grass), 06-logs-dawn.jpg (mud and sand shore), 09-riffle-dawn.jpg (speckled LeafyGrass and tall default grass), 10-pool-golden.jpg, and 11-gate-noon.jpg (patchy bright green grass and flat brown mud).",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Terrain Water",
+        "reason": "Unmistakable swirling normal-map pattern and high-contrast specular highlights across 03-dockend-noon.jpg, 04-dockend-night.jpg, 10-pool-golden.jpg, and 12-pool-night.jpg.",
+        "runs": 1
+      },
+      {
+        "item": "SmoothPlastic stacked-cone pine trees and faceted low-poly deciduous trees",
+        "reason": "Classic Roblox simulator/free-model silhouette and flat plastic shading in 08-stands-noon.jpg (left background), 09-riffle-dawn.jpg (center hill and right background), 10-pool-golden.jpg (center-left), and 11-gate-noon.jpg (midground behind the fence).",
+        "runs": 1
+      },
+      {
+        "item": "Flat-shaded SmoothPlastic grey boulder formations",
+        "reason": "Reads as untextured low-poly Roblox terrain props in 09-riffle-dawn.jpg (center mound beneath the pines) and 10-pool-golden.jpg / 12-pool-night.jpg (right shoreline), clashing sharply with the mossy rocks in 05-weedbed-golden.jpg.",
+        "runs": 1
+      },
+      {
+        "item": "Blocky SmoothPlastic cattail reeds",
+        "reason": "Close-up in 05-weedbed-golden.jpg (left foreground) clearly reveals sharp rectangular prism green stems and plain brown cylinder tops; also visible in 01-dock-dawn.jpg and 08-stands-noon.jpg.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox sparkle particle texture on night fireflies",
+        "reason": "Distinctive spiky starburst sprite floating over the water in 04-dockend-night.jpg (large star near bottom-left) and 12-pool-night.jpg (across the pool).",
+        "runs": 1
+      },
+      {
+        "item": "Default noon sky palette and stock dynamic Clouds",
+        "reason": "Bright saturated default Roblox blue sky and recognizable stock cloud layer across 03-dockend-noon.jpg, 08-stands-noon.jpg, and 11-gate-noon.jpg.",
+        "runs": 1
+      },
+      {
+        "item": "Plain cylinder posts with glowing Neon spheres on top",
+        "reason": "Reads as quick placeholder Roblox parts in 10-pool-golden.jpg (far right bank), 11-gate-noon.jpg (right of the Cedar Creek gate), and 12-pool-night.jpg (far right bank).",
+        "runs": 1
+      },
+      {
+        "item": "Plain untextured orange rectangular boat/float",
+        "reason": "Reads like a flat SmoothPlastic block floating next to the right side of the dock in 01-dock-dawn.jpg and 02-dock-golden.jpg.",
+        "runs": 1
+      },
+      {
+        "item": "Default blocky Roblox avatar look",
+        "reason": "Standard blocky character wearing casual streetwear and a Santa hat stands center frame on the dock in 01-dock-dawn.jpg, 02-dock-golden.jpg, and 08-stands-noon.jpg.",
+        "runs": 1
+      }
+    ],
+    "audit": {
+      "floatingLabels": 0,
+      "alwaysOnTopLabelsNotPrompt": 0,
+      "wind": 4,
+      "stockMaterial": 151,
+      "lightingStyle": "Realistic",
+      "plastic": 711,
+      "surfaceAppearances": 1,
+      "heroSets": 1,
+      "stockTerrain_homeLake": 0.43539630836047777,
+      "materialVariants": 20,
+      "terrainCustomSlots": 4,
+      "plasticTop": "PineTall_Node 160, PineShort_Node 152, Reeds_Node 141, LeafyTree_Node 123, LilyPads_Node 33, BigLake 20, RockSmall_Node 18, RockMedium_Node 17, MyPondFish 12, ProBabyTurtle_Dinghy 7",
+      "stockTerrain_bigLakeBasin": 1,
+      "stockGround": 3,
+      "alwaysOnTopLabels": 0,
+      "parts": 1742
+    }
   }
 ]
