@@ -1,0 +1,36 @@
+{
+  "beauty": 8.5,
+  "mood": 9,
+  "readability": 6.5,
+  "kids_fit": 8,
+  "buildable": 6,
+  "overall": 7.5,
+  "one_line": "It feels like staying up late to fish by warm glowing lanterns under a huge moon while fireflies blink along the shore.",
+  "strengths": [
+    "The warm orange dock lanterns against cool blue moonlight create a strong color contrast that immediately guides the eye to every fishing spot.",
+    "The glowing bobber and bright bite icon make the core fishing action feel exciting and dramatic against dark water.",
+    "Fireflies floating near the grass and cattails add movement and magic with a lightweight particle system.",
+    "The quiet night atmosphere naturally brings out that calm-but-tense feeling of waiting for a bite without looking scary for kids."
+  ],
+  "risks": [
+    "The bright white moonlight reflection stretching across the water can swallow up a bright bobber on a small phone screen unless the bobber uses a bold color like red or lime.",
+    "Dark night shadows are tough to read when kids play on phones in bright rooms or outdoors, so ambient light will need to be brighter than in these pictures.",
+    "In wider shots like the creek and logs views, the player is small and dark-toned and can blend into the shoreline or dock shadows.",
+    "Lower mobile graphics settings in Roblox will flatten water shimmer and turn off lamp shadows, which could make the scene feel muddy if not carefully tuned."
+  ],
+  "made_up": [
+    "Warm orange lantern light reflecting accurately across rippling water waves, which Roblox Terrain water does not render for PointLights on phones.",
+    "Glowing turquoise shallow water and swirling underwater light streaks along the creek banks and around the lake dock.",
+    "Crisp shadows cast by dock lamps onto wood planks and dirt paths, which require Future lighting that most phones scale down.",
+    "Detailed realistic water splashes and fine circular ripple rings erupting around the bobber during a bite.",
+    "Clean dark shadows cast by floating logs onto the underwater lakebed.",
+    "High-detail surface work like braided rope coils around dock posts and realistic wet mud and bark textures that go beyond chunky house-style models."
+  ],
+  "model": "gemini-4-neon",
+  "images": [
+    "bite.jpg",
+    "creek.jpg",
+    "lake.jpg",
+    "logs.jpg"
+  ]
+}

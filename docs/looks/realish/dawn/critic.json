@@ -1,0 +1,35 @@
+{
+  "beauty": 8.5,
+  "mood": 9.0,
+  "readability": 6.8,
+  "kids_fit": 8.5,
+  "buildable": 5.5,
+  "overall": 7.4,
+  "one_line": "It feels like sneaking out to a quiet, misty lake right as the pink sun wakes up the water.",
+  "strengths": [
+    "The cool pink sunrise against clear teal water creates a fresh, memorable morning look that stands out from typical bright blue Roblox worlds.",
+    "Chunky pine trees and simple wooden docks sit naturally on the realistic terrain materials, proving the Real-ish house style holds together well.",
+    "Soft mist along the far shoreline creates a peaceful yet mysterious mood that fits the calm-but-tense wait for a fish to bite.",
+    "Close-up gameplay framing keeps the red-and-white bobber and yellow exclamation mark readable when placed against the deeper shaded water."
+  ],
+  "risks": [
+    "Looking toward the low morning sun washes out the player, dock, and fishing line with glare, which makes small targets hard to read on a phone screen.",
+    "Covering a large lake with mist particle emitters can hurt mobile frame rates and create distracting flat card edges where particles intersect water or terrain.",
+    "Bright pastel sky glare on the water surface can hide the white fishing line and yellow bite alert whenever the camera tilts toward the horizon.",
+    "Lower mobile graphics quality levels in Roblox dial back Atmosphere haze and grass density, which could make the far banks look much plainer than the concepts."
+  ],
+  "made_up": [
+    "Crisp, mirror-like real-time reflections of distant tree lines, buoys, cattails, and floating logs that Roblox Terrain water cannot produce on phones.",
+    "True volumetric god rays streaming cleanly between individual tree trunks rather than Roblox's simpler screen-space SunRays effect.",
+    "Physical concentric water ripples refracting light around the bobber and a refracted fishing line visible beneath the surface.",
+    "Smooth, continuous ground mist clinging naturally to valleys and coves without billboard popping or heavy mobile particle overdraw.",
+    "Detailed wet-rock edges, fine submerged pebbles, and natural bank erosion blending that go beyond standard Roblox Terrain transitions."
+  ],
+  "model": "gemini-4-neon",
+  "images": [
+    "bite.jpg",
+    "creek.jpg",
+    "lake.jpg",
+    "logs.jpg"
+  ]
+}
