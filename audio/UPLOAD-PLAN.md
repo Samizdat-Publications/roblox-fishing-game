@@ -2,6 +2,10 @@
 
 Written 11/26/2026, when Stewart's account hit Roblox's audio upload cap. Code: `src/ReplicatedStorage/Shared/SoundSheets.luau` (sheets and stand-ins, tested in `SoundSheets.spec`), `tools/audio/build_sheet.py` (packs a sheet).
 
+## Update, 11/27/2026: the cap is lifted
+
+Stewart completed Roblox age verification on the uploading account on 11/27/2026. The account had already used all 100 uploads for the month, and that evening six more went through (two sheets, two motor loops, the frenzy loop and the frenzy music), so the verification counts. The exact new monthly number isn't shown anywhere we can read; leg 3 still budgets uploads and keeps the sheets. Rain comes from Roblox's licensed library (Pro Sound Effects, no upload).
+
 ## The cap (checked in Roblox's docs, 11/26/2026)
 
 - From Roblox's audio guide (https://create.roblox.com/docs/audio/assets.md): unverified accounts can import **100** free audio assets per 30 days; **ID-verified accounts can import 2,000** per 30 days. A daily limit, if any, is replaced by the monthly one.
@@ -26,23 +30,23 @@ Status: **up** = uploaded and playing; **stand-in** = plays a borrowed uploaded 
 | splash-small, splash-big | up | own file | done |
 | sting-common to sting-godlike (7), sting-new-species | up | own file | done |
 | theme-lake, theme-creek, tension-fight | up | own file | done |
-| bobber-plop | stand-in (splash-small, quick slice) | sheet-water | 1 |
-| cast-whoosh | none yet (the L2 cast needs it) | sheet-water | 1 |
-| line-snap | stand-in (line-strain, quick slice) | sheet-water | 1 |
-| pond-splash | stand-in (splash-small) | sheet-water | 3 |
+| bobber-plop | up (sheet-water, 11/27) | sheet-water | done |
+| cast-whoosh | up (sheet-water, 11/27) | sheet-water | done |
+| line-snap | up (sheet-water, 11/27) | sheet-water | done |
+| pond-splash | up (sheet-water, 11/27) | sheet-water | done |
 | sting-trophy | stand-in (sting-rare, slower) | own file | 2 |
 | sting-monster | stand-in (sting-mythic, slower) | own file | 2 |
 | server-horn | stand-in (sting-legendary, slowed slice) | own file | 2 |
-| sell-coins | stand-in (sting-common, faster) | sheet-ui | 3 |
-| journal-page, ui-click, ui-open | none | sheet-ui | 3 |
-| goal-complete | stand-in (sting-uncommon) | sheet-ui | later (goals) |
+| sell-coins | up (sheet-ui, 11/27) | sheet-ui | done |
+| journal-page, ui-click, ui-open | up (sheet-ui, 11/27) | sheet-ui | done |
+| goal-complete | up (sheet-ui, 11/27) | sheet-ui | done |
 | bait bench: worm wriggle, hook click, knot pull, minnow flick, squish, cricket chirp | none (L3) | sheet-bait | 1 when L3 starts |
 | L4 the wait: a low swell as a fish shadow comes for the bait, a twitch flick | none | sheet-water or own | 1 when L4 starts |
-| frenzy-boil | stand-in (thrash-splash, slower) | own file (loop) | later (frenzies) |
-| frenzy-burst | none | own file | later (frenzies) |
-| rain-on-water, thunder-far, wind-gust | none | own files | later (weather) |
+| frenzy-boil | up (own loop, 11/27) | own file (loop) | done |
+| frenzy-burst | up (own file, 11/27) | own file | done |
+| rain-on-water, thunder-far, wind-gust | up: rain from the licensed library, thunder and wind in sheet-water (11/27) | library / sheet | done |
 | amb-biglake, amb-bluewater, theme-biglake, tension-bluewater | none | own files | later (Big Lake) |
-| motor-dinghy-idle, motor-dinghy-run, motor-deepv-run, boat-bump, buoy-bell | none (boat-bump, buoy-bell in sheet-water) | own / sheet | later (boats) |
+| motor-dinghy-idle, motor-dinghy-run, boat-bump, buoy-bell | up (motors own loops, the rest in sheet-water, 11/27); motor-deepv-run waits for the Deep-V | own / sheet | done |
 | breach-huge | stand-in (splash-big, slower) | own file | later (Godlike events) |
 | winter: ice crack, auger, wind over ice | none | own / sheet | later (seasons) |
 

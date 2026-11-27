@@ -30,11 +30,12 @@ return {
 	["theme-lake"] = "rbxassetid://76895844343949",
 	["theme-creek"] = "rbxassetid://119583899918145",
 	["tension-fight"] = "rbxassetid://131247988401466",
-	-- Prompted 2026-11-26 in the cloud (audio/sounds-next.json), not generated or uploaded yet.
+	-- Prompted 2026-11-26 in the cloud (audio/sounds-next.json). Uploaded 11/27/2026 where an id is set;
+	-- the short ones play from the sheets in SoundSheets (sheet-water, sheet-ui), so their ids stay empty.
 	["amb-biglake"] = "",
 	["amb-bluewater"] = "",
-	["motor-dinghy-idle"] = "",
-	["motor-dinghy-run"] = "",
+	["motor-dinghy-idle"] = "rbxassetid://110660038490367",
+	["motor-dinghy-run"] = "rbxassetid://74507819416169",
 	["motor-deepv-run"] = "",
 	["boat-bump"] = "",
 	["buoy-bell"] = "",
@@ -48,12 +49,13 @@ return {
 	["sting-trophy"] = "",
 	["sting-monster"] = "",
 	["server-horn"] = "",
-	["frenzy-boil"] = "",
-	["rain-on-water"] = "",
+	["frenzy-boil"] = "rbxassetid://98406930497590",
+	-- Licensed Creator Store sound (Pro Sound Effects, "Rain On Water 3", a 60 s loop): no upload.
+	["rain-on-water"] = "rbxassetid://9112855302",
 	["thunder-far"] = "",
 	["wind-gust"] = "",
 	["breach-huge"] = "",
 	["theme-biglake"] = "",
 	["tension-bluewater"] = "",
-	["frenzy-burst"] = "",
+	["frenzy-burst"] = "rbxassetid://134812582219869",
 } :: { [string]: string }
