@@ -19,6 +19,11 @@ fight breaks the line. The
 Okay spinner's shorter cast and the Perfect plastic worm's weedless rig are not modelled
 (the sim has no cast distance or snags).
 
+--retrieve works the lures (L4c, Config.LURE_RETRIEVE_ON): no bobber; each lure cast is
+retrieved back over a few seconds and strikes come at Retrieve.luau's hazard (worked well,
+the same average time as a bobber bite). A recast costs a cast; a missed strike or a snag
+ends the cast. The smart player works it well most of the time, a kid less often.
+
 Run:  python3 tools/econ/sim.py            (full report, about a minute)
       python3 tools/econ/sim.py --quick    (fewer runs, for a fast check)
 
@@ -208,6 +213,41 @@ MOUTHS = {"small": 1, "medium": 2, "large": 3}
 BENCH_SECONDS = {"Okay": 0.0, "Good": 3.5, "Perfect": 3.5}  # Okay is Quick Bait: no bench at all
 LURE_BENCH_SECONDS = {"Okay": 0.0, "Good": 4.5, "Perfect": 4.5}  # a knot or a Texas rig (L3b)
 RIG_ON = False  # --bait
+
+# Working the lure (L4c), read from Shared/Retrieve.luau. Off unless --retrieve.
+_ret_src = (_shared / "Retrieve.luau").read_text(encoding="utf-8")
+RET_END = _const(_ret_src, "END_DIST")
+RET_WELL = {k: float(v) for k, v in _re.findall(r"\t(\w+) = ([0-9.]+),", _re.search(r"WELL_SHARE = \{(.*?)\}", _ret_src, _re.S).group(1))}
+RET_FALL_END = _const(_ret_src, "FALL_END")
+RET_PAYBACK = {k: float(v) for k, v in _re.findall(r"\t(\w+) = ([0-9.]+),", _re.search(r"RECAST_PAYBACK = \{(.*?)\}", _ret_src, _re.S).group(1))}  # strikes a little sooner in the water, to pay back recasts
+# Seconds a well-worked retrieve takes to start scoring, and its average speed after that
+# (the spinner's middle of the band; the worm's tapped hop every FALL_END + 0.05 s).
+RET_SPEED = {
+    "Spinner": (_const(_ret_src, "BAND_LO") + _const(_ret_src, "BAND_HI")) / 2,
+    "PlasticWorm": (_const(_ret_src, "HOP_BASE") + _const(_ret_src, "HOP_PER_SEC") * 0.1) / (RET_FALL_END + 0.05),
+}
+RET_START = {"Spinner": 1.0, "PlasticWorm": RET_FALL_END + 0.05}
+# Share of a retrieve's time spent good. Skilled: about the well-worked share. Kid: the spinner
+# drifts out of the band and the worm gets dragged or ripped a good part of the time.
+RET_SHARE = {"skilled": {"Spinner": 0.85, "PlasticWorm": 0.68}, "kid": {"Spinner": 0.55, "PlasticWorm": 0.45}}
+RET_SNAG = {"skilled": 0.03, "kid": 0.12}  # chance a cast at the logs or weeds is left to sink and snags
+RET_SNAG_COST = 3.0  # wiggling it free
+RET_CAST = (18, 38)  # studs out, where a player aims
+RETRIEVE_ON = False  # --retrieve
+
+
+def retrieve_cast(rng, bait, delay, skill_kind, spot):
+    """One worked lure cast. Returns (seconds spent, struck)."""
+    length = max(rng.uniform(*RET_CAST) - RET_END, 1)
+    dur = RET_START[bait] + length / RET_SPEED[bait]
+    if spot in ("Logs", "WeedBed") and rng.random() < RET_SNAG[skill_kind]:
+        return dur * rng.random() + RET_SNAG_COST, False
+    share = RET_SHARE[skill_kind][bait]
+    strike = rng.expovariate(1) * delay * RET_WELL[bait] * RET_PAYBACK[bait] / share
+    if strike > dur:
+        return dur, False
+    return strike, True
+
 
 # The fish of the day (L6d), read from Shared/Daily.luau: one species bites a little more
 # readily. Off unless --fish-of-day names it.
@@ -631,6 +671,7 @@ class Strategy:
     uses_cover = False  # fishes tight to cover where the spot has it (L2b)
     uses_rises = False  # casts onto rises, about one per rise interval (L2b)
     rig_grade = "Okay"  # bait bench grade every time (L3, --bait)
+    retrieve_skill = "kid"  # how well lures are worked (L4c, --retrieve)
     hook_rule = None  # "right" (best hook for the spot) or a fixed size; None: no hook sizes
 
     def spots(self, p):
@@ -651,6 +692,7 @@ class Smart(Strategy):
     hook_p = 0.92
     uses_cover = True
     uses_rises = True
+    retrieve_skill = "skilled"
 
     def __init__(self, pond=True, skill=KID):
         self.uses_pond = pond
@@ -889,6 +931,21 @@ def play_session(p, strat, rng, clock_start, minutes=SESSION_MIN, log=None):
                 d = rng.uniform(RISE_BITE_MIN, RISE_BITE_MAX)
                 next_rise = t + rng.uniform(RISE_MIN, RISE_MAX)
             first = False
+            if RETRIEVE_ON and not live:
+                # Work the lure (L4c): strike or it comes back; a recast, a miss or a snag
+                # starts a fresh cast.
+                spent, struck = retrieve_cast(rng, bait, d, strat.retrieve_skill, spot)
+                t += spent
+                if not struck:
+                    t += CAST_OVERHEAD
+                    continue
+                if rng.random() < strat.hook_p:
+                    t += HOOK_REACTION
+                    sid = pick_species(w, rng)
+                    hooked = True
+                else:
+                    t += CFG["HOOK_WINDOW"] + CAST_OVERHEAD
+                continue
             t += d
             if rng.random() < strat.hook_p:
                 t += HOOK_REACTION
@@ -1266,6 +1323,48 @@ def report_bait(runs, sessions=10):
     print(f"Dock kid with a Medium hook on worms against before L3: {100 * (dk_med / dk_old - 1):+.1f}%")
 
 
+def report_retrieve(runs, sessions=10):
+    """L4c: coins per minute with the lures worked back, against today's bobber."""
+    global RETRIEVE_ON
+    print("\n## Working the lure (L4c)\n")
+    print(f"Each career plays {sessions} sessions of {SESSION_MIN} minutes; {runs} careers each, same seeds.")
+    print(f"Lure casts land {RET_CAST[0]} to {RET_CAST[1]} studs out. Good share of a retrieve: skilled "
+          f"{RET_SHARE['skilled']['Spinner']:.2f} spinner / {RET_SHARE['skilled']['PlasticWorm']:.2f} worm, "
+          f"kid {RET_SHARE['kid']['Spinner']:.2f} / {RET_SHARE['kid']['PlasticWorm']:.2f} "
+          f"(worked well: {RET_WELL['Spinner']:.2f} / {RET_WELL['PlasticWorm']:.2f}).\n")
+
+    def kid_hands():
+        st = Smart(pond=False)
+        st.retrieve_skill = "kid"
+        return st
+
+    cases = [
+        ("smart", lambda: Smart(pond=False)),
+        ("smart, kid on the reel", kid_hands),
+        ("dock kid", lambda: DockWorms()),
+        ("random", lambda: RandomPlayer()),
+    ]
+    rows, out = [], {}
+    for label, make in cases:
+        vals = {}
+        lure_share = {}
+        for on in (False, True):
+            RETRIEVE_ON = on
+            gross, lures, fish = [], 0, 0
+            for i in range(runs):
+                p, per, _ = run_career(make(), seed=9000 + i, sessions=sessions, stop_early=False)
+                gross.append(sum(per) / len(per))
+            vals[on] = statistics.mean(gross)
+        RETRIEVE_ON = False
+        change = 100 * (vals[True] / vals[False] - 1)
+        out[label] = change
+        rows.append([label, f"{vals[False]:.1f}", f"{vals[True]:.1f}", f"{change:+.1f}%"])
+    print(table(rows, ["Player", "coins/min today (bobber)", "coins/min working lures", "change"]))
+    print()
+    print(f"Target: smart and dock kid within 5 percent of today. Smart {out['smart']:+.1f}%, dock kid {out['dock kid']:+.1f}%.")
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true", help="fewer runs")
@@ -1280,6 +1379,7 @@ def main():
     ap.add_argument("--grace-value", type=float, help="play with this FIGHT_IDLE_GRACE instead of Config's, to compare")
     ap.add_argument("--assist-always", action="store_true", help="reel assist never turns itself off (the game before L4b)")
     ap.add_argument("--fish-of-day", help="this species bites a little more readily all day (Daily.luau, L6d)")
+    ap.add_argument("--retrieve", action="store_true", help="only report working the lures against today's bobber (L4c)")
     args = ap.parse_args()
     global SIZE_CLASSES, WEATHER_ON, GOALS, ASSIST_ALWAYS, FISH_OF_DAY
     FISH_OF_DAY = args.fish_of_day
@@ -1298,6 +1398,9 @@ def main():
         return
     if args.bait:
         report_bait(12 if args.quick else 60)
+        return
+    if args.retrieve:
+        report_retrieve(12 if args.quick else 60)
         return
     if args.grace:
         print("## Slack-line grace: chance to land, Willow Rod (mean over the fish, worst fish)\n")

@@ -5,6 +5,9 @@
 --   (Approach.REEL_HOLD or longer) reels the line back in; a tap never reels in. With live
 --   bait and an empty hook, the press that would cast opens the bait bench first (L3,
 --   BaitBench); the same button works it.
+--   Working a lure (L4c, Config.LURE_RETRIEVE_ON): no bobber. Holding the button reels a
+--   spinner, a short press hops a plastic worm (RetrieveView draws it); each press and
+--   let-go goes to the server (remote "Reel"), which decides strikes.
 --
 -- From the bite until the fight ends, input is read straight from UserInputService, so a
 -- click or touch ANYWHERE on screen (even over a panel or button) hooks and reels. Panels
@@ -30,6 +33,7 @@ local BaitRig = require(Shared.BaitRig)
 local BaitData = require(Shared.BaitData)
 local Approach = require(Shared.Approach)
 local FightFeel = require(Shared.FightFeel)
+local Retrieve = require(Shared.Retrieve)
 
 local UI = require(script.Parent.UI)
 local PondView = require(script.Parent.PondView)
@@ -44,6 +48,7 @@ local RodFeel = require(script.Parent.RodFeel)
 local CastFlight = require(script.Parent.CastFlight)
 local FightTells = require(script.Parent.FightTells)
 local CatchMoment = require(script.Parent.CatchMoment)
+local RetrieveView = require(script.Parent.RetrieveView)
 
 -- The same water and spot boxes the server casts against (Shared/WaterMap).
 local castZones = WaterMap.castZones()
@@ -51,7 +56,7 @@ local castWaters = WaterMap.castWaters()
 
 local Controller = {}
 
-local state = "Idle" -- Idle, Baiting, Charging, Casting, Waiting, Snagged, Bite, Hooking, Fighting, Resolving
+local state = "Idle" -- Idle, Baiting, Charging, Casting, Waiting, Retrieving, Snagged, Bite, Hooking, Fighting, Resolving
 local stateSince = 0
 local chargeStart = 0
 local fight: FightModel.State? = nil
@@ -70,6 +75,11 @@ local benchHeld: { [string]: boolean } = {} -- move inputs held down on the bait
 local waitPressAt: number? = nil
 local waitPressReeled = false
 local landedAt: Vector3? = nil -- where the server put the bobber this cast (for the fight's tells, L4b)
+-- Working a lure (L4c): the inputs holding the button down, the presses sent this cast (so a
+-- press the server would refuse is never sent), and whether the last press went out.
+local reelHeld: { [any]: boolean } = {}
+local reelPresses: { Retrieve.Press } = {}
+local reelSent = false
 
 -- Inputs that count as "reel" during a bite or fight, on every device.
 local REEL_TYPES = {
@@ -182,6 +192,9 @@ end
 local function goIdle()
 	BaitBench.cancel()
 	waitPressAt = nil
+	RetrieveView.stop()
+	table.clear(reelHeld)
+	reelSent = false
 	WaitScene.clear()
 	CastFlight.cancel()
 	FightTells.stop()
@@ -367,6 +380,76 @@ local function benchUp(key: string)
 	end
 end
 
+----------------------------------------------------------------------------------------
+-- Working a lure (L4c)
+
+-- The button went down or up while working a lure. Several inputs held at once count as one
+-- press. Each press goes to the model on this screen at once and to the server, stamped with
+-- the seconds since the lure landed; one the server would refuse (too quick) isn't sent.
+local function reelInput(key: any, down: boolean)
+	local was = next(reelHeld) ~= nil
+	if down then
+		reelHeld[key] = true
+	else
+		reelHeld[key] = nil
+	end
+	local now = next(reelHeld) ~= nil
+	if was == now then
+		return
+	end
+	local t = RetrieveView.elapsed()
+	local kind = if now then "down" else "up"
+	if kind == "up" and not reelSent then
+		return -- its down was never sent
+	end
+	if Retrieve.acceptEvent(reelPresses, kind, t) then
+		reelSent = false
+		return
+	end
+	Retrieve.addEvent(reelPresses, kind, t)
+	reelSent = kind == "down"
+	if kind == "down" then
+		RetrieveView.press(t)
+	else
+		RetrieveView.release(t)
+	end
+	Remotes.event("Reel"):FireServer(kind, t)
+end
+
+-- What to do with a worked lure, for the status line (short: one line on a phone).
+local function retrieveHint(lure: string): string
+	if lure == "Spinner" then
+		return "Hold to reel. Keep the meter on Just right."
+	end
+	return "Tap to hop it, then wait: fish hit it as it falls."
+end
+
+-- Studio test hook (DebugAutoFish): work the lure the way Retrieve.wellTimeline does.
+local autoReel: { Retrieve.Press }? = nil
+local function autoWork()
+	local lure = RetrieveView.lure()
+	if not lure then
+		return
+	end
+	if not autoReel then
+		autoReel = Retrieve.wellTimeline(lure, Retrieve.MAX_TIME)
+	end
+	local t = RetrieveView.elapsed()
+	local want = false
+	for _, p in autoReel :: { Retrieve.Press } do
+		if p.down > t then
+			break
+		end
+		if t < (p.up :: number) then
+			want = true
+			break
+		end
+	end
+	if want ~= (reelHeld.auto == true) then
+		reelInput("auto", want)
+	end
+end
+
 local function hook()
 	if state ~= "Bite" then
 		return
@@ -427,7 +510,10 @@ local function onFish(_name: string, inputState: Enum.UserInputState, _input: In
 		-- the landing ring's arc and plops in (CastFlight).
 		RodFeel.swing()
 		if predicted then
-			CastFlight.start(predicted, FightFeel.releaseTime())
+			-- A worked lure (L4c) flies instead of the bobber.
+			local _, bait = castGear()
+			local lureLook = if Config.LURE_RETRIEVE_ON and Retrieve.isLure(bait) then BaitData.byId[bait :: string].color else nil
+			CastFlight.start(predicted, FightFeel.releaseTime(), lureLook)
 		end
 		playId("cast-whoosh", "cast")
 		UI.status("Casting...")
@@ -443,6 +529,11 @@ local function onFish(_name: string, inputState: Enum.UserInputState, _input: In
 			WaitScene.twitch()
 			Remotes.event("Twitch"):FireServer()
 		end
+	elseif state == "Retrieving" and (began or ended) then
+		-- Hold reels a spinner, a short press hops a worm (L4c): mouse, F, R2 and the touch
+		-- button all come this way, the same path the wait's tap and hold use.
+		local key: any = if _input then _input.UserInputType.Name .. ":" .. _input.KeyCode.Name else "button"
+		reelInput(key, began)
 	elseif state == "Snagged" and began then
 		Remotes.event("Wiggle"):FireServer() -- the server ignores presses too close together
 	end
@@ -500,8 +591,33 @@ local function onFishingEvent(kind: string, payload: any)
 		CastFlight.cancel()
 	end
 	SoundFX.event(kind, payload)
-	WaitScene.event(kind, payload)
-	if kind == "Landed" then
+	local retrieving = kind == "Landed" and type(payload.retrieve) == "string"
+	if not retrieving then
+		WaitScene.event(kind, payload)
+	end
+	if retrieving then
+		-- A worked lure (L4c): no bobber, no bobber camera; you work it back.
+		setState("Retrieving")
+		waitPressAt = nil
+		table.clear(reelHeld)
+		table.clear(reelPresses)
+		reelSent = false
+		autoReel = nil
+		RetrieveView.start(payload)
+		UI.status(
+			"At "
+				.. tostring(payload.spotName)
+				.. "."
+				.. (if payload.tight then " Near cover." else "")
+				.. " "
+				.. retrieveHint(payload.retrieve)
+		)
+		if payload.rise then
+			UI.toast("Right on the rise!", Color3.fromRGB(120, 200, 255))
+		end
+	elseif kind == "Retrieved" then
+		goIdle()
+	elseif kind == "Landed" then
 		setState("Waiting")
 		waitPressAt = nil
 		if typeof(payload.pos) == "Vector3" then
@@ -533,13 +649,23 @@ local function onFishingEvent(kind: string, payload: any)
 		goIdle()
 	elseif kind == "Bite" then
 		waitPressAt = nil
+		if payload and payload.lure then
+			-- A strike on the worked lure (L4c): the rod thumps (the sound is the bite cue).
+			RetrieveView.strike(if typeof(payload.pos) == "Vector3" then payload.pos else nil)
+			if typeof(payload.pos) == "Vector3" then
+				landedAt = payload.pos
+			end
+		end
 		setState("Bite")
 		UI.closePanels()
 		UI.setLocked(true)
 		freezeCharacter(true)
 		UI.bite(true)
-		local how = if payload and payload.style == "pull" then "It's pulling the bobber under! " elseif payload and payload.style == "slam" then "Wham! " else "Bite! "
+		local how = if payload and payload.lure then "Strike! " elseif payload and payload.style == "pull" then "It's pulling the bobber under! " elseif payload and payload.style == "slam" then "Wham! " else "Bite! "
 		UI.status(how .. "Press " .. UI.inputName() .. " now!")
+	elseif kind == "Missed" and payload and payload.ended then
+		UI.toast(payload.text) -- a worked lure's strike was missed: the cast is over (L4c)
+		goIdle()
 	elseif kind == "Missed" then
 		setState("Waiting")
 		endFishOn()
@@ -801,6 +927,18 @@ function Controller.start()
 			goIdle() -- the bench closed without finishing (should not happen)
 		end
 		WaitScene.step(state, dt)
+		if state == "Retrieving" then
+			if autoFish() then
+				autoWork()
+			end
+			RetrieveView.step(dt, CastFlight.flying())
+			if RetrieveView.finished() and next(reelHeld) == nil then
+				UI.status("Here it comes...")
+			end
+			if RetrieveView.elapsed() > Retrieve.MAX_TIME + 5 then
+				goIdle() -- the server never ended the cast; don't leave the player stuck
+			end
+		end
 		-- Holding the Fish button while waiting reels the line in (a tap twitches instead).
 		if state == "Waiting" and waitPressAt and not waitPressReeled then
 			if Approach.pressKind(os.clock() - (waitPressAt :: number), false) == "reel" then

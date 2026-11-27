@@ -26,6 +26,7 @@ local Rises = require(Shared.Rises)
 local BaitRig = require(Shared.BaitRig)
 local Approach = require(Shared.Approach)
 local BobberCam = require(Shared.BobberCam)
+local Retrieve = require(Shared.Retrieve)
 
 local Server = script.Parent
 local PlayerData = require(Server.PlayerData)
@@ -65,8 +66,25 @@ type Coming = {
 	striking: boolean, -- the nibbles and bite are running
 }
 
+-- A lure being worked back (L4c, Config.LURE_RETRIEVE_ON): the client streams its presses and
+-- the server runs them through Shared/Retrieve a little behind its own clock (Retrieve.LAG),
+-- rolling strikes from the good seconds. Nothing the client says is a strike.
+type Run = {
+	state: Retrieve.State,
+	startedAt: number, -- os.clock() of the landing
+	presses: { Retrieve.Press }, -- the accepted timeline (seconds after the landing)
+	events: { { kind: string, t: number } }, -- accepted, waiting to be scored
+	scoredTo: number, -- the model has run this far (seconds after the landing)
+	lastGood: number, -- good seconds already rolled for a strike
+	delay: number?, -- the bobber's bite delay for this cast (nil: nothing here wants it)
+	fromRise: boolean,
+	tokens: number, -- rate limit for Reel messages
+	tokensAt: number,
+	refused: number, -- events refused this cast
+}
+
 type Session = {
-	phase: string, -- Idle, Waiting, Snagged, Bite, Fighting
+	phase: string, -- Idle, Waiting, Retrieving, Snagged, Bite, Fighting
 	token: number,
 	nibbling: boolean?, -- a fish is testing the bait (small dips before the real bite)
 	bobber: BasePart?,
@@ -89,11 +107,15 @@ type Session = {
 	rig: Rig?, -- the bait on the hook (L3); not cleared by cleanup()
 	rigEmptyAt: number, -- os.clock() when the hook last went empty (a bench can't start sooner)
 	lastRigAt: number, -- os.clock() of the last Rig accepted (rate limit)
+	retrieve: Run?, -- a lure being worked back (L4c)
 }
 
 local RIG_MIN_GAP = 0.5 -- seconds between Rig messages the server will look at
 local ASSIST_OFF_TEXT = "Reel assist is off now. Turn it back on in the journal any time."
 local RIG_LATENCY = 0.5 -- slack when checking a bench run against the server's clock
+local REEL_RATE = 20 -- Reel messages a second the server will look at (L4c)...
+local REEL_BURST = 12 -- ...with this many in a burst
+local REEL_REFUSE_MAX = 30 -- a cast with this many refused presses is ended
 
 local sessions: { [Player]: Session } = {}
 local rng = Random.new()
@@ -148,6 +170,7 @@ local function cleanup(s: Session)
 	s.waitGen += 1
 	s.twitches = Approach.newTwitches()
 	s.extraDelay = 0
+	s.retrieve = nil
 end
 
 -- The bait or lure on the hook for a cast with `baitId`, or nil (nothing on, or a stale rig).
@@ -448,11 +471,10 @@ local function startComing(player: Player, s: Session, plan: Approach.Plan, from
 	runComing(player, s)
 end
 
-function scheduleBite(player: Player, s: Session)
-	local token = s.token
-	s.waitGen += 1
-	local gen = s.waitGen
-	s.coming = nil
+-- The bite delay for this cast with every multiplier: cover, a frenzy, how the bait went on,
+-- and a claimed rise (first bite only). Nil when nothing here wants this bait. A worked lure
+-- (L4c) uses the same delay for its strike hazard.
+local function castDelay(s: Session): (number?, boolean)
 	local delay = FishLogic.biteDelay(s.weights or {}, rng)
 	if delay then
 		delay = Cover.adjustDelay(delay, s.tight == true) -- fish hold tight to cover
@@ -471,6 +493,16 @@ function scheduleBite(player: Player, s: Session)
 		fromRise = true
 	end
 	s.fastBite = nil
+	return delay, fromRise
+end
+
+function scheduleBite(player: Player, s: Session)
+	local token = s.token
+	s.waitGen += 1
+	local gen = s.waitGen
+	s.coming = nil
+	local delay, fromRise = castDelay(s)
+	local rig = rigFor(s, s.bait)
 	if not delay then
 		task.delay(Config.NOTHING_WAIT, function()
 			if s.token == token and s.phase == "Waiting" then
@@ -533,6 +565,227 @@ local function onTwitch(player: Player)
 		s.waitGen += 1
 		runComing(player, s)
 	end
+end
+
+-- The hook is stuck on a log or in the weeds (L2b): wiggle it free within SNAG_TIME or the
+-- line snaps. A worked lure left to sink onto cover (L4c) comes here too.
+local function startSnag(player: Player, s: Session, pos: Vector3)
+	s.phase = "Snagged"
+	s.retrieve = nil
+	s.snag = Cover.newSnag(os.clock())
+	send(player, "Snag", { pos = pos })
+	local token = s.token
+	task.delay(Cover.SNAG_TIME, function()
+		if s.token == token and s.phase == "Snagged" then
+			local bait = BaitData.byId[s.bait or ""]
+			local now = PlayerData.get(player)
+			local lure = bait ~= nil and bait.kind == "lure"
+			if now and Cover.losesBait(bait and bait.kind, false, 1) then
+				Inventory.consumeBait(now, s.bait or "")
+				PlayerData.changed(player)
+				if rigFor(s, s.bait) then
+					emptyHook(player, s)
+				end
+			elseif lure and rigFor(s, s.bait) then
+				emptyHook(player, s) -- the lure is saved (never lost) but has to be tied on again
+			end
+			cleanup(s)
+			send(player, "Snapped", { text = if lure then "The line snapped on the snag. Tie your lure back on." else "The line snapped on the snag." })
+		end
+	end)
+end
+
+----------------------------------------------------------------------------------------
+-- Working a lure (L4c, behind Config.LURE_RETRIEVE_ON)
+
+-- A fish hits the worked lure: picked and sized now by the same bite weights as a bobber
+-- bite, then the normal hook window. A missed strike ends the cast (the lure is kept).
+local function lureStrike(player: Player, s: Session, r: Run)
+	local speciesId = FishLogic.pickSpecies(s.weights or {}, rng)
+	local species = speciesId and FishData.byId[speciesId]
+	if not species then
+		return
+	end
+	local cm, kg, class = rollComing(player, species)
+	local pattern = FishLogic.bitePattern(species)
+	local pos = Retrieve.position(r.state)
+	s.retrieve = nil
+	s.species = species.id
+	s.catch = { cm = cm, kg = kg, class = class }
+	s.land = pos -- the boat's line check follows the fish
+	s.phase = "Bite"
+	print(string.format(
+		"[Fishing] %s: %s struck the %s after %.1fs (%.1fs good, %.1f studs in), %.1f cm %s",
+		player.Name,
+		species.id,
+		s.bait or "lure",
+		r.state.t,
+		r.state.good,
+		r.state.traveled,
+		cm,
+		class
+	))
+	send(player, "Bite", { style = pattern.style, lure = true, pos = pos })
+	local token = s.token
+	task.delay(pattern.hookWindow, function()
+		if s.token == token and s.phase == "Bite" then
+			print(string.format("[Fishing] %s missed the strike: %s let go", player.Name, species.id))
+			send(player, "Missed", { text = "Too slow! It let go of the lure. Cast again.", ended = true })
+			reset(player, s)
+		end
+	end)
+end
+
+-- The lure came back to your feet (or ran out of time) with no strike: the cast just ends.
+local function lureBack(player: Player, s: Session, r: Run)
+	print(string.format(
+		"[Fishing] %s: the %s came back with no strike (%.1fs, %.1fs good of it)",
+		player.Name,
+		s.bait or "lure",
+		r.state.t,
+		r.state.good
+	))
+	if not r.delay then
+		send(player, "Hint", { text = nothingHint(player, s) })
+	end
+	send(player, "Retrieved", { pos = Retrieve.position(r.state) })
+	reset(player, s)
+end
+
+-- Run the model on to `upTo` (seconds after the landing), applying accepted presses in order.
+local function scoreRun(r: Run, upTo: number)
+	while #r.events > 0 and r.events[1].t <= upTo do
+		local e = table.remove(r.events, 1) :: { kind: string, t: number }
+		if e.kind == "down" then
+			Retrieve.press(r.state, e.t)
+		else
+			Retrieve.release(r.state, e.t)
+		end
+	end
+	Retrieve.advance(r.state, upTo)
+	r.scoredTo = math.max(r.scoredTo, upTo)
+end
+
+-- The server's clock for one worked lure: every TICK, score up to LAG behind real time and
+-- roll for a strike on the new good seconds.
+local function runRetrieve(player: Player, s: Session)
+	local token = s.token
+	task.spawn(function()
+		while true do
+			task.wait(Retrieve.TICK)
+			local r = s.retrieve
+			if s.token ~= token or s.phase ~= "Retrieving" or not r then
+				return
+			end
+			local upTo = os.clock() - r.startedAt - Retrieve.LAG
+			if upTo > r.scoredTo then
+				scoreRun(r, upTo)
+				local st = r.state
+				local fresh = st.good - r.lastGood
+				r.lastGood = st.good
+				local pos = Retrieve.position(st)
+				if st.snagged then
+					print(string.format("[Fishing] %s: the %s sank onto cover and snagged at %.1fs", player.Name, s.bait or "lure", st.t))
+					startSnag(player, s, pos)
+					return
+				elseif rng:NextNumber() < Retrieve.strikeChance(fresh, r.delay, st.lure) then
+					lureStrike(player, s, r)
+					if s.phase ~= "Retrieving" then
+						return
+					end
+				elseif st.done or not FishLogic.isOnWaterAny(pos, waters) then
+					lureBack(player, s, r)
+					return
+				end
+			end
+		end
+	end)
+end
+
+-- The lure landed: start working it back. Its strike hazard comes from the same bite delay a
+-- bobber would get here (castDelay), so worked well it strikes as soon on average.
+local function startRetrieve(player: Player, s: Session, landing: Vector3, origin: Vector3, grade: string)
+	local baitId = s.bait :: string
+	local delay, fromRise = castDelay(s)
+	local now = os.clock()
+	local run: Run = {
+		state = Retrieve.new(baitId, grade, landing, origin),
+		startedAt = now,
+		presses = {},
+		events = {},
+		scoredTo = 0,
+		lastGood = 0,
+		delay = delay,
+		fromRise = fromRise,
+		tokens = REEL_BURST,
+		tokensAt = now,
+		refused = 0,
+	}
+	s.phase = "Retrieving"
+	s.retrieve = run
+	print(string.format(
+		"[Fishing] %s working a %s (%s) at %s, %.1f studs out, strike delay %s%s",
+		player.Name,
+		baitId,
+		grade,
+		s.spot or "?",
+		run.state.length,
+		if delay then string.format("%.1fs", delay) else "none (nothing here wants it)",
+		if fromRise then ", on a rise" else ""
+	))
+	send(player, "Landed", {
+		pos = landing,
+		spot = s.spot,
+		spotName = FishLogic.SPOT_NAMES[s.spot :: string],
+		bait = baitId,
+		tight = s.tight,
+		rise = fromRise,
+		retrieve = baitId,
+		origin = origin,
+		grade = grade,
+	})
+	runRetrieve(player, s)
+end
+
+-- One press or let-go of the button while working a lure, `t` seconds after it landed (the
+-- client's clock). Refused when it couldn't be real. A press stamped before what the server
+-- has already scored counts from there, so nothing that already happened is rewritten.
+local function onReel(player: Player, kind: any, t: any)
+	local s = session(player)
+	local r = s.retrieve
+	if s.phase ~= "Retrieving" or not r then
+		return
+	end
+	local now = os.clock()
+	r.tokens = math.min(REEL_BURST, r.tokens + (now - r.tokensAt) * REEL_RATE)
+	r.tokensAt = now
+	if r.tokens < 1 then
+		return
+	end
+	r.tokens -= 1
+	local elapsed = now - r.startedAt
+	local why: string? = nil
+	local at = 0
+	if type(t) ~= "number" or t ~= t then
+		why = "bad time"
+	elseif t > elapsed + Retrieve.FUTURE_SLACK then
+		why = "stamped in the future"
+	else
+		at = math.max(t :: number, r.scoredTo)
+		why = Retrieve.acceptEvent(r.presses, kind, at)
+	end
+	if why then
+		r.refused += 1
+		if r.refused == 1 or r.refused % 10 == 0 then
+			warn(string.format("[Fishing] %s's reel press refused (%s), %d this cast", player.Name, why, r.refused))
+		end
+		if r.refused >= REEL_REFUSE_MAX then
+			reset(player, s)
+		end
+		return
+	end
+	Retrieve.addEvent(r.presses, kind :: string, at)
+	table.insert(r.events, { kind = kind :: string, t = at })
 end
 
 local function onCast(player: Player, dir: any, power: any, clientLanding: any)
@@ -623,7 +876,11 @@ local function onCast(player: Player, dir: any, power: any, clientLanding: any)
 	s.spot = FishLogic.spotAt(landing, zones)
 	s.period = FishLogic.periodFromClock(Lighting.ClockTime)
 	s.bait = baitId
-	s.bobber = makeBobber(player, landing)
+	-- A worked lure has no bobber (L4c): the client draws the lure and its line.
+	local retrieve = Config.LURE_RETRIEVE_ON and Retrieve.isLure(baitId)
+	if not retrieve then
+		s.bobber = makeBobber(player, landing)
+	end
 	-- Live bait goes on the hook now if the bench wasn't used (Quick Bait, a skip, or a bait
 	-- switch the client didn't bench): Okay, exactly the game before L3. A lure is tied on
 	-- Okay the same way (L3b); hook size doesn't matter for a lure.
@@ -639,28 +896,7 @@ local function onCast(player: Player, dir: any, power: any, clientLanding: any)
 	-- Perfect plastic worm is): snagged (L2b, L3b). Each press of the cast button sends a
 	-- Wiggle; SNAG_WIGGLES of them in SNAG_TIME free it.
 	if Cover.snagAt(landing, baitId, rigGrade) then
-		s.phase = "Snagged"
-		s.snag = Cover.newSnag(os.clock())
-		send(player, "Snag", { pos = landing })
-		local token = s.token
-		task.delay(Cover.SNAG_TIME, function()
-			if s.token == token and s.phase == "Snagged" then
-				local bait = BaitData.byId[s.bait or ""]
-				local now = PlayerData.get(player)
-				local lure = bait ~= nil and bait.kind == "lure"
-				if now and Cover.losesBait(bait and bait.kind, false, 1) then
-					Inventory.consumeBait(now, s.bait or "")
-					PlayerData.changed(player)
-					if rigFor(s, s.bait) then
-						emptyHook(player, s)
-					end
-				elseif lure and rigFor(s, s.bait) then
-					emptyHook(player, s) -- the lure is saved (never lost) but has to be tied on again
-				end
-				cleanup(s)
-				send(player, "Snapped", { text = if lure then "The line snapped on the snag. Tie your lure back on." else "The line snapped on the snag." })
-			end
-		end)
+		startSnag(player, s, landing)
 		return
 	end
 
@@ -676,6 +912,10 @@ local function onCast(player: Player, dir: any, power: any, clientLanding: any)
 	-- A cast onto an open rise claims it: a quick bite, if anything here wants this bait.
 	if #(s.weights :: { FishLogic.Weight }) > 0 and RiseService.claim(player, landing) then
 		s.fastBite = Rises.biteDelay(rng)
+	end
+	if retrieve then
+		startRetrieve(player, s, landing, hrp.Position, rigGrade)
+		return
 	end
 	send(player, "Landed", {
 		pos = landing,
@@ -1031,7 +1271,7 @@ local function onCancel(player: Player)
 		send(player, "Hint", { text = "Too early, that was just a nibble. Wait for the bobber to go under." })
 		return
 	end
-	if s.phase == "Waiting" or s.phase == "Bite" then
+	if s.phase == "Waiting" or s.phase == "Bite" or s.phase == "Retrieving" then
 		reset(player, s)
 	elseif s.phase == "Fighting" then
 		send(player, "Escaped", { text = "You let it go." })
@@ -1043,7 +1283,21 @@ end
 function FishingService.debugState(player: Player): any
 	local s = session(player)
 	local r = s.rig
+	local run = s.retrieve
 	return {
+		retrieve = if run
+			then {
+				t = run.state.t,
+				good = run.state.good,
+				traveled = run.state.traveled,
+				length = run.state.length,
+				speed = run.state.speed,
+				depth = run.state.depth,
+				presses = #run.presses,
+				refused = run.refused,
+				delay = run.delay,
+			}
+			else nil,
 		phase = s.phase,
 		spot = s.spot,
 		period = s.period,
@@ -1065,6 +1319,7 @@ function FishingService.start()
 	Remotes.event("Wiggle").OnServerEvent:Connect(onWiggle)
 	Remotes.event("Twitch").OnServerEvent:Connect(onTwitch)
 	Remotes.event("Rig").OnServerEvent:Connect(onRig)
+	Remotes.event("Reel").OnServerEvent:Connect(onReel)
 	Players.PlayerRemoving:Connect(function(player)
 		local s = sessions[player]
 		if s then
@@ -1078,7 +1333,7 @@ function FishingService.start()
 		while true do
 			task.wait(0.5)
 			for player, s in sessions do
-				if s.land and (s.phase == "Waiting" or s.phase == "Snagged" or s.phase == "Bite" or s.phase == "Fighting") then
+				if s.land and (s.phase == "Waiting" or s.phase == "Retrieving" or s.phase == "Snagged" or s.phase == "Bite" or s.phase == "Fighting") then
 					local ok, msg = BoatService.lineCheck(player, s.land)
 					if not ok then
 						local fighting = s.phase == "Fighting"

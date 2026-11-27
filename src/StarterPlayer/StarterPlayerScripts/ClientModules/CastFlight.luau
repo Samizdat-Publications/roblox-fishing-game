@@ -30,6 +30,7 @@ type Flight = {
 	to: Vector3,
 	releaseAt: number,
 	ghost: Part?,
+	lure: Color3?, -- a worked lure flies instead of the bobber (L4c): small, in its colour
 	beam: Beam?,
 	conn: RBXScriptConnection?,
 }
@@ -84,12 +85,12 @@ local function hideReal(on: boolean)
 	end
 end
 
-local function makeGhost(): (Part, Beam?)
+local function makeGhost(lure: Color3?): (Part, Beam?)
 	local g = Instance.new("Part")
 	g.Name = "FlyingBobber"
 	g.Shape = Enum.PartType.Ball
-	g.Size = Vector3.one * GHOST_SIZE
-	g.Color = GHOST_COLOR
+	g.Size = Vector3.one * (if lure then 0.3 else GHOST_SIZE)
+	g.Color = lure or GHOST_COLOR
 	g.Material = Enum.Material.SmoothPlastic
 	g.Anchored = true
 	g.CanCollide = false
@@ -149,7 +150,7 @@ local function step()
 	end
 	if not f.ghost then
 		f.from = RodFeel.tipPosition() or f.to + Vector3.new(0, 4, 0)
-		f.ghost, f.beam = makeGhost()
+		f.ghost, f.beam = makeGhost(f.lure)
 	end
 	local k = (now - f.releaseAt) / CastLogic.FLIGHT_TIME
 	if k >= 1 then
@@ -161,14 +162,15 @@ local function step()
 end
 
 -- The cast was let go toward `landing`; the bobber leaves the rod tip `releaseIn` seconds
--- from now (the end of the whip).
-function CastFlight.start(landing: Vector3, releaseIn: number)
+-- from now (the end of the whip). `lure` (L4c): a worked lure flies, in this colour.
+function CastFlight.start(landing: Vector3, releaseIn: number, lure: Color3?)
 	stop(false)
 	local f: Flight = {
 		from = nil,
 		to = landing,
 		releaseAt = os.clock() + releaseIn,
 		ghost = nil,
+		lure = lure,
 		beam = nil,
 		conn = nil,
 	}

@@ -10,6 +10,7 @@ local EVENTS = {
 	"CancelCast", -- client: ()
 	"Wiggle", -- client: (), one press to work a snagged hook free (L2b)
 	"Twitch", -- client: (), a quick tap while waiting jiggles the bait (L4)
+	"Reel", -- client: (kind: "down"|"up", t: number), working a lure: the button, seconds after it landed (L4c)
 	"Equip", -- client: (baitId: string)
 	"SetAssist", -- client: (on: boolean)
 	"SetQuickBait", -- client: (on: boolean), skip the bait bench (L3)

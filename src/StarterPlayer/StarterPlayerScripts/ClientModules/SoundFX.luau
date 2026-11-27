@@ -152,7 +152,7 @@ local function playerPosition(): Vector3?
 end
 
 local function lineIn(): boolean
-	return phase == "Waiting" or phase == "Bite" or phase == "Hooking"
+	return phase == "Waiting" or phase == "Retrieving" or phase == "Bite" or phase == "Hooking"
 end
 
 local function fighting(): boolean
