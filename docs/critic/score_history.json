@@ -1096,5 +1096,52 @@
       "alwaysOnTopLabels": 0,
       "parts": 1742
     }
+  },
+  {
+    "date": "2026-11-27",
+    "step": "n1-round2",
+    "set": "A",
+    "rubric": "look",
+    "run": "2026-11-27-1747",
+    "commit": "f50b6d7",
+    "shots": 12,
+    "median": 6.5,
+    "scores": [
+      6.5,
+      7.0,
+      6.5
+    ],
+    "points": {
+      "composition": 7,
+      "light": 6.5,
+      "water": 6,
+      "mood": 7,
+      "want_to_fish": 7,
+      "phone_readability": 7,
+      "broken_or_ugly": 5.5
+    },
+    "reports": [
+      "docs\\critic\\2026-11-27-n1-round2-neon.md",
+      "docs\\critic\\2026-11-27-n1-round2-neon-2.md",
+      "docs\\critic\\2026-11-27-n1-round2-neon-3.md"
+    ],
+    "audit": {
+      "floatingLabels": 0,
+      "alwaysOnTopLabelsNotPrompt": 0,
+      "wind": 4,
+      "stockMaterial": 151,
+      "lightingStyle": "Realistic",
+      "plastic": 388,
+      "surfaceAppearances": 1,
+      "heroSets": 1,
+      "stockTerrain_homeLake": 0.4489685124864278,
+      "materialVariants": 20,
+      "terrainCustomSlots": 5,
+      "plasticTop": "Reeds_Node 101, PineShort_Node 57, PineTall_Node 54, LeafyTree_Node 51, LilyPads_Node 27, FishShadows 25, BigLake 20, MyPondFish 12, RockMedium_Node 10, ProBabyTurtle_Dinghy 7",
+      "stockTerrain_bigLakeBasin": 1,
+      "stockGround": 3,
+      "alwaysOnTopLabels": 0,
+      "parts": 2189
+    }
   }
 ]
