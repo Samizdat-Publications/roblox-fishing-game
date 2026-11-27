@@ -1,7 +1,8 @@
 --!strict
 -- Client side of boats: hides other owners' "Drive" and "Tie up" prompts on this screen
--- (the server refuses them anyway), so a player only ever sees prompts they can use.
--- UNVERIFIED in Studio: written 2026-11-26 in the cloud.
+-- (the server refuses them anyway), so a player only ever sees prompts they can use; sends
+-- the helm's controls; keeps the camera on the player while seated; the fish finder panel.
+-- Written 2026-11-26 in the cloud; the helm and the camera proven in Studio 11/27/2026 (L7).
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -126,8 +127,31 @@ local function sendInput()
 	end)
 end
 
+-- Roblox points the camera at a VehicleSeat when you sit in one. On a boat keep it on the
+-- player instead, so fishing from the seat looks and works like fishing from the dock (the
+-- bobber camera and the catch moment only follow the player's Humanoid).
+local function cameraOnPlayer()
+	local cam = workspace.CurrentCamera
+	local function check()
+		local subject = cam.CameraSubject
+		local char = Players.LocalPlayer.Character
+		local hum = char and char:FindFirstChildOfClass("Humanoid")
+		if hum and subject and subject:IsA("VehicleSeat") and hum.SeatPart == subject then
+			local model = subject:FindFirstAncestorOfClass("Model")
+			if model and model:GetAttribute("BoatId") then
+				cam.CameraSubject = hum
+			end
+		end
+	end
+	cam:GetPropertyChangedSignal("CameraSubject"):Connect(function()
+		task.defer(check)
+	end)
+	check()
+end
+
 function BoatClient.start()
 	task.spawn(fishFinder)
+	cameraOnPlayer()
 	task.spawn(sendInput)
 	workspace.DescendantAdded:Connect(function(d)
 		if d:IsA("ProximityPrompt") then

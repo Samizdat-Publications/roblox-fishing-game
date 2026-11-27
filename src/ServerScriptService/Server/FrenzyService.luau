@@ -62,7 +62,12 @@ local function reachable(): { [string]: boolean }
 	local ok = { Dock = true, OpenWater = true, Logs = true, Riffle = true }
 	if workspace:FindFirstChild("BigLake") then
 		ok.Basin = true
-		ok.DropOff = true
+		-- Blue water only once a boat that can reach it is on sale.
+		for _, b in require(Shared.BoatData).list do
+			if b.blueWater and b.forSale then
+				ok.DropOff = true
+			end
+		end
 	end
 	return ok
 end

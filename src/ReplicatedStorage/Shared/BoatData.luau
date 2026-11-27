@@ -1,5 +1,5 @@
 --!strict
--- Boats. UNVERIFIED: written overnight 2026-11-26 without Studio; nothing uses this yet.
+-- Boats. Written overnight 2026-11-26; the dinghy proven in Studio 11/27/2026 (L7).
 -- See docs/superpowers/plans/2026-11-26-boat.md. The server applies these numbers when it
 -- drives a boat and checks where it went; the client only shows them.
 --
@@ -18,6 +18,7 @@ export type Boat = {
 	seats: number, -- people aboard at most
 	crew: number, -- people who must be aboard before it will move
 	blueWater: boolean, -- may it cross into the deep blue water?
+	forSale: boolean, -- false: the shop shows it as coming soon and the server won't sell it
 	length: number, -- studs, hull size for the model and the slip
 	width: number,
 	color: Color3,
@@ -38,6 +39,7 @@ local list: { Boat } = {
 		seats = 1,
 		crew = 1,
 		blueWater = false,
+		forSale = true,
 		length = 8,
 		width = 4,
 		color = Color3.fromRGB(235, 120, 40),
@@ -56,6 +58,9 @@ local list: { Boat } = {
 		seats = 2,
 		crew = 2,
 		blueWater = true,
+		-- Waits for the two-player playtest (Liam's account in the place). Stewart, 11/26/2026:
+		-- it must move with one player too (crew becomes 1 when it goes on sale).
+		forSale = false,
 		length = 16,
 		width = 7,
 		color = Color3.fromRGB(235, 235, 230),

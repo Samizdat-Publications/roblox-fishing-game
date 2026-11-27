@@ -112,7 +112,7 @@ return function(t, Shared)
 	end)
 
 	t.test("the client and server see the same map", function()
-		t.eq(#WaterMap.castWaters(), #WaterMap.waters() + (if Config.BIG_LAKE_ON then 5 else 0), "waters")
+		t.eq(#WaterMap.castWaters(), #WaterMap.waters() + (if Config.BIG_LAKE_ON then 2 else 0), "waters") -- the channel and the Big Lake
 		t.ok(FishLogic.isOnWaterAny(Vector3.new(0, 0.3, 0), WaterMap.waters()), "lake middle")
 		t.ok(not FishLogic.isOnWaterAny(Vector3.new(0, 0.3, 100), WaterMap.waters()), "south shore")
 		t.eq(FishLogic.spotAt(Vector3.new(0, 0.3, 57), WaterMap.zones()), "Dock", "dock")

@@ -1,7 +1,7 @@
 --!strict
 -- Pure boat rules: buying, how input turns into speed and turning, the server's sanity
 -- check on where a boat went, casting from a boat and docking. No Roblox services here.
--- UNVERIFIED: written overnight 2026-11-26 without Studio; nothing uses this yet.
+-- Written overnight 2026-11-26; buying, driving and casting proven in Studio 11/27/2026 (L7).
 local Shared = script.Parent
 local BoatData = require(Shared.BoatData)
 
@@ -22,8 +22,8 @@ end
 -- Buy a boat. Owning one is saved; the boat itself waits at the slip each session.
 function BoatLogic.buy(data: any, id: string): (boolean, string)
 	local b = BoatData.byId[id]
-	if not b then
-		return false, "That boat isn't for sale."
+	if not b or not b.forSale then
+		return false, "That boat isn't for sale yet."
 	end
 	data.boats = data.boats or {}
 	if data.boats[id] then

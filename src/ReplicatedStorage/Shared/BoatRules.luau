@@ -3,10 +3,11 @@
 -- Big Lake, its island, the buoy line and the blue water beyond it. Also the server's
 -- per-check verdict on a moving boat and the extra casting rules on the water.
 -- Pure data and checks, no Roblox services, so it runs in tests outside Studio.
--- UNVERIFIED in Studio: written 2026-11-26 in the cloud (boat plan Tasks 2 to 5 and 7).
+-- Written 2026-11-26 in the cloud; the Big Lake's shape moved into Shore on 11/27/2026 (L7).
 local Shared = script.Parent
 local BoatData = require(Shared.BoatData)
 local BoatLogic = require(Shared.BoatLogic)
+local Shore = require(Shared.Shore)
 
 local BoatRules = {}
 
@@ -34,17 +35,14 @@ end
 BoatRules.LAKE = box(-110, -80, 110, 80)
 BoatRules.CHANNEL = box(-15, -142, 15, -78) -- a 30 stud cut through the north shore
 BoatRules.BIG_LAKE = box(-200, -440, 200, -140) -- about 400 x 300
-BoatRules.ISLAND = box(-110, -255, -70, -225) -- land, 40 x 30, toward the west side
+-- The island's bounds. Its real outline (three circles) and the Big Lake's rounded corners
+-- and headlands are in Shore, which every "is this water?" check asks first.
+BoatRules.ISLAND = box(-111, -255, -66, -225)
 BoatRules.BUOY_Z = -290 -- the line of orange buoys; north of it (smaller z) is blue water
 BoatRules.BLUE_WATER = box(-200, -440, 200, -290)
 
--- The Big Lake's water without the island, as boxes a cast or a boat may be over.
-local BIG_LAKE_WATER: { Box } = {
-	box(-200, -225, 200, -140), -- south of the island
-	box(-200, -440, 200, -255), -- north of the island (blue water starts at -290)
-	box(-200, -255, -110, -225), -- west of the island
-	box(-70, -255, 200, -225), -- east of the island
-}
+-- The Big Lake's water box (Shore carves the island and the banks out of it).
+local BIG_LAKE_WATER: { Box } = { BoatRules.BIG_LAKE }
 
 -- Fishing spots on the Big Lake. Order matters: the island point is checked before the basin.
 BoatRules.ZONES = {
@@ -85,6 +83,9 @@ function BoatRules.extraCastWaters(): { Box }
 end
 
 function BoatRules.isBoatWater(pos: Vector3): boolean
+	if Shore.isLand(pos) then
+		return false
+	end
 	for _, b in BoatRules.waters() do
 		if inBox(pos, b) then
 			return true
@@ -149,7 +150,7 @@ function BoatRules.castCheck(landing: Vector3, boatId: string?, speed: number): 
 	if BoatRules.inBlueWater(landing) then
 		local b = boatId and BoatData.byId[boatId]
 		if not (b and b.blueWater) then
-			return false, "Blue water is only reachable on the Deep-V Boat, and it takes two players."
+			return false, "Blue water needs a bigger boat than this one."
 		end
 	end
 	return true, nil

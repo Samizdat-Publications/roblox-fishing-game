@@ -828,7 +828,7 @@ function UI.buildShop()
 			end
 		end)
 	end
-	-- Boats: bought once; the chosen one waits at your slip by the dock. UNVERIFIED in Studio.
+	-- Boats: bought once; the chosen one waits at your slip by the dock (L7).
 	local boatHeader = label(scroll, "BoatsHeader", "Boats", UDim2.new(1, -10, 0, 30), UDim2.new(), 20, C.gold, Enum.Font.GothamBlack)
 	boatHeader.TextXAlignment = Enum.TextXAlignment.Left
 	boatHeader.LayoutOrder = 200
@@ -840,7 +840,7 @@ function UI.buildShop()
 		corner(row, 10)
 		local swatch = frame(row, "Swatch", UDim2.fromOffset(6, 64), UDim2.fromOffset(6, 10), b.color, 0)
 		corner(swatch, 3)
-		local title = b.name .. (if b.crew > 1 then " (for two players)" else "")
+		local title = b.name
 		label(row, "Name", title, UDim2.fromOffset(320, 28), UDim2.fromOffset(18, 6), 20, C.text, Enum.Font.GothamBold).TextXAlignment = Enum.TextXAlignment.Left
 		local blurb = label(row, "Blurb", b.blurb, UDim2.fromOffset(330, 48), UDim2.fromOffset(18, 32), 14, C.dim)
 		blurb.TextXAlignment = Enum.TextXAlignment.Left
@@ -848,6 +848,9 @@ function UI.buildShop()
 		local btn = button(row, "Buy", "", UDim2.fromOffset(150, 50), UDim2.new(1, -162, 0, 17), C.blue, function()
 			local st = lastState
 			if not st then
+				return
+			end
+			if not b.forSale then
 				return
 			end
 			if st.boats and st.boats[b.id] then
@@ -908,7 +911,11 @@ function UI.refreshShop()
 		local btn = refs.boatRows and refs.boatRows[b.id]
 		if btn then
 			local owned = s.boats and s.boats[b.id]
-			if s.boat == b.id then
+			if not b.forSale then
+				btn.Text = "Coming soon"
+				btn.AutoButtonColor = false
+				btn.BackgroundColor3 = C.panel
+			elseif s.boat == b.id then
 				btn.Text = "At your slip"
 				btn.BackgroundColor3 = C.panel
 			elseif owned then

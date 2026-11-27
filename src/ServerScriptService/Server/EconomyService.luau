@@ -69,6 +69,20 @@ end
 function EconomyService.start()
 	toastEvent = Remotes.event("Toast")
 
+	-- Studio-only test hook: set the player attribute DebugCoins to a number to set their coins.
+	if game:GetService("RunService"):IsStudio() then
+		PlayerData.onLoad(function(player: Player)
+			player:GetAttributeChangedSignal("DebugCoins"):Connect(function()
+				local data = PlayerData.get(player)
+				local n = player:GetAttribute("DebugCoins")
+				if data and type(n) == "number" then
+					data.coins = math.max(0, math.floor(n))
+					PlayerData.changed(player)
+				end
+			end)
+		end)
+	end
+
 	Remotes.func("Buy").OnServerInvoke = function(player: Player, baitId: any)
 		local data = PlayerData.get(player)
 		if not data or type(baitId) ~= "string" or not BaitData.byId[baitId] then

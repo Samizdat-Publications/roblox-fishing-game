@@ -5,7 +5,8 @@
 -- movers; every half second it checks where the boat went (BoatRules.check). Docking,
 -- empty boats and leaving all send the boat back to its slip.
 -- Rules live in the pure modules BoatData, BoatLogic and BoatRules (tested outside Studio).
--- UNVERIFIED: written 2026-11-26 in the cloud without Studio (boat plan Tasks 1 to 4, 6, 7).
+-- Written 2026-11-26 in the cloud; the dinghy proven in Studio 11/27/2026 (L7). The Deep-V's
+-- two seats and the fish finder still wait for a two-player playtest.
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -43,6 +44,7 @@ type Boat = {
 	ridePrompt: ProximityPrompt?,
 	tiePrompt: ProximityPrompt,
 	movers: Movers,
+	wake: ParticleEmitter,
 	motion: BoatLogic.Motion,
 	yaw: number, -- heading in radians around +Y; the AlignOrientation holds the hull to it
 	lastGood: Vector3,
@@ -144,6 +146,9 @@ local function buildModel(owner: Player, b: BoatData.Boat, at: CFrame): (Model, 
 	hull.TopSurface = Enum.SurfaceType.Smooth
 	hull.BottomSurface = Enum.SurfaceType.Smooth
 	hull.CustomPhysicalProperties = PhysicalProperties.new(0.3, 0.3, 0.1)
+	-- The hull leads the assembly a seated character joins; otherwise the (heavier) character
+	-- became the root and sitting down dragged the boat onto the dock (11/27/2026 playtest).
+	hull.RootPriority = 127
 	hull.CFrame = at * CFrame.new(0, hullHeight / 2 - 0.4, 0) -- sits a little into the water
 	hull.Anchored = true
 	hull.Parent = model
@@ -178,6 +183,29 @@ local function buildModel(owner: Player, b: BoatData.Boat, at: CFrame): (Model, 
 	model:SetAttribute("BoatId", b.id)
 	model:SetAttribute("OwnerId", owner.UserId)
 	return model, hull, helm, nav
+end
+
+-- A little white water behind the stern while the boat moves (step sets its rate by speed).
+local function makeWake(hull: BasePart): ParticleEmitter
+	local at = Instance.new("Attachment")
+	at.Name = "Stern"
+	at.Position = Vector3.new(0, -hull.Size.Y / 2 + 0.5, hull.Size.Z / 2 + 0.6)
+	at.Parent = hull
+	local e = Instance.new("ParticleEmitter")
+	e.Name = "Wake"
+	e.Texture = "rbxasset://textures/particles/smoke_main.dds"
+	e.Color = ColorSequence.new(Color3.fromRGB(240, 248, 255))
+	e.LightEmission = 0.2
+	e.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.8), NumberSequenceKeypoint.new(1, 3.2) })
+	e.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.35), NumberSequenceKeypoint.new(1, 1) })
+	e.Lifetime = NumberRange.new(0.9, 1.4)
+	e.Speed = NumberRange.new(0.5, 1.5)
+	e.SpreadAngle = Vector2.new(35, 5)
+	e.EmissionDirection = Enum.NormalId.Back
+	e.Rotation = NumberRange.new(0, 360)
+	e.Rate = 0
+	e.Parent = at
+	return e
 end
 
 local function makeMovers(hull: BasePart): Movers
@@ -252,6 +280,7 @@ end
 
 local function stop(boat: Boat)
 	boat.motion = { speed = 0, yawRate = 0 }
+	boat.wake.Rate = 0
 	boat.movers.lv.PlaneVelocity = Vector2.zero
 	boat.hull.AssemblyLinearVelocity = Vector3.zero
 	boat.hull.AssemblyAngularVelocity = Vector3.zero
@@ -268,13 +297,24 @@ local function moveTo(boat: Boat, cf: CFrame)
 end
 
 -- Stand whoever is aboard on the dock beside the boat's slip (never left in open water).
+-- The move is made again just before the rider's client gets its character back: handing it
+-- over at once let the client's last position (in the boat) win (11/27/2026 playtest).
+local HANDBACK = 0.4 -- seconds the server keeps a rider's character after they get up
 local function landRiders(boat: Boat, riders: { Player })
 	for i, r in riders do
 		local root = r.Character and r.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
 		if root then
-			root.CFrame = CFrame.new(2, 4.5, BoatRules.SLIP_ZS[boat.slip] + (i - 1) * 2)
+			local at = CFrame.new(2, 4.5, BoatRules.SLIP_ZS[boat.slip] + (i - 1) * 2) * CFrame.Angles(0, math.rad(90), 0)
 			pcall(function()
-				root:SetNetworkOwner(r) -- walking again: their own client moves them
+				root:SetNetworkOwner(nil)
+			end)
+			root.CFrame = at
+			root.AssemblyLinearVelocity = Vector3.zero
+			task.delay(HANDBACK - 0.1, function()
+				if root.Parent then
+					root.CFrame = at
+					root.AssemblyLinearVelocity = Vector3.zero
+				end
 			end)
 		end
 	end
@@ -382,6 +422,7 @@ function spawnFor(player: Player)
 		ridePrompt = if nav then prompt(nav, "RidePrompt", "Ride", player.DisplayName .. "'s " .. b.name) else nil,
 		tiePrompt = prompt(helm, "TiePrompt", "Tie up", "Boat slip " .. slip),
 		movers = makeMovers(hull),
+		wake = makeWake(hull),
 		motion = { speed = 0, yawRate = 0 },
 		yaw = 0,
 		lastGood = hull.Position,
@@ -389,9 +430,8 @@ function spawnFor(player: Player)
 		emptyFor = 0,
 		docked = true,
 	}
+	-- E (gamepad X) like every other prompt: F and the gamepad's face buttons reel in a fight.
 	boat.tiePrompt.Enabled = false
-	boat.tiePrompt.KeyboardKeyCode = Enum.KeyCode.F
-	boat.tiePrompt.GamepadKeyCode = Enum.KeyCode.ButtonY
 	boats[player] = boat
 
 	-- Only the owner may take the helm. The client hides the prompt from everyone else too.
@@ -435,13 +475,24 @@ function spawnFor(player: Player)
 			local occ = (s :: any).Occupant :: Humanoid?
 			-- Whoever just got up walks on their own again: hand their character back to them.
 			if last and last ~= occ then
+				-- Dying or resetting at the helm sends the boat home. The seat empties (the death
+				-- breaks the seat weld) before Died reaches the handler below, so check here too.
+				if ownerOnly and (last.Health <= 0 or last.Parent == nil) then
+					task.delay(1, function()
+						if boats[player] == boat and not helm.Occupant then
+							returnToSlip(boat)
+						end
+					end)
+				end
 				local leaver = Players:GetPlayerFromCharacter(last.Parent)
 				local root = last.Parent and last.Parent:FindFirstChild("HumanoidRootPart") :: BasePart?
 				if leaver and root then
-					task.defer(function()
-						pcall(function()
-							root:SetNetworkOwner(leaver)
-						end)
+					task.delay(HANDBACK, function()
+						if root.Parent then
+							pcall(function()
+								root:SetNetworkOwner(leaver)
+							end)
+						end
 					end)
 				end
 			end
@@ -539,6 +590,7 @@ local function step(dt: number)
 		boat.yaw += BoatRules.spinY(boat.motion.yawRate) * dt
 		boat.movers.ao.CFrame = CFrame.fromOrientation(0, boat.yaw, 0)
 		boat.movers.ap.Position = Vector3.new(pos.X, BoatRules.WATER_Y + boat.hull.Size.Y / 2 - 0.4, pos.Z)
+		boat.wake.Rate = 40 * math.clamp(math.abs(boat.motion.speed) / BoatData.byId[boat.id].maxSpeed, 0, 1)
 
 		boat.checkTimer += dt
 		if boat.checkTimer >= CHECK_EVERY then
@@ -633,8 +685,19 @@ function BoatService.castCheck(player: Player, landing: Vector3): (boolean, stri
 end
 
 -- While a line is in from a boat: is it still fine? A boat that speeds up or runs far from
--- the bobber loses the line. UNVERIFIED in Studio (2026-11-26).
-BoatService.MAX_LINE = 60
+-- the bobber loses the line. Far means 15 studs past the longest cast any rod and bait can
+-- make (it was a flat 60, and a Graphite spinner cast lands 65 out: the 11/27/2026 playtest).
+local function longestCast(): number
+	local CastLogic = require(Shared.CastLogic)
+	local best = 0
+	for _, rod in require(Shared.RodData).list do
+		for _, bait in require(Shared.BaitData).list do
+			best = math.max(best, CastLogic.distance(1, rod.id, bait.id))
+		end
+	end
+	return best
+end
+BoatService.MAX_LINE = longestCast() + 15
 function BoatService.lineCheck(player: Player, bobber: Vector3): (boolean, string?)
 	local id, speed = BoatService.seatedIn(player)
 	if not id then

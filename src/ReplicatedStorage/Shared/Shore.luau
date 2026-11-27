@@ -86,6 +86,23 @@ Shore.AREAS = {
 			{ name = "PoolWest", x = -255, z = -42, r = 8 },
 		},
 	},
+	-- The Big Lake (L7), BoatRules.BIG_LAKE: rounded corners, three headlands, a point off the
+	-- south bank, and the island as three overlapping circles whose small east tip is the weedy
+	-- island point. The channel comes in through the middle of the south bank (x -15..15).
+	{
+		name = "BigLake", x1 = -200, x2 = 200, z1 = -440, z2 = -140,
+		banks = true, open = { { edge = "z2", from = -15, to = 15 } },
+		corner = 60, bed = -7, shallows = 18,
+		points = {
+			{ name = "WestHead", x = -212, z = -335, r = 36 },
+			{ name = "EastHead", x = 214, z = -205, r = 38 },
+			{ name = "NorthHead", x = 70, z = -452, r = 34 },
+			{ name = "ReedPoint", x = -120, z = -134, r = 18 },
+			{ name = "IslandWest", x = -97, z = -241, r = 14 },
+			{ name = "IslandEast", x = -82, z = -236, r = 11 },
+			{ name = "IslandTip", x = -72, z = -239, r = 6 },
+		},
+	},
 } :: { Area }
 
 -- The area this point lies in, if any.

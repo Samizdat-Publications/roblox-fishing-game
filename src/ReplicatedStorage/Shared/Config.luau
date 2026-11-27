@@ -76,8 +76,9 @@ Config.UNITS = "imperial"
 Config.WEATHER_ON = true
 Config.FRENZIES_ON = true
 Config.GOALS_ON = true
-Config.BIG_LAKE_ON = false
-Config.BOATS_ON = false
+-- The Big Lake and the dinghy (L7): on since the 11/27/2026 Studio playtest.
+Config.BIG_LAKE_ON = true
+Config.BOATS_ON = true
 -- Work the lure (L4c): with a lure on, no bobber; you reel a spinner or hop a plastic worm back
 -- and fish strike while it moves (Shared/Retrieve). On since the 11/27/2026 Studio playtest;
 -- false puts lures back under a bobber.

@@ -5,14 +5,15 @@ return function(t, Shared)
 	local FishLogic = require(Shared.FishLogic)
 	local FishData = require(Shared.FishData)
 
-	-- Switched on one at a time as each is proven in Studio (L6): weather, frenzies and goals 11/27/2026.
-	t.test("weather, frenzies and goals are on; the Big Lake and boats still off", function()
+	-- Switched on one at a time as each is proven in Studio: weather, frenzies and goals (L6) and
+	-- the Big Lake and boats (L7), 11/27/2026.
+	t.test("weather, frenzies, goals, the Big Lake and boats are on", function()
 		t.eq(Config.WEATHER_ON, true, "weather")
 		t.eq(Config.FRENZIES_ON, true, "frenzies")
 		t.eq(Config.GOALS_ON, true, "goals")
-		t.eq(Config.BIG_LAKE_ON, false, "Big Lake")
-		t.eq(Config.BOATS_ON, false, "boats")
-		t.eq(Config.boatsOn(), false, "boats need the Big Lake too")
+		t.eq(Config.BIG_LAKE_ON, true, "Big Lake")
+		t.eq(Config.BOATS_ON, true, "boats")
+		t.eq(Config.boatsOn(), true, "boats need the Big Lake too")
 	end)
 
 	t.test("with weather off (clear skies) no weather-only fish bites anywhere", function()
