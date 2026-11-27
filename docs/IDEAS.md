@@ -21,4 +21,4 @@ Raw ideas to plan later. Not approved designs: the Fable 5.2 planning session (s
 
 - 2026-11-27 **The real rod in your hands.** Done the same night: the rod models are welded along the invisible logical rod, and hide while RodFeel draws the bend.
 - 2026-11-27 **Look critic's remaining asks.** Done the same night (now 7/10): trees in clumps, signs on top, a round stone-edged home pond, short grass by the creek, the noon light. Still open: night water and the bobber at night, signs hiding sooner than 140 studs, the creek pool's straight sand bank, the even lake path, Lighting.Technology to Future (a Studio setting, check on a phone first).
-- 2026-11-27 **Buy line, not just rods.** Now that lines have pound ratings (L4d), a spool of heavier line at the bait shop could let a Willow rod handle bigger fish, a cheaper step before the next rod.
+- 2026-11-27 **Buy line, not just rods.** Done the same night: braided line, 120 coins once, 4 lb more on any rod (save v10).
