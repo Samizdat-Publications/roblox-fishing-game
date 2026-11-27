@@ -85,22 +85,26 @@ end
 WaterLook.SHALLOWS = 20 -- studs of sloping sand off a bank (the same as SHELF below, so no step)
 local GRASS_FROM = 1.5 -- studs into the land where sand gives way to grass
 
--- Height of the ground at this signed distance to land (nil: leave the bed as it is).
-function WaterLook.shoreHeight(d: number): number?
+-- Height of the ground at this signed distance to land (nil: leave the bed as it is), for a
+-- bed at `bed` that the shallows reach after `shallows` studs (the lake's by default).
+function WaterLook.shoreHeight(d: number, bed: number?, shallows: number?): number?
 	local top = -WaterLook.SHORE_DEPTH
-	if d <= -WaterLook.SHALLOWS then
+	local b = bed or WaterLook.BED_TOP
+	local s = shallows or WaterLook.SHALLOWS
+	if d <= -s then
 		return nil
 	elseif d < 0 then
-		return top + (d / WaterLook.SHALLOWS) * (top - WaterLook.BED_TOP)
+		return top + (d / s) * (top - b)
 	end
-	return math.min(1, top + d * 0.6) -- up the beach to the ground's top (y = 1)
+	return math.min(1, top + d * 0.6) -- up the bank to the ground's top (y = 1)
 end
 
-local function shoreTerrain()
-	local t = workspace.Terrain
-	local L = Shore.LAKE
-	local y1, y2 = -12, 4
-	local region = Region3.new(Vector3.new(L.x1, y1, L.z1), Vector3.new(L.x2, y2, L.z2)):ExpandToGrid(CELL)
+-- One shaped water area (Shore.AREAS), written voxel by voxel. On the creek the sloping
+-- bank is grass and stone, not sand.
+local function shoreArea(t: Terrain, a: Shore.Area)
+	local lake = a.name == "Lake"
+	local y1, y2 = math.min(-12, a.bed - 4), 4
+	local region = Region3.new(Vector3.new(a.x1, y1, a.z1), Vector3.new(a.x2, y2, a.z2)):ExpandToGrid(CELL)
 	local lo = region.CFrame.Position - region.Size / 2
 	local ch = t:ReadVoxelChannels(region, CELL, { "SolidMaterial", "SolidOccupancy", "LiquidOccupancy" }) :: any
 	local mats, solid, liquid = ch.SolidMaterial, ch.SolidOccupancy, ch.LiquidOccupancy
@@ -109,10 +113,13 @@ local function shoreTerrain()
 		local cx = lo.X + (ix - 0.5) * CELL
 		for iz = 1, nz do
 			local cz = lo.Z + (iz - 0.5) * CELL
-			local d = Shore.depth(cx, cz)
-			local h = WaterLook.shoreHeight(d)
+			local d = Shore.depthIn(a, cx, cz)
+			local inside = cx >= a.x1 and cx <= a.x2 and cz >= a.z1 and cz <= a.z2
+			local h = if inside then (if lake then WaterLook.shoreHeight(d) else WaterLook.shoreHeight(d, a.bed, a.shallows)) else nil
 			if h then
-				local material = if d >= GRASS_FROM then Enum.Material.Grass else Enum.Material.Sand
+				local material = if d >= GRASS_FROM then Enum.Material.Grass
+					elseif lake then Enum.Material.Sand
+					else Enum.Material.Mud
 				for iy = 1, ny do
 					local y0 = lo.Y + (iy - 1) * CELL
 					local s = math.clamp((h - y0) / CELL, 0, 1)
@@ -124,6 +131,47 @@ local function shoreTerrain()
 		end
 	end
 	t:WriteVoxelChannels(region, CELL, { SolidMaterial = mats, SolidOccupancy = solid, LiquidOccupancy = liquid })
+end
+
+-- Cedar Creek's banks were grass parts with straight vertical edges (the "trench" the critic
+-- kept naming). L5e: the parts are hidden and stop colliding, and terrain grass fills the same
+-- boxes to the same height, so the terrain shore can slope and curve into the water.
+local function creekBanks(lake: Model)
+	local creek = lake:FindFirstChild("CedarCreek")
+	if not creek then
+		return
+	end
+	local t = workspace.Terrain
+	for _, p in creek:GetChildren() do
+		if p:IsA("BasePart") and p.Name == "Bank" then
+			if p:GetAttribute("OrigTransparency") == nil then
+				p:SetAttribute("OrigTransparency", p.Transparency)
+				p:SetAttribute("OrigCollide", p.CanCollide)
+			end
+			p.Transparency = 1
+			p.CanCollide = false
+			p.CanQuery = false
+			t:FillBlock(p.CFrame, p.Size, Enum.Material.Grass)
+		end
+	end
+	-- The creek's paths sit on that grass now: sand under them, so terrain grass blades don't
+	-- grow up through the path.
+	for _, name in { "BankPath", "PathToCreek" } do
+		local path = creek:FindFirstChild(name)
+		if path and path:IsA("BasePart") then
+			local top = path.Position.Y - path.Size.Y / 2
+			t:FillBlock(CFrame.new(path.Position.X, top - 4, path.Position.Z), Vector3.new(path.Size.X, 8, path.Size.Z), Enum.Material.Sand)
+		end
+	end
+end
+
+-- Every shaped water area: the lake (L5d) and the creek's three stretches (L5e).
+local function shoreTerrain(lake: Model)
+	local t = workspace.Terrain
+	creekBanks(lake)
+	for _, a in Shore.AREAS do
+		shoreArea(t, a)
+	end
 end
 
 -- The creek's beds in terrain (L5c): each stretch gets a bed and shelving sides, so the pool is
@@ -194,7 +242,7 @@ local function terrainBed(lake: Model, surfaceY: number)
 		shelfWedge(t, side, c, hx, hz, bed, top, WaterLook.SHELF, Enum.Material.Sand)
 	end
 	creekBed(surfaceY)
-	shoreTerrain()
+	shoreTerrain(lake)
 	-- Hide the old flat bed parts (kept, so revert can show them again).
 	for _, name in HIDDEN_BEDS do
 		local p = find(lake, name)
@@ -282,6 +330,17 @@ end
 -- Puts the bed parts back as they were and removes the decoration. Terrain water and its
 -- settings stay (the gray box used terrain water too).
 function WaterLook.revert(lake: Model)
+	local creek = lake:FindFirstChild("CedarCreek")
+	for _, p in (if creek then creek:GetChildren() else {}) do
+		local was = p:GetAttribute("OrigTransparency")
+		if p:IsA("BasePart") and p.Name == "Bank" and type(was) == "number" then
+			p.Transparency = was
+			p.CanCollide = p:GetAttribute("OrigCollide") ~= false
+			p.CanQuery = true
+			p:SetAttribute("OrigTransparency", nil)
+			p:SetAttribute("OrigCollide", nil)
+		end
+	end
 	for _, t in TINTS do
 		local p = find(lake, t.path)
 		if p and p:IsA("BasePart") then

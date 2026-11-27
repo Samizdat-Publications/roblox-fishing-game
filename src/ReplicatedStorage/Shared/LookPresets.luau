@@ -146,10 +146,12 @@ LookPresets.PRESETS = {
 			Atmosphere = {
 				Density = 0.3,
 				Offset = 0.1,
-				Color = rgb(62, 78, 112),
-				Decay = rgb(30, 40, 72),
+				-- Darker than at first (11/27): the pale blue haze lit the far hills against the
+				-- black sky; now they read as dark shapes, like real hills at night.
+				Color = rgb(34, 42, 64),
+				Decay = rgb(14, 18, 34),
 				Glare = 0,
-				Haze = 0.4,
+				Haze = 0.15,
 			},
 			BloomEffect = { Intensity = 0.9, Size = 30, Threshold = 1.2 },
 			ColorCorrectionEffect = { Brightness = 0.04, Contrast = 0.08, Saturation = -0.12, TintColor = rgb(212, 226, 255) },

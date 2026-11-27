@@ -32,17 +32,36 @@ return function(t, Shared)
 	end)
 
 	-- (Cover.spec checks every cover feature through isOnWaterAny, so the shore can't swallow one.)
-	t.test("every lake fishing zone's middle stays open water", function()
+	t.test("every fishing zone's middle stays open water", function()
 		for _, z in WaterMap.zones() do
 			local c = z.cframe.Position
 			local d = Shore.depth(c.X, c.Z)
-			t.ok(d == -math.huge or d < -5, z.name .. " middle is open water")
+			-- The creek is narrow: its middles only need a few studs of water round them.
+			local need = if c.X < -160 then -3 else -5
+			t.ok(d == -math.huge or d < need, string.format("%s middle is open water (%.1f)", z.name, d))
 		end
 	end)
 
-	t.test("outside the lake the shore has no say (the creek stays water)", function()
-		t.eq(Shore.depth(-230, 50), -math.huge, "riffle")
+	t.test("the creek meanders but stays water down its middle, and is open where stretches join", function()
 		t.ok(FishLogic.isOnWaterAny(Vector3.new(-230, 0, 50), WaterMap.waters()), "riffle is water")
+		for z = 31, 74 do
+			t.ok(not Shore.isLand(Vector3.new(-230, 0, z)), "riffle middle at z " .. z)
+		end
+		for z = -9, 29 do
+			t.ok(not Shore.isLand(Vector3.new(-230, 0, z)), "run middle at z " .. z)
+		end
+		-- The joins: pool to run (z = -10) and run to riffle (z = 30) are open water.
+		t.ok(not Shore.isLand(Vector3.new(-230, 0, -10.5)), "pool mouth")
+		t.ok(not Shore.isLand(Vector3.new(-230, 0, 29.5)), "riffle mouth")
+		-- The pool's corners are rounded off, and the banks bulge in.
+		t.ok(Shore.isLand(Vector3.new(-251, 0, -69)), "pool corner")
+		t.ok(Shore.isLand(Vector3.new(-235.5, 0, 41)), "riffle west bulge")
+		t.ok(Shore.isLand(Vector3.new(-224.5, 0, 55)), "riffle east bulge")
+	end)
+
+	t.test("outside every shaped water the shore has no say", function()
+		t.eq(Shore.depth(0, 120), -math.huge, "the south lawn")
+		t.eq(Shore.depth(-300, 0), -math.huge, "past the creek")
 	end)
 
 	t.test("depth is continuous across the corner squares' edges", function()
