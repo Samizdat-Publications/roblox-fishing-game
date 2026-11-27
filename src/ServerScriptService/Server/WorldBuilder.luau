@@ -192,7 +192,7 @@ function WorldBuilder.buildCreek(lake: Model)
 	prompt.KeyboardKeyCode = Enum.KeyCode.E
 	prompt.GamepadKeyCode = Enum.KeyCode.ButtonX
 	prompt.Parent = post
-	sign(creek, gate, "Cedar Creek", Color3.fromRGB(140, 220, 160), 7) -- above the fence line
+	sign(creek, gate, "Cedar Creek", Color3.fromRGB(140, 220, 160), 8.6) -- above the gate arch's beam (Scenery, L5c)
 	local lampBulb = part(creek, "GateLamp", Vector3.new(1.2, 1.2, 1.2), CFrame.new(-158, 9, -5.5), Color3.fromRGB(255, 230, 170), {
 		Material = Enum.Material.Neon,
 		CanCollide = false,
