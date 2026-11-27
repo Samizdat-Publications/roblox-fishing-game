@@ -116,6 +116,25 @@ What works, learned on the first import:
 | BaitShopStand_wood, _canvas, _metal | 113815152721251, 129724187320327, 122388811024576 | `ServerStorage.Art.BaitShopStand` since 11/27/2026: three meshes, WeatheredPlank on wood, Canvas on canvas, stock Metal; the old one waits as `Art.BaitShopStandPlain` |
 | FishBuyerStand_wood, _canvas, _metal | 80578305985776, 100378319005593, 120976665888017 | `ServerStorage.Art.FishBuyerStand` since 11/27/2026, as above; the old one is `Art.FishBuyerStandPlain` |
 | Bluegill (first try) | 123238298956061 | Not used: uploaded before the colour fix, too dark |
+| BirchLean1_bark | 125805882558924 | `ServerStorage.Art` (bank kit, N1) |
+| BirchLean1_leaf | 129700640484715 | `ServerStorage.Art` (bank kit, N1) |
+| BirchLean2_bark | 138283234746703 | `ServerStorage.Art` (bank kit, N1) |
+| BirchLean2_leaf | 79895271357253 | `ServerStorage.Art` (bank kit, N1) |
+| Bush1_leaf | 134351210984652 | `ServerStorage.Art` (bank kit, N1) |
+| Bush2_leaf | 106907494507711 | `ServerStorage.Art` (bank kit, N1) |
+| DriftwoodBranch_bark | 79709164941856 | `ServerStorage.Art` (bank kit, N1) |
+| DriftwoodLog_bark | 119920168455068 | `ServerStorage.Art` (bank kit, N1) |
+| DriftwoodStump_bark | 140295224704444 | `ServerStorage.Art` (bank kit, N1) |
+| Fern1_leaf | 129546014946419 | `ServerStorage.Art` (bank kit, N1) |
+| Fern2_leaf | 100002423759617 | `ServerStorage.Art` (bank kit, N1) |
+| ReedClump1_leaf | 93789660979767 | `ServerStorage.Art` (bank kit, N1) |
+| ReedClump2_leaf | 118810460444914 | `ServerStorage.Art` (bank kit, N1) |
+| ShorePine1_bark | 80687642579621 | `ServerStorage.Art` (bank kit, N1) |
+| ShorePine1_leaf | 76359460720149 | `ServerStorage.Art` (bank kit, N1) |
+| ShorePine2_bark | 112736060544485 | `ServerStorage.Art` (bank kit, N1) |
+| ShorePine2_leaf | 72515166122185 | `ServerStorage.Art` (bank kit, N1) |
+| ShoreStones1_stone | 117648149300620 | `ServerStorage.Art` (bank kit, N1) |
+| ShoreStones2_stone | 136352377294537 | `ServerStorage.Art` (bank kit, N1) |
 
 ## The models
 

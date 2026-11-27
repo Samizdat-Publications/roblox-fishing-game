@@ -1,0 +1,66 @@
+{
+  "family": "bark",
+  "kind": "prop",
+  "size": 512,
+  "source": "Bark012",
+  "source_page": "https://ambientcg.com/a/Bark012",
+  "licence": "CC0",
+  "studs_per_tile": 4,
+  "target_rgb": [
+    104,
+    82,
+    62
+  ],
+  "mean_rgb": [
+    104.0,
+    82.0,
+    62.0
+  ],
+  "luma_rel_std_in": 0.1274,
+  "luma_rel_std_out": 0.111,
+  "neutral_mean": 0.8,
+  "neutral_std": 0.0841,
+  "neutral_min_max": [
+    0.555,
+    0.966
+  ],
+  "rough_mean": 0.8982,
+  "rough_std": 0.0568,
+  "metal_mean": null,
+  "normal_mean_tilt": 0.2838,
+  "seam_in": 0.94,
+  "seam_fixed": false,
+  "seam_out": {
+    "color": 0.886,
+    "normal": 0.877,
+    "rough": 0.95
+  },
+  "settings": {
+    "ao_mix": 0.3,
+    "contrast": 1.0,
+    "despeckle_k": 2.5,
+    "flatten": 0.5,
+    "flatten_sigma": 0.12,
+    "hue_var": 0.25,
+    "kind": "prop",
+    "max_rel_std": 0.14,
+    "neutral_mean": 0.8,
+    "normal_strength": 1.0,
+    "rough_contrast": 1.0,
+    "rough_mean": 0.9,
+    "seam_blend": 0.2,
+    "seam_limit": 1.25,
+    "seamless": "auto",
+    "sheet": "n1",
+    "size": 512,
+    "soften": 0.5,
+    "soften_sigma": 1.5,
+    "source": "Bark012",
+    "studs_per_tile": 4,
+    "target_rgb": [
+      104,
+      82,
+      62
+    ]
+  }
+}

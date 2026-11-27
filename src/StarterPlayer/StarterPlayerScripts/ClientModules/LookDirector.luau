@@ -8,6 +8,10 @@
 -- LookPresets.stepBlend) x an area preset (LookPresets.areaWeights round the camera, only
 -- with Config.LOOK_AREAS_ON) x a device tier (LookPresets.TIERS). With areas off and the
 -- desktop tier this writes exactly the values the server used to write.
+-- N1: on the desktop tier with Config.REALISTIC_DESKTOP the look also carries the Realistic
+-- grade (LookPresets.gradeFor, TIERS.desktop.grade); the phone tier never does. Terrain water
+-- comes from the areas (LOOK_AREAS_ON) and/or the home lake's water by time of day
+-- (Config.WATER_BY_TIME_ON, LookPresets.homeWaterAt).
 --
 -- The tier: touch with no keyboard is "phone", anything else "desktop". A watchdog drops to
 -- phone once per session if frames average over 25 ms for 10 s (never in Studio, whose
@@ -93,26 +97,18 @@ local function setStyle(style: any)
 	end)
 end
 
--- Lighting.LightingStyle for this tier: Soft on phone; Realistic on desktop only with
--- Config.REALISTIC_DESKTOP, else the place's own style (put back if phone changed it).
-local function applyStyle(tier: LookPresets.Tier)
-	if tier.lightingStyle == "Realistic" and not Config.REALISTIC_DESKTOP then
-		if placeStyle ~= nil then
-			local ok, now = pcall(function()
-				return (Lighting :: any).LightingStyle
-			end)
-			if ok and now ~= placeStyle then
-				setStyle(placeStyle)
-			end
-		end
-		return
-	end
-	local ok, enum = pcall(function()
-		return (Enum :: any).LightingStyle[tier.lightingStyle]
+-- Lighting.LightingStyle is place-wide: a LocalScript may not write it (tested 11/27/2026,
+-- "lacking capability PluginOrOpenCloud"). The place is set to Realistic in Edit; the client
+-- only reads it to know whether the Realistic grade applies.
+local function placeIsRealistic(): boolean
+	local ok, style = pcall(function()
+		return (Lighting :: any).LightingStyle
 	end)
-	if ok and enum then
-		setStyle(enum)
-	end
+	return ok and style == (Enum :: any).LightingStyle.Realistic
+end
+
+local function applyStyle(_tier: LookPresets.Tier)
+	-- Nothing to write (see placeIsRealistic); kept so a tier change has one place to hook.
 end
 
 -- Switch an effect off for this tier, or back on if the tier switched it off before. An
@@ -149,14 +145,32 @@ local function applyEffects(tier: LookPresets.Tier)
 	-- once lanterns cast them (N0 proof corner); nothing to switch yet.
 end
 
--- Terrain water from the blended areas (only with LOOK_AREAS_ON), written when it changes.
-local function applyWater()
-	local water = LookPresets.areaWater(weights) :: any
+-- Two water values close enough not to rewrite (the per-time water drifts with the clock).
+local function near(a: any, b: any): boolean
+	if type(a) == "number" and type(b) == "number" then
+		return math.abs(a - b) < 1e-3
+	end
+	if typeof(a) == "Color3" and typeof(b) == "Color3" then
+		return math.abs(a.R - b.R) < 1e-3 and math.abs(a.G - b.G) < 1e-3 and math.abs(a.B - b.B) < 1e-3
+	end
+	return a == b
+end
+
+-- Terrain water, written when it changes: the blended areas with LOOK_AREAS_ON (home's water by
+-- time of day inside them with WATER_BY_TIME_ON), else the home lake's water by time of day.
+local function applyWater(clock: number)
+	local byTime = if Config.WATER_BY_TIME_ON then clock else nil
+	local water: any
+	if Config.LOOK_AREAS_ON then
+		water = LookPresets.areaWater(weights, byTime)
+	else
+		water = LookPresets.homeWaterAt(clock)
+	end
 	local last = lastWater
 	if last then
 		local same = true
 		for k, v in water do
-			if last[k] ~= v then
+			if not near(last[k], v) then
 				same = false
 				break
 			end
@@ -190,19 +204,21 @@ local function fullWrite(dt: number)
 	end
 	local areas = if Config.LOOK_AREAS_ON then weights else nil
 	local clock = Lighting.ClockTime
-	local b = blend
-	if Config.WEATHER_ON and b then
-		-- The same call the server made (DayNight.applyLook), plus the areas.
-		local clouds = workspace.Terrain:FindFirstChildOfClass("Clouds")
-		LookPresets.applyTo(Lighting, clock, make, b.to, LookPresets.smooth(b.amount), b.from, clouds, areas)
-	else
-		LookPresets.applyTo(Lighting, clock, make, nil, nil, nil, nil, areas)
-	end
-	if Config.LOOK_AREAS_ON then
-		applyWater()
-	end
 	local id = chooseTier()
 	local tier = LookPresets.TIERS[id] or LookPresets.TIERS.desktop
+	-- The Realistic grade: whenever the place runs Realistic and REALISTIC_DESKTOP allows it.
+	local grade = LookPresets.gradeFor(tier, Config.REALISTIC_DESKTOP and placeIsRealistic())
+	local b = blend
+	if Config.WEATHER_ON and b then
+		-- The same call the server made (DayNight.applyLook), plus the areas and the grade.
+		local clouds = workspace.Terrain:FindFirstChildOfClass("Clouds")
+		LookPresets.applyTo(Lighting, clock, make, b.to, LookPresets.smooth(b.amount), b.from, clouds, areas, grade)
+	else
+		LookPresets.applyTo(Lighting, clock, make, nil, nil, nil, nil, areas, grade)
+	end
+	if Config.LOOK_AREAS_ON or Config.WATER_BY_TIME_ON then
+		applyWater(clock)
+	end
 	if id ~= tierId then
 		print(string.format("[LookDirector] tier %s -> %s", tierId, id))
 		tierId = id
@@ -225,6 +241,9 @@ function LookDirector.debugState(): { [string]: any }
 		area = area,
 		areasOn = Config.LOOK_AREAS_ON,
 		tier = tierId,
+		graded = LookPresets.gradeFor(LookPresets.TIERS[tierId], Config.REALISTIC_DESKTOP and placeIsRealistic()) ~= nil,
+		waterByTime = Config.WATER_BY_TIME_ON,
+		water = lastWater,
 		watchdogDropped = watchdogDropped,
 	}
 end

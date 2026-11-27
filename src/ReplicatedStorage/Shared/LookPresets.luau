@@ -343,11 +343,115 @@ local function scale(c: Color3, f: number): Color3
 	return Color3.new(math.clamp(c.R * f, 0, 1), math.clamp(c.G * f, 0, 1), math.clamp(c.B * f, 0, 1))
 end
 
+-- The Realistic grade (N1): the presets were tuned under Lighting.LightingStyle Soft, and
+-- Realistic overdrives them (golden-hour sky near white, the noon lawn too bright and yellow).
+-- These are offsets ADDED to each preset's own values, only on the desktop tier with
+-- Config.REALISTIC_DESKTOP (TIERS.desktop.grade, gradeFor); the phone tier and Soft never see
+-- them. Between presets the offsets blend with the same weights the presets do, so every
+-- clock gets a grade. Numbers only, keyed like a preset's look. Tune here, one table.
+-- 11/27/2026 starting points (advisor, golden hour and noon measured under Realistic):
+--   golden: exposure 0 to -0.3, glare 2.5 to 0.8, haze 1.2 to 0.7, bloom 0.8 to 0.4 with
+--           threshold 1.4 to 1.9, sun rays 0.2 to 0.08 (mid-sky red under 235, treeline visible)
+--   day:    exposure 0 to -0.35, saturation 0.15 to 0.02, haze 0 to 0.5 (lawn near 115,135,65)
+--   dawn, dusk: the same direction, gentler; dawn's mist (haze 2) is kept.
+--   night:  bloom only (lamps flare under Realistic); exposure and ambients untouched, so the
+--           night stays moonlit navy, never black.
+export type Grade = { [string]: { [string]: { [string]: number } } }
+
+-- stylua: ignore
+LookPresets.REALISTIC_GRADE = {
+	dawn = {
+		Lighting = { ExposureCompensation = -0.2 },
+		Atmosphere = { Glare = -0.4, Haze = -0.2 },
+		BloomEffect = { Intensity = -0.2, Threshold = 0.3 },
+		SunRaysEffect = { Intensity = -0.04 },
+	},
+	day = {
+		Lighting = { ExposureCompensation = -0.35 },
+		Atmosphere = { Haze = 0.5 },
+		ColorCorrectionEffect = { Saturation = -0.13 },
+	},
+	golden = {
+		Lighting = { ExposureCompensation = -0.3 },
+		Atmosphere = { Glare = -1.7, Haze = -0.5 },
+		BloomEffect = { Intensity = -0.4, Threshold = 0.5 },
+		SunRaysEffect = { Intensity = -0.12 },
+	},
+	dusk = {
+		Lighting = { ExposureCompensation = -0.15 },
+		Atmosphere = { Glare = -0.2 },
+		BloomEffect = { Intensity = -0.3, Threshold = 0.3 },
+	},
+	night = {
+		BloomEffect = { Intensity = -0.3, Threshold = 0.2 },
+	},
+} :: Grade
+
+-- The range each graded field is held to after the offset (Roblox's own limits, or tighter).
+-- stylua: ignore
+LookPresets.GRADE_LIMITS = {
+	["Lighting.ExposureCompensation"] = { -3, 3 },
+	["Lighting.Brightness"] = { 0, 10 },
+	["Lighting.EnvironmentDiffuseScale"] = { 0, 1 },
+	["Lighting.EnvironmentSpecularScale"] = { 0, 1 },
+	["Atmosphere.Density"] = { 0, LookPresets.MAX_DENSITY },
+	["Atmosphere.Offset"] = { 0, 1 },
+	["Atmosphere.Glare"] = { 0, 10 },
+	["Atmosphere.Haze"] = { 0, LookPresets.MAX_HAZE },
+	["BloomEffect.Intensity"] = { 0, 10 },
+	["BloomEffect.Size"] = { 0, 56 },
+	["BloomEffect.Threshold"] = { 0, 4 },
+	["ColorCorrectionEffect.Brightness"] = { -1, 1 },
+	["ColorCorrectionEffect.Contrast"] = { -1, 1 },
+	["ColorCorrectionEffect.Saturation"] = { -1, 1 },
+	["SunRaysEffect.Intensity"] = { 0, 1 },
+	["SunRaysEffect.Spread"] = { 0, 1 },
+} :: { [string]: { number } }
+
+-- The grade's offsets at this clock, blended by the preset weights: { [target]: { [prop]: n } }.
+function LookPresets.gradeAt(clock: number, grade: Grade): { [string]: { [string]: number } }
+	local out: { [string]: { [string]: number } } = {}
+	for id, w in LookPresets.weights(clock) do
+		local g = grade[id]
+		if g and w > 0 then
+			for target, values in g do
+				local t = out[target] or {}
+				out[target] = t
+				for k, v in values do
+					t[k] = (t[k] or 0) + v * w
+				end
+			end
+		end
+	end
+	return out
+end
+
+-- Adds the grade at this clock to a look in place, each field held to GRADE_LIMITS.
+local function applyGrade(look: Look, clock: number, grade: Grade)
+	for target, values in LookPresets.gradeAt(clock, grade) do
+		local inst = look[target]
+		if inst then
+			for k, d in values do
+				local v = inst[k]
+				if type(v) == "number" then
+					local lim = LookPresets.GRADE_LIMITS[target .. "." .. k]
+					local nv = v + d
+					inst[k] = if lim then math.clamp(nv, lim[1], lim[2]) else nv
+				end
+			end
+		end
+	end
+end
+
 -- The look at this clock in this weather (a fresh table each call). weather is a kind id
 -- or nil (Clear); amount (default 1) blends from kind `from` (default Clear) to it.
--- With no weather, or Clear, the values are exactly the time-of-day look.
-function LookPresets.at(clock: number, weather: string?, amount: number?, from: string?): Look
+-- With no weather, or Clear, the values are exactly the time-of-day look. `grade` (N1, the
+-- desktop Realistic grade, see gradeFor) is added to the time-of-day look before the weather.
+function LookPresets.at(clock: number, weather: string?, amount: number?, from: string?, grade: Grade?): Look
 	local out = base(clock)
+	if grade then
+		applyGrade(out, clock, grade)
+	end
 	local l = LookPresets.layer(weather, amount, from)
 	if isClear(l) then
 		return out
@@ -396,9 +500,10 @@ end
 -- Writes the look for this clock (and weather, see at) to `lighting` (tests pass fakes for
 -- lighting and make). With a weather given, `clouds` (Terrain's Clouds, if any) is set too;
 -- it is never created here (Scenery owns it). `areas` (N0, LookDirector) are area weights
--- from areaWeights; nil, or home = 1, leaves the look exactly as it was.
-function LookPresets.applyTo(lighting: any, clock: number, make: (string) -> any, weather: string?, amount: number?, from: string?, clouds: any?, areas: { [string]: number }?)
-	local look = LookPresets.at(clock, weather, amount, from)
+-- from areaWeights; nil, or home = 1, leaves the look exactly as it was. `grade` (N1) is the
+-- desktop Realistic grade from gradeFor; nil leaves the look as it was.
+function LookPresets.applyTo(lighting: any, clock: number, make: (string) -> any, weather: string?, amount: number?, from: string?, clouds: any?, areas: { [string]: number }?, grade: Grade?)
+	local look = LookPresets.at(clock, weather, amount, from, grade)
 	if areas ~= nil then
 		look = LookPresets.blendAreas(look, areas)
 	end
@@ -487,8 +592,9 @@ LookPresets.AREAS = {
 		decay = WHITE,
 		tint = WHITE,
 		saturation = 0,
-		-- The place's water today: WaterLook.TERRAIN (L5d), written once in Edit and saved.
-		water = { WaterColor = rgb(26, 66, 62), WaterTransparency = 0.55, WaterReflectance = 0.35, WaterWaveSize = 0.12, WaterWaveSpeed = 8 },
+		-- The place's water: WaterLook.TERRAIN (L5d), written once in Edit and saved. Transparency
+		-- 0.55 to 0.42 on 11/27/2026 (N1, with WaterLook). By time of day: WATER_BY_TIME.
+		water = { WaterColor = rgb(26, 66, 62), WaterTransparency = 0.42, WaterReflectance = 0.35, WaterWaveSize = 0.12, WaterWaveSpeed = 8 },
 	},
 	creek = {
 		-- The cold stream in the woods: a touch darker and greener, very clear water.
@@ -638,8 +744,40 @@ local function mixColor(acc: Color3?, c: Color3, w: number): Color3
 	return Color3.new(a.R + c.R * w, a.G + c.G * w, a.B + c.B * w)
 end
 
--- The area settings for these weights, each field the weighted mean of the areas'.
-function LookPresets.areaMix(weights: { [string]: number }): Area
+-- The home lake's water by time of day (N1, signature 4: a mirror at dawn, a light chop by
+-- day, calm at night). Per preset id, blended with the preset weights; WaterColor stays the
+-- home area's. Day is the home water as it was (AREAS.home.water). Used with
+-- Config.WATER_BY_TIME_ON (on its own, or inside the area blend with LOOK_AREAS_ON).
+export type TimeWater = { WaterTransparency: number, WaterReflectance: number, WaterWaveSize: number, WaterWaveSpeed: number }
+
+-- stylua: ignore
+LookPresets.WATER_BY_TIME = {
+	dawn =   { WaterWaveSize = 0.03, WaterWaveSpeed = 3, WaterReflectance = 0.75, WaterTransparency = 0.38 }, -- glass
+	day =    { WaterWaveSize = 0.12, WaterWaveSpeed = 8, WaterReflectance = 0.35, WaterTransparency = 0.42 }, -- small chop
+	golden = { WaterWaveSize = 0.08, WaterWaveSpeed = 6, WaterReflectance = 0.55, WaterTransparency = 0.42 }, -- settling, glints
+	dusk =   { WaterWaveSize = 0.05, WaterWaveSpeed = 4, WaterReflectance = 0.6,  WaterTransparency = 0.4 },
+	night =  { WaterWaveSize = 0.04, WaterWaveSpeed = 3, WaterReflectance = 0.5,  WaterTransparency = 0.42 }, -- calm, holds the moon
+} :: { [string]: TimeWater }
+
+local WATER_KEYS = { "WaterTransparency", "WaterReflectance", "WaterWaveSize", "WaterWaveSpeed" }
+
+-- The home lake's water at this clock (a fresh table).
+function LookPresets.homeWaterAt(clock: number): Water
+	local out = { WaterColor = LookPresets.AREAS.home.water.WaterColor, WaterTransparency = 0, WaterReflectance = 0, WaterWaveSize = 0, WaterWaveSpeed = 0 } :: any
+	for id, w in LookPresets.weights(clock) do
+		local tw = LookPresets.WATER_BY_TIME[id]
+		if tw and w > 0 then
+			for _, k in WATER_KEYS do
+				out[k] += (tw :: any)[k] * w
+			end
+		end
+	end
+	return out :: Water
+end
+
+-- The area settings for these weights, each field the weighted mean of the areas'. With a
+-- clock (Config.WATER_BY_TIME_ON), home's water is its water at that time (homeWaterAt).
+function LookPresets.areaMix(weights: { [string]: number }, clock: number?): Area
 	local out = {
 		exposure = 0,
 		density = 0,
@@ -647,9 +785,11 @@ function LookPresets.areaMix(weights: { [string]: number }): Area
 		saturation = 0,
 		water = { WaterTransparency = 0, WaterReflectance = 0, WaterWaveSize = 0, WaterWaveSpeed = 0 },
 	} :: any
+	local homeWater = if clock ~= nil then LookPresets.homeWaterAt(clock) else nil
 	for id, w in weights do
 		local a = LookPresets.AREAS[id]
 		if a and w > 0 then
+			local aw = if id == "home" and homeWater then homeWater else a.water
 			out.exposure += a.exposure * w
 			out.density += a.density * w
 			out.haze += a.haze * w
@@ -659,21 +799,27 @@ function LookPresets.areaMix(weights: { [string]: number }): Area
 			out.decay = mixColor(out.decay, a.decay, w)
 			out.tint = mixColor(out.tint, a.tint, w)
 			local water = out.water
-			water.WaterColor = mixColor(water.WaterColor, a.water.WaterColor, w)
-			for _, k in { "WaterTransparency", "WaterReflectance", "WaterWaveSize", "WaterWaveSpeed" } do
-				water[k] += (a.water :: any)[k] * w
+			water.WaterColor = mixColor(water.WaterColor, aw.WaterColor, w)
+			for _, k in WATER_KEYS do
+				water[k] += (aw :: any)[k] * w
 			end
 		end
 	end
 	if out.ambient == nil then
-		return LookPresets.AREAS.home -- no known area weighted: home
+		-- No known area weighted: home.
+		if homeWater then
+			local h = table.clone(LookPresets.AREAS.home) :: any
+			h.water = homeWater
+			return h :: Area
+		end
+		return LookPresets.AREAS.home
 	end
 	return out :: Area
 end
 
--- Terrain water for these area weights.
-function LookPresets.areaWater(weights: { [string]: number }): Water
-	return LookPresets.areaMix(weights).water
+-- Terrain water for these area weights (and, with a clock, home's water by time of day).
+function LookPresets.areaWater(weights: { [string]: number }, clock: number?): Water
+	return LookPresets.areaMix(weights, clock).water
 end
 
 local function isHome(a: Area): boolean
@@ -734,11 +880,26 @@ export type Tier = {
 	bloom: boolean,
 	depthOfField: boolean,
 	cloudDetail: number,
+	grade: Grade?, -- offsets for this tier's Realistic style (N1); used only with REALISTIC_DESKTOP
 }
 
 LookPresets.TIERS = {
-	desktop = { id = "desktop", lightingStyle = "Realistic", shadows = "all", sunRays = true, bloom = true, depthOfField = true, cloudDetail = 1 },
-	phone = { id = "phone", lightingStyle = "Soft", shadows = "sun", sunRays = false, bloom = true, depthOfField = false, cloudDetail = 0.5 },
+	desktop = { id = "desktop", lightingStyle = "Realistic", shadows = "all", sunRays = true, bloom = true, depthOfField = true, cloudDetail = 1, grade = LookPresets.REALISTIC_GRADE },
+	-- LightingStyle is place-wide (a LocalScript may not write it: "lacking capability
+	-- PluginOrOpenCloud", tested 11/27/2026), so the phone runs the place's style too, takes the
+	-- same grade, and saves its cost elsewhere: no sun rays or depth of field, no lantern shadows.
+	phone = { id = "phone", lightingStyle = "Realistic", shadows = "sun", sunRays = false, bloom = true, depthOfField = false, cloudDetail = 0.5, grade = LookPresets.REALISTIC_GRADE },
 } :: { [string]: Tier }
+
+-- The grade to lay on the look: the tier's grade only when the place really runs Realistic
+-- (`realistic`: the place's Lighting.LightingStyle is Realistic and Config.REALISTIC_DESKTOP
+-- allows the grade); otherwise nil, so Soft keeps the presets as they are. Both tiers carry
+-- the grade, because the style is place-wide (see TIERS.phone).
+function LookPresets.gradeFor(tier: Tier?, realistic: boolean): Grade?
+	if tier and realistic then
+		return tier.grade
+	end
+	return nil
+end
 
 return LookPresets

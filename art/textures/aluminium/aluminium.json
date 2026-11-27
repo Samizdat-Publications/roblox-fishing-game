@@ -1,0 +1,72 @@
+{
+  "family": "aluminium",
+  "kind": "prop",
+  "size": 512,
+  "source": "Metal009",
+  "source_page": "https://ambientcg.com/a/Metal009",
+  "licence": "CC0",
+  "studs_per_tile": 4,
+  "target_rgb": [
+    176,
+    180,
+    184
+  ],
+  "mean_rgb": [
+    176.0,
+    180.0,
+    184.0
+  ],
+  "luma_rel_std_in": 0.0226,
+  "luma_rel_std_out": 0.02,
+  "neutral_mean": 0.8,
+  "neutral_std": 0.0159,
+  "neutral_min_max": [
+    0.758,
+    0.841
+  ],
+  "rough_mean": 0.42,
+  "rough_std": 0.0348,
+  "metal_mean": 0.9,
+  "normal_mean_tilt": 0.0299,
+  "seam_in": 0.992,
+  "seam_fixed": false,
+  "seam_out": {
+    "color": 0.908,
+    "normal": 0.704,
+    "rough": 0.873
+  },
+  "settings": {
+    "ao_mix": 0.3,
+    "contrast": 1.0,
+    "dents": {
+      "depth": 3.0,
+      "scale": 0.07,
+      "seed": 11
+    },
+    "despeckle_k": 2.5,
+    "flatten": 0.5,
+    "flatten_sigma": 0.12,
+    "hue_var": 0.2,
+    "kind": "prop",
+    "max_rel_std": 0.05,
+    "metal_mean": 0.9,
+    "neutral_mean": 0.8,
+    "normal_strength": 1.0,
+    "rough_contrast": 1.0,
+    "rough_mean": 0.42,
+    "seam_blend": 0.2,
+    "seam_limit": 1.25,
+    "seamless": "auto",
+    "sheet": "n1",
+    "size": 512,
+    "soften": 0.3,
+    "soften_sigma": 1.5,
+    "source": "Metal009",
+    "studs_per_tile": 4,
+    "target_rgb": [
+      176,
+      180,
+      184
+    ]
+  }
+}

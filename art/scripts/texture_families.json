@@ -159,6 +159,271 @@
       "hue_var": 0.0,
       "ao_mix": 0.3,
       "max_rel_std": 0.05
+    },
+    "forest_floor": {
+      "kind": "terrain",
+      "size": 1024,
+      "sheet": "n1",
+      "source": "forrest_ground_03",
+      "candidates": [
+        "forrest_ground_03",
+        "forest_leaves_03",
+        "forest_ground_04",
+        "Ground023"
+      ],
+      "target_rgb": [
+        92,
+        72,
+        48
+      ],
+      "studs_per_tile": 16,
+      "rough_mean": 0.9,
+      "normal_strength": 0.7,
+      "max_rel_std": 0.09,
+      "flatten": 0.6,
+      "hue_var": 0.3,
+      "soften": 0.6
+    },
+    "lake_mud": {
+      "kind": "terrain",
+      "size": 1024,
+      "sheet": "n1",
+      "source": "brown_mud",
+      "candidates": [
+        "brown_mud",
+        "dirt",
+        "Ground036"
+      ],
+      "target_rgb": [
+        70,
+        62,
+        46
+      ],
+      "studs_per_tile": 20,
+      "rough_mean": 0.6,
+      "normal_strength": 0.6,
+      "max_rel_std": 0.07,
+      "flatten": 0.6,
+      "hue_var": 0.2,
+      "soften": 0.7
+    },
+    "footpath_gravel": {
+      "kind": "terrain",
+      "size": 1024,
+      "sheet": "n1",
+      "source": "gravel_floor_02",
+      "candidates": [
+        "gravel_floor_02",
+        "Gravel041",
+        "gravelly_sand",
+        "Gravel040"
+      ],
+      "target_rgb": [
+        140,
+        128,
+        108
+      ],
+      "studs_per_tile": 12,
+      "rough_mean": 0.88,
+      "normal_strength": 0.8,
+      "max_rel_std": 0.08,
+      "flatten": 0.6,
+      "hue_var": 0.3,
+      "soften": 0.6,
+      "despeckle_k": 2.0
+    },
+    "shore_sand": {
+      "kind": "terrain",
+      "size": 1024,
+      "sheet": "n1",
+      "source": "Ground060",
+      "candidates": [
+        "Ground060",
+        "aerial_beach_01",
+        "Ground059",
+        "Ground033"
+      ],
+      "target_rgb": [
+        186,
+        170,
+        128
+      ],
+      "studs_per_tile": 16,
+      "rough_mean": 0.9,
+      "normal_strength": 0.6,
+      "max_rel_std": 0.05,
+      "flatten": 0.6,
+      "hue_var": 0.25,
+      "soften": 0.6,
+      "ao_mix": 0.15
+    },
+    "deep_bed": {
+      "kind": "terrain",
+      "size": 1024,
+      "sheet": "n1",
+      "source": "dense_sand",
+      "candidates": [
+        "dense_sand",
+        "Ground099",
+        "damp_sand"
+      ],
+      "target_rgb": [
+        40,
+        46,
+        40
+      ],
+      "studs_per_tile": 24,
+      "rough_mean": 0.7,
+      "normal_strength": 0.5,
+      "max_rel_std": 0.06,
+      "flatten": 0.7,
+      "hue_var": 0.15,
+      "soften": 0.8,
+      "ao_mix": 0.1
+    },
+    "bark": {
+      "kind": "prop",
+      "size": 512,
+      "sheet": "n1",
+      "source": "Bark012",
+      "candidates": [
+        "Bark012",
+        "Bark014",
+        "bark_willow_02",
+        "chinese_cedar_bark"
+      ],
+      "target_rgb": [
+        104,
+        82,
+        62
+      ],
+      "studs_per_tile": 4,
+      "rough_mean": 0.9,
+      "max_rel_std": 0.14,
+      "flatten": 0.5,
+      "hue_var": 0.25,
+      "soften": 0.5
+    },
+    "leaf_needle": {
+      "kind": "prop",
+      "size": 512,
+      "sheet": "n1",
+      "source": "leaf_needle_proc",
+      "candidates": [
+        "leaf_needle_proc",
+        "Moss002",
+        "Moss004"
+      ],
+      "target_rgb": [
+        62,
+        92,
+        48
+      ],
+      "studs_per_tile": 8,
+      "rough_mean": 0.8,
+      "max_rel_std": 0.13,
+      "flatten": 0.3,
+      "hue_var": 0.0,
+      "soften": 0.4
+    },
+    "tin_roof": {
+      "kind": "prop",
+      "size": 512,
+      "sheet": "n1",
+      "source": "corrugated_iron",
+      "candidates": [
+        "corrugated_iron",
+        "worn_corrugated_iron",
+        "corrugated_iron_02",
+        "CorrugatedSteel005"
+      ],
+      "target_rgb": [
+        150,
+        152,
+        150
+      ],
+      "studs_per_tile": 4,
+      "rough_mean": 0.5,
+      "max_rel_std": 0.07,
+      "flatten": 0.7,
+      "hue_var": 0.4,
+      "soften": 0.4,
+      "streaks": {
+        "amount": 0.2,
+        "cover": 0.6,
+        "rgb": [
+          124,
+          78,
+          48
+        ],
+        "seed": 5
+      },
+      "ao_mix": 0.5,
+      "seam_limit": 1.4,
+      "note": "seam score 1.28 is a rib flank sitting on the wrap edge, not a seam (checked by eye)"
+    },
+    "painted_wood": {
+      "kind": "prop",
+      "size": 512,
+      "sheet": "n1",
+      "source": "PaintedWood008A",
+      "candidates": [
+        "PaintedWood008A",
+        "Planks010",
+        "PaintedWood008B",
+        "distressed_painted_planks",
+        "white_planks_clean"
+      ],
+      "target_rgb": [
+        196,
+        190,
+        176
+      ],
+      "studs_per_tile": 5,
+      "rough_mean": 0.6,
+      "max_rel_std": 0.07,
+      "flatten": 0.3,
+      "hue_var": 0.3,
+      "soften": 0.4,
+      "rotate": 1,
+      "contrast": 1.3,
+      "boards": {
+        "count": 4,
+        "gap": 0.006,
+        "wear": 0.2,
+        "tone": 0.03,
+        "seed": 3
+      },
+      "seam_limit": 1.7,
+      "note": "seam score 1.6 is the board groove that sits on the wrap edge, not a seam (checked by eye)"
+    },
+    "aluminium": {
+      "kind": "prop",
+      "size": 512,
+      "sheet": "n1",
+      "source": "Metal009",
+      "candidates": [
+        "Metal009",
+        "Metal011",
+        "Metal051B"
+      ],
+      "target_rgb": [
+        176,
+        180,
+        184
+      ],
+      "studs_per_tile": 4,
+      "rough_mean": 0.42,
+      "max_rel_std": 0.05,
+      "flatten": 0.5,
+      "hue_var": 0.2,
+      "soften": 0.3,
+      "metal_mean": 0.9,
+      "dents": {
+        "depth": 3.0,
+        "scale": 0.07,
+        "seed": 11
+      }
     }
   },
   "sources": {
@@ -302,6 +567,313 @@
       "provider": "procedural",
       "generator": "fish_skin.py",
       "dir": "artifacts/textures_src/fish_skin_proc",
+      "licence": "ours"
+    },
+    "forest_leaves_03": {
+      "provider": "Poly Haven",
+      "page": "https://polyhaven.com/a/forest_leaves_03",
+      "licence": "CC0",
+      "files": [
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/forest_leaves_03/forest_leaves_03_diff_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/forest_leaves_03/forest_leaves_03_nor_gl_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/forest_leaves_03/forest_leaves_03_rough_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/forest_leaves_03/forest_leaves_03_ao_1k.jpg"
+      ]
+    },
+    "forrest_ground_03": {
+      "provider": "Poly Haven",
+      "page": "https://polyhaven.com/a/forrest_ground_03",
+      "licence": "CC0",
+      "files": [
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/forrest_ground_03/forrest_ground_03_diff_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/forrest_ground_03/forrest_ground_03_nor_gl_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/forrest_ground_03/forrest_ground_03_rough_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/forrest_ground_03/forrest_ground_03_ao_1k.jpg"
+      ]
+    },
+    "forest_ground_04": {
+      "provider": "Poly Haven",
+      "page": "https://polyhaven.com/a/forest_ground_04",
+      "licence": "CC0",
+      "files": [
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/forest_ground_04/forest_ground_04_diff_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/forest_ground_04/forest_ground_04_nor_gl_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/forest_ground_04/forest_ground_04_rough_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/forest_ground_04/forest_ground_04_ao_1k.jpg"
+      ]
+    },
+    "Ground023": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Ground023",
+      "zip": "https://ambientcg.com/get?file=Ground023_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "brown_mud": {
+      "provider": "Poly Haven",
+      "page": "https://polyhaven.com/a/brown_mud",
+      "licence": "CC0",
+      "files": [
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_mud/brown_mud_diff_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_mud/brown_mud_nor_gl_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_mud/brown_mud_rough_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_mud/brown_mud_ao_1k.jpg"
+      ]
+    },
+    "dirt": {
+      "provider": "Poly Haven",
+      "page": "https://polyhaven.com/a/dirt",
+      "licence": "CC0",
+      "files": [
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/dirt/dirt_diff_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/dirt/dirt_nor_gl_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/dirt/dirt_rough_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/dirt/dirt_ao_1k.jpg"
+      ]
+    },
+    "Ground036": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Ground036",
+      "zip": "https://ambientcg.com/get?file=Ground036_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Gravel041": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Gravel041",
+      "zip": "https://ambientcg.com/get?file=Gravel041_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "gravelly_sand": {
+      "provider": "Poly Haven",
+      "page": "https://polyhaven.com/a/gravelly_sand",
+      "licence": "CC0",
+      "files": [
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/gravelly_sand/gravelly_sand_diff_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/gravelly_sand/gravelly_sand_nor_gl_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/gravelly_sand/gravelly_sand_rough_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/gravelly_sand/gravelly_sand_ao_1k.jpg"
+      ]
+    },
+    "gravel_floor_02": {
+      "provider": "Poly Haven",
+      "page": "https://polyhaven.com/a/gravel_floor_02",
+      "licence": "CC0",
+      "files": [
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/gravel_floor_02/gravel_floor_02_diff_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/gravel_floor_02/gravel_floor_02_nor_gl_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/gravel_floor_02/gravel_floor_02_rough_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/gravel_floor_02/gravel_floor_02_ao_1k.jpg"
+      ]
+    },
+    "Gravel040": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Gravel040",
+      "zip": "https://ambientcg.com/get?file=Gravel040_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Ground033": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Ground033",
+      "zip": "https://ambientcg.com/get?file=Ground033_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Ground059": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Ground059",
+      "zip": "https://ambientcg.com/get?file=Ground059_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Ground060": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Ground060",
+      "zip": "https://ambientcg.com/get?file=Ground060_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "aerial_beach_01": {
+      "provider": "Poly Haven",
+      "page": "https://polyhaven.com/a/aerial_beach_01",
+      "licence": "CC0",
+      "files": [
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/aerial_beach_01/aerial_beach_01_diff_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/aerial_beach_01/aerial_beach_01_nor_gl_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/aerial_beach_01/aerial_beach_01_rough_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/aerial_beach_01/aerial_beach_01_ao_1k.jpg"
+      ]
+    },
+    "dense_sand": {
+      "provider": "Poly Haven",
+      "page": "https://polyhaven.com/a/dense_sand",
+      "licence": "CC0",
+      "files": [
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/dense_sand/dense_sand_diff_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/dense_sand/dense_sand_nor_gl_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/dense_sand/dense_sand_rough_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/dense_sand/dense_sand_ao_1k.jpg"
+      ]
+    },
+    "damp_sand": {
+      "provider": "Poly Haven",
+      "page": "https://polyhaven.com/a/damp_sand",
+      "licence": "CC0",
+      "files": [
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/damp_sand/damp_sand_diff_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/damp_sand/damp_sand_nor_gl_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/damp_sand/damp_sand_rough_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/damp_sand/damp_sand_ao_1k.jpg"
+      ]
+    },
+    "Ground099": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Ground099",
+      "zip": "https://ambientcg.com/get?file=Ground099_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Bark012": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Bark012",
+      "zip": "https://ambientcg.com/get?file=Bark012_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Bark014": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Bark014",
+      "zip": "https://ambientcg.com/get?file=Bark014_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "bark_willow_02": {
+      "provider": "Poly Haven",
+      "page": "https://polyhaven.com/a/bark_willow_02",
+      "licence": "CC0",
+      "files": [
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/bark_willow_02/bark_willow_02_diff_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/bark_willow_02/bark_willow_02_nor_gl_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/bark_willow_02/bark_willow_02_rough_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/bark_willow_02/bark_willow_02_ao_1k.jpg"
+      ]
+    },
+    "chinese_cedar_bark": {
+      "provider": "Poly Haven",
+      "page": "https://polyhaven.com/a/chinese_cedar_bark",
+      "licence": "CC0",
+      "files": [
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/chinese_cedar_bark/chinese_cedar_bark_diff_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/chinese_cedar_bark/chinese_cedar_bark_nor_gl_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/chinese_cedar_bark/chinese_cedar_bark_rough_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/chinese_cedar_bark/chinese_cedar_bark_ao_1k.jpg"
+      ]
+    },
+    "Moss002": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Moss002",
+      "zip": "https://ambientcg.com/get?file=Moss002_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Moss004": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Moss004",
+      "zip": "https://ambientcg.com/get?file=Moss004_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "corrugated_iron": {
+      "provider": "Poly Haven",
+      "page": "https://polyhaven.com/a/corrugated_iron",
+      "licence": "CC0",
+      "files": [
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/corrugated_iron/corrugated_iron_diff_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/corrugated_iron/corrugated_iron_nor_gl_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/corrugated_iron/corrugated_iron_rough_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/corrugated_iron/corrugated_iron_ao_1k.jpg"
+      ]
+    },
+    "worn_corrugated_iron": {
+      "provider": "Poly Haven",
+      "page": "https://polyhaven.com/a/worn_corrugated_iron",
+      "licence": "CC0",
+      "files": [
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/worn_corrugated_iron/worn_corrugated_iron_diff_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/worn_corrugated_iron/worn_corrugated_iron_nor_gl_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/worn_corrugated_iron/worn_corrugated_iron_rough_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/worn_corrugated_iron/worn_corrugated_iron_ao_1k.jpg"
+      ]
+    },
+    "corrugated_iron_02": {
+      "provider": "Poly Haven",
+      "page": "https://polyhaven.com/a/corrugated_iron_02",
+      "licence": "CC0",
+      "files": [
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/corrugated_iron_02/corrugated_iron_02_diff_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/corrugated_iron_02/corrugated_iron_02_nor_gl_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/corrugated_iron_02/corrugated_iron_02_rough_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/corrugated_iron_02/corrugated_iron_02_ao_1k.jpg"
+      ]
+    },
+    "CorrugatedSteel005": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/CorrugatedSteel005",
+      "zip": "https://ambientcg.com/get?file=CorrugatedSteel005_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "PaintedWood008A": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/PaintedWood008A",
+      "zip": "https://ambientcg.com/get?file=PaintedWood008A_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "PaintedWood008B": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/PaintedWood008B",
+      "zip": "https://ambientcg.com/get?file=PaintedWood008B_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Planks010": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Planks010",
+      "zip": "https://ambientcg.com/get?file=Planks010_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "distressed_painted_planks": {
+      "provider": "Poly Haven",
+      "page": "https://polyhaven.com/a/distressed_painted_planks",
+      "licence": "CC0",
+      "files": [
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/distressed_painted_planks/distressed_painted_planks_diff_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/distressed_painted_planks/distressed_painted_planks_nor_gl_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/distressed_painted_planks/distressed_painted_planks_rough_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/distressed_painted_planks/distressed_painted_planks_ao_1k.jpg"
+      ]
+    },
+    "white_planks_clean": {
+      "provider": "Poly Haven",
+      "page": "https://polyhaven.com/a/white_planks_clean",
+      "licence": "CC0",
+      "files": [
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/white_planks_clean/white_planks_clean_diff_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/white_planks_clean/white_planks_clean_nor_gl_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/white_planks_clean/white_planks_clean_rough_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/white_planks_clean/white_planks_clean_ao_1k.jpg"
+      ]
+    },
+    "Metal011": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Metal011",
+      "zip": "https://ambientcg.com/get?file=Metal011_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Metal009": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Metal009",
+      "zip": "https://ambientcg.com/get?file=Metal009_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Metal051B": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Metal051B",
+      "zip": "https://ambientcg.com/get?file=Metal051B_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "leaf_needle_proc": {
+      "provider": "procedural",
+      "generator": "builtin:leaf_needle",
+      "dir": "artifacts/textures_src/leaf_needle_proc",
       "licence": "ours"
     }
   }

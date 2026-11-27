@@ -91,7 +91,7 @@ Config.LURE_RETRIEVE_ON = true
 -- tier set Lighting.LightingStyle to Realistic; off, the place's own style is kept.
 Config.LOOK_DIRECTOR_ON = true -- on 11/27/2026 after its playtest: set A 6.0 off and 6.0 on, clocks match
 Config.LOOK_AREAS_ON = false
-Config.REALISTIC_DESKTOP = false
+Config.REALISTIC_DESKTOP = true -- N1: the place runs Realistic (set in Edit; a LocalScript cannot write LightingStyle) and the grade applies
 -- Painted world signs (leg 3, N2): wooden boards with painted words (Server/Signs) in place of
 -- the floating name labels, and sign lanterns lit at night (ClientModules/Lanterns). Off, the
 -- world builders make the old floating signs only.
@@ -99,11 +99,11 @@ Config.PAINTED_SIGNS_ON = true -- on 11/27/2026 after the corner playtest (board
 -- Wind you can see (leg 3, N1): the server sets workspace.GlobalWind from the weather
 -- (Weather.windFor, blended over 20 s), so grass, clouds and particles move the same for
 -- everyone. Off, GlobalWind is never touched.
-Config.WIND_ON = false
+Config.WIND_ON = true
 -- The home lake's water by time of day (leg 3, N1, LookPresets.WATER_BY_TIME): a mirror at
 -- dawn, a light chop by day. Works on its own (home water everywhere) or inside the area
 -- water with LOOK_AREAS_ON. Off, the water is left as it was.
-Config.WATER_BY_TIME_ON = false
+Config.WATER_BY_TIME_ON = true
 
 function Config.boatsOn(): boolean
 	return Config.BOATS_ON and Config.BIG_LAKE_ON

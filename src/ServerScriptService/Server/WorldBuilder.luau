@@ -58,6 +58,39 @@ local function part(parent: Instance, name: string, size: Vector3, cf: CFrame, c
 	return p
 end
 
+-- Lamp globes as lanterns (leg 3, N1; the plan's wrong-list: Neon only on lantern glass, and only
+-- lit): warm Glass by day, and a PointLight tagged "Lantern" that ClientModules/Lanterns lights at
+-- night only (it turns the glass Neon while lit). Lanterns cast shadows (the plan's rule).
+WorldBuilder.LANTERN = {
+	color = Color3.fromRGB(255, 190, 120),
+	size = 0.7,
+	range = 14,
+	brightness = 1.1,
+}
+
+-- Makes one globe a lantern, in place: safe to run again.
+local function asLantern(glass: BasePart)
+	local L = WorldBuilder.LANTERN
+	local c = glass.Position
+	glass.Material = Enum.Material.Glass
+	glass.Color = L.color
+	glass.Size = Vector3.new(L.size, L.size, L.size)
+	glass.Position = c
+	glass.CanCollide = false
+	glass.CastShadow = false
+	local light = glass:FindFirstChildOfClass("PointLight")
+	if not light then
+		light = Instance.new("PointLight")
+		light.Parent = glass
+	end
+	local pl = light :: PointLight
+	pl.Color = L.color
+	pl.Range = L.range
+	pl.Brightness = L.brightness
+	pl.Shadows = true
+	game:GetService("CollectionService"):AddTag(pl, "Lantern")
+end
+
 -- Signs are sized in studs (they shrink with distance like a real board), sit above the
 -- roof or wall they belong to (`lift` studs over the adornee's centre), and fade out past
 -- SIGN_RANGE so they don't pile up on the far shore (L5a critic, 11/26/2026).
@@ -197,16 +230,11 @@ function WorldBuilder.buildCreek(lake: Model)
 	prompt.Parent = post
 	sign(creek, gate, "Cedar Creek", Color3.fromRGB(140, 220, 160), 8.6) -- above the gate arch's beam (Scenery, L5c)
 	local lampBulb = part(creek, "GateLamp", Vector3.new(1.2, 1.2, 1.2), CFrame.new(-158, 9, -5.5), Color3.fromRGB(255, 230, 170), {
-		Material = Enum.Material.Neon,
 		CanCollide = false,
 	})
 	lampBulb.Shape = Enum.PartType.Ball
 	part(creek, "GateLampPost", Vector3.new(0.5, 8, 0.5), CFrame.new(-158, 5, -5.5), COLORS.darkWood)
-	local light = Instance.new("PointLight")
-	light.Range = 26
-	light.Brightness = 1.6
-	light.Color = Color3.fromRGB(255, 225, 170)
-	light.Parent = lampBulb
+	asLantern(lampBulb) -- was a white Neon globe lit day and night (range 26, brightness 1.6)
 
 	-- Invisible boxes marking the creek's water, used by casts.
 	local waterFolder = Instance.new("Folder")
@@ -397,18 +425,12 @@ function WorldBuilder.build(): Model
 	for i, pos in { Vector3.new(7.5, 1.5, 36), Vector3.new(-7.5, 1.5, 36), Vector3.new(-24, 1, 93), Vector3.new(24, 1, 93) } do
 		part(lamps, "Post" .. i, Vector3.new(0.5, 8, 0.5), CFrame.new(pos + Vector3.new(0, 4, 0)), COLORS.darkWood)
 		local bulb = part(lamps, "Bulb" .. i, Vector3.new(1.2, 1.2, 1.2), CFrame.new(pos + Vector3.new(0, 8.4, 0)), Color3.fromRGB(255, 230, 170), {
-			Material = Enum.Material.Neon,
 			CanCollide = false,
 		})
 		bulb.Shape = Enum.PartType.Ball
-		local light = Instance.new("PointLight")
-		-- was 28 at 1.6 (a hard cyan disc at night), then 18 at 1.1 (a green wash over the water in
-		-- front of the dock, 11/27/2026); 11 keeps the glow on the dock end
-		light.Range = 11
-		light.Brightness = 1
-		light.Color = Color3.fromRGB(255, 198, 138) -- warm amber
-		light.Shadows = false
-		light.Parent = bulb
+		-- The light was 28 at 1.6 (a hard cyan disc at night), then 18 at 1.1 (a green wash over the
+		-- water in front of the dock), then 11 at 1 lit day and night; N1: a lantern, night only.
+		asLantern(bulb)
 	end
 	lamps.Parent = lake
 
@@ -669,6 +691,42 @@ function WorldBuilder.dockLanterns(lake: Model)
 		glass.Parent = folder
 	end
 	folder.Parent = lake
+end
+
+-- Turns the saved world's white Neon lamp globes into lanterns, in place (N1; safe to run again):
+-- the shore lamps (Lamps.Bulb1 to 4), the creek gate lamp and the creek pool's lantern (Scenery).
+-- Returns how many globes it converted.
+--   require(game.ServerScriptService.Server.WorldBuilder).lanternLamps(workspace.Lake)
+function WorldBuilder.lanternLamps(lake: Model): number
+	local globes: { BasePart } = {}
+	local lamps = lake:FindFirstChild("Lamps")
+	for _, p in (if lamps then lamps:GetChildren() else {}) do
+		if p:IsA("BasePart") and string.match(p.Name, "^Bulb%d+$") then
+			table.insert(globes, p)
+		end
+	end
+	for _, path in { "CedarCreek.GateLamp", "Scenery.PoolLantern.Bulb" } do
+		local node = find(lake, path)
+		if node and node:IsA("BasePart") then
+			table.insert(globes, node)
+		end
+	end
+	local n = 0
+	for _, g in globes do
+		if g.Transparency >= 1 then
+			-- Hidden by the art dress (the old dock-end bulbs under the hero dock, whose own
+			-- DockLanterns light the spot): switch the light off rather than stack shadows.
+			for _, l in g:GetDescendants() do
+				if l:IsA("Light") then
+					l.Enabled = false
+				end
+			end
+		else
+			asLantern(g)
+			n += 1
+		end
+	end
+	return n
 end
 
 -- Painted signs (leg 3, N2): boards where a painted board would really hang, in place of the

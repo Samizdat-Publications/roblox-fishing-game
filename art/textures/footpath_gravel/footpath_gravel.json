@@ -1,0 +1,66 @@
+{
+  "family": "footpath_gravel",
+  "kind": "terrain",
+  "size": 1024,
+  "source": "gravel_floor_02",
+  "source_page": "https://polyhaven.com/a/gravel_floor_02",
+  "licence": "CC0",
+  "studs_per_tile": 12,
+  "target_rgb": [
+    140,
+    128,
+    108
+  ],
+  "mean_rgb": [
+    140.0,
+    128.0,
+    108.0
+  ],
+  "luma_rel_std_in": 0.1068,
+  "luma_rel_std_out": 0.0681,
+  "neutral_mean": 0.8,
+  "neutral_std": 0.0531,
+  "neutral_min_max": [
+    0.684,
+    0.908
+  ],
+  "rough_mean": 0.88,
+  "rough_std": 0.0154,
+  "metal_mean": null,
+  "normal_mean_tilt": 0.1857,
+  "seam_in": 0.884,
+  "seam_fixed": false,
+  "seam_out": {
+    "color": 0.882,
+    "normal": 1.142,
+    "rough": 0.885
+  },
+  "settings": {
+    "ao_mix": 0.3,
+    "contrast": 1.0,
+    "despeckle_k": 2.0,
+    "flatten": 0.6,
+    "flatten_sigma": 0.12,
+    "hue_var": 0.3,
+    "kind": "terrain",
+    "max_rel_std": 0.08,
+    "neutral_mean": 0.8,
+    "normal_strength": 0.8,
+    "rough_contrast": 1.0,
+    "rough_mean": 0.88,
+    "seam_blend": 0.2,
+    "seam_limit": 1.25,
+    "seamless": "auto",
+    "sheet": "n1",
+    "size": 1024,
+    "soften": 0.6,
+    "soften_sigma": 1.5,
+    "source": "gravel_floor_02",
+    "studs_per_tile": 12,
+    "target_rgb": [
+      140,
+      128,
+      108
+    ]
+  }
+}

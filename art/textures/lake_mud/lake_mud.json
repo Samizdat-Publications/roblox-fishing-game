@@ -1,0 +1,66 @@
+{
+  "family": "lake_mud",
+  "kind": "terrain",
+  "size": 1024,
+  "source": "brown_mud",
+  "source_page": "https://polyhaven.com/a/brown_mud",
+  "licence": "CC0",
+  "studs_per_tile": 20,
+  "target_rgb": [
+    70,
+    62,
+    46
+  ],
+  "mean_rgb": [
+    70.0,
+    62.0,
+    46.0
+  ],
+  "luma_rel_std_in": 0.1141,
+  "luma_rel_std_out": 0.0608,
+  "neutral_mean": 0.8,
+  "neutral_std": 0.0475,
+  "neutral_min_max": [
+    0.662,
+    0.919
+  ],
+  "rough_mean": 0.6,
+  "rough_std": 0.0246,
+  "metal_mean": null,
+  "normal_mean_tilt": 0.0995,
+  "seam_in": 1.144,
+  "seam_fixed": false,
+  "seam_out": {
+    "color": 1.104,
+    "normal": 1.113,
+    "rough": 1.104
+  },
+  "settings": {
+    "ao_mix": 0.3,
+    "contrast": 1.0,
+    "despeckle_k": 2.5,
+    "flatten": 0.6,
+    "flatten_sigma": 0.12,
+    "hue_var": 0.2,
+    "kind": "terrain",
+    "max_rel_std": 0.07,
+    "neutral_mean": 0.8,
+    "normal_strength": 0.6,
+    "rough_contrast": 1.0,
+    "rough_mean": 0.6,
+    "seam_blend": 0.2,
+    "seam_limit": 1.25,
+    "seamless": "auto",
+    "sheet": "n1",
+    "size": 1024,
+    "soften": 0.7,
+    "soften_sigma": 1.5,
+    "source": "brown_mud",
+    "studs_per_tile": 20,
+    "target_rgb": [
+      70,
+      62,
+      46
+    ]
+  }
+}

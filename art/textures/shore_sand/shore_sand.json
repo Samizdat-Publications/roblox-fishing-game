@@ -1,0 +1,66 @@
+{
+  "family": "shore_sand",
+  "kind": "terrain",
+  "size": 1024,
+  "source": "Ground060",
+  "source_page": "https://ambientcg.com/a/Ground060",
+  "licence": "CC0",
+  "studs_per_tile": 16,
+  "target_rgb": [
+    186,
+    170,
+    128
+  ],
+  "mean_rgb": [
+    186.0,
+    170.0,
+    128.0
+  ],
+  "luma_rel_std_in": 0.0238,
+  "luma_rel_std_out": 0.0162,
+  "neutral_mean": 0.8,
+  "neutral_std": 0.013,
+  "neutral_min_max": [
+    0.752,
+    0.846
+  ],
+  "rough_mean": 0.9,
+  "rough_std": 0.0143,
+  "metal_mean": null,
+  "normal_mean_tilt": 0.0269,
+  "seam_in": 0.905,
+  "seam_fixed": false,
+  "seam_out": {
+    "color": 0.983,
+    "normal": 0.822,
+    "rough": 0.885
+  },
+  "settings": {
+    "ao_mix": 0.15,
+    "contrast": 1.0,
+    "despeckle_k": 2.5,
+    "flatten": 0.6,
+    "flatten_sigma": 0.12,
+    "hue_var": 0.25,
+    "kind": "terrain",
+    "max_rel_std": 0.05,
+    "neutral_mean": 0.8,
+    "normal_strength": 0.6,
+    "rough_contrast": 1.0,
+    "rough_mean": 0.9,
+    "seam_blend": 0.2,
+    "seam_limit": 1.25,
+    "seamless": "auto",
+    "sheet": "n1",
+    "size": 1024,
+    "soften": 0.6,
+    "soften_sigma": 1.5,
+    "source": "Ground060",
+    "studs_per_tile": 16,
+    "target_rgb": [
+      186,
+      170,
+      128
+    ]
+  }
+}

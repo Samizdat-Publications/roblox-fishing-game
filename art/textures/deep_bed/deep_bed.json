@@ -1,0 +1,66 @@
+{
+  "family": "deep_bed",
+  "kind": "terrain",
+  "size": 1024,
+  "source": "dense_sand",
+  "source_page": "https://polyhaven.com/a/dense_sand",
+  "licence": "CC0",
+  "studs_per_tile": 24,
+  "target_rgb": [
+    40,
+    46,
+    40
+  ],
+  "mean_rgb": [
+    40.0,
+    46.0,
+    40.0
+  ],
+  "luma_rel_std_in": 0.0366,
+  "luma_rel_std_out": 0.0322,
+  "neutral_mean": 0.8,
+  "neutral_std": 0.0255,
+  "neutral_min_max": [
+    0.728,
+    0.867
+  ],
+  "rough_mean": 0.7,
+  "rough_std": 0.0098,
+  "metal_mean": null,
+  "normal_mean_tilt": 0.0395,
+  "seam_in": 0.892,
+  "seam_fixed": false,
+  "seam_out": {
+    "color": 0.865,
+    "normal": 0.99,
+    "rough": 0.851
+  },
+  "settings": {
+    "ao_mix": 0.1,
+    "contrast": 1.0,
+    "despeckle_k": 2.5,
+    "flatten": 0.7,
+    "flatten_sigma": 0.12,
+    "hue_var": 0.15,
+    "kind": "terrain",
+    "max_rel_std": 0.06,
+    "neutral_mean": 0.8,
+    "normal_strength": 0.5,
+    "rough_contrast": 1.0,
+    "rough_mean": 0.7,
+    "seam_blend": 0.2,
+    "seam_limit": 1.25,
+    "seamless": "auto",
+    "sheet": "n1",
+    "size": 1024,
+    "soften": 0.8,
+    "soften_sigma": 1.5,
+    "source": "dense_sand",
+    "studs_per_tile": 24,
+    "target_rgb": [
+      40,
+      46,
+      40
+    ]
+  }
+}

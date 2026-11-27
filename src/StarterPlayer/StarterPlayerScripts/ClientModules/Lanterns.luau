@@ -20,6 +20,12 @@ local lit = false
 local function set(inst: Instance, on: boolean)
 	if inst:IsA("Light") then
 		inst.Enabled = on
+		-- The phone tier keeps the sun's shadows only (LookPresets.TIERS.phone.shadows).
+		local player = game:GetService("Players").LocalPlayer
+		local phone = player ~= nil and player:GetAttribute("LookTierActive") == "phone"
+		pcall(function()
+			(inst :: any).Shadows = not phone
+		end)
 		local glass = inst.Parent
 		if glass and glass:IsA("BasePart") then
 			glass.Material = if on then Enum.Material.Neon else Enum.Material.Glass

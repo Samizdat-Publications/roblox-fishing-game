@@ -1,6 +1,7 @@
 """Material sheet: every family on a sphere, on the thing it is for, and at 30 studs.
 
     python art/scripts/material_sheet.py                       # writes art/textures/sheet-n0.png
+    python art/scripts/material_sheet.py --sheet n1            # the N1 families, art/textures/sheet-n1.png
     python art/scripts/material_sheet.py --out artifacts/n0/sheet-test.png --samples 32
     python art/scripts/material_sheet.py --only meadow_grass wet_sand
     python art/scripts/material_sheet.py --dir rope=artifacts/textures_candidates/rope__Rope003
@@ -10,13 +11,16 @@ Blender headless on this file to render one small picture per cell, then pastes 
 into one labelled sheet with Pillow. Inside Blender (the `bpy` half) it builds each cell:
 
   row 1  sphere, colour map                    (3 studs across, seen from about 8 studs)
-  row 2  the thing the family is for, colour   (dock section, rope coil, awning, ground, boulders, fish)
+  row 2  the thing the family is for, colour   (dock section, rope coil, awning, ground, boulders, fish,
+                                                trunk and log, tree and bush, shed roof, board wall, jon boat;
+                                                the two lake beds lie half under a sheet of lake water)
   row 3  the same thing 30 studs away, with a bobber for scale (a crop of the screen)
   row 4  sphere, NEUTRAL map times sample colour A (how Layer B and tinted terrain slots look)
   row 5  the thing, NEUTRAL map times sample colour B (a second hue, to show the map carries any colour)
 
 Units: 1 Blender unit = 1 stud. Maps repeat every `studs_per_tile` studs, as a Roblox
-MaterialVariant would. Light: one warm sun at 40 degrees and a plain sky, Standard view
+MaterialVariant would. A family belongs to the sheet named in its `sheet` field in the
+table (n0 if it has none). Light: one warm sun at 40 degrees and a plain sky, Standard view
 transform, exposure set so a flat sunlit surface shows about its own colour. This is a
 judging tool, not the engine: final say is the patch in Studio.
 
@@ -44,7 +48,19 @@ SAMPLES = {
     "wet_sand": ([110, 96, 74], [84, 72, 60]),
     "shore_stone": ([118, 112, 102], [70, 78, 84]),
     "fish_skin": ([92, 120, 88], [214, 156, 62]),
+    "forest_floor": ([92, 72, 48], [70, 60, 44]),
+    "lake_mud": ([70, 62, 46], [84, 72, 60]),
+    "footpath_gravel": ([140, 128, 108], [150, 140, 134]),
+    "shore_sand": ([186, 170, 128], [176, 142, 132]),
+    "deep_bed": ([40, 46, 40], [32, 40, 52]),
+    "bark": ([104, 82, 62], [206, 200, 188]),            # pine brown, birch white
+    "leaf_needle": ([62, 92, 48], [176, 132, 48]),       # summer green, autumn gold
+    "tin_roof": ([150, 152, 150], [128, 58, 48]),        # galvanised, barn red
+    "painted_wood": ([196, 190, 176], [62, 98, 104]),    # off-white, boathouse teal
+    "aluminium": ([200, 204, 208], [96, 112, 92]),       # bare, olive paint worn thin
 }
+# lake water over the beds that are only ever seen through it: (tint, how far the bed lies under)
+UNDER_WATER = {"lake_mud": ([26, 66, 62], 0.8), "deep_bed": ([26, 66, 62], 0.45)}
 ROWS = [
     ("sphere", "color", "sphere, colour map"),
     ("object", "color", "in use, colour map"),
@@ -174,6 +190,9 @@ def blender_main(job_path: str) -> None:
             nt.links.new(mix.outputs[2], bsdf.inputs["Base Color"])
         rough = tex(fam["rough"], True)
         nt.links.new(rough.outputs[0], bsdf.inputs["Roughness"])
+        if fam.get("metal"):
+            metal = tex(fam["metal"], True)
+            nt.links.new(metal.outputs[0], bsdf.inputs["Metallic"])
         nrm = tex(fam["normal"], True)
         nmap = nt.nodes.new("ShaderNodeNormalMap")
         nmap.uv_map = "UVMap"
@@ -189,7 +208,37 @@ def blender_main(job_path: str) -> None:
         bsdf.inputs["Roughness"].default_value = rough
         return mat
 
+    def water_material(rgb, clear):
+        """A stand-in for lake water seen from above: what is under it shows through, tinted
+        and dimmed, with a little sky on top. `clear` is how much of the bed's light gets out."""
+        mat = bpy.data.materials.new("LakeWater")
+        mat.use_nodes = True
+        nt = mat.node_tree
+        nt.nodes.remove(nt.nodes["Principled BSDF"])
+        out_node = nt.nodes["Material Output"]
+        through = nt.nodes.new("ShaderNodeBsdfTransparent")
+        lin = [srgb_to_linear(c) for c in rgb]
+        peak = max(lin)
+        through.inputs["Color"].default_value = tuple(min(1.0, clear * (0.35 + 0.65 * c / peak)) for c in lin) + (1.0,)
+        body = nt.nodes.new("ShaderNodeBsdfDiffuse")
+        body.inputs["Color"].default_value = tuple(lin) + (1.0,)
+        gloss = nt.nodes.new("ShaderNodeBsdfGlossy")
+        gloss.inputs["Roughness"].default_value = 0.08
+        mix1 = nt.nodes.new("ShaderNodeMixShader")
+        mix1.inputs[0].default_value = 0.18
+        nt.links.new(through.outputs[0], mix1.inputs[1])
+        nt.links.new(body.outputs[0], mix1.inputs[2])
+        mix2 = nt.nodes.new("ShaderNodeMixShader")
+        mix2.inputs[0].default_value = 0.10
+        nt.links.new(mix1.outputs[0], mix2.inputs[1])
+        nt.links.new(gloss.outputs[0], mix2.inputs[2])
+        nt.links.new(mix2.outputs[0], out_node.inputs["Surface"])
+        return mat
+
     grey = flat_material("StageGrey", [150, 150, 150])
+    cut_wood = flat_material("CutWood", [186, 160, 118], 0.8)
+    trunk_brown = flat_material("TrunkBrown", [84, 66, 50], 0.9)
+    wall_wood = flat_material("WallWood", [122, 104, 86], 0.85)
     bob_red = flat_material("BobberRed", [222, 44, 34], 0.35)
     bob_white = flat_material("BobberWhite", [245, 245, 240], 0.35)
 
@@ -306,9 +355,103 @@ def blender_main(job_path: str) -> None:
     def build_object(fam, mat, far):
         slug, spt = fam["slug"], fam["studs_per_tile"]
         if fam["kind"] == "terrain":
-            ground("Patch", mat, 140.0 if far else 40.0, spt, 0.35)
+            size = 140.0 if far else 40.0
+            ground("Patch", mat, size, spt, 0.35)
+            if slug in UNDER_WATER:
+                rgb, clear = UNDER_WATER[slug]
+                water = water_material(rgb, clear)
+                if far:                                  # all of it under water, the bobber floats
+                    param_surface("Water", water, lambda u, v: (((u - 0.5) * size, (v - 0.5) * size, 0.9), (u, v)), 2, 2)
+                else:                                    # right half under water, left half dry
+                    param_surface("Water", water, lambda u, v: ((u * size * 0.5, (v - 0.5) * size, 0.9), (u, v)), 2, 2)
             return
         stage()
+        if slug == "bark":
+            def trunk(u, v):                             # grain (map V) runs up the trunk
+                a = u * 2 * math.pi
+                r = 0.95 - 0.15 * v
+                return (-2.6 + r * math.cos(a), 0.8 + r * math.sin(a), v * 8.0), (a * 0.9 / spt, v * 8.0 / spt)
+            param_surface("Trunk", mat, trunk, 16, 6, smooth=True)
+            def log(u, v):                               # a felled log: grain runs along it
+                a = u * 2 * math.pi
+                x = -1.2 + v * 6.0
+                return (x, -1.6 + 0.25 * v + 0.6 * math.cos(a), 0.6 + 0.6 * math.sin(a)), (a * 0.6 / spt, v * 6.0 / spt)
+            param_surface("Log", mat, log, 14, 4, smooth=True)
+            for x in (-1.2, 4.8):
+                def cap(u, v, x=x):
+                    a = u * 2 * math.pi
+                    yy = -1.6 + 0.25 * ((x + 1.2) / 6.0)
+                    return (x, yy + 0.6 * v * math.cos(a), 0.6 + 0.6 * v * math.sin(a)), (u, v)
+                param_surface("LogEnd", cut_wood, cap, 14, 1, smooth=False)
+            return
+        if slug == "leaf_needle":
+            def blob(name, radius, center, squash, seed):
+                bm = bmesh.new()
+                bmesh.ops.create_icosphere(bm, subdivisions=2, radius=1.0)
+                for v in bm.verts:
+                    d = v.co.normalized()
+                    k = 1.0 + 0.2 * noise.noise(d * 1.9 + Vector((seed, seed * 1.7, 0.3)))
+                    v.co = Vector((d.x * radius * k + center[0], d.y * radius * k + center[1],
+                                   d.z * radius * k * squash + center[2]))
+                bm.normal_update()
+                box_uv(bm, spt)
+                return finish(bm, name, mat, False)
+            # a broadleaf tree: three canopy blobs on a trunk
+            box("TreeTrunk", trunk_brown, (0.7, 0.7, 4.0), (-3.2, 0.5, 2.0), 1.0)
+            blob("CanopyA", 2.6, (-3.2, 0.5, 5.6), 0.8, 1.0)
+            blob("CanopyB", 1.9, (-1.5, 0.0, 4.6), 0.8, 2.6)
+            blob("CanopyC", 1.7, (-4.8, 1.0, 4.4), 0.8, 4.2)
+            # a pine: three stacked low-poly cones
+            box("PineTrunk", trunk_brown, (0.5, 0.5, 2.0), (3.2, 1.0, 1.0), 1.0)
+            for k, (r, z0, hgt) in enumerate(((2.3, 1.4, 3.2), (1.8, 3.4, 2.8), (1.2, 5.2, 2.6))):
+                bm = bmesh.new()
+                bmesh.ops.create_cone(bm, cap_ends=True, segments=8, radius1=r, radius2=0.0, depth=hgt)
+                for v in bm.verts:
+                    v.co = Vector((v.co.x + 3.2, v.co.y + 1.0, v.co.z + z0 + hgt * 0.5))
+                bm.normal_update()
+                box_uv(bm, spt)
+                finish(bm, f"Pine{k}", mat, False)
+            # a bush and a clump of reeds (flat blades)
+            blob("Bush", 1.2, (0.6, -2.6, 0.8), 0.7, 6.3)
+            return
+        if slug == "tin_roof":
+            box("Walls", wall_wood, (7.0, 5.0, 3.4), (0.0, 0.0, 1.7), 4.0)
+            for side in (-1.0, 1.0):
+                def slope(u, v, side=side):              # map U along the ridge, V down the slope
+                    x = (u - 0.5) * 8.0
+                    run = v * 3.4
+                    return (x, side * run, 5.2 - run * 0.55), (x / spt, run * 1.14 / spt)
+                param_surface("Roof", mat, slope, 2, 2, smooth=False)
+            for gx in (-3.5, 3.5):
+                param_surface("Gable", wall_wood,
+                              lambda u, v, gx=gx: ((gx, (u - 0.5) * 5.0 * (1.0 - v), 3.4 + v * 1.8), (u, v)),
+                              1, 1, smooth=False)
+            return
+        if slug == "painted_wood":
+            box("Wall", mat, (9.0, 0.5, 5.0), (0.0, 1.0, 2.5), spt)       # boards run up the wall
+            box("Post", wall_wood, (0.4, 0.4, 3.2), (2.2, -2.2, 1.6), 1.0)
+            box("Sign", mat, (3.6, 0.3, 1.6), (2.2, -2.45, 2.9), spt)
+            box("Crate", mat, (1.8, 1.8, 1.8), (-2.6, -1.8, 0.9), spt)
+            return
+        if slug == "aluminium":
+            length, beam, depth = 11.0, 4.2, 1.5
+            def hull(u, v):                              # a flat-bottomed jon boat, bow toward +x
+                rise = max(0.0, (v - 0.62) / 0.38)
+                half = 0.5 * beam * (1.0 - 0.3 * rise * rise)
+                z0 = 0.25 + 1.05 * rise * rise
+                x = (v - 0.5) * length
+                pts = [(-half, depth), (-half * 0.8, z0), (half * 0.8, z0), (half, depth)]
+                t = u * 3.0
+                i = min(int(t), 2)
+                f = t - i
+                y = pts[i][0] + (pts[i + 1][0] - pts[i][0]) * f
+                z = pts[i][1] + (pts[i + 1][1] - pts[i][1]) * f
+                return (x, y, z), (x / spt, u * (beam + 2.0) / spt)
+            param_surface("Hull", mat, hull, 3, 24, smooth=False)
+            box("Transom", mat, (0.12, beam * 0.9, depth - 0.3), (-0.5 * length, 0.0, 0.25 + (depth - 0.3) * 0.5), spt)
+            for bx in (-2.6, 1.2):
+                box("Bench", mat, (1.0, beam * 0.86, 0.12), (bx, 0.0, 1.05), spt)
+            return
         if slug == "weathered_plank":
             box("Deck", mat, (12.0, 6.0, 0.4), (0.0, 0.0, 1.6), spt)
             for sx in (-5.4, 5.4):
@@ -373,10 +516,21 @@ def blender_main(job_path: str) -> None:
                 look((5.5, -11.0, 6.5), (0.0, 0.0, 2.8), 42)
             elif slug == "shore_stone":
                 look((3.0, -9.0, 3.6), (0.4, -0.4, 0.9), 45)
+            elif slug == "bark":
+                look((5.5, -9.5, 4.2), (0.2, -0.4, 2.2), 40)
+            elif slug == "leaf_needle":
+                look((3.0, -16.0, 6.0), (-0.2, 0.0, 3.4), 40)
+            elif slug == "tin_roof":
+                look((8.0, -13.0, 9.0), (0.0, 0.0, 2.6), 40)
+            elif slug == "painted_wood":
+                look((3.5, -10.5, 4.2), (0.0, 0.0, 2.3), 38)
+            elif slug == "aluminium":
+                look((7.5, -11.0, 6.5), (0.0, 0.0, 0.8), 42)
             else:
                 look((1.2, -6.0, 2.4), (0.0, 0.0, 1.6), 55)
         else:  # far: 30 studs, a crop of the screen
-            target = (0.0, 0.0, 0.4 if fam["kind"] == "terrain" else 1.4)
+            tall = {"bark": 3.0, "leaf_needle": 3.4, "tin_roof": 2.6, "painted_wood": 2.3}
+            target = (0.0, 0.0, 0.4 if fam["kind"] == "terrain" else tall.get(slug, 1.4))
             look((8.0, -28.0, 7.0), target, 85)
 
     def clear():
@@ -402,6 +556,8 @@ def blender_main(job_path: str) -> None:
                 build_object(fam, mat, kind == "far")
                 if kind == "far":
                     z = 0.55 if fam["kind"] == "terrain" else (2.1 if fam["slug"] == "weathered_plank" else 0.3)
+                    if fam["slug"] in UNDER_WATER:
+                        z = 0.9
                     pos = (0.0, 0.0, z) if fam["kind"] == "terrain" or fam["slug"] == "weathered_plank" else (-3.6, -3.4, 0.3)
                     bobber(pos)
             camera_for(fam, kind)
@@ -426,22 +582,30 @@ def driver_main() -> None:
         from PIL import Image, ImageDraw, ImageFont
 
     ap = argparse.ArgumentParser(description="Render the material sheet.")
-    ap.add_argument("--out", default=str(REPO / "art" / "textures" / "sheet-n0.png"))
+    ap.add_argument("--sheet", default="n0", help="which sheet: families whose `sheet` field says so (n0, n1)")
+    ap.add_argument("--out", help="default art/textures/sheet-<sheet>.png")
     ap.add_argument("--only", nargs="*", help="only these families")
     ap.add_argument("--dir", action="append", default=[], metavar="FAMILY=FOLDER",
                     help="take a family's maps from another folder (a candidate run)")
     ap.add_argument("--cell", type=int, default=384)
     ap.add_argument("--samples", type=int, default=64)
-    ap.add_argument("--title", default="Material families, N0")
+    ap.add_argument("--title", help="default: Material families, <SHEET>")
     ap.add_argument("--compose-only", action="store_true", help="reuse the cells already rendered")
     args = ap.parse_args()
 
     with open(TABLE, "r", encoding="utf-8") as f:
         table = json.load(f)
     overrides = dict(d.split("=", 1) for d in args.dir)
+    if not args.out:
+        args.out = str(REPO / "art" / "textures" / f"sheet-{args.sheet}.png")
+    if not args.title:
+        args.title = f"Material families, {args.sheet.upper()}"
     fams = []
     for slug, cfg in table["families"].items():
-        if args.only and slug not in args.only:
+        if args.only:
+            if slug not in args.only:
+                continue
+        elif cfg.get("sheet", "n0") != args.sheet:
             continue
         folder = Path(overrides.get(slug, REPO / "art" / "textures" / slug))
         if not folder.is_absolute():
@@ -458,6 +622,7 @@ def driver_main() -> None:
             "sample_a": a, "sample_b": b,
             "color": str(folder / f"{slug}_color.png"), "neutral": str(folder / f"{slug}_neutral.png"),
             "normal": str(folder / f"{slug}_normal.png"), "rough": str(folder / f"{slug}_rough.png"),
+            "metal": str(folder / f"{slug}_metal.png") if (folder / f"{slug}_metal.png").exists() else None,
         })
 
     out = Path(args.out).resolve()

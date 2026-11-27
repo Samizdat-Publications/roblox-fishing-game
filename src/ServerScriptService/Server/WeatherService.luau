@@ -58,10 +58,41 @@ function WeatherService.force(kind: string, wind: string?)
 	publish(true)
 end
 
+-- Wind (leg 3, N1, Config.WIND_ON): workspace.GlobalWind from the weather showing now
+-- (Weather.windFor), eased over Weather.WIND_BLEND_SECONDS. Set here on the server so it
+-- replicates and every player sees the same grass, clouds and particles move.
+local WIND_EVERY = 0.2 -- real seconds between GlobalWind writes while it changes
+
+local function startWind()
+	local now = WeatherService.now()
+	local first = Weather.windFor(now.weather, now.wind)
+	local wind: Weather.WindBlend = { from = first, to = first, amount = 1 }
+	workspace.GlobalWind = first
+	local since = 0
+	RunService.Heartbeat:Connect(function(dt)
+		since += dt
+		if since < WIND_EVERY then
+			return
+		end
+		local n = WeatherService.now()
+		local target = Weather.windFor(n.weather, n.wind)
+		if wind.amount >= 1 and target == wind.to then
+			since = 0
+			return -- settled: nothing to write
+		end
+		local v = Weather.stepWind(wind, target, since)
+		since = 0
+		workspace.GlobalWind = v
+	end)
+end
+
 function WeatherService.start()
 	local lastClock = Lighting.ClockTime
 	local timer = 0
 	publish(false)
+	if Config.WIND_ON then
+		startWind()
+	end
 	-- Studio-only test hook: set workspace attribute DebugWeather to a kind id to force it
 	-- (scripts run from the Studio tools live in their own VM and can't call force directly).
 	if RunService:IsStudio() then

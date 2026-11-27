@@ -39,6 +39,22 @@ MaterialKit.FAMILIES = {
 	{ name = "ShoreStone", base = Enum.Material.Slate, color = 89874330433856, normal = 111500464538293, rough = 80673120127218, studs = 8, pattern = Enum.MaterialPattern.Organic },
 	{ name = "ShoreStoneGround", base = Enum.Material.Rock, color = 77321670500551, normal = 111500464538293, rough = 80673120127218, studs = 12, pattern = Enum.MaterialPattern.Organic },
 	{ name = "FishSkin", base = Enum.Material.SmoothPlastic, color = 71877620575284, normal = 81839350043697, rough = 86528045576678, studs = 1 },
+	-- N1 (uploaded 11/27/2026): five ground families (palette colour maps) and five prop families
+	-- (neutral maps). Aluminium's metalness map is not uploaded yet (N4, the boats).
+	{ name = "ForestFloor", base = Enum.Material.LeafyGrass, color = 95357700780503, normal = 95747081334473, rough = 82504253799149, studs = 16, pattern = Enum.MaterialPattern.Organic },
+	{ name = "LakeMud", base = Enum.Material.Mud, color = 99107177716357, normal = 98896444647625, rough = 108288187418156, studs = 20, pattern = Enum.MaterialPattern.Organic },
+	{ name = "FootpathGravel", base = Enum.Material.Ground, color = 115571706147624, normal = 102838146211477, rough = 99044862705199, studs = 12, pattern = Enum.MaterialPattern.Organic },
+	-- The mown lawns by the stands: the meadow maps on a LeafyGrass base, which grows no blades
+	-- (terrain Grass grows knee-high blades that hide the stand counters at eye height).
+	{ name = "MeadowLawn", base = Enum.Material.LeafyGrass, color = 101241396464400, normal = 99613738695349, rough = 138017832448140, studs = 16, pattern = Enum.MaterialPattern.Organic },
+	{ name = "ShoreSand", base = Enum.Material.Sand, color = 108907089517955, normal = 86859007204320, rough = 132693441658407, studs = 16, pattern = Enum.MaterialPattern.Organic },
+	{ name = "DeepBed", base = Enum.Material.Basalt, color = 110490221392736, normal = 75840132113757, rough = 135764485636397, studs = 24, pattern = Enum.MaterialPattern.Organic },
+	{ name = "Bark", base = Enum.Material.Wood, color = 131285884539566, normal = 75468619984383, rough = 116447292242793, studs = 4 },
+	{ name = "LeafNeedle", base = Enum.Material.LeafyGrass, color = 77632184387333, normal = 106977982508439, rough = 101588155137944, studs = 8 },
+	{ name = "TinRoof", base = Enum.Material.CorrodedMetal, color = 130249019931486, normal = 114659436037341, rough = 96342230031415, studs = 4 },
+	{ name = "TinRoofRust", base = Enum.Material.CorrodedMetal, color = 123504692013472, normal = 114659436037341, rough = 96342230031415, studs = 4 },
+	{ name = "PaintedWood", base = Enum.Material.WoodPlanks, color = 125197895604357, normal = 138548088880298, rough = 114031226403634, studs = 5 },
+	{ name = "Aluminium", base = Enum.Material.Metal, color = 116945538976167, normal = 140540589693552, rough = 130928792762580, studs = 4 },
 } :: { Family }
 
 -- The wet band: the slot the waterline sand is repainted with (MaterialKit.paintWetBand).
@@ -88,9 +104,113 @@ function MaterialKit.dress(root: Instance, rules: { Rule }): number
 	return n
 end
 
+-- N1, the whole home lake: the same rules spread from the corner, plus the paths (gravel on the
+-- old sand strips until the paths are re-laid as wandering terrain) and the shore lamp posts.
+MaterialKit.HOME_LAKE = {
+	{ path = "Lake.BoatSlips.", material = Enum.Material.Wood, variant = "WeatheredPlank", color = Color3.fromRGB(150, 132, 112) },
+	{ path = "Lake.Lamps.Post", material = Enum.Material.Wood, variant = "WeatheredPlank", color = Color3.fromRGB(120, 104, 88) },
+	{ path = "Lake.Scenery.PondStones.", material = Enum.Material.Slate, variant = "ShoreStone" },
+	{ path = "Lake.Path", from = Enum.Material.Sand, material = Enum.Material.Ground, variant = "FootpathGravel", color = Color3.new(1, 1, 1) },
+	{ path = "Lake.CedarCreek.PathToCreek", material = Enum.Material.Ground, variant = "FootpathGravel", color = Color3.new(1, 1, 1) },
+	{ path = "Lake.CedarCreek.BankPath", material = Enum.Material.Ground, variant = "FootpathGravel", color = Color3.new(1, 1, 1) },
+} :: { Rule }
+
+-- Layer B on the source models in ServerStorage.Art (WorldBuilder.dress copies them into the
+-- world): model name -> variant. Single-family models only; mixed ones (pines with their
+-- canopies, the leafy tree) are replaced by the split bank kit instead.
+MaterialKit.ART_VARIANTS = {
+	Log1 = "Bark",
+	Log2 = "Bark",
+	Log3 = "Bark",
+	RockSmall = "ShoreStone",
+	RockMedium = "ShoreStone",
+	RockLarge = "ShoreStone",
+	PondRim = "ShoreStone",
+	Reeds = "LeafNeedle",
+	LilyPads = "LeafNeedle",
+} :: { [string]: string }
+
+function MaterialKit.skinArt(): number
+	local art = game:GetService("ServerStorage"):FindFirstChild("Art")
+	if not art then
+		return 0
+	end
+	local n = 0
+	for name, variant in MaterialKit.ART_VARIANTS do
+		local m = art:FindFirstChild(name)
+		local f = MaterialKit.byName(variant)
+		if m and f and MaterialService:FindFirstChild(variant) then
+			for _, d in m:GetDescendants() do
+				if d:IsA("MeshPart") then
+					d.Material = f.base
+					d.MaterialVariant = variant
+					n += 1
+				end
+			end
+		end
+	end
+	return n
+end
+
+-- The lawns (N1): inside the boxes of the old Ground* lawn parts (WaterLook.lawnsToTerrain made
+-- them terrain), meadow voxels (slot 2) become the bladeless lawn slot. Returns cells changed.
+MaterialKit.LAWN_SLOT = 26
+
+function MaterialKit.paintLawns(lake: Instance): number
+	local t = workspace.Terrain
+	local n = 0
+	for _, p in lake:GetChildren() do
+		if p:IsA("BasePart") and string.match(p.Name, "^Ground") then
+			local half = p.Size / 2
+			local lo = p.Position - Vector3.new(half.X, 0, half.Z)
+			local hi = p.Position + Vector3.new(half.X, 0, half.Z)
+			local region = Region3.new(Vector3.new(lo.X, -12, lo.Z), Vector3.new(hi.X, 8, hi.Z)):ExpandToGrid(4)
+			local ch = t:ReadVoxelChannels(region, 4, { "SolidMaterialIndex" })
+			local idx = ch.SolidMaterialIndex
+			local size = ch.Size
+			local changed = 0
+			for x = 1, size.X do
+				for y = 1, size.Y do
+					for z = 1, size.Z do
+						if idx[x][y][z] == 2 then
+							idx[x][y][z] = MaterialKit.LAWN_SLOT
+							changed += 1
+						end
+					end
+				end
+			end
+			if changed > 0 then
+				t:WriteVoxelChannels(region, 4, { SolidMaterialIndex = idx })
+				n += changed
+			end
+		end
+	end
+	return n
+end
+
 -- Fish skin (N0 tries it on two; N1 does all 26): the fish models in ServerStorage.Art keep their
 -- vertex colours and get the FishSkin variant (neutral scales, low roughness, a wet sheen).
 MaterialKit.FISH_SKINNED = { "Bluegill", "LargemouthBass" }
+
+-- Every species with a model (N1): the fish ids in FishData and BigLakeFishData.
+function MaterialKit.allFish(): { string }
+	local shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+	local out = {}
+	for _, modName in { "FishData", "BigLakeFishData" } do
+		local mod = shared:FindFirstChild(modName)
+		local ok, data = pcall(require, mod)
+		if ok and type(data) == "table" then
+			local list = data.LIST or data.list or data.FISH or data
+			for k, v in list do
+				local id = if type(v) == "table" and v.id then v.id elseif type(k) == "string" then k else nil
+				if type(id) == "string" then
+					table.insert(out, id)
+				end
+			end
+		end
+	end
+	return out
+end
 
 function MaterialKit.skinFish(names: { string }?): number
 	local art = game:GetService("ServerStorage"):FindFirstChild("Art")
@@ -129,12 +249,18 @@ function MaterialKit.undress(root: Instance): number
 	return n
 end
 
--- Repaints terrain sand that sits at the waterline (cells whose centre is within `band` studs of
--- the water surface at y = `waterY`) with the wet-sand slot, inside the box lo..hi. Runs in chunks.
-function MaterialKit.paintWetBand(lo: Vector3, hi: Vector3, waterY: number?, band: number?): number
+-- Repaints terrain sand that sits at the waterline with the wet-sand slot, inside the box lo..hi
+-- (y is ignored), for water whose surface is at y = `waterY` (0). Two modes:
+--  * band only (the N0 proof corner): cells whose centre is within `band` studs (2.5) of the surface;
+--  * with `below` (N1, the whole lake): every cell that reaches from `below` studs under the
+--    surface to `band` studs over it, so the submerged sand shelf and the strip just above the
+--    waterline are both wet sand.
+-- Returns how many voxels changed.
+function MaterialKit.paintWetBand(lo: Vector3, hi: Vector3, waterY: number?, band: number?, below: number?): number
 	local t = workspace.Terrain
 	local wy, b = waterY or 0, band or 2.5
-	local region = Region3.new(Vector3.new(lo.X, wy - 8, lo.Z), Vector3.new(hi.X, wy + 8, hi.Z)):ExpandToGrid(4)
+	local down = math.max(below or 0, 8)
+	local region = Region3.new(Vector3.new(lo.X, wy - down - 4, lo.Z), Vector3.new(hi.X, wy + math.max(b, 4) + 4, hi.Z)):ExpandToGrid(4)
 	local ch = t:ReadVoxelChannels(region, 4, { "SolidMaterialIndex", "SolidOccupancy" })
 	local size = ch.Size
 	local idx = ch.SolidMaterialIndex
@@ -142,8 +268,9 @@ function MaterialKit.paintWetBand(lo: Vector3, hi: Vector3, waterY: number?, ban
 	local n = 0
 	for x = 1, size.X do
 		for y = 1, size.Y do
-			local cy = y0 + (y - 0.5) * 4
-			if math.abs(cy - wy) <= b then
+			local cellLo = y0 + (y - 1) * 4
+			local wet = if below then MaterialKit.wetCell(cellLo, wy, b, below) else math.abs(cellLo + 2 - wy) <= b
+			if wet then
 				for z = 1, size.Z do
 					if idx[x][y][z] == 6 and ch.SolidOccupancy[x][y][z] > 0 then
 						idx[x][y][z] = MaterialKit.WET_SLOT
@@ -159,6 +286,24 @@ function MaterialKit.paintWetBand(lo: Vector3, hi: Vector3, waterY: number?, ban
 	return n
 end
 
+-- True when a 4 stud cell starting at `cellLo` reaches into the wet band: from `below` studs under
+-- the surface `wy` to `band` studs over it.
+function MaterialKit.wetCell(cellLo: number, wy: number, band: number, below: number): boolean
+	return cellLo < wy + band and cellLo + 4 > wy - below
+end
+
+-- The home lake's wet band (N1): its water box (Shore's x -110..110, z -80..80) plus a voxel past
+-- the drawn waterline, which wanders up to 1.8 studs outside it (ShoreEdge.OUT_MAX). Band 6 under
+-- the water, 1.5 over it. Run after WaterLook.lawnsToTerrain and again after any WaterLook.apply.
+MaterialKit.HOME_LAKE_LO = Vector3.new(-124, 0, -94)
+MaterialKit.HOME_LAKE_HI = Vector3.new(124, 0, 94)
+MaterialKit.WET_BELOW = 6
+MaterialKit.WET_ABOVE = 1.5
+
+function MaterialKit.wetBandHomeLake(): number
+	return MaterialKit.paintWetBand(MaterialKit.HOME_LAKE_LO, MaterialKit.HOME_LAKE_HI, 0, MaterialKit.WET_ABOVE, MaterialKit.WET_BELOW)
+end
+
 -- Stock material -> our variant, for every part and voxel of it with no variant of its own.
 MaterialKit.OVERRIDES = {} :: { [Enum.Material]: string }
 
@@ -167,6 +312,15 @@ MaterialKit.OVERRIDES = {} :: { [Enum.Material]: string }
 MaterialKit.SLOTS = {
 	{ slot = 2, base = Enum.Material.Grass, variant = "MeadowGrass", tint = Color3.new(1, 1, 1) },
 	{ slot = 23, base = Enum.Material.Sand, variant = "WetSand", tint = Color3.new(1, 1, 1) },
+	-- N1: dry sand above the water is ours (the wet band and the shelf are slot 23), and the
+	-- stock mud of the lake beds is our lake mud.
+	{ slot = 6, base = Enum.Material.Sand, variant = "ShoreSand", tint = Color3.new(1, 1, 1) },
+	{ slot = 12, base = Enum.Material.Mud, variant = "LakeMud", tint = Color3.new(1, 1, 1) },
+	-- N1 dress pass (BankDress paints these by slot index): the wandering footpaths and the
+	-- forest floor under the treeline.
+	{ slot = 24, base = Enum.Material.Ground, variant = "FootpathGravel", tint = Color3.new(1, 1, 1) },
+	{ slot = 25, base = Enum.Material.LeafyGrass, variant = "ForestFloor", tint = Color3.new(1, 1, 1) },
+	{ slot = 26, base = Enum.Material.LeafyGrass, variant = "MeadowLawn", tint = Color3.new(1, 1, 1) },
 } :: { { slot: number, base: Enum.Material, variant: string, tint: Color3 } }
 
 local function asset(id: number?): string

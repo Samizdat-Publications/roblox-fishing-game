@@ -207,6 +207,194 @@
       ]
     }
   },
+  "BirchLean1_bark": {
+    "name": "BirchLean1_bark",
+    "studs": [
+      15.59,
+      17.72,
+      8.58
+    ],
+    "triangles": 500,
+    "parts": 1,
+    "replaces": "Nothing yet (LeafyTree stays for inland spots)",
+    "notes": "Bank kit, Layer B, bark family: MaterialVariant bark with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/BirchLean1_bark.glb. Pivot at the bottom centre; the ground line is 1.35 studs above it, so place the pivot at ground (or water) height minus 1.35. It stands 16.4 studs above the ground line. The box is centred on the foot of the trunk and both meshes share it (two corner specks), so both go at the same CFrame. Foot on the bank 1 to 3 studs back from the water. It leans toward Roblox -X: turn that at the water.",
+    "model": "BirchLean1",
+    "family": "bark",
+    "variant": "bark",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 1.35,
+    "height_above_ground": 16.36,
+    "true_studs": [
+      8.93,
+      17.72,
+      7.97
+    ],
+    "model_triangles": 1202,
+    "palette_seen_rgb": {
+      "birch_white": [
+        204,
+        200,
+        190
+      ],
+      "birch_shade": [
+        180,
+        176,
+        166
+      ],
+      "birch_mark": [
+        54,
+        50,
+        46
+      ],
+      "birch_foot": [
+        112,
+        104,
+        94
+      ],
+      "birch_twig": [
+        104,
+        88,
+        74
+      ]
+    }
+  },
+  "BirchLean1_leaf": {
+    "name": "BirchLean1_leaf",
+    "studs": [
+      15.59,
+      17.72,
+      8.58
+    ],
+    "triangles": 702,
+    "parts": 1,
+    "replaces": "Nothing yet (LeafyTree stays for inland spots)",
+    "notes": "Bank kit, Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/BirchLean1_leaf.glb. Pivot at the bottom centre; the ground line is 1.35 studs above it, so place the pivot at ground (or water) height minus 1.35. It stands 16.4 studs above the ground line. The box is centred on the foot of the trunk and both meshes share it (two corner specks), so both go at the same CFrame. Foot on the bank 1 to 3 studs back from the water. It leans toward Roblox -X: turn that at the water.",
+    "model": "BirchLean1",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 1.35,
+    "height_above_ground": 16.36,
+    "true_studs": [
+      8.93,
+      17.72,
+      7.97
+    ],
+    "model_triangles": 1202,
+    "palette_seen_rgb": {
+      "birch_leaf": [
+        110,
+        140,
+        70
+      ],
+      "birch_leaf_deep": [
+        88,
+        118,
+        58
+      ],
+      "birch_leaf_sun": [
+        124,
+        152,
+        78
+      ]
+    }
+  },
+  "BirchLean2_bark": {
+    "name": "BirchLean2_bark",
+    "studs": [
+      12.59,
+      16.08,
+      11.02
+    ],
+    "triangles": 524,
+    "parts": 1,
+    "replaces": "Nothing yet (LeafyTree stays for inland spots)",
+    "notes": "Bank kit, Layer B, bark family: MaterialVariant bark with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/BirchLean2_bark.glb. Pivot at the bottom centre; the ground line is 1.24 studs above it, so place the pivot at ground (or water) height minus 1.24. It stands 14.8 studs above the ground line. The box is centred on the foot of the trunk and both meshes share it (two corner specks), so both go at the same CFrame. A twin-stem birch for the bank, as BirchLean1. Leans toward Roblox -X.",
+    "model": "BirchLean2",
+    "family": "bark",
+    "variant": "bark",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 1.24,
+    "height_above_ground": 14.84,
+    "true_studs": [
+      8.14,
+      16.08,
+      10.55
+    ],
+    "model_triangles": 1306,
+    "palette_seen_rgb": {
+      "birch_white": [
+        204,
+        200,
+        190
+      ],
+      "birch_shade": [
+        180,
+        176,
+        166
+      ],
+      "birch_mark": [
+        54,
+        50,
+        46
+      ],
+      "birch_foot": [
+        112,
+        104,
+        94
+      ],
+      "birch_twig": [
+        104,
+        88,
+        74
+      ]
+    }
+  },
+  "BirchLean2_leaf": {
+    "name": "BirchLean2_leaf",
+    "studs": [
+      12.59,
+      16.08,
+      11.02
+    ],
+    "triangles": 782,
+    "parts": 1,
+    "replaces": "Nothing yet (LeafyTree stays for inland spots)",
+    "notes": "Bank kit, Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/BirchLean2_leaf.glb. Pivot at the bottom centre; the ground line is 1.24 studs above it, so place the pivot at ground (or water) height minus 1.24. It stands 14.8 studs above the ground line. The box is centred on the foot of the trunk and both meshes share it (two corner specks), so both go at the same CFrame. A twin-stem birch for the bank, as BirchLean1. Leans toward Roblox -X.",
+    "model": "BirchLean2",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 1.24,
+    "height_above_ground": 14.84,
+    "true_studs": [
+      8.14,
+      16.08,
+      10.55
+    ],
+    "model_triangles": 1306,
+    "palette_seen_rgb": {
+      "birch_leaf": [
+        110,
+        140,
+        70
+      ],
+      "birch_leaf_deep": [
+        88,
+        118,
+        58
+      ],
+      "birch_leaf_sun": [
+        124,
+        152,
+        78
+      ]
+    }
+  },
   "BlackCrappie": {
     "name": "BlackCrappie",
     "studs": [
@@ -302,6 +490,90 @@
     "parts": 13,
     "replaces": "FishShadows blobs and the catch held on the line (FishingService.showCatch)",
     "notes": "Built at the species' average length, 57.5 cm = 4.79 studs (1 stud = 12 cm). Scale by caught cm / average cm. Head along +X."
+  },
+  "Bush1_leaf": {
+    "name": "Bush1_leaf",
+    "studs": [
+      5.02,
+      3.19,
+      3.68
+    ],
+    "triangles": 864,
+    "parts": 1,
+    "replaces": "Nothing yet: undergrowth for the treeline",
+    "notes": "Bank kit, Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/Bush1_leaf.glb. Pivot at the bottom centre; the ground line is 0.13 studs above it, so place the pivot at ground (or water) height minus 0.13. It stands 3.1 studs above the ground line. On land at the feet of the treeline and between the trees.",
+    "model": "Bush1",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.13,
+    "height_above_ground": 3.06,
+    "true_studs": [
+      5.02,
+      3.19,
+      3.68
+    ],
+    "model_triangles": 864,
+    "palette_seen_rgb": {
+      "bush": [
+        78,
+        108,
+        58
+      ],
+      "bush_sun": [
+        98,
+        126,
+        64
+      ],
+      "bush_deep": [
+        58,
+        84,
+        48
+      ]
+    }
+  },
+  "Bush2_leaf": {
+    "name": "Bush2_leaf",
+    "studs": [
+      5.53,
+      2.88,
+      3.65
+    ],
+    "triangles": 916,
+    "parts": 1,
+    "replaces": "Nothing yet: undergrowth for the treeline",
+    "notes": "Bank kit, Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/Bush2_leaf.glb. Pivot at the bottom centre; the ground line is 0.17 studs above it, so place the pivot at ground (or water) height minus 0.17. It stands 2.7 studs above the ground line. On land, mixed with Bush1.",
+    "model": "Bush2",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.17,
+    "height_above_ground": 2.71,
+    "true_studs": [
+      5.53,
+      2.88,
+      3.65
+    ],
+    "model_triangles": 916,
+    "palette_seen_rgb": {
+      "bush": [
+        78,
+        108,
+        58
+      ],
+      "bush_sun": [
+        98,
+        126,
+        64
+      ],
+      "bush_deep": [
+        58,
+        84,
+        48
+      ]
+    }
   },
   "ChannelCatfish": {
     "name": "ChannelCatfish",
@@ -400,6 +672,226 @@
       ]
     },
     "glb_bytes": 4158488
+  },
+  "DriftwoodBranch_bark": {
+    "name": "DriftwoodBranch_bark",
+    "studs": [
+      8.88,
+      3.29,
+      4.83
+    ],
+    "triangles": 324,
+    "parts": 1,
+    "replaces": "Nothing yet: new dressing for the home lake bank",
+    "notes": "Bank kit, Layer B, bark family: MaterialVariant bark with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/DriftwoodBranch_bark.glb. Pivot at the bottom centre; the ground line is 0.12 studs above it, so place the pivot at ground (or water) height minus 0.12. It stands 3.2 studs above the ground line. On the sand or half in the shallows, any turn. Lies along X.",
+    "model": "DriftwoodBranch",
+    "family": "bark",
+    "variant": "bark",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.12,
+    "height_above_ground": 3.17,
+    "true_studs": [
+      8.88,
+      3.29,
+      4.83
+    ],
+    "model_triangles": 324,
+    "palette_seen_rgb": {
+      "drift_light": [
+        170,
+        162,
+        150
+      ],
+      "drift_dark": [
+        140,
+        130,
+        118
+      ],
+      "drift_end": [
+        184,
+        174,
+        156
+      ]
+    }
+  },
+  "DriftwoodLog_bark": {
+    "name": "DriftwoodLog_bark",
+    "studs": [
+      5.63,
+      2.14,
+      1.46
+    ],
+    "triangles": 216,
+    "parts": 1,
+    "replaces": "Nothing yet: new dressing for the home lake bank",
+    "notes": "Bank kit, Layer B, bark family: MaterialVariant bark with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/DriftwoodLog_bark.glb. Pivot at the bottom centre; the ground line is 0.28 studs above it, so place the pivot at ground (or water) height minus 0.28. It stands 1.9 studs above the ground line. On the sand, or at the waterline with one end in the water. Lies along X.",
+    "model": "DriftwoodLog",
+    "family": "bark",
+    "variant": "bark",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.28,
+    "height_above_ground": 1.86,
+    "true_studs": [
+      5.63,
+      2.14,
+      1.46
+    ],
+    "model_triangles": 216,
+    "palette_seen_rgb": {
+      "drift_light": [
+        170,
+        162,
+        150
+      ],
+      "drift_dark": [
+        140,
+        130,
+        118
+      ],
+      "drift_crack": [
+        106,
+        98,
+        88
+      ],
+      "drift_end": [
+        184,
+        174,
+        156
+      ]
+    }
+  },
+  "DriftwoodStump_bark": {
+    "name": "DriftwoodStump_bark",
+    "studs": [
+      4.31,
+      3.17,
+      4.34
+    ],
+    "triangles": 514,
+    "parts": 1,
+    "replaces": "Nothing yet: new dressing for the home lake bank",
+    "notes": "Bank kit, Layer B, bark family: MaterialVariant bark with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/DriftwoodStump_bark.glb. Pivot at the bottom centre; the ground line is 0.44 studs above it, so place the pivot at ground (or water) height minus 0.44. It stands 2.7 studs above the ground line. On the bank or the wet band, roots on the ground.",
+    "model": "DriftwoodStump",
+    "family": "bark",
+    "variant": "bark",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.44,
+    "height_above_ground": 2.73,
+    "true_studs": [
+      4.31,
+      3.17,
+      4.34
+    ],
+    "model_triangles": 514,
+    "palette_seen_rgb": {
+      "drift_light": [
+        170,
+        162,
+        150
+      ],
+      "drift_dark": [
+        140,
+        130,
+        118
+      ],
+      "drift_crack": [
+        106,
+        98,
+        88
+      ],
+      "drift_end": [
+        184,
+        174,
+        156
+      ]
+    }
+  },
+  "Fern1_leaf": {
+    "name": "Fern1_leaf",
+    "studs": [
+      3.14,
+      1.51,
+      3.52
+    ],
+    "triangles": 492,
+    "parts": 1,
+    "replaces": "Nothing yet: undergrowth for the treeline",
+    "notes": "Bank kit, Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/Fern1_leaf.glb. Pivot at the bottom centre; the ground line is 0.2 studs above it, so place the pivot at ground (or water) height minus 0.2. It stands 1.3 studs above the ground line. On land under the trees and along the path, in groups of two to four.",
+    "model": "Fern1",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.2,
+    "height_above_ground": 1.31,
+    "true_studs": [
+      3.14,
+      1.51,
+      3.52
+    ],
+    "model_triangles": 492,
+    "palette_seen_rgb": {
+      "fern": [
+        84,
+        118,
+        56
+      ],
+      "fern_tip": [
+        112,
+        140,
+        68
+      ],
+      "fern_deep": [
+        62,
+        90,
+        46
+      ]
+    }
+  },
+  "Fern2_leaf": {
+    "name": "Fern2_leaf",
+    "studs": [
+      3.18,
+      1.73,
+      3.13
+    ],
+    "triangles": 372,
+    "parts": 1,
+    "replaces": "Nothing yet: undergrowth for the treeline",
+    "notes": "Bank kit, Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/Fern2_leaf.glb. Pivot at the bottom centre; the ground line is 0.2 studs above it, so place the pivot at ground (or water) height minus 0.2. It stands 1.5 studs above the ground line. On land, mixed with Fern1.",
+    "model": "Fern2",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.2,
+    "height_above_ground": 1.53,
+    "true_studs": [
+      3.18,
+      1.73,
+      3.13
+    ],
+    "model_triangles": 372,
+    "palette_seen_rgb": {
+      "fern": [
+        84,
+        118,
+        56
+      ],
+      "fern_tip": [
+        112,
+        140,
+        68
+      ],
+      "fern_deep": [
+        62,
+        90,
+        46
+      ]
+    }
   },
   "FiberglassRod": {
     "name": "FiberglassRod",
@@ -809,6 +1301,120 @@
     "replaces": "FishShadows blobs and the catch held on the line (FishingService.showCatch)",
     "notes": "Built at the species' average length, 35.0 cm = 2.92 studs (1 stud = 12 cm). Scale by caught cm / average cm. Head along +X."
   },
+  "ReedClump1_leaf": {
+    "name": "ReedClump1_leaf",
+    "studs": [
+      3.94,
+      7.34,
+      3.2
+    ],
+    "triangles": 856,
+    "parts": 1,
+    "replaces": "Reeds (the stick reeds over the weed bed)",
+    "notes": "Bank kit, Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/ReedClump1_leaf.glb. Pivot at the bottom centre; the ground line is 1.01 studs above it, so place the pivot at ground (or water) height minus 1.01. It stands 6.3 studs above the ground line. IN THE WATER: the shallows and the weed bed. The stems reach 1 stud under the surface.",
+    "model": "ReedClump1",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 1.01,
+    "height_above_ground": 6.33,
+    "true_studs": [
+      3.94,
+      7.34,
+      3.2
+    ],
+    "model_triangles": 856,
+    "palette_seen_rgb": {
+      "reed": [
+        110,
+        120,
+        60
+      ],
+      "reed_tip": [
+        140,
+        130,
+        80
+      ],
+      "reed_base": [
+        84,
+        96,
+        52
+      ],
+      "rush": [
+        92,
+        110,
+        58
+      ],
+      "cattail_head": [
+        96,
+        64,
+        40
+      ],
+      "cattail_head_dark": [
+        70,
+        46,
+        30
+      ]
+    }
+  },
+  "ReedClump2_leaf": {
+    "name": "ReedClump2_leaf",
+    "studs": [
+      3.76,
+      7.18,
+      3.73
+    ],
+    "triangles": 928,
+    "parts": 1,
+    "replaces": "Reeds (the stick reeds over the weed bed)",
+    "notes": "Bank kit, Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/ReedClump2_leaf.glb. Pivot at the bottom centre; the ground line is 1.01 studs above it, so place the pivot at ground (or water) height minus 1.01. It stands 6.2 studs above the ground line. IN THE WATER, mixed with ReedClump1; also right at the waterline.",
+    "model": "ReedClump2",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 1.01,
+    "height_above_ground": 6.17,
+    "true_studs": [
+      3.76,
+      7.18,
+      3.73
+    ],
+    "model_triangles": 928,
+    "palette_seen_rgb": {
+      "reed": [
+        110,
+        120,
+        60
+      ],
+      "reed_tip": [
+        140,
+        130,
+        80
+      ],
+      "reed_base": [
+        84,
+        96,
+        52
+      ],
+      "rush": [
+        92,
+        110,
+        58
+      ],
+      "cattail_head": [
+        96,
+        64,
+        40
+      ],
+      "cattail_head_dark": [
+        70,
+        46,
+        30
+      ]
+    }
+  },
   "Reeds": {
     "name": "Reeds",
     "studs": [
@@ -868,6 +1474,278 @@
     "parts": 1,
     "replaces": "Cedar Creek Boulder1-5 and Pebble1-14 (pick the size that fits)",
     "notes": "About 1.6 studs across."
+  },
+  "ShorePine1_bark": {
+    "name": "ShorePine1_bark",
+    "studs": [
+      12.23,
+      25.31,
+      11.66
+    ],
+    "triangles": 262,
+    "parts": 1,
+    "replaces": "PineTall on the lake's far shore (the creek keeps PineTall and PineShort for now)",
+    "notes": "Bank kit, Layer B, bark family: MaterialVariant bark with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/ShorePine1_bark.glb. Pivot at the bottom centre; the ground line is 1.01 studs above it, so place the pivot at ground (or water) height minus 1.01. It stands 24.3 studs above the ground line. The box is centred on the foot of the trunk and both meshes share it (two corner specks), so both go at the same CFrame. The treeline: on land, 8 studs or more back from the water. Any turn, scale 0.8 to 1.2.",
+    "model": "ShorePine1",
+    "family": "bark",
+    "variant": "bark",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 1.01,
+    "height_above_ground": 24.3,
+    "true_studs": [
+      11.44,
+      25.31,
+      10.56
+    ],
+    "model_triangles": 588,
+    "palette_seen_rgb": {
+      "pine_bark": [
+        98,
+        80,
+        64
+      ],
+      "pine_bark_dark": [
+        76,
+        63,
+        52
+      ],
+      "pine_bark_high": [
+        120,
+        92,
+        70
+      ]
+    }
+  },
+  "ShorePine1_leaf": {
+    "name": "ShorePine1_leaf",
+    "studs": [
+      12.23,
+      25.31,
+      11.66
+    ],
+    "triangles": 326,
+    "parts": 1,
+    "replaces": "PineTall on the lake's far shore (the creek keeps PineTall and PineShort for now)",
+    "notes": "Bank kit, Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/ShorePine1_leaf.glb. Pivot at the bottom centre; the ground line is 1.01 studs above it, so place the pivot at ground (or water) height minus 1.01. It stands 24.3 studs above the ground line. The box is centred on the foot of the trunk and both meshes share it (two corner specks), so both go at the same CFrame. The treeline: on land, 8 studs or more back from the water. Any turn, scale 0.8 to 1.2.",
+    "model": "ShorePine1",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 1.01,
+    "height_above_ground": 24.3,
+    "true_studs": [
+      11.44,
+      25.31,
+      10.56
+    ],
+    "model_triangles": 588,
+    "palette_seen_rgb": {
+      "pine_needle": [
+        52,
+        84,
+        66
+      ],
+      "pine_needle_sun": [
+        60,
+        92,
+        58
+      ],
+      "pine_needle_deep": [
+        38,
+        62,
+        48
+      ]
+    }
+  },
+  "ShorePine2_bark": {
+    "name": "ShorePine2_bark",
+    "studs": [
+      15.11,
+      20.45,
+      10.93
+    ],
+    "triangles": 406,
+    "parts": 1,
+    "replaces": "PineShort on the lake's far shore",
+    "notes": "Bank kit, Layer B, bark family: MaterialVariant bark with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/ShorePine2_bark.glb. Pivot at the bottom centre; the ground line is 1.01 studs above it, so place the pivot at ground (or water) height minus 1.01. It stands 19.4 studs above the ground line. The box is centred on the foot of the trunk and both meshes share it (two corner specks), so both go at the same CFrame. The treeline's front row and gaps: on land. The long limbs point toward Roblox -X.",
+    "model": "ShorePine2",
+    "family": "bark",
+    "variant": "bark",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 1.01,
+    "height_above_ground": 19.44,
+    "true_studs": [
+      11.12,
+      20.45,
+      10.37
+    ],
+    "model_triangles": 1288,
+    "palette_seen_rgb": {
+      "pine_bark": [
+        98,
+        80,
+        64
+      ],
+      "pine_bark_dark": [
+        76,
+        63,
+        52
+      ],
+      "pine_bark_high": [
+        120,
+        92,
+        70
+      ]
+    }
+  },
+  "ShorePine2_leaf": {
+    "name": "ShorePine2_leaf",
+    "studs": [
+      15.11,
+      20.45,
+      10.93
+    ],
+    "triangles": 882,
+    "parts": 1,
+    "replaces": "PineShort on the lake's far shore",
+    "notes": "Bank kit, Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/ShorePine2_leaf.glb. Pivot at the bottom centre; the ground line is 1.01 studs above it, so place the pivot at ground (or water) height minus 1.01. It stands 19.4 studs above the ground line. The box is centred on the foot of the trunk and both meshes share it (two corner specks), so both go at the same CFrame. The treeline's front row and gaps: on land. The long limbs point toward Roblox -X.",
+    "model": "ShorePine2",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 1.01,
+    "height_above_ground": 19.44,
+    "true_studs": [
+      11.12,
+      20.45,
+      10.37
+    ],
+    "model_triangles": 1288,
+    "palette_seen_rgb": {
+      "pine_needle": [
+        52,
+        84,
+        66
+      ],
+      "pine_needle_sun": [
+        60,
+        92,
+        58
+      ],
+      "pine_needle_deep": [
+        38,
+        62,
+        48
+      ]
+    }
+  },
+  "ShoreStones1_stone": {
+    "name": "ShoreStones1_stone",
+    "studs": [
+      4.08,
+      1.5,
+      2.9
+    ],
+    "triangles": 668,
+    "parts": 1,
+    "replaces": "Nothing yet: new dressing for the home lake bank",
+    "notes": "Bank kit, Layer B, stone family: MaterialVariant shore_stone with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/ShoreStones1_stone.glb. Pivot at the bottom centre; the ground line is 0.4 studs above it, so place the pivot at ground (or water) height minus 0.4. It stands 1.1 studs above the ground line. AT THE WATERLINE, half in the water: the dark wet band is painted on at the ground line.",
+    "model": "ShoreStones1",
+    "family": "stone",
+    "variant": "shore_stone",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.4,
+    "height_above_ground": 1.1,
+    "true_studs": [
+      4.08,
+      1.5,
+      2.9
+    ],
+    "model_triangles": 668,
+    "palette_seen_rgb": {
+      "stone": [
+        118,
+        112,
+        102
+      ],
+      "stone_light": [
+        136,
+        130,
+        118
+      ],
+      "stone_brown": [
+        124,
+        110,
+        94
+      ],
+      "stone_grey": [
+        108,
+        108,
+        104
+      ],
+      "stone_wet": [
+        72,
+        70,
+        62
+      ]
+    }
+  },
+  "ShoreStones2_stone": {
+    "name": "ShoreStones2_stone",
+    "studs": [
+      4.08,
+      1.28,
+      3.01
+    ],
+    "triangles": 588,
+    "parts": 1,
+    "replaces": "Nothing yet: new dressing for the home lake bank",
+    "notes": "Bank kit, Layer B, stone family: MaterialVariant shore_stone with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/ShoreStones2_stone.glb. Pivot at the bottom centre; the ground line is 0.4 studs above it, so place the pivot at ground (or water) height minus 0.4. It stands 0.9 studs above the ground line. AT THE WATERLINE, mixed with ShoreStones1.",
+    "model": "ShoreStones2",
+    "family": "stone",
+    "variant": "shore_stone",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.4,
+    "height_above_ground": 0.88,
+    "true_studs": [
+      4.08,
+      1.28,
+      3.01
+    ],
+    "model_triangles": 588,
+    "palette_seen_rgb": {
+      "stone": [
+        118,
+        112,
+        102
+      ],
+      "stone_light": [
+        136,
+        130,
+        118
+      ],
+      "stone_brown": [
+        124,
+        110,
+        94
+      ],
+      "stone_grey": [
+        108,
+        108,
+        104
+      ],
+      "stone_wet": [
+        72,
+        70,
+        62
+      ]
+    }
   },
   "SmallmouthBass": {
     "name": "SmallmouthBass",

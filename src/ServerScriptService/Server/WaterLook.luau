@@ -13,6 +13,8 @@
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local WaterMap = require(Shared:WaitForChild("WaterMap"))
 local Shore = require(Shared:WaitForChild("Shore"))
+local ShoreEdge = require(Shared:WaitForChild("ShoreEdge"))
+local BoatRules = require(Shared:WaitForChild("BoatRules"))
 
 local WaterLook = {}
 
@@ -24,7 +26,8 @@ WaterLook.TERRAIN = {
 	-- pool at noon: bright sand seen through very clear water).
 	-- L5d: deeper again and less mirror-like (still read as cyan at noon from the dock).
 	WaterColor = Color3.fromRGB(26, 66, 62),
-	WaterTransparency = 0.55,
+	-- N1 (11/27/2026): 0.42, so less of the bed shows through the shallows (they read pale beige).
+	WaterTransparency = 0.42,
 	WaterReflectance = 0.35,
 	WaterWaveSize = 0.12, -- gentle
 	WaterWaveSpeed = 8,
@@ -33,7 +36,9 @@ WaterLook.TERRAIN = {
 	GrassLength = 0.45,
 }
 
-local SAND = Color3.fromRGB(198, 182, 134)
+-- N1 (11/27/2026): darker (was 198, 182, 134). The noon shallows read pale beige (181, 182, 156)
+-- because this bed sand showed through the water. Slot 6 (Sand) is also the dry beach sand.
+local SAND = Color3.fromRGB(150, 138, 104)
 local BED = Color3.fromRGB(96, 88, 66)
 
 -- Bed parts to tint: path under Lake, colour, material.
@@ -215,6 +220,238 @@ local function shoreTerrain(lake: Model)
 	creekMeadow(t)
 end
 
+-- The home lawns as terrain (leg 3, N1). The lawns round the lake were five big Grass parts
+-- (GroundSouth, GroundEast, GroundWest and GroundNorth's two halves round the channel) whose
+-- faces stood at the waterline as a ruler-straight ledge. lawnsToTerrain fills each part's box
+-- with terrain Grass (slot 2, our meadow), shapes the bank so it slopes into the water along a
+-- waterline that wanders a couple of studs in and out of Shore's line (ShoreEdge, so no plain
+-- bank runs straight past 30 studs), and hides the parts. Walking height is unchanged (top y 1).
+-- Nothing casts against the parts (casts, zones and the landing ring are math on WaterMap and
+-- Shore), so they stop colliding, querying and touching; they stay in the place for the revert.
+WaterLook.LAWN_TOP = 1
+WaterLook.LAWN_HIDDEN_TOP = 0.5 -- the revert lowers lawn terrain under the parts' tops (no z-fight)
+local LAND_DONE = 3.5 -- past this depth to land the bank is flat ground at LAWN_TOP
+
+type Rect = { x1: number, x2: number, z1: number, z2: number }
+
+local function rectOfPart(p: BasePart): Rect
+	local c, s = p.Position, p.Size
+	return { x1 = c.X - s.X / 2, x2 = c.X + s.X / 2, z1 = c.Z - s.Z / 2, z2 = c.Z + s.Z / 2 }
+end
+
+local function inRect(r: Rect, x: number, z: number, pad: number?): boolean
+	local k = pad or 0
+	return x >= r.x1 - k and x <= r.x2 + k and z >= r.z1 - k and z <= r.z2 + k
+end
+
+local function lawnParts(lake: Instance): { BasePart }
+	local out = {}
+	for _, p in lake:GetChildren() do
+		if p:IsA("BasePart") and string.match(p.Name, "^Ground") then
+			table.insert(out, p)
+		end
+	end
+	return out
+end
+
+local function areaNamed(name: string): Shore.Area?
+	for _, a in Shore.AREAS do
+		if a.name == name then
+			return a
+		end
+	end
+	return nil
+end
+
+-- Parts that sit flat on the lawn (paths, path bends, the pond's floor, the stands' counters):
+-- bladeless LeafyGrass under them, so terrain grass blades don't grow up through them.
+local function flatOnLawn(lake: Instance): { BasePart }
+	local out = {}
+	for _, p in lake:GetChildren() do
+		if p:IsA("BasePart") and string.match(p.Name, "^Path") then
+			table.insert(out, p)
+		end
+	end
+	local scenery = lake:FindFirstChild("Scenery")
+	local bends = scenery and scenery:FindFirstChild("PathBends")
+	for _, p in (if bends then bends:GetChildren() else {}) do
+		if p:IsA("BasePart") then
+			table.insert(out, p)
+		end
+	end
+	local pond = lake:FindFirstChild("HomePond")
+	local bottom = pond and pond:FindFirstChild("Bottom")
+	if bottom and bottom:IsA("BasePart") then
+		table.insert(out, bottom)
+	end
+	for _, name in { "SellStand", "ShopStand" } do
+		local m = lake:FindFirstChild(name)
+		local counter = m and m:FindFirstChild("Counter")
+		if counter and counter:IsA("BasePart") then
+			table.insert(out, counter)
+		end
+	end
+	return out
+end
+
+-- Rewrites the bank round the home lake, voxel by voxel: inside the lake box out to the edge of
+-- the shallows, and every lawn column near the water (the Big Lake's south bank too, where
+-- GroundNorth meets it). `on` false draws Shore's straight line again (the revert) and drops
+-- every lawn column to LAWN_HIDDEN_TOP so the restored parts hide it.
+local function rimPass(lake: Instance, on: boolean): number
+	local t = workspace.Terrain
+	local area = areaNamed("Lake")
+	if not area then
+		return 0
+	end
+	local big = areaNamed("BigLake")
+	local box: Rect = { x1 = area.x1, x2 = area.x2, z1 = area.z1, z2 = area.z2 }
+	local lawns: { Rect } = {}
+	local lo3, hi3 = Vector3.new(box.x1, -12, box.z1), Vector3.new(box.x2, 4, box.z2)
+	for _, p in lawnParts(lake) do
+		local r = rectOfPart(p)
+		table.insert(lawns, r)
+		lo3 = Vector3.new(math.min(lo3.X, r.x1), -12, math.min(lo3.Z, r.z1))
+		hi3 = Vector3.new(math.max(hi3.X, r.x2), 4, math.max(hi3.Z, r.z2))
+	end
+	local cb = BoatRules.CHANNEL
+	local channel: Rect = {
+		x1 = cb.cframe.Position.X - cb.size.X / 2,
+		x2 = cb.cframe.Position.X + cb.size.X / 2,
+		z1 = cb.cframe.Position.Z - cb.size.Z / 2,
+		z2 = cb.cframe.Position.Z + cb.size.Z / 2,
+	}
+	local bigRect: Rect? = if big then { x1 = big.x1, x2 = big.x2, z1 = big.z1, z2 = big.z2 } else nil
+	local region = Region3.new(lo3, hi3):ExpandToGrid(CELL)
+	local lo = region.CFrame.Position - region.Size / 2
+	local ch = t:ReadVoxelChannels(region, CELL, { "SolidMaterial", "SolidOccupancy", "LiquidOccupancy" }) :: any
+	local mats, solid, liquid = ch.SolidMaterial, ch.SolidOccupancy, ch.LiquidOccupancy
+	local nx, ny, nz = #mats, #mats[1], #mats[1][1]
+	local written = 0
+	for ix = 1, nx do
+		local cx = lo.X + (ix - 0.5) * CELL
+		for iz = 1, nz do
+			local cz = lo.Z + (iz - 0.5) * CELL
+			local inLake = inRect(box, cx, cz)
+			local inLawn = false
+			for _, r in lawns do
+				if inRect(r, cx, cz) then
+					inLawn = true
+					break
+				end
+			end
+			local skip = not (inLake or inLawn)
+				or inRect(channel, cx, cz, 2) -- BoatWorld's channel
+				or (math.abs(cx) <= 19 and cz <= box.z1 + 20) -- the channel's mouth keeps what BoatWorld cut
+				or (bigRect ~= nil and inRect(bigRect, cx, cz)) -- BoatWorld's Big Lake
+			if not skip then
+				local d = ShoreEdge.depth(area, cx, cz, on)
+				if big and not inLake then
+					-- Distance to the Big Lake's water from its south bank (BoatWorld measures it so).
+					local ex, ez = math.clamp(cx, big.x1, big.x2), math.clamp(cz, big.z1, big.z2)
+					d = math.min(d, math.max(Shore.depthIn(big, ex, ez), 0) + math.sqrt((cx - ex) ^ 2 + (cz - ez) ^ 2))
+				end
+				local h: number? = nil
+				if inLake then
+					if d > -WaterLook.SHALLOWS and d < LAND_DONE + 4 then
+						h = WaterLook.shoreHeight(d)
+					end
+				elseif not on then
+					h = math.min(WaterLook.LAWN_HIDDEN_TOP, WaterLook.shoreHeight(d) or WaterLook.LAWN_TOP)
+				elseif d < LAND_DONE then
+					h = WaterLook.shoreHeight(d)
+				end
+				if h then
+					local leafy = false
+					for iy = 1, ny do
+						if mats[ix][iy][iz] == Enum.Material.LeafyGrass then
+							leafy = true
+						end
+					end
+					local material = if d < GRASS_FROM then Enum.Material.Sand
+						elseif leafy and not inLake then Enum.Material.LeafyGrass
+						else Enum.Material.Grass
+					for iy = 1, ny do
+						local y0 = lo.Y + (iy - 1) * CELL
+						local s = math.clamp((h - y0) / CELL, 0, 1)
+						mats[ix][iy][iz] = if s > 0 then material else Enum.Material.Air
+						solid[ix][iy][iz] = s
+						liquid[ix][iy][iz] = if y0 + CELL <= 0.01 then 1 else 0 -- the water's surface is y = 0
+					end
+					written += 1
+				end
+			end
+		end
+	end
+	t:WriteVoxelChannels(region, CELL, { SolidMaterial = mats, SolidOccupancy = solid, LiquidOccupancy = liquid })
+	return written
+end
+
+-- The lawns to terrain (run in Edit; safe to run again). Returns counts for the log.
+--   require(game.ServerScriptService.Server.WaterLook).lawnsToTerrain(workspace.Lake)
+function WaterLook.lawnsToTerrain(lake: Model): { lawns: number, underlays: number, columns: number }
+	local t = workspace.Terrain
+	local parts = lawnParts(lake)
+	for _, p in parts do
+		if p:GetAttribute("LawnOrigTransparency") == nil then
+			p:SetAttribute("LawnOrigTransparency", p.Transparency)
+			p:SetAttribute("LawnOrigCollide", p.CanCollide)
+			p:SetAttribute("LawnOrigQuery", p.CanQuery)
+			p:SetAttribute("LawnOrigTouch", p.CanTouch)
+		end
+		-- The box down to the part's bottom, top at y 1 like the part's.
+		local bottom = p.Position.Y - p.Size.Y / 2
+		local top = WaterLook.LAWN_TOP
+		t:FillBlock(CFrame.new(p.Position.X, (bottom + top) / 2, p.Position.Z), Vector3.new(p.Size.X, top - bottom, p.Size.Z), Enum.Material.Grass)
+	end
+	local flat = flatOnLawn(lake)
+	for _, p in flat do
+		local top = WaterLook.LAWN_TOP
+		t:FillBlock(CFrame.new(p.Position.X, top - 4, p.Position.Z) * p.CFrame.Rotation, Vector3.new(p.Size.X, 8, p.Size.Z), Enum.Material.LeafyGrass)
+	end
+	local columns = rimPass(lake, true)
+	for _, p in parts do
+		p.Transparency = 1
+		p.CanCollide = false
+		p.CanQuery = false
+		p.CanTouch = false
+	end
+	lake:SetAttribute("LawnsTerrain", true)
+	return { lawns = #parts, underlays = #flat, columns = columns }
+end
+
+-- Puts the lawn parts back and draws Shore's straight bank again, with the lawn terrain lowered
+-- under the parts' tops so they hide it. The terrain grass stays (hidden).
+function WaterLook.lawnsToTerrainRevert(lake: Model): number
+	local n = 0
+	for _, p in lawnParts(lake) do
+		local was = p:GetAttribute("LawnOrigTransparency")
+		if type(was) == "number" then
+			p.Transparency = was
+			p.CanCollide = p:GetAttribute("LawnOrigCollide") ~= false
+			p.CanQuery = p:GetAttribute("LawnOrigQuery") ~= false
+			p.CanTouch = p:GetAttribute("LawnOrigTouch") ~= false
+			for _, k in { "LawnOrigTransparency", "LawnOrigCollide", "LawnOrigQuery", "LawnOrigTouch" } do
+				p:SetAttribute(k, nil)
+			end
+			n += 1
+		end
+	end
+	rimPass(lake, false)
+	lake:SetAttribute("LawnsTerrain", nil)
+	return n
+end
+
+-- Just the water settings and the bed's sand colour, without rebuilding the bed (apply does both).
+--   require(game.ServerScriptService.Server.WaterLook).tune()
+function WaterLook.tune()
+	local terrain = workspace.Terrain
+	for k, v in WaterLook.TERRAIN do
+		(terrain :: any)[k] = v
+	end
+	terrain:SetMaterialColor(Enum.Material.Sand, SAND)
+end
+
 -- The creek's beds in terrain (L5c): each stretch gets a bed and shelving sides, so the pool is
 -- a bowl, not a box. A side that opens into the next stretch rises only to that stretch's bed
 -- (`top`), so the water still runs through. Sides with no `top` rise to the shallows.
@@ -284,6 +521,10 @@ local function terrainBed(lake: Model, surfaceY: number)
 	end
 	creekBed(surfaceY)
 	shoreTerrain(lake)
+	-- Lawns already terrain (N1): shoreTerrain just drew the straight bank, so draw the wandering one.
+	if lake:GetAttribute("LawnsTerrain") then
+		rimPass(lake, true)
+	end
 	-- Hide the old flat bed parts (kept, so revert can show them again).
 	for _, name in HIDDEN_BEDS do
 		local p = find(lake, name)

@@ -9,6 +9,8 @@ maps a Roblox MaterialVariant needs:
                                                 and for terrain slots that use the slot tint
     art/textures/<family>/<family>_normal.png   OpenGL convention, re-normalized
     art/textures/<family>/<family>_rough.png    roughness (white = rough)
+    art/textures/<family>/<family>_metal.png    metalness (white = metal), only for families
+                                                with a `metal_mean` (aluminium)
     art/textures/<family>/<family>_tile3.jpg    3x3 tiled preview (colour left, neutral right)
     art/textures/<family>/<family>.json         source, settings and measured stats
 
@@ -31,7 +33,8 @@ Steps, in order:
   1. Load colour, normal (OpenGL), roughness and optional AO from the source folder
      (ambientCG names: *_Color, *_NormalGL, *_Roughness, *_AmbientOcclusion; Poly Haven
      names: *_diff_*, *_nor_gl_*, *_rough_*, *_ao_*). Procedural families run their
-     generator script first; it writes the same four names into its own source folder.
+     generator first (a script next to this one, or `builtin:<name>` for the ones at the
+     bottom of this file); it writes the same four names into its own source folder.
   2. Optional rotate (quarter turns, the normal vectors turn with the image) and crop.
   3. Seam check: the jump across the wrap edge compared with the strongest lines the
      picture already has (1.0 or less = seamless). If it fails (or the source was
@@ -49,6 +52,18 @@ Steps, in order:
   9. Normal: soften, scale strength (normal_strength; below 1 flattens), re-normalize.
  10. Roughness: soften, move the mean to rough_mean, scale contrast, clamp.
  11. Write the maps, the tiled preview and the stats, and print the seam scores.
+
+Hand-made extras (optional knobs, all made by code and all tileable; a family that names
+none of them goes through exactly the steps above):
+  boards   {count, gap, wear, tone, seed}   cut the picture into `count` boards along V:
+           each board gets its own stretch of the scan, a dark groove sits between boards,
+           and the paint wears thin beside the grooves so the grain shows (painted_wood).
+  streaks  {amount, cover, rgb, seed}       rust runs down V: darker in the neutral map,
+           toward `rgb` in the colour map, rougher in the roughness map (tin_roof).
+  dents    {depth, scale, seed}             a few shallow dents pressed into the normal
+           map (aluminium).
+  metal_mean (and metal_var)                also write a metalness map: the scan's own if
+           it has one, else flat; a touch less metal where the surface is rough.
 
 Nothing here talks to Roblox: uploading is a separate, deliberate step (uploads are
 permanent). Raw downloads live under artifacts/textures_src/ and are not committed.
@@ -85,6 +100,7 @@ MAP_PATTERNS = {
     "normal": ["_NormalGL.", "_nor_gl_"],
     "rough": ["_Roughness.", "_rough_"],
     "ao": ["_AmbientOcclusion.", "_ao_"],
+    "metal": ["_Metalness.", "_metal_"],
 }
 
 
@@ -243,6 +259,112 @@ def soft_clip(d: np.ndarray, limit: float) -> np.ndarray:
     return limit * np.tanh(d / limit)
 
 
+def tile_noise(size: int, sigma: float, seed: int, stretch: tuple = (1.0, 1.0)) -> np.ndarray:
+    """A smooth random field that wraps: white noise through a gaussian low-pass, zero mean,
+    unit spread. sigma is the blob size in pixels; stretch (rows, columns) makes the blobs
+    that many times longer along an axis."""
+    rng = np.random.default_rng(seed)
+    a = rng.standard_normal((size, size))
+    fy = np.fft.fftfreq(size)[:, None] * stretch[0]
+    fx = np.fft.rfftfreq(size)[None, :] * stretch[1]
+    g = np.exp(-2.0 * (np.pi ** 2) * (sigma ** 2) * (fx ** 2 + fy ** 2))
+    out = np.fft.irfft2(np.fft.rfft2(a) * g, s=(size, size))
+    out -= out.mean()
+    return out / max(float(out.std()), 1e-9)
+
+
+def add_height(nrm: np.ndarray, h: np.ndarray) -> np.ndarray:
+    """Press a height field (in pixels) into a normal map (vectors, OpenGL green-up)."""
+    dx = (np.roll(h, -1, axis=1) - np.roll(h, 1, axis=1)) * 0.5
+    drow = (np.roll(h, -1, axis=0) - np.roll(h, 1, axis=0)) * 0.5
+    z = np.maximum(nrm[..., 2], 1e-3)
+    out = np.stack([nrm[..., 0] / z - dx, nrm[..., 1] / z + drow, np.ones_like(z)], axis=-1)
+    return out / np.linalg.norm(out, axis=-1, keepdims=True)
+
+
+def shuffle_boards(maps: dict, count: int, seed: int) -> dict:
+    """Give each of `count` boards (strips along V) its own stretch of the scan, by sliding
+    each strip a random way along V. Sliding wraps, so the tile still repeats."""
+    rng = np.random.default_rng(seed)
+    size = maps["color"].shape[0]
+    edges = [int(round(i * size / count)) for i in range(count + 1)]
+    shifts = rng.integers(size // 8, size - size // 8, size=count)
+    for k in list(maps):
+        a = maps[k].copy()
+        for i in range(count):
+            a[:, edges[i]:edges[i + 1]] = np.roll(maps[k][:, edges[i]:edges[i + 1]], int(shifts[i]), axis=0)
+        maps[k] = a
+    return maps
+
+
+def family_extras(cfg: dict, size: int, luma: np.ndarray) -> dict:
+    """The hand-made layers a family asks for. Returns:
+    shade (multiplies colour and neutral), tint (0..1 mask) and tint_rgb (colour map only),
+    height (pixels, pressed into the normal map), rough (added to the roughness)."""
+    shade = np.ones((size, size))
+    tint = np.zeros((size, size))
+    tint_rgb = np.array([0.5, 0.4, 0.3])
+    height = np.zeros((size, size))
+    rough = np.zeros((size, size))
+    px = size / 512.0
+
+    b = cfg.get("boards")
+    if b:
+        count, seed = int(b.get("count", 4)), int(b.get("seed", 3))
+        rng = np.random.default_rng(seed + 100)
+        x = (np.arange(size) + 0.5) / size * count
+        frac = x - np.floor(x)
+        d = np.minimum(frac, 1.0 - frac) / count              # distance to the board edge, in tiles
+        gap = float(b.get("gap", 0.006))
+        t = np.clip(1.0 - d / gap, 0.0, 1.0)
+        groove = (t * t * (3.0 - 2.0 * t))[None, :] * np.ones((size, 1))
+        band = np.exp(-(d / float(b.get("wear_width", 0.022))) ** 2)[None, :]
+        n1 = tile_noise(size, 2.0 * px, seed + 1, stretch=(9.0, 1.0))           # flecks along the grain
+        n2 = tile_noise(size, 22.0 * px, seed + 2, stretch=(4.0, 1.0))          # where the wear gathers
+        worn = np.clip(band * (0.35 + 0.45 * n1 + 0.5 * n2), 0.0, 1.0)
+        worn = np.maximum(worn, 0.7 * np.clip(0.7 * n2 + 0.45 * n1 - 1.45, 0.0, 1.0))  # a few patches mid-board
+        hp = luma - blur_wrap(luma[..., None], 5.0 * px)[..., 0]
+        grain = np.clip(0.5 - hp / (4.0 * max(float(hp.std()), 1e-6)), 0.0, 1.0)  # 1 on dark grain lines
+        wear = float(b.get("wear", 0.3))
+        shade *= 1.0 - wear * worn * (0.5 + 0.9 * grain)
+        shade *= 1.0 - 0.55 * groove
+        tone = float(b.get("tone", 0.03))
+        idx = np.minimum(np.floor(x).astype(int), count - 1)
+        shade *= (1.0 + tone * rng.uniform(-1.0, 1.0, size=count))[idx][None, :]
+        tint = np.maximum(tint, np.clip(0.75 * worn * wear / 0.3, 0.0, 0.9))
+        tint_rgb = np.array(b.get("rgb", [158, 146, 128]), dtype=np.float64) / 255.0
+        height -= groove * float(b.get("groove_depth", 2.2)) * px
+        height -= worn * 0.5 * px
+        rough += 0.22 * worn + 0.2 * groove
+
+    s = cfg.get("streaks")
+    if s:
+        seed = int(s.get("seed", 5))
+        thin = tile_noise(size, 2.2 * px, seed, stretch=(40.0, 1.0))        # long runs down V
+        fleck = tile_noise(size, 1.6 * px, seed + 2, stretch=(3.0, 1.0))    # pitting
+        wide = tile_noise(size, 20.0 * px, seed + 1, stretch=(4.0, 1.0))    # where it gathers
+        gather = np.clip((wide - float(np.quantile(wide, 1.0 - float(s.get("cover", 0.5))))) / 1.5, 0.0, 1.0)
+        m = gather * np.clip(0.35 + 0.5 * thin + 0.3 * fleck, 0.0, 1.0)
+        m = blur_wrap(m[..., None], 1.0 * px)[..., 0]
+        amount = float(s.get("amount", 0.3))
+        shade *= 1.0 - 0.6 * amount * m
+        tint = np.maximum(tint, np.clip(2.0 * amount * m, 0.0, 0.8))
+        tint_rgb = np.array(s.get("rgb", [124, 78, 48]), dtype=np.float64) / 255.0
+        rough += 0.35 * m
+
+    dn = cfg.get("dents")
+    if dn:
+        seed = int(dn.get("seed", 11))
+        n = tile_noise(size, float(dn.get("scale", 0.07)) * size, seed)
+        pits = -np.clip(n - 0.9, 0.0, None) ** 2               # only the deepest few press in
+        wave = 0.12 * tile_noise(size, 0.2 * size, seed + 1)
+        height += (pits + wave) * float(dn.get("depth", 4.0)) * px
+        rough += 0.06 * np.clip(-pits, 0.0, 1.0)
+
+    return {"shade": shade, "tint": tint, "tint_rgb": tint_rgb, "height": height, "rough": rough,
+            "used": bool(b or s or dn)}
+
+
 # ----------------------------------------------------------------------------
 # the pipeline
 # ----------------------------------------------------------------------------
@@ -282,6 +404,10 @@ def fetch_source(name: str, folder: Path, info: dict) -> None:
 
 
 def run_generator(script: str) -> None:
+    if script.startswith("builtin:"):
+        print(f"  generator {script}")
+        BUILTIN[script.split(":", 1)[1]]()
+        return
     path = Path(__file__).resolve().with_name(script)
     print(f"  generator {path.name}")
     subprocess.run([sys.executable, str(path)], check=True)
@@ -316,6 +442,9 @@ def process(family: str, table: dict, source_override: str | None = None,
     }
     if "ao" in files:
         maps["ao"] = load_grey(files["ao"])
+    want_metal = cfg.get("metal_mean") is not None
+    if want_metal and "metal" in files:
+        maps["metal"] = load_grey(files["metal"])
 
     maps = rot90_maps(maps, int(cfg.get("rotate", 0)))
     maps = crop_maps(maps, float(cfg.get("crop", 1.0)))
@@ -334,6 +463,9 @@ def process(family: str, table: dict, source_override: str | None = None,
     # 4. resize
     for k in list(maps):
         maps[k] = resize_wrap(maps[k], size)
+
+    if cfg.get("boards"):
+        maps = shuffle_boards(maps, int(cfg["boards"].get("count", 4)), int(cfg["boards"].get("seed", 3)))
 
     color = np.clip(maps["color"], 0.0, 1.0)
     rough = np.clip(maps["rough"], 0.0, 1.0)
@@ -390,6 +522,19 @@ def process(family: str, table: dict, source_override: str | None = None,
     n_dev = np.where(n_dev > 0, soft_clip(n_dev, headroom * 0.95), n_dev)
     n_dev = n_dev - n_dev.mean()
     neutral = np.clip(n_mean * (1.0 + n_dev), 0.0, 1.0)
+
+    # 8b. hand-made extras: board grooves and worn paint, rust streaks, dents
+    extra = family_extras(cfg, size, luma)
+    if extra["used"]:
+        t = extra["tint"][..., None]
+        pulled = pulled * extra["shade"][..., None]
+        pulled = pulled * (1.0 - t) + t * extra["tint_rgb"][None, None, :] * (0.55 + 0.45 * ratio[..., None])
+        pulled = np.clip(pulled, 0.0, 1.0)
+        for _ in range(3):
+            pulled = np.clip(pulled + (target - pulled.reshape(-1, 3).mean(axis=0)), 0.0, 1.0)
+        neutral = neutral * extra["shade"]
+        for _ in range(3):                         # back onto the neutral mean
+            neutral = np.clip(neutral * (n_mean / neutral.mean()), 0.0, 1.0)
     neutral = np.repeat(neutral[..., None], 3, axis=2)
 
     # 9. normal
@@ -398,6 +543,8 @@ def process(family: str, table: dict, source_override: str | None = None,
         nrm = nrm + n_soft * (blur_wrap(nrm, sigma) - nrm)
     nrm[..., :2] *= float(cfg.get("normal_strength", 1.0))
     nrm = normalize(nrm)
+    if extra["used"]:
+        nrm = add_height(nrm, extra["height"])
     normal = (nrm + 1.0) * 0.5
 
     # 10. roughness
@@ -406,8 +553,20 @@ def process(family: str, table: dict, source_override: str | None = None,
     r_mean = cfg.get("rough_mean")
     r = rough - rough.mean()
     r = r * float(cfg.get("rough_contrast", 1.0))
+    if extra["used"]:
+        r = r + extra["rough"][..., None] - float(extra["rough"].mean())
     rough = (float(r_mean) if r_mean is not None else float(rough.mean())) + r
     rough = np.clip(rough, float(cfg.get("rough_min", 0.08)), float(cfg.get("rough_max", 1.0)))
+
+    # 10b. metalness, for the families that ask for it: the scan's own map if it has one,
+    # a little less metal where the surface is rougher (oxide, scuffs), mean on metal_mean
+    metal = None
+    if want_metal:
+        m_mean = float(cfg["metal_mean"])
+        m = maps["metal"] - maps["metal"].mean() if "metal" in maps else np.zeros_like(rough)
+        r_dev = (rough - rough.mean()) / max(float(rough.std()), 1e-6)
+        m = m - float(cfg.get("metal_var", 0.03)) * np.clip(r_dev, -2.0, 2.0)
+        metal = np.clip(m_mean + (m - m.mean()), 0.0, 1.0)
 
     # 11. write
     out = out_dir or (REPO / "art" / "textures" / family)
@@ -422,6 +581,9 @@ def process(family: str, table: dict, source_override: str | None = None,
     Image.fromarray(to_u8(neutral), "RGB").save(paths["neutral"], optimize=True)
     Image.fromarray(to_u8(normal), "RGB").save(paths["normal"], optimize=True)
     Image.fromarray(to_u8(rough)[..., 0], "L").save(paths["rough"], optimize=True)
+    if metal is not None:
+        paths["metal"] = out / f"{family}_metal.png"
+        Image.fromarray(to_u8(metal)[..., 0], "L").save(paths["metal"], optimize=True)
 
     # tiled preview: colour left, neutral right, 3 x 3 each
     cell = 256
@@ -455,6 +617,7 @@ def process(family: str, table: dict, source_override: str | None = None,
         "neutral_min_max": [round(float(neutral.min()), 3), round(float(neutral.max()), 3)],
         "rough_mean": round(float(rough.mean()), 4),
         "rough_std": round(float(rough.std()), 4),
+        "metal_mean": round(float(metal.mean()), 4) if metal is not None else None,
         "normal_mean_tilt": round(float(np.sqrt((nrm[..., :2] ** 2).sum(axis=-1)).mean()), 4),
         "seam_in": round(seam_in, 3),
         "seam_fixed": fixed,
@@ -474,6 +637,86 @@ def process(family: str, table: dict, source_override: str | None = None,
           f"{stats['luma_rel_std_out']}  neutral {stats['neutral_mean']}  rough {stats['rough_mean']}  "
           f"seam {stats['seam_in']} -> {worst} ({'fixed, ' if fixed else ''}{flag})")
     return stats
+
+
+# ----------------------------------------------------------------------------
+# built-in procedural sources (a family's source says "generator": "builtin:<name>")
+# ----------------------------------------------------------------------------
+
+def gen_leaf_needle(size: int = 1024, seed: int = 21) -> None:
+    """Leaf and needle clusters for tree canopies, bushes and reeds on low-poly meshes.
+
+    No scan fits: photos of foliage are full of holes, hard shadows and one species' leaf.
+    This lays down three layers of soft leaf dabs, back to front. The dabs come in sprays
+    (a handful fanning out from one point), so the picture reads as tufts of leaves up
+    close and as soft dappled masses from far off. Lower layers are darker, the highest
+    dab wins, and the gaps between sprays fall into shade. Colour is near-grey on purpose:
+    the mesh's vertex colours carry the hue. Writes the four source maps the pipeline reads
+    into artifacts/textures_src/leaf_needle_proc/."""
+    out = REPO / "artifacts" / "textures_src" / "leaf_needle_proc"
+    rng = np.random.default_rng(seed)
+    best = np.full((size, size), -0.25)
+    tone = np.full((size, size), -1.2)
+    k = size / 1024.0
+    #         sprays, dabs, base height, tone, dab length px, dab width px
+    layers = [(64, 7, 0.00, -0.7, 108.0, 36.0),
+              (60, 6, 0.32, 0.0, 100.0, 33.0),
+              (46, 6, 0.64, 0.6, 92.0, 30.0)]
+    for sprays, dabs, base, layer_tone, length, width in layers:
+        for _ in range(sprays):
+            cx, cy = rng.uniform(0, size, 2)
+            fan = rng.uniform(0, 2 * np.pi)
+            for _ in range(dabs):
+                ang = fan + rng.uniform(-1.5, 1.5)
+                half = 0.5 * length * k * rng.uniform(0.75, 1.1)
+                wid = 0.5 * width * k * rng.uniform(0.8, 1.15)
+                ux, uy = np.cos(ang), np.sin(ang)
+                mx = cx + ux * half * rng.uniform(0.7, 1.5) + rng.uniform(-0.25, 0.25) * half
+                my = cy + uy * half * rng.uniform(0.7, 1.5) + rng.uniform(-0.25, 0.25) * half
+                r = int(half + 3)
+                ys = (np.arange(int(my) - r, int(my) + r + 1))
+                xs = (np.arange(int(mx) - r, int(mx) + r + 1))
+                py, px_ = np.meshgrid(ys - my, xs - mx, indexing="ij")
+                a = (px_ * ux + py * uy) / half               # -1 at the stem, +1 at the tip
+                b = (-px_ * uy + py * ux) / wid
+                taper = np.clip(1.0 - 0.55 * np.clip(a, 0.0, 1.0) ** 2, 0.2, 1.0)   # narrower toward the tip
+                d2 = a * a + (b / taper) ** 2
+                inside = d2 < 1.0
+                h = (base + 0.16 * a + 0.24 * np.sqrt(np.clip(1.0 - d2, 0.0, 1.0))
+                     - 0.05 * np.exp(-(b / 0.14) ** 2) + rng.uniform(-0.07, 0.07))
+                iy, ix = np.ix_(ys % size, xs % size)
+                cur = best[iy, ix]
+                win = inside & (h > cur)
+                best[iy, ix] = np.where(win, h, cur)
+                tone[iy, ix] = np.where(win, layer_tone + rng.uniform(-0.5, 0.5), tone[iy, ix])
+
+    height = best - best.min()
+    height = height / height.max()
+    height = blur_wrap(height[..., None], 1.6 * k)[..., 0]
+    shade = np.clip((blur_wrap(height[..., None], 16.0 * k)[..., 0] - height) * 3.5, 0.0, 1.0)
+    shade = blur_wrap(shade[..., None], 1.5 * k)[..., 0]
+    tone = blur_wrap(tone[..., None], 1.5 * k)[..., 0]
+    masses = tile_noise(size, 0.11 * size, seed + 1)             # big light and dark masses
+    color = 0.62 * (1.0 + 0.13 * tone + 0.07 * masses) * (1.0 - 0.5 * shade) * (0.8 + 0.2 * height)
+    hp = height * 15.0 * k
+    dx = (np.roll(hp, -1, axis=1) - np.roll(hp, 1, axis=1)) * 0.5
+    drow = (np.roll(hp, -1, axis=0) - np.roll(hp, 1, axis=0)) * 0.5
+    n = np.stack([-dx, drow, np.ones_like(hp)], axis=-1)
+    n /= np.linalg.norm(n, axis=-1, keepdims=True)
+    maps = {
+        "Color": np.repeat(np.clip(color, 0, 1)[..., None], 3, axis=2),
+        "NormalGL": (n + 1.0) * 0.5,
+        "Roughness": np.clip(0.80 - 0.14 * height + 0.12 * shade, 0, 1),
+        "AmbientOcclusion": np.clip(1.0 - 0.8 * shade, 0, 1),
+    }
+    out.mkdir(parents=True, exist_ok=True)
+    for name, a in maps.items():
+        u8 = to_u8(a)
+        Image.fromarray(u8, "RGB" if u8.ndim == 3 else "L").save(out / f"leaf_needle_{name}.png")
+    print(f"  leaf and needle source maps written to {out}")
+
+
+BUILTIN = {"leaf_needle": gen_leaf_needle}
 
 
 def parse_set(pairs: list[str]) -> dict:

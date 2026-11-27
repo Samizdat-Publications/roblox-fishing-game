@@ -1,0 +1,66 @@
+{
+  "family": "leaf_needle",
+  "kind": "prop",
+  "size": 512,
+  "source": "leaf_needle_proc",
+  "source_page": null,
+  "licence": "ours",
+  "studs_per_tile": 8,
+  "target_rgb": [
+    62,
+    92,
+    48
+  ],
+  "mean_rgb": [
+    62.0,
+    92.0,
+    48.0
+  ],
+  "luma_rel_std_in": 0.3107,
+  "luma_rel_std_out": 0.1169,
+  "neutral_mean": 0.8,
+  "neutral_std": 0.0901,
+  "neutral_min_max": [
+    0.613,
+    0.94
+  ],
+  "rough_mean": 0.8,
+  "rough_std": 0.0706,
+  "metal_mean": null,
+  "normal_mean_tilt": 0.2041,
+  "seam_in": 0.717,
+  "seam_fixed": false,
+  "seam_out": {
+    "color": 0.753,
+    "normal": 0.578,
+    "rough": 0.647
+  },
+  "settings": {
+    "ao_mix": 0.3,
+    "contrast": 1.0,
+    "despeckle_k": 2.5,
+    "flatten": 0.3,
+    "flatten_sigma": 0.12,
+    "hue_var": 0.0,
+    "kind": "prop",
+    "max_rel_std": 0.13,
+    "neutral_mean": 0.8,
+    "normal_strength": 1.0,
+    "rough_contrast": 1.0,
+    "rough_mean": 0.8,
+    "seam_blend": 0.2,
+    "seam_limit": 1.25,
+    "seamless": "auto",
+    "sheet": "n1",
+    "size": 512,
+    "soften": 0.4,
+    "soften_sigma": 1.5,
+    "source": "leaf_needle_proc",
+    "studs_per_tile": 8,
+    "target_rgb": [
+      62,
+      92,
+      48
+    ]
+  }
+}

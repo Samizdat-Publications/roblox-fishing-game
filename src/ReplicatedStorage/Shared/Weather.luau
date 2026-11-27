@@ -225,6 +225,85 @@ function Weather.forecast(plan: DayPlan, moon: number): string
 	return text
 end
 
+-- Wind you can see (leg 3, N1 "Life"): workspace.GlobalWind by weather kind, so grass,
+-- clouds and particles move. Speeds in studs per second. A kind with no direction of its own
+-- (only Wind days carry one, the "WindFrom" attribute) blows from WIND_DEFAULT_FROM.
+-- Directions: north is -Z and east is +X (the deep hole, "north" in SPOT_SIDE, is at z -25).
+-- GlobalWind points where the air goes, so wind from the west blows toward +X.
+-- stylua: ignore
+Weather.WIND_SPEED = {
+	Clear = 4,      -- a light breeze
+	Overcast = 6,
+	Fog = 0.5,      -- still air, that is why the fog sits
+	Wind = 14,      -- a windy day
+	PreStorm = 10,  -- gusting up before the storm
+	Storm = 22,
+	ColdFront = 12, -- bright and breezy
+} :: { [string]: number }
+Weather.WIND_DEFAULT_FROM = "west" -- prevailing westerly
+Weather.WIND_BLEND_SECONDS = 20 -- the same 20 s the look takes to change weather
+
+local BEARING = {
+	north = 0, northeast = 45, east = 90, southeast = 135,
+	south = 180, southwest = 225, west = 270, northwest = 315,
+}
+
+-- Compass bearing (degrees, 0 = north, 90 = east) for a WindFrom value: a compass word, an
+-- angle (number or numeric string), else nil.
+function Weather.bearingOf(from: any): number?
+	if type(from) == "number" then
+		return from % 360
+	elseif type(from) == "string" then
+		local b = BEARING[string.lower(from)]
+		if b then
+			return b
+		end
+		local n = tonumber(from)
+		if n then
+			return n % 360
+		end
+	end
+	return nil
+end
+
+-- GlobalWind for this weather kind and direction (unknown kind: Clear's breeze).
+function Weather.windFor(kind: string?, from: any): Vector3
+	local speed = (if kind then Weather.WIND_SPEED[kind] else nil) or Weather.WIND_SPEED.Clear
+	local b = Weather.bearingOf(from) or (BEARING[Weather.WIND_DEFAULT_FROM] :: number)
+	local r = math.rad(b)
+	-- The from-direction is (sin b, 0, -cos b); the air moves the other way.
+	return Vector3.new(-math.sin(r) * speed, 0, math.cos(r) * speed)
+end
+
+-- The wind blend: `from` vector into `to`, `amount` (0..1, linear) of the way, eased.
+export type WindBlend = { from: Vector3, to: Vector3, amount: number }
+
+local function smooth(t: number): number
+	t = math.clamp(t, 0, 1)
+	return t * t * (3 - 2 * t)
+end
+
+local function lerpV(a: Vector3, b: Vector3, t: number): Vector3
+	return Vector3.new(a.X + (b.X - a.X) * t, a.Y + (b.Y - a.Y) * t, a.Z + (b.Z - a.Z) * t)
+end
+
+-- The wind showing now for a blend.
+function Weather.windNow(b: WindBlend): Vector3
+	return lerpV(b.from, b.to, smooth(b.amount))
+end
+
+-- Moves the blend on by dt seconds toward `target` (mutates b) and returns the wind to show.
+-- A new target starts from whatever shows now, so a change mid-blend never jumps.
+function Weather.stepWind(b: WindBlend, target: Vector3, dt: number): Vector3
+	if target ~= b.to then
+		b.from = Weather.windNow(b)
+		b.to = target
+		b.amount = 0
+	end
+	b.amount = math.min(1, b.amount + dt / Weather.WIND_BLEND_SECONDS)
+	return Weather.windNow(b)
+end
+
 -- A hint line when nothing bites, naming the weather when it's the reason.
 function Weather.hint(now: Now?): string?
 	local id = now and now.weather

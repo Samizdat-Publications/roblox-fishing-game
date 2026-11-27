@@ -411,7 +411,7 @@ return function(t, Shared)
 		end
 		local h = LookPresets.areaWater({ home = 1 })
 		t.ok(h.WaterColor == Color3.fromRGB(26, 66, 62), "home water colour (WaterLook.TERRAIN)")
-		t.eq(h.WaterTransparency, 0.55, "home water transparency")
+		t.eq(h.WaterTransparency, 0.42, "home water transparency (0.55 to 0.42 on 11/27, with WaterLook)")
 		t.eq(h.WaterWaveSize, 0.12, "home waves")
 		-- applyTo with home areas writes what it wrote before.
 		local function fake()
@@ -456,18 +456,237 @@ return function(t, Shared)
 		t.eq(LookPresets.AREAS.bluewater.water.WaterWaveSize, 2 * LookPresets.AREAS.home.water.WaterWaveSize, "blue water swell is doubled")
 		-- A half-and-half blend sits between the two.
 		local half = LookPresets.areaWater({ home = 0.5, creek = 0.5 })
-		t.ok(math.abs(half.WaterTransparency - (0.55 + 0.8) / 2) < 1e-9, "water blends")
+		t.ok(math.abs(half.WaterTransparency - (0.42 + 0.8) / 2) < 1e-9, "water blends")
 	end)
 
 	t.test("tiers: desktop and phone, and phone has no sun rays", function()
 		local d, p = LookPresets.TIERS.desktop, LookPresets.TIERS.phone
 		t.ok(d ~= nil and p ~= nil, "both tiers")
 		t.eq(d.lightingStyle, "Realistic", "desktop style")
-		t.eq(p.lightingStyle, "Soft", "phone style")
+		t.eq(p.lightingStyle, "Realistic", "phone runs the place-wide style")
 		t.eq(p.sunRays, false, "no sun rays on phone")
 		t.eq(p.depthOfField, false, "no depth of field on phone")
 		t.eq(p.bloom, true, "phone keeps bloom")
 		t.eq(p.shadows, "sun", "phone: sun shadows only")
 		t.ok(d.sunRays and d.bloom and d.depthOfField, "desktop extras on")
+	end)
+
+	-- N1: the Realistic grade (desktop tier with Config.REALISTIC_DESKTOP only) -------------
+	t.test("grade: only the desktop tier with Realistic on gets it", function()
+		local d, p = LookPresets.TIERS.desktop, LookPresets.TIERS.phone
+		t.ok(LookPresets.gradeFor(d, true) == LookPresets.REALISTIC_GRADE, "desktop + realistic")
+		t.ok(LookPresets.gradeFor(d, false) == nil, "desktop, Soft kept")
+		t.ok(LookPresets.gradeFor(p, true) == LookPresets.REALISTIC_GRADE, "phone too: the style is place-wide")
+		t.ok(LookPresets.gradeFor(p, false) == nil, "phone never")
+		t.ok(LookPresets.gradeFor(nil, true) == nil, "no tier")
+	end)
+
+	t.test("grade: no grade leaves every look exactly as it was", function()
+		for _, c in CLOCKS do
+			for _, w in { "Clear", "Storm", "Fog" } do
+				same(LookPresets.at(c, w, 0.6, "Overcast"), LookPresets.at(c, w, 0.6, "Overcast", nil), "ungraded at " .. c .. " " .. w)
+			end
+		end
+	end)
+
+	t.test("grade: every key is a real preset field with a limit", function()
+		for id, g in LookPresets.REALISTIC_GRADE do
+			local p = LookPresets.byId[id]
+			t.ok(p ~= nil, "grade for a real preset: " .. id)
+			for target, values in g do
+				for k, v in values do
+					t.ok(type(v) == "number", id .. " " .. target .. "." .. k .. " is a number")
+					t.ok(p and p.look[target] and type(p.look[target][k]) == "number", id .. " " .. target .. "." .. k .. " is a preset field")
+					t.ok(LookPresets.GRADE_LIMITS[target .. "." .. k] ~= nil, target .. "." .. k .. " has a limit")
+				end
+			end
+		end
+	end)
+
+	t.test("grade: golden and noon hit the advisor's starting points", function()
+		local g = LookPresets.REALISTIC_GRADE
+		local function near(a, b, what)
+			t.ok(math.abs(a - b) < 1e-9, string.format("%s: %.3f want %.3f", what, a, b))
+		end
+		local gold = LookPresets.at(17.5, nil, nil, nil, g)
+		near(gold.Lighting.ExposureCompensation, -0.3, "golden exposure")
+		near(gold.Atmosphere.Glare, 0.8, "golden glare")
+		near(gold.Atmosphere.Haze, 0.7, "golden haze")
+		near(gold.BloomEffect.Intensity, 0.4, "golden bloom")
+		near(gold.BloomEffect.Threshold, 1.9, "golden bloom threshold")
+		near(gold.SunRaysEffect.Intensity, 0.08, "golden sun rays")
+		local noon = LookPresets.at(12, nil, nil, nil, g)
+		near(noon.Lighting.ExposureCompensation, -0.35, "day exposure")
+		near(noon.ColorCorrectionEffect.Saturation, 0.02, "day saturation")
+		near(noon.Atmosphere.Haze, 0.5, "day haze")
+		-- Fields the grade leaves alone stay exactly the preset's.
+		t.eq(noon.Lighting.Brightness, LookPresets.at(12).Lighting.Brightness, "day brightness untouched")
+	end)
+
+	t.test("grade: blends between presets with their weights, and stays in range", function()
+		local g = LookPresets.REALISTIC_GRADE
+		-- Half way from day (to 15.5) into golden (from 16.75): the mean of the two offsets.
+		local c = 15.5 + (16.75 - 15.5) / 2
+		local wts = LookPresets.weights(c)
+		local want = (wts.day or 0) * g.day.Lighting.ExposureCompensation + (wts.golden or 0) * g.golden.Lighting.ExposureCompensation
+		local got = LookPresets.gradeAt(c, g).Lighting.ExposureCompensation
+		t.ok(math.abs(got - want) < 1e-9, "blended exposure offset")
+		t.ok(math.abs(got - -0.325) < 1e-9, "half way is -0.325")
+		for i = 0, 240 do
+			local clock = i * 0.1
+			for _, w in { "Clear", "Storm", "Fog", "ColdFront" } do
+				local look = LookPresets.at(clock, w, 1, "Clear", g)
+				for key, lim in LookPresets.GRADE_LIMITS do
+					local target, prop = string.match(key, "^(%w+)%.(%w+)$")
+					local v = look[target] and look[target][prop]
+					if type(v) == "number" then
+						t.ok(v >= lim[1] - 1e-9 and v <= lim[2] + 1e-9, string.format("%s at %.1f %s", key, clock, w))
+					end
+				end
+			end
+		end
+		-- Continuous round the clock (the grade adds no step of its own).
+		local prev = LookPresets.at(-0.01, nil, nil, nil, g)
+		for i = 0, 2400 do
+			local now = LookPresets.at(i * 0.01, nil, nil, nil, g)
+			local d = math.abs(now.Lighting.ExposureCompensation - prev.Lighting.ExposureCompensation)
+			t.ok(d < 0.03, string.format("graded exposure step at %.2f", i * 0.01))
+			prev = now
+		end
+	end)
+
+	t.test("grade: night stays moonlit navy and dawn keeps its mist", function()
+		local g = LookPresets.REALISTIC_GRADE
+		local night, raw = LookPresets.at(22, nil, nil, nil, g), LookPresets.at(22)
+		t.eq(night.Lighting.ExposureCompensation, raw.Lighting.ExposureCompensation, "night exposure untouched")
+		t.ok(night.Lighting.OutdoorAmbient == raw.Lighting.OutdoorAmbient, "night ambient untouched")
+		t.ok(night.Atmosphere.Color == raw.Atmosphere.Color, "navy haze untouched")
+		t.ok(night.Atmosphere.Haze >= 1, "night haze kept")
+		local dawn = LookPresets.at(6, nil, nil, nil, g)
+		t.ok(dawn.Atmosphere.Haze >= 1.5, "dawn mist kept")
+		t.eq(dawn.Atmosphere.Density, LookPresets.at(6).Atmosphere.Density, "dawn density untouched")
+		t.eq(LookPresets.at(22, "Storm", 1, "Clear", g).Lighting.Brightness, LookPresets.at(22, "Storm").Lighting.Brightness, "storm night brightness untouched")
+	end)
+
+	t.test("grade: applyTo writes the graded look, phone path unchanged", function()
+		local function fake()
+			local l = {}
+			function l:FindFirstChild()
+				return nil
+			end
+			function l:FindFirstChildOfClass()
+				return nil
+			end
+			return l
+		end
+		local made = {}
+		local function make(className)
+			local i = { ClassName = className }
+			made[className] = i
+			return i
+		end
+		local a = fake()
+		LookPresets.applyTo(a, 17.5, make, nil, nil, nil, nil, nil, LookPresets.gradeFor(LookPresets.TIERS.desktop, true))
+		t.ok(math.abs(a.ExposureCompensation - -0.3) < 1e-9, "desktop graded exposure")
+		t.ok(math.abs(made.Atmosphere.Glare - 0.8) < 1e-9, "desktop graded glare")
+		local b = fake()
+		LookPresets.applyTo(b, 17.5, make, nil, nil, nil, nil, nil, LookPresets.gradeFor(LookPresets.TIERS.phone, false))
+		t.eq(b.ExposureCompensation, LookPresets.at(17.5).Lighting.ExposureCompensation, "Soft place: exposure as before")
+		t.eq(made.Atmosphere.Glare, 2.5, "Soft place: glare as before")
+	end)
+
+	-- N1: the home lake's water by time of day --------------------------------------------
+	t.test("water by time: a mirror at dawn, a light chop by day, calm at night", function()
+		local home = LookPresets.AREAS.home.water
+		local day = LookPresets.homeWaterAt(12)
+		for _, k in { "WaterTransparency", "WaterReflectance", "WaterWaveSize", "WaterWaveSpeed" } do
+			t.ok(math.abs(day[k] - home[k]) < 1e-9, "day is home's water: " .. k)
+		end
+		t.ok(day.WaterColor == home.WaterColor, "colour stays home's")
+		t.ok(math.abs(day.WaterTransparency - 0.42) < 1e-9, "home transparency 0.42")
+		local dawn = LookPresets.homeWaterAt(6)
+		t.ok(dawn.WaterWaveSize >= 0.02 and dawn.WaterWaveSize <= 0.05, "dawn waves 0.02 to 0.05")
+		t.ok(dawn.WaterReflectance >= 0.6, "dawn reflectance high")
+		t.ok(dawn.WaterReflectance > day.WaterReflectance, "dawn more mirror than day")
+		local night = LookPresets.homeWaterAt(22)
+		t.ok(night.WaterWaveSize < day.WaterWaveSize and night.WaterWaveSpeed < day.WaterWaveSpeed, "night calmer than day")
+		for _, p in LookPresets.PRESETS do
+			t.ok(LookPresets.WATER_BY_TIME[p.id] ~= nil, "water for " .. p.id)
+		end
+		-- In range and continuous all round the clock.
+		local prev = LookPresets.homeWaterAt(-0.01)
+		for i = 0, 2400 do
+			local w = LookPresets.homeWaterAt(i * 0.01)
+			t.ok(w.WaterTransparency >= 0 and w.WaterTransparency <= 1 and w.WaterReflectance >= 0 and w.WaterReflectance <= 1, "range at " .. i)
+			t.ok(math.abs(w.WaterWaveSize - prev.WaterWaveSize) < 0.005, string.format("wave step at %.2f", i * 0.01))
+			prev = w
+		end
+	end)
+
+	t.test("water by time: inside the area blend, home only", function()
+		-- Without a clock the area water is exactly as before.
+		t.eq(LookPresets.areaWater({ home = 1 }).WaterWaveSize, 0.12, "no clock: home's own water")
+		-- With a clock, home's share follows the time of day; other areas keep theirs.
+		local d = LookPresets.areaWater({ home = 1 }, 6)
+		t.ok(math.abs(d.WaterWaveSize - LookPresets.homeWaterAt(6).WaterWaveSize) < 1e-9, "home at dawn")
+		t.eq(LookPresets.areaWater({ creek = 1 }, 6).WaterWaveSize, LookPresets.AREAS.creek.water.WaterWaveSize, "creek ignores the clock")
+		local half = LookPresets.areaWater({ home = 0.5, creek = 0.5 }, 6)
+		local want = (LookPresets.homeWaterAt(6).WaterReflectance + LookPresets.AREAS.creek.water.WaterReflectance) / 2
+		t.ok(math.abs(half.WaterReflectance - want) < 1e-9, "half home at dawn, half creek")
+		t.ok(math.abs(LookPresets.areaWater({}, 6).WaterWaveSize - LookPresets.homeWaterAt(6).WaterWaveSize) < 1e-9, "no area weighted: home at that time")
+	end)
+
+	-- N1: wind by weather (Shared/Weather, set on the server by WeatherService with Config.WIND_ON)
+	t.test("wind: speeds by weather and direction from WindFrom", function()
+		local Weather = require(Shared.Weather)
+		local function near(a, b, what)
+			t.ok(math.abs(a - b) < 1e-6, string.format("%s: %.3f want %.3f", what, a, b))
+		end
+		near(Weather.windFor("Clear").Magnitude, 4, "clear breeze")
+		t.ok(Weather.windFor("Fog").Magnitude <= 1, "fog near still")
+		near(Weather.windFor("ColdFront").Magnitude, 12, "cold front")
+		near(Weather.windFor("Storm").Magnitude, 22, "storm")
+		near(Weather.windFor("Nonsense").Magnitude, 4, "unknown kind: clear's breeze")
+		near(Weather.windFor(nil).Magnitude, 4, "no kind: clear's breeze")
+		for _, k in Weather.list do
+			t.ok(Weather.WIND_SPEED[k.id] ~= nil, "a speed for " .. k.id)
+		end
+		t.ok(Weather.windFor("Storm").Magnitude > Weather.windFor("Wind").Magnitude, "storm beats a windy day")
+		t.ok(Weather.windFor("Wind").Magnitude > Weather.windFor("Clear").Magnitude, "a windy day beats clear")
+		-- Directions: north is -Z, east is +X; the wind blows away from where it comes from.
+		local n = Weather.windFor("Wind", "north")
+		near(n.Z, 14, "from the north blows toward +Z")
+		near(n.X, 0, "from the north: no X")
+		near(Weather.windFor("Wind", "west").X, 14, "from the west blows toward +X")
+		near(Weather.windFor("Storm", "East").X, -22, "from the east blows toward -X (any case)")
+		near(Weather.windFor("Clear", "south").Z, -4, "from the south blows toward -Z")
+		near(Weather.windFor("Clear", 90).X, -4, "an angle works (90 = from the east)")
+		near(Weather.windFor("Clear", "270").X, 4, "a numeric string works")
+		near(Weather.windFor("Clear", nil).X, 4, "no direction: from the west by default")
+		near(Weather.windFor("Clear", "sideways").X, 4, "nonsense direction: the default")
+		near(Weather.windFor("Storm", "north").Y, 0, "always level")
+	end)
+
+	t.test("wind: blends over 20 s and never jumps", function()
+		local Weather = require(Shared.Weather)
+		local a, b = Weather.windFor("Clear"), Weather.windFor("Storm", "north")
+		local blend = { from = a, to = a, amount = 1 }
+		local prev = Weather.stepWind(blend, a, 0.2)
+		t.ok(prev == a, "settled stays put")
+		local worst = 0
+		for _ = 1, 99 do
+			local v = Weather.stepWind(blend, b, 0.2)
+			worst = math.max(worst, (v - prev).Magnitude)
+			prev = v
+		end
+		t.ok(blend.amount < 1, "not there after 19.8 s")
+		local v = Weather.stepWind(blend, b, 0.2)
+		t.ok((v - b).Magnitude < 1e-9, "there at 20 s")
+		t.ok(worst < 0.5, "no tick moves it more than half a stud per second")
+		-- A change mid-blend starts from what shows now.
+		local mid = { from = a, to = b, amount = 0.5 }
+		local shown = Weather.windNow(mid)
+		local after = Weather.stepWind(mid, Weather.windFor("Fog"), 0)
+		t.ok((after - shown).Magnitude < 1e-9, "a mid-blend change does not jump")
 	end)
 end

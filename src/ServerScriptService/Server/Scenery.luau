@@ -514,14 +514,19 @@ function Scenery.apply(lake: Model): Result
 	local pool = WaterMap.CREEK[3]
 	local lx, lz = pool.x2 + 3, (pool.z1 + pool.z2) / 2 - 12
 	lampPart(lantern, "Post", Vector3.new(0.5, 8, 0.5), CFrame.new(lx, Scenery.GROUND_TOP + 4, lz), Color3.fromRGB(70, 50, 35), Enum.Material.Wood, true)
-	local bulb = lampPart(lantern, "Bulb", Vector3.new(1.2, 1.2, 1.2), CFrame.new(lx, Scenery.GROUND_TOP + 8.4, lz), Color3.fromRGB(255, 230, 170), Enum.Material.Neon, false)
+	-- N1: a lantern (WorldBuilder.LANTERN): warm Glass by day; the light is tagged "Lantern" so
+	-- ClientModules/Lanterns lights it at night only. Was a white Neon globe, range 20, always on.
+	local lanternColor = Color3.fromRGB(255, 190, 120)
+	local bulb = lampPart(lantern, "Bulb", Vector3.new(0.7, 0.7, 0.7), CFrame.new(lx, Scenery.GROUND_TOP + 8.4, lz), lanternColor, Enum.Material.Glass, false)
 	bulb.Shape = Enum.PartType.Ball
+	bulb.CastShadow = false
 	local light = Instance.new("PointLight")
-	light.Range = 20
-	light.Brightness = 1.2
-	light.Color = Color3.fromRGB(255, 198, 138)
-	light.Shadows = false
+	light.Range = 14
+	light.Brightness = 1.1
+	light.Color = lanternColor
+	light.Shadows = true
 	light.Parent = bulb
+	game:GetService("CollectionService"):AddTag(light, "Lantern")
 	lantern.Parent = folder
 
 	-- 6b. The creek pool's east bank (11/27/2026): the bank path runs straight along the water
