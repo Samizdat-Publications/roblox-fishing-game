@@ -6,35 +6,23 @@
 --   Lake 220 x 160 centered on the origin. Ground ring top at y = 1.
 --   South shore (z = +80) has the dock, spawn, sell stand and shop.
 --   Weed bed in the south-west, fallen logs in the south-east, deep hole north of the dock.
-local Config = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Config"))
+local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local Config = require(Shared:WaitForChild("Config"))
+-- The water and zone boxes live in Shared/WaterMap so the client's landing ring uses the
+-- same map as the server (L2, 2026-11-26).
+local WaterMap = require(Shared:WaitForChild("WaterMap"))
 
 local WorldBuilder = {}
 
-local WATER_SIZE = Vector3.new(220, 1, 160)
-local WATER_CF = CFrame.new(0, -0.5, 0)
+local WATER_SIZE = WaterMap.WATER_SIZE
+local WATER_CF = WaterMap.WATER_CF
 
--- Zone boxes (first match wins, so the dock is listed first).
-local ZONES = {
-	{ name = "Dock", center = Vector3.new(0, 0, 57), size = Vector3.new(30, 10, 46) },
-	{ name = "WeedBed", center = Vector3.new(-78, 0, 38), size = Vector3.new(56, 10, 64) },
-	{ name = "Logs", center = Vector3.new(78, 0, 42), size = Vector3.new(56, 10, 60) },
-	{ name = "DeepHole", center = Vector3.new(0, 0, -22), size = Vector3.new(60, 10, 56) },
-}
+-- Zone boxes (first match wins, so the dock is listed first), creek stretches included.
+local ZONES = WaterMap.ZONES
 
 -- Cedar Creek, west of the lake behind a gated fence: three stretches of water, each its own spot.
 -- Rectangles in studs (x1, x2, z1, z2) with the bed height under the water.
-local CREEK = {
-	{ name = "Riffle", x1 = -236, x2 = -224, z1 = 30, z2 = 75, bed = -1.5 },
-	{ name = "Rocks", x1 = -240, x2 = -220, z1 = -10, z2 = 30, bed = -4 },
-	{ name = "Pool", x1 = -252, x2 = -208, z1 = -70, z2 = -10, bed = -9 },
-}
-for _, c in CREEK do
-	table.insert(ZONES, {
-		name = c.name,
-		center = Vector3.new((c.x1 + c.x2) / 2, 0, (c.z1 + c.z2) / 2),
-		size = Vector3.new(c.x2 - c.x1, 10, c.z2 - c.z1),
-	})
-end
+local CREEK = WaterMap.CREEK
 
 local COLORS = {
 	water = Color3.fromRGB(70, 130, 180),
@@ -114,23 +102,12 @@ local function stand(parent: Instance, name: string, pos: Vector3, color: Color3
 end
 
 function WorldBuilder.zones(): { { name: string, cframe: CFrame, size: Vector3 } }
-	local out = {}
-	for _, z in ZONES do
-		table.insert(out, { name = z.name, cframe = CFrame.new(z.center), size = z.size })
-	end
-	return out
+	return WaterMap.zones()
 end
 
 -- Every water box a cast may land in: the lake and the creek's three stretches.
 function WorldBuilder.waters(): { { cframe: CFrame, size: Vector3 } }
-	local out = { { cframe = WATER_CF, size = WATER_SIZE } }
-	for _, c in CREEK do
-		table.insert(out, {
-			cframe = CFrame.new((c.x1 + c.x2) / 2, -0.5, (c.z1 + c.z2) / 2),
-			size = Vector3.new(c.x2 - c.x1, 1, c.z2 - c.z1),
-		})
-	end
-	return out
+	return WaterMap.waters()
 end
 
 function WorldBuilder.water(): (CFrame, Vector3)

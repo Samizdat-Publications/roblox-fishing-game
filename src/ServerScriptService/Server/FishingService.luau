@@ -18,10 +18,11 @@ local Inventory = require(Shared.Inventory)
 local RodData = require(Shared.RodData)
 local Rarity = require(Shared.Rarity)
 local Remotes = require(Shared.Remotes)
+local CastLogic = require(Shared.CastLogic)
+local WaterMap = require(Shared.WaterMap)
 
 local Server = script.Parent
 local PlayerData = require(Server.PlayerData)
-local WorldBuilder = require(Server.WorldBuilder)
 local RodService = require(Server.RodService)
 local GoalService = require(Server.GoalService)
 local WeatherService = require(Server.WeatherService)
@@ -30,7 +31,6 @@ local Frenzy = require(Shared.Frenzy)
 local FrenzyService = require(Server.FrenzyService)
 local Teamwork = require(Shared.Teamwork)
 local BoatService = require(Server.BoatService)
-local BoatRules = require(Shared.BoatRules)
 
 local FishingService = {}
 
@@ -52,18 +52,10 @@ type Session = {
 
 local sessions: { [Player]: Session } = {}
 local rng = Random.new()
-local zones = WorldBuilder.zones()
-local waters = WorldBuilder.waters()
--- The channel and the Big Lake (boat-only water), when it's switched on. UNVERIFIED in
--- Studio, 2026-11-26.
-if Config.BIG_LAKE_ON then
-	for _, z in BoatRules.ZONES do
-		table.insert(zones, z)
-	end
-	for _, b in BoatRules.extraCastWaters() do
-		table.insert(waters, b)
-	end
-end
+-- The lake, the creek and (when it's switched on) the channel and the Big Lake. The client's
+-- landing ring reads the same WaterMap. Big Lake part UNVERIFIED in Studio, 2026-11-26.
+local zones = WaterMap.castZones()
+local waters = WaterMap.castWaters()
 
 local fishingEvent: RemoteEvent
 local toastEvent: RemoteEvent
@@ -255,7 +247,7 @@ function scheduleBite(player: Player, s: Session)
 	end)
 end
 
-local function onCast(player: Player, dir: any, power: any)
+local function onCast(player: Player, dir: any, power: any, clientLanding: any)
 	local s = session(player)
 	local data = PlayerData.get(player)
 	if s.phase ~= "Idle" or not data then
@@ -300,17 +292,30 @@ local function onCast(player: Player, dir: any, power: any)
 	if flat.Magnitude < 0.01 then
 		flat = hrp.CFrame.LookVector * Vector3.new(1, 0, 1)
 	end
-	flat = flat.Unit
 	local p = math.clamp(power, 0, 1)
-	local rod = RodData.byId[data.rod] or RodData.byId.Willow
-	-- The rod's extra reach grows with power, so a soft cast stays short with any rod
-	-- (the creek is only 12 studs wide).
-	local dist = Config.CAST_MIN + p * (Config.CAST_RANGE + rod.castBonus)
-	local landing = hrp.Position + flat * dist
-	landing = Vector3.new(landing.X, 0.3, landing.Z)
-	if not FishLogic.isOnWaterAny(landing, waters) then
+	-- Shared with the client's landing ring (CastLogic), so the ring shows where this lands.
+	-- The rod's and lure's extra reach grows with power, so a soft cast stays short with any
+	-- rod (the creek is only 12 studs wide).
+	local origin = hrp.Position
+	local landing = CastLogic.landing(origin, flat, p, data.rod, baitId)
+	if landing then
+		landing = CastLogic.assist(landing, origin, waters, FishLogic.isOnWaterAny)
+	end
+	if not landing then
 		send(player, "Hint", { text = "That landed on dry ground. Face the water and cast." })
 		return
+	end
+	-- The client sends the point its ring showed. Use it when it is close to ours, so lag
+	-- or a slightly different frame never moves the bobber away from the ring.
+	if typeof(clientLanding) == "Vector3" then
+		local c = clientLanding :: Vector3
+		local finite = c.X == c.X and c.Z == c.Z and math.abs(c.X) < 1e6 and math.abs(c.Z) < 1e6
+		if finite and CastLogic.flatDistance(c, landing) <= CastLogic.ACCEPT then
+			local cl = Vector3.new(c.X, CastLogic.LAND_Y, c.Z)
+			if FishLogic.isOnWaterAny(cl, waters) then
+				landing = cl
+			end
+		end
 	end
 	local boatOk, boatMsg = BoatService.castCheck(player, landing)
 	if not boatOk then

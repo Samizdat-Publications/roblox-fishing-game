@@ -221,6 +221,25 @@ Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6
 - Still to do in L1: a Lake Sturgeon at the deep hole in its real conditions, the journal on the smallest phone (the simulated mouse wheel zoomed the camera instead of scrolling the journal; check with a real wheel), the 15 new fish models (they hang as the old shape until then), a Neon reveal clip, the StyLua reformat, and Liam's 20 minutes.
 - Look mockups for the beauty pass: five looks (Golden Afternoon, Bright Summer Day, Misty Dawn, Moonlit Night, Autumn Lake) from the all-models stills, page https://claude.ai/artifact/DjMRLNSn6t91zKmR93sGr6 (source `planner/looks.html`, images `docs/looks/`, script `tools/looks/mockup.py`). They were made in the old flat low-poly style before Stewart picked Real-ish, so treat them as light and time-of-day moods, not materials.
 
+## 2026-11-27 (night): L2a, the cast ring
+
+- While you hold, a ring travels out and back on the water at 16 studs a second with a dotted arc from the rod tip and a label naming the spot (red "Dry ground" over land). Let go when it sits where you want. The power bar still moves with it. Still: `docs/making-of/stills/2026-11-27-cast-ring.jpg`.
+- One shared `Shared/CastLogic.luau` does the math for both the ring and the server; `Shared/WaterMap.luau` now holds the water and zone boxes so the client sees the same water. A near miss within 3 studs of the bank slides onto the water. Lures cast farther: spinner 1.25x, plastic worm 1.1x, minnow 1.05x on the reach part; a soft cast is still 8 studs.
+- Verified in Studio: 20 casts (4 directions, 5 powers) landed exactly on the client's predicted point (0.00 studs off); a deliberately wrong prediction was ignored and the server used its own. 156 tests pass in Studio and with Lune; checksums match. Place version 48.
+- Found and fixed in the playtest: the ring sat behind the player's head (the camera aims through the character), so the character now fades while aiming; adornments under the camera and an AlwaysOnTop label didn't render, so the ring lives in a client-only workspace folder and the label hangs off the ring.
+- Not yet checked: touch and gamepad (same charge path as the mouse), the 4-stud accuracy trial by hand, the smallest phone. Next: L2b (rises, cover, snags, the specific "nothing wants this" hint, the save-migration test).
+
+## Overnight plan (11/26 to 11/27/2026, until at least 11am)
+
+Stewart: keep working all night, make your own calls, stop only for real blockers; full sim but beatable by a 13-year-old who knows a little about fishing. One orchestrating session (this one) with builder agents for code; the orchestrator pushes to Studio, playtests, takes stills and commits after each step. Order:
+
+1. L2a: the cast ring, arc and shared `CastLogic` (in progress).
+2. L2b: rises, cover and snags; economy re-run.
+3. L3: the bait bench as a real rigging minigame (bait choice, hook size, hooking it right).
+4. L4: the wait and the reel, full-sim feel (bobber camera, fish shadow, twitch, drag and line tension).
+5. L1 leftover: the 15 new fish models.
+6. Morning report at the top of this file by 11am.
+
 ## Paused here (2026-11-26 evening, L1 and the looks)
 
 - Done: L1 first Studio pass (place version 44, saved, Edit mode, no playtest running); all scripts match `src/`; 143 tests pass. Five look mockups in the old low-poly style are live on the looks page; Stewart's seasons and frozen-lake direction is recorded.
@@ -243,6 +262,7 @@ A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shor
 - The test save on Stewart's account has 21 coins and 14 fish from Claude's playtests. Ask Claude to wipe it if you want a fresh start.
 
 ## Waiting on Stewart
+- **ID verification (planned 11/27):** verify the Roblox account Studio uploads with (playtests spawn as ProBabyTurtle) to lift the audio cap from 100 to 2,000 uploads per 30 days. Figure out which account owns the Fishing Game first; Roblox moves games only into a group, and uploaded sounds and models stay with the account that uploaded them.
 - **Voice chat off:** in Studio, File, Experience Settings, Communication, turn Enable Voice Chat off.
 - **Rating:** Creator Dashboard, the Fishing Game experience, Publish settings, Content ratings: redo the questionnaire and check it comes out Minimal or Mild.
 - **Open the place on your own phone** once now and once after the beauty pass (L5), to check the frame rate on a real device.

@@ -19,10 +19,18 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared.Config)
 local FightModel = require(Shared.FightModel)
 local Remotes = require(Shared.Remotes)
+local CastLogic = require(Shared.CastLogic)
+local FishLogic = require(Shared.FishLogic)
+local WaterMap = require(Shared.WaterMap)
 
 local UI = require(script.Parent.UI)
 local PondView = require(script.Parent.PondView)
 local SoundFX = require(script.Parent.SoundFX)
+local CastRing = require(script.Parent.CastRing)
+
+-- The same water and spot boxes the server casts against (Shared/WaterMap).
+local castZones = WaterMap.castZones()
+local castWaters = WaterMap.castWaters()
 
 local Controller = {}
 
@@ -147,6 +155,7 @@ local function goIdle()
 	endFishOn()
 	UI.bite(false)
 	UI.showPower(nil)
+	CastRing.hide()
 	UI.showFight(nil)
 	idleStatus()
 end
@@ -158,8 +167,62 @@ local function goIdleAfterFight()
 	needRelease = anyHeld()
 end
 
+-- The rod and bait this cast uses, from the last state the server sent.
+local function castGear(): (string?, string?)
+	if snapshot then
+		return snapshot.rod, snapshot.equipped
+	end
+	return nil, nil
+end
+
+-- Power rises and falls while held (the ring travels out and back), see CastLogic.powerAt.
 local function chargePower(): number
-	return math.clamp((os.clock() - chargeStart) / Config.CHARGE_TIME, 0, 1)
+	local rod, bait = castGear()
+	return CastLogic.powerAt(os.clock() - chargeStart, rod, bait)
+end
+
+-- Where a cast at this power would land, worked out exactly the way the server does it.
+-- Returns the raw landing (for drawing), the landing after near-miss help (nil over dry
+-- ground) and the rod tip the arc starts from.
+local function predictCast(power: number): (Vector3?, Vector3?, Vector3?)
+	local char = Players.LocalPlayer.Character
+	local hrp = char and char:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not hrp then
+		return nil, nil, nil
+	end
+	local rod, bait = castGear()
+	local origin = hrp.Position
+	local flat = workspace.CurrentCamera.CFrame.LookVector * Vector3.new(1, 0, 1)
+	if flat.Magnitude < 0.01 then
+		flat = hrp.CFrame.LookVector * Vector3.new(1, 0, 1)
+	end
+	local raw = CastLogic.landing(origin, flat, power, rod, bait)
+	if not raw then
+		return nil, nil, nil
+	end
+	local assisted = CastLogic.assist(raw, origin, castWaters, FishLogic.isOnWaterAny)
+	local rodPart = if char then char:FindFirstChild("Rod") else nil
+	local tipAtt = if rodPart then rodPart:FindFirstChild("RodTip") else nil
+	local tip = if tipAtt and tipAtt:IsA("Attachment") then tipAtt.WorldPosition else origin + Vector3.new(0, 4, 0) + flat.Unit
+	return raw, assisted, tip
+end
+
+local function spotLabel(point: Vector3): string
+	local name = FishLogic.SPOT_NAMES[FishLogic.spotAt(point, castZones)] or "open water"
+	return name:sub(1, 1):upper() .. name:sub(2)
+end
+
+local function drawRing(power: number)
+	local raw, assisted, tip = predictCast(power)
+	if not raw or not tip then
+		CastRing.hide()
+		return
+	end
+	if assisted then
+		CastRing.update(tip, assisted, true, spotLabel(assisted))
+	else
+		CastRing.update(tip, raw, false, "Dry ground")
+	end
 end
 
 local function hook()
@@ -190,14 +253,17 @@ local function onFish(_name: string, inputState: Enum.UserInputState, _input: In
 		setState("Charging")
 		chargeStart = os.clock()
 		UI.showPower(0)
-		UI.status("Let go to cast")
+		drawRing(0)
+		UI.status("Let go when the ring is where you want")
 	elseif state == "Charging" and ended then
 		local power = chargePower()
+		local _, predicted = predictCast(power)
 		UI.showPower(nil)
+		CastRing.hide()
 		setState("Casting")
 		castTimeout = os.clock() + 3
 		local cam = workspace.CurrentCamera
-		Remotes.event("Cast"):FireServer(cam.CFrame.LookVector, power)
+		Remotes.event("Cast"):FireServer(cam.CFrame.LookVector, power, predicted)
 		playId("cast-whoosh", "cast")
 		UI.status("Casting...")
 	elseif state == "Waiting" and began and os.clock() - stateSince > 0.6 then
@@ -466,7 +532,9 @@ function Controller.start()
 	RunService.RenderStepped:Connect(function(dt)
 		UI.setClock(Lighting.ClockTime)
 		if state == "Charging" then
-			UI.showPower(chargePower())
+			local power = chargePower()
+			UI.showPower(power)
+			drawRing(power)
 		elseif state == "Casting" and os.clock() > castTimeout then
 			goIdle()
 		elseif state == "Bite" and autoFish() then

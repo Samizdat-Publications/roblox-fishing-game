@@ -8,15 +8,16 @@ export type Bait = {
 	pack: number,
 	price: number,
 	blurb: string,
+	castMult: number?, -- how much farther it casts at full power (heavier lures fly farther); missing means 1
 }
 
 local list: { Bait } = {
 	{ id = "Worm", name = "Worms", kind = "live", pack = 10, price = 8, blurb = "Everything eats a worm. Panfish love them." },
 	{ id = "Cricket", name = "Crickets", kind = "live", pack = 10, price = 12, blurb = "Sunfish can't resist a cricket near weeds." },
-	{ id = "Minnow", name = "Minnows", kind = "live", pack = 10, price = 20, blurb = "Small fish for bigger fish: perch, crappie, bass." },
+	{ id = "Minnow", name = "Minnows", kind = "live", pack = 10, price = 20, blurb = "Small fish for bigger fish: perch, crappie, bass.", castMult = 1.05 },
 	{ id = "Stinkbait", name = "Stinkbait", kind = "live", pack = 10, price = 16, blurb = "Smelly. Bottom feeders find it in the dark." },
-	{ id = "Spinner", name = "Spinner", kind = "lure", pack = 1, price = 100, blurb = "Flashing blade. Hunters chase it in daylight." },
-	{ id = "PlasticWorm", name = "Plastic Worm", kind = "lure", pack = 1, price = 100, blurb = "Slow and wiggly. Bass grab it around cover." },
+	{ id = "Spinner", name = "Spinner", kind = "lure", pack = 1, price = 100, blurb = "Flashing blade. Hunters chase it in daylight.", castMult = 1.25 },
+	{ id = "PlasticWorm", name = "Plastic Worm", kind = "lure", pack = 1, price = 100, blurb = "Slow and wiggly. Bass grab it around cover.", castMult = 1.1 },
 }
 
 local byId: { [string]: Bait } = {}
