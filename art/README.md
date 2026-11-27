@@ -193,3 +193,33 @@ The table is generated from `models/manifest.json`. Sizes are studs as X x Y (up
 | [DeepV](previews/DeepV.png) | 7.19 x 4.14 x 17.75 | 548 | The gray-box boat BoatService builds (boat plan Task 2) | 16 x 7 stud hull; bow toward -Z. Helm seat behind the console, navigator seat up front. |
 
 Total: 32 models. Every one is a single mesh well under the 20,000 triangle limit; the biggest is the dock at 1372.
+
+## The plant kit: Cedar Creek and the first island (11/27/2026)
+
+![Plant kit](previews/plant_kit.png)
+
+Built by `scripts/plant_kit.py` for leg 3, N3 (Cedar Creek) and N6 (the first island). **Not yet uploaded or seen in Studio.** Same Layer B rules as the home lake bank kit: one mesh per material family, `<Name>_bark` takes the `bark` MaterialVariant and `<Name>_leaf` takes `leaf_needle`, each with its NEUTRAL colour map. UVs are world scale (1 UV unit = 1 stud), and the vertex colours are stored 1.25 times lighter than the colour you should see. Upload the copies in `models/roblox/`. Each mesh has its own entry in `models/manifest.json`, with the palette and placement notes.
+
+**Placing them.** Each model is built with the ground at height 0 and reaches a little below it. The pivot is the bottom centre of the box, so place the pivot at ground height minus `bury` (the table). Two-mesh models, and CreekFern2, have a box centred on the foot of the trunk (or the middle of the log), so both meshes go at the same CFrame and a turn spins the model about its foot. Anything that leans or faces a way was built toward Blender +X, which is **Roblox -X** once imported.
+
+**Where PlantFactory came in.** Stewart's PlantFactory exports (ranch-twin, `assets/plantfactory_export/`) were checked first. Their foliage is alpha-cut leaf cards, which a Layer B mesh (no textures) would show as opaque rectangles, and their trunks are true to scale, far thinner than this game's chunky shapes. So no PlantFactory mesh is shipped. The one real gain is the Cedar's crown: its reach by height and by side is measured from the western red cedar export (Thuja plicata, seed 0), kept in `scripts/plant_envelopes.json` and widened 1.9 times. A real cedar is a narrow column, widest at four tenths of its height, and the Cedar keeps that shape. Ferns, moss, juniper, heather and lichen were never exported, and the lone pine is a deliberately wind-shaped landmark, so those are hand-built. Nothing new had to be exported.
+
+**Budgets.** 12 models, 17 meshes, 8,078 triangles. The island uses 9 of its 12 mesh budget (LonePine, Juniper1 and Juniper2 at two each, then HeathTufts, LichenTufts and LichenCrust). Sizes are the true extent in studs, X x Y (up) x Z.
+
+| Model | Area | Size (studs) | Triangles | Bury | Placement |
+|---|---|---|---|---|---|
+| Cedar | Cedar Creek | 8.65 x 19.01 x 8.44 | 310 bark + 962 leaf = 1272 | 1.02 | On the creek banks, 2 studs or more back from the water, in loose groups of two or three so the crowns meet over the stream (the closed canopy). Any turn; scale 0.7 to 1.1 for 13 to 20 studs. The nodding leader at the top leans toward Roblox -X. |
+| MossyLog | Cedar Creek | 25.81 x 4.11 x 6.41 | 814 bark + 338 leaf = 1152 | 0.27 | Across the pool, each end on a bank top. Lies along X; the root-plate end is at Roblox +X, the broken end at Roblox -X. The ends sink their bury into the banks; the middle may hang over the water. |
+| CreekRoots | Cedar Creek | 2.7 x 3.53 x 5.6 | 540 bark = 540 | 3.52 | On a cut bank face: the model's Roblox +X side goes into the bank and the roots hang toward Roblox -X (the water). Its ground line is the bank lip, so the pivot goes at lip height minus bury. Roblox terrain is 4 stud voxels, so a cut bank is a slope, not a wall: set the model's back where the slope meets the water line, then check in Studio that the roots are not buried in it. |
+| CreekFern1 | Cedar Creek | 4.08 x 1.48 x 4.15 | 470 leaf = 470 | 0.2 | On the banks and under the cedars, in groups of two to five; any turn, scale 0.8 to 1.3. |
+| CreekFern2 | Cedar Creek | 3 x 2.02 x 3.64 | 422 leaf = 422 | 1.23 | On the lip of a cut bank or the top of a boulder, the fronds spilling over toward Roblox -X (the water). Its fronds hang 2 studs below its ground line on purpose. |
+| MossMat | Cedar Creek | 6.93 x 1.83 x 5.28 | 216 leaf = 216 | 0.48 | On the top of a boulder: fitted to RockLarge (scale 1) and RockMedium (scale 0.6). Sink it 0.1 so no gap shows; scale X and Z to fit, Y to match the rock's curve. |
+| LonePine | Island | 19.47 x 31.17 x 13.42 | 482 bark + 802 leaf = 1284 | 1.56 | The island's landmark: on its highest granite knoll, alone, so the sky is behind it from the approach. The trunk bends and the crown streams toward Roblox -X: turn that away from the prevailing wind (downwind), and so the approach from the marina sees it side on. At scale 1 it stands 29.6 studs and its crown reaches 16 studs downwind of the foot. |
+| Juniper1 | Island | 6.45 x 1.55 x 5.97 | 62 bark + 716 leaf = 778 | 0.45 | A creeping mat: in the hollows and along the cracks of the granite, any turn, scale 0.7 to 1.3. Sink the rim slightly into rock edges. |
+| Juniper2 | Island | 6.4 x 3.53 x 3.9 | 164 bark + 430 leaf = 594 | 0.67 | A wind-shorn shrub: on the island's exposed shoulders. It streams toward Roblox -X: turn that downwind, the same way as the LonePine. The bleached dead limb points upwind. |
+| HeathTufts | Island | 4.66 x 1.23 x 2.81 | 646 leaf = 646 | 0.15 | Between the rocks on any thin soil, drifts of several, any turn. |
+| LichenTufts | Island | 3.26 x 0.68 x 2.71 | 404 leaf = 404 | 0.1 | Pale reindeer-lichen cushions: on thin soil and in the dips of the granite, near the heath. |
+| LichenCrust | Island | 4.75 x 0.1 x 3.02 | 300 leaf = 300 | 0.04 | Orange and grey-green crust on the granite itself: lay it on a rock face (tilt it to the slope; it is 0.1 studs thick), mostly on the sunny, bird-perch tops. |
+
+Rebuild: `python art/scripts/plant_kit.py` (the models, the manifest entries and the sheet; `--no-render` for the models only). The previews read the real `bark` and `leaf_needle` maps from `art/textures/` when they are there, or from the folder in `PLANT_KIT_TEXTURES`. To re-measure the cedar from a PlantFactory export: `blender -b -P art/scripts/plant_kit.py -- --measure <file.fbx>`.
+

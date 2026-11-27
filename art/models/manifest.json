@@ -2406,5 +2406,788 @@
     "parts": 11,
     "replaces": "FishShadows blobs and the catch held on the line (FishingService.showCatch)",
     "notes": "Built at the species' average length, 23.5 cm = 1.96 studs (1 stud = 12 cm). Scale by caught cm / average cm. Head along +X."
+  },
+  "Cedar_bark": {
+    "name": "Cedar_bark",
+    "studs": [
+      9.37,
+      19.01,
+      8.61
+    ],
+    "triangles": 310,
+    "parts": 1,
+    "replaces": "PineTall and PineShort along Cedar Creek (the gray-box trunk and crown pairs)",
+    "notes": "Plant kit (Cedar Creek), Layer B, bark family: MaterialVariant bark with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/Cedar_bark.glb. Pivot at the bottom centre; the ground line is 1.02 studs above it, so place the pivot at ground height minus 1.02. It stands 18.0 studs above the ground line. Both meshes share one box, centred on the foot of the trunk (or the middle of the log), so both go at the same CFrame. On the creek banks, 2 studs or more back from the water, in loose groups of two or three so the crowns meet over the stream (the closed canopy). Any turn; scale 0.7 to 1.1 for 13 to 20 studs. The nodding leader at the top leans toward Roblox -X. Crown shape from PlantFactory export thuja-plicata-s0.fbx (ranch-twin assets/plantfactory_export), measured 11/27/2026.",
+    "model": "Cedar",
+    "family": "bark",
+    "variant": "bark",
+    "area": "creek",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 1.02,
+    "height_above_ground": 17.99,
+    "true_studs": [
+      8.65,
+      19.01,
+      8.44
+    ],
+    "model_triangles": 1272,
+    "source": "PlantFactory export thuja-plicata-s0.fbx (ranch-twin assets/plantfactory_export), measured 11/27/2026",
+    "palette_seen_rgb": {
+      "cedar_bark": [
+        110,
+        70,
+        50
+      ],
+      "cedar_bark_grey": [
+        128,
+        112,
+        98
+      ],
+      "cedar_bark_dark": [
+        78,
+        52,
+        40
+      ]
+    }
+  },
+  "Cedar_leaf": {
+    "name": "Cedar_leaf",
+    "studs": [
+      9.37,
+      19.01,
+      8.61
+    ],
+    "triangles": 962,
+    "parts": 1,
+    "replaces": "PineTall and PineShort along Cedar Creek (the gray-box trunk and crown pairs)",
+    "notes": "Plant kit (Cedar Creek), Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/Cedar_leaf.glb. Pivot at the bottom centre; the ground line is 1.02 studs above it, so place the pivot at ground height minus 1.02. It stands 18.0 studs above the ground line. Both meshes share one box, centred on the foot of the trunk (or the middle of the log), so both go at the same CFrame. On the creek banks, 2 studs or more back from the water, in loose groups of two or three so the crowns meet over the stream (the closed canopy). Any turn; scale 0.7 to 1.1 for 13 to 20 studs. The nodding leader at the top leans toward Roblox -X. Crown shape from PlantFactory export thuja-plicata-s0.fbx (ranch-twin assets/plantfactory_export), measured 11/27/2026.",
+    "model": "Cedar",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "area": "creek",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 1.02,
+    "height_above_ground": 17.99,
+    "true_studs": [
+      8.65,
+      19.01,
+      8.44
+    ],
+    "model_triangles": 1272,
+    "source": "PlantFactory export thuja-plicata-s0.fbx (ranch-twin assets/plantfactory_export), measured 11/27/2026",
+    "palette_seen_rgb": {
+      "cedar_leaf_sun": [
+        82,
+        112,
+        56
+      ],
+      "cedar_leaf": [
+        66,
+        96,
+        50
+      ],
+      "cedar_leaf_deep": [
+        42,
+        64,
+        38
+      ]
+    }
+  },
+  "CreekFern1_leaf": {
+    "name": "CreekFern1_leaf",
+    "studs": [
+      4.08,
+      1.48,
+      4.15
+    ],
+    "triangles": 470,
+    "parts": 1,
+    "replaces": "Nothing yet: creek undergrowth",
+    "notes": "Plant kit (Cedar Creek), Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/CreekFern1_leaf.glb. Pivot at the bottom centre; the ground line is 0.2 studs above it, so place the pivot at ground height minus 0.2. It stands 1.3 studs above the ground line. On the banks and under the cedars, in groups of two to five; any turn, scale 0.8 to 1.3.",
+    "model": "CreekFern1",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "area": "creek",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.2,
+    "height_above_ground": 1.28,
+    "true_studs": [
+      4.08,
+      1.48,
+      4.15
+    ],
+    "model_triangles": 470,
+    "source": "hand-built in this script",
+    "palette_seen_rgb": {
+      "cfern": [
+        74,
+        110,
+        52
+      ],
+      "cfern_tip": [
+        100,
+        132,
+        62
+      ],
+      "cfern_deep": [
+        50,
+        78,
+        40
+      ]
+    }
+  },
+  "CreekFern2_leaf": {
+    "name": "CreekFern2_leaf",
+    "studs": [
+      4.19,
+      2.02,
+      3.93
+    ],
+    "triangles": 422,
+    "parts": 1,
+    "replaces": "Nothing yet: creek undergrowth",
+    "notes": "Plant kit (Cedar Creek), Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/CreekFern2_leaf.glb. Pivot at the bottom centre; the ground line is 1.23 studs above it, so place the pivot at ground height minus 1.23. It stands 0.8 studs above the ground line. Both meshes share one box, centred on the foot of the trunk (or the middle of the log), so both go at the same CFrame. On the lip of a cut bank or the top of a boulder, the fronds spilling over toward Roblox -X (the water). Its fronds hang 2 studs below its ground line on purpose.",
+    "model": "CreekFern2",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "area": "creek",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 1.23,
+    "height_above_ground": 0.79,
+    "true_studs": [
+      3.0,
+      2.02,
+      3.64
+    ],
+    "model_triangles": 422,
+    "source": "hand-built in this script",
+    "palette_seen_rgb": {
+      "cfern": [
+        74,
+        110,
+        52
+      ],
+      "cfern_tip": [
+        100,
+        132,
+        62
+      ],
+      "cfern_deep": [
+        50,
+        78,
+        40
+      ]
+    }
+  },
+  "CreekRoots_bark": {
+    "name": "CreekRoots_bark",
+    "studs": [
+      2.7,
+      3.53,
+      5.6
+    ],
+    "triangles": 540,
+    "parts": 1,
+    "replaces": "Nothing yet: roots on the cut banks (plan, Cedar Creek row)",
+    "notes": "Plant kit (Cedar Creek), Layer B, bark family: MaterialVariant bark with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/CreekRoots_bark.glb. Pivot at the bottom centre; the ground line is 3.52 studs above it, so place the pivot at ground height minus 3.52. It stands 0.0 studs above the ground line. On a cut bank face: the model's Roblox +X side goes into the bank and the roots hang toward Roblox -X (the water). Its ground line is the bank lip, so the pivot goes at lip height minus bury. Roblox terrain is 4 stud voxels, so a cut bank is a slope, not a wall: set the model's back where the slope meets the water line, then check in Studio that the roots are not buried in it.",
+    "model": "CreekRoots",
+    "family": "bark",
+    "variant": "bark",
+    "area": "creek",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 3.52,
+    "height_above_ground": 0.02,
+    "true_studs": [
+      2.7,
+      3.53,
+      5.6
+    ],
+    "model_triangles": 540,
+    "source": "hand-built in this script",
+    "palette_seen_rgb": {
+      "root": [
+        92,
+        72,
+        56
+      ],
+      "root_dark": [
+        64,
+        50,
+        40
+      ],
+      "root_pale": [
+        130,
+        110,
+        90
+      ]
+    }
+  },
+  "HeathTufts_leaf": {
+    "name": "HeathTufts_leaf",
+    "studs": [
+      4.66,
+      1.23,
+      2.81
+    ],
+    "triangles": 646,
+    "parts": 1,
+    "replaces": "Nothing yet: island kit",
+    "notes": "Plant kit (the first island), Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/HeathTufts_leaf.glb. Pivot at the bottom centre; the ground line is 0.15 studs above it, so place the pivot at ground height minus 0.15. It stands 1.1 studs above the ground line. Between the rocks on any thin soil, drifts of several, any turn.",
+    "model": "HeathTufts",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "area": "island",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.15,
+    "height_above_ground": 1.08,
+    "true_studs": [
+      4.66,
+      1.23,
+      2.81
+    ],
+    "model_triangles": 646,
+    "source": "hand-built in this script",
+    "palette_seen_rgb": {
+      "heath": [
+        120,
+        54,
+        48
+      ],
+      "heath_dark": [
+        82,
+        42,
+        38
+      ],
+      "heath_dry": [
+        142,
+        98,
+        74
+      ],
+      "heath_green": [
+        92,
+        88,
+        54
+      ]
+    }
+  },
+  "Juniper1_bark": {
+    "name": "Juniper1_bark",
+    "studs": [
+      7.32,
+      1.55,
+      6.82
+    ],
+    "triangles": 62,
+    "parts": 1,
+    "replaces": "Nothing yet: island kit",
+    "notes": "Plant kit (the first island), Layer B, bark family: MaterialVariant bark with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/Juniper1_bark.glb. Pivot at the bottom centre; the ground line is 0.45 studs above it, so place the pivot at ground height minus 0.45. It stands 1.1 studs above the ground line. Both meshes share one box, centred on the foot of the trunk (or the middle of the log), so both go at the same CFrame. A creeping mat: in the hollows and along the cracks of the granite, any turn, scale 0.7 to 1.3. Sink the rim slightly into rock edges.",
+    "model": "Juniper1",
+    "family": "bark",
+    "variant": "bark",
+    "area": "island",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.45,
+    "height_above_ground": 1.1,
+    "true_studs": [
+      6.45,
+      1.55,
+      5.97
+    ],
+    "model_triangles": 778,
+    "source": "hand-built in this script",
+    "palette_seen_rgb": {
+      "juniper_bark": [
+        104,
+        84,
+        72
+      ],
+      "juniper_dead": [
+        168,
+        160,
+        148
+      ]
+    }
+  },
+  "Juniper1_leaf": {
+    "name": "Juniper1_leaf",
+    "studs": [
+      7.32,
+      1.55,
+      6.82
+    ],
+    "triangles": 716,
+    "parts": 1,
+    "replaces": "Nothing yet: island kit",
+    "notes": "Plant kit (the first island), Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/Juniper1_leaf.glb. Pivot at the bottom centre; the ground line is 0.45 studs above it, so place the pivot at ground height minus 0.45. It stands 1.1 studs above the ground line. Both meshes share one box, centred on the foot of the trunk (or the middle of the log), so both go at the same CFrame. A creeping mat: in the hollows and along the cracks of the granite, any turn, scale 0.7 to 1.3. Sink the rim slightly into rock edges.",
+    "model": "Juniper1",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "area": "island",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.45,
+    "height_above_ground": 1.1,
+    "true_studs": [
+      6.45,
+      1.55,
+      5.97
+    ],
+    "model_triangles": 778,
+    "source": "hand-built in this script",
+    "palette_seen_rgb": {
+      "juniper": [
+        52,
+        84,
+        66
+      ],
+      "juniper_sun": [
+        66,
+        98,
+        72
+      ],
+      "juniper_deep": [
+        36,
+        60,
+        50
+      ],
+      "juniper_bronze": [
+        100,
+        94,
+        64
+      ]
+    }
+  },
+  "Juniper2_bark": {
+    "name": "Juniper2_bark",
+    "studs": [
+      9.28,
+      3.53,
+      4.07
+    ],
+    "triangles": 164,
+    "parts": 1,
+    "replaces": "Nothing yet: island kit",
+    "notes": "Plant kit (the first island), Layer B, bark family: MaterialVariant bark with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/Juniper2_bark.glb. Pivot at the bottom centre; the ground line is 0.67 studs above it, so place the pivot at ground height minus 0.67. It stands 2.9 studs above the ground line. Both meshes share one box, centred on the foot of the trunk (or the middle of the log), so both go at the same CFrame. A wind-shorn shrub: on the island's exposed shoulders. It streams toward Roblox -X: turn that downwind, the same way as the LonePine. The bleached dead limb points upwind.",
+    "model": "Juniper2",
+    "family": "bark",
+    "variant": "bark",
+    "area": "island",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.67,
+    "height_above_ground": 2.86,
+    "true_studs": [
+      6.4,
+      3.53,
+      3.9
+    ],
+    "model_triangles": 594,
+    "source": "hand-built in this script",
+    "palette_seen_rgb": {
+      "juniper_bark": [
+        104,
+        84,
+        72
+      ],
+      "juniper_dead": [
+        168,
+        160,
+        148
+      ]
+    }
+  },
+  "Juniper2_leaf": {
+    "name": "Juniper2_leaf",
+    "studs": [
+      9.28,
+      3.53,
+      4.07
+    ],
+    "triangles": 430,
+    "parts": 1,
+    "replaces": "Nothing yet: island kit",
+    "notes": "Plant kit (the first island), Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/Juniper2_leaf.glb. Pivot at the bottom centre; the ground line is 0.67 studs above it, so place the pivot at ground height minus 0.67. It stands 2.9 studs above the ground line. Both meshes share one box, centred on the foot of the trunk (or the middle of the log), so both go at the same CFrame. A wind-shorn shrub: on the island's exposed shoulders. It streams toward Roblox -X: turn that downwind, the same way as the LonePine. The bleached dead limb points upwind.",
+    "model": "Juniper2",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "area": "island",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.67,
+    "height_above_ground": 2.86,
+    "true_studs": [
+      6.4,
+      3.53,
+      3.9
+    ],
+    "model_triangles": 594,
+    "source": "hand-built in this script",
+    "palette_seen_rgb": {
+      "juniper": [
+        52,
+        84,
+        66
+      ],
+      "juniper_sun": [
+        66,
+        98,
+        72
+      ],
+      "juniper_deep": [
+        36,
+        60,
+        50
+      ],
+      "juniper_bronze": [
+        100,
+        94,
+        64
+      ]
+    }
+  },
+  "LichenCrust_leaf": {
+    "name": "LichenCrust_leaf",
+    "studs": [
+      4.75,
+      0.1,
+      3.02
+    ],
+    "triangles": 300,
+    "parts": 1,
+    "replaces": "Nothing yet: island kit",
+    "notes": "Plant kit (the first island), Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/LichenCrust_leaf.glb. Pivot at the bottom centre; the ground line is 0.04 studs above it, so place the pivot at ground height minus 0.04. It stands 0.1 studs above the ground line. Orange and grey-green crust on the granite itself: lay it on a rock face (tilt it to the slope; it is 0.1 studs thick), mostly on the sunny, bird-perch tops.",
+    "model": "LichenCrust",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "area": "island",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.04,
+    "height_above_ground": 0.06,
+    "true_studs": [
+      4.75,
+      0.1,
+      3.02
+    ],
+    "model_triangles": 300,
+    "source": "hand-built in this script",
+    "palette_seen_rgb": {
+      "lichen_orange": [
+        204,
+        130,
+        48
+      ],
+      "lichen_orange_dark": [
+        172,
+        100,
+        40
+      ],
+      "lichen": [
+        150,
+        160,
+        120
+      ],
+      "lichen_grey": [
+        164,
+        166,
+        150
+      ]
+    }
+  },
+  "LichenTufts_leaf": {
+    "name": "LichenTufts_leaf",
+    "studs": [
+      3.26,
+      0.68,
+      2.71
+    ],
+    "triangles": 404,
+    "parts": 1,
+    "replaces": "Nothing yet: island kit",
+    "notes": "Plant kit (the first island), Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/LichenTufts_leaf.glb. Pivot at the bottom centre; the ground line is 0.1 studs above it, so place the pivot at ground height minus 0.1. It stands 0.6 studs above the ground line. Pale reindeer-lichen cushions: on thin soil and in the dips of the granite, near the heath.",
+    "model": "LichenTufts",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "area": "island",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.1,
+    "height_above_ground": 0.58,
+    "true_studs": [
+      3.26,
+      0.68,
+      2.71
+    ],
+    "model_triangles": 404,
+    "source": "hand-built in this script",
+    "palette_seen_rgb": {
+      "lichen": [
+        150,
+        160,
+        120
+      ],
+      "lichen_pale": [
+        176,
+        182,
+        150
+      ],
+      "lichen_shade": [
+        114,
+        124,
+        94
+      ]
+    }
+  },
+  "LonePine_bark": {
+    "name": "LonePine_bark",
+    "studs": [
+      35.23,
+      31.17,
+      14.87
+    ],
+    "triangles": 482,
+    "parts": 1,
+    "replaces": "Nothing yet: the island landmark (plan, N6)",
+    "notes": "Plant kit (the first island), Layer B, bark family: MaterialVariant bark with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/LonePine_bark.glb. Pivot at the bottom centre; the ground line is 1.56 studs above it, so place the pivot at ground height minus 1.56. It stands 29.6 studs above the ground line. Both meshes share one box, centred on the foot of the trunk (or the middle of the log), so both go at the same CFrame. The island's landmark: on its highest granite knoll, alone, so the sky is behind it from the approach. The trunk bends and the crown streams toward Roblox -X: turn that away from the prevailing wind (downwind), and so the approach from the marina sees it side on. At scale 1 it stands 29.6 studs and its crown reaches 16 studs downwind of the foot.",
+    "model": "LonePine",
+    "family": "bark",
+    "variant": "bark",
+    "area": "island",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 1.56,
+    "height_above_ground": 29.6,
+    "true_studs": [
+      19.47,
+      31.17,
+      13.42
+    ],
+    "model_triangles": 1284,
+    "source": "hand-built in this script",
+    "palette_seen_rgb": {
+      "lpine_bark": [
+        96,
+        78,
+        66
+      ],
+      "lpine_bark_dark": [
+        70,
+        58,
+        52
+      ],
+      "lpine_bark_red": [
+        122,
+        84,
+        62
+      ],
+      "lpine_dead": [
+        168,
+        160,
+        150
+      ]
+    }
+  },
+  "LonePine_leaf": {
+    "name": "LonePine_leaf",
+    "studs": [
+      35.23,
+      31.17,
+      14.87
+    ],
+    "triangles": 802,
+    "parts": 1,
+    "replaces": "Nothing yet: the island landmark (plan, N6)",
+    "notes": "Plant kit (the first island), Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/LonePine_leaf.glb. Pivot at the bottom centre; the ground line is 1.56 studs above it, so place the pivot at ground height minus 1.56. It stands 29.6 studs above the ground line. Both meshes share one box, centred on the foot of the trunk (or the middle of the log), so both go at the same CFrame. The island's landmark: on its highest granite knoll, alone, so the sky is behind it from the approach. The trunk bends and the crown streams toward Roblox -X: turn that away from the prevailing wind (downwind), and so the approach from the marina sees it side on. At scale 1 it stands 29.6 studs and its crown reaches 16 studs downwind of the foot.",
+    "model": "LonePine",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "area": "island",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 1.56,
+    "height_above_ground": 29.6,
+    "true_studs": [
+      19.47,
+      31.17,
+      13.42
+    ],
+    "model_triangles": 1284,
+    "source": "hand-built in this script",
+    "palette_seen_rgb": {
+      "lpine_needle": [
+        50,
+        80,
+        62
+      ],
+      "lpine_needle_sun": [
+        62,
+        92,
+        60
+      ],
+      "lpine_needle_deep": [
+        34,
+        56,
+        46
+      ]
+    }
+  },
+  "MossMat_leaf": {
+    "name": "MossMat_leaf",
+    "studs": [
+      6.93,
+      1.83,
+      5.28
+    ],
+    "triangles": 216,
+    "parts": 1,
+    "replaces": "Nothing yet: moss on the creek boulders (RockLarge, RockMedium)",
+    "notes": "Plant kit (Cedar Creek), Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/MossMat_leaf.glb. Pivot at the bottom centre; the ground line is 0.48 studs above it, so place the pivot at ground height minus 0.48. It stands 1.4 studs above the ground line. On the top of a boulder: fitted to RockLarge (scale 1) and RockMedium (scale 0.6). Sink it 0.1 so no gap shows; scale X and Z to fit, Y to match the rock's curve.",
+    "model": "MossMat",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "area": "creek",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.48,
+    "height_above_ground": 1.35,
+    "true_studs": [
+      6.93,
+      1.83,
+      5.28
+    ],
+    "model_triangles": 216,
+    "source": "hand-built in this script",
+    "palette_seen_rgb": {
+      "moss": [
+        78,
+        104,
+        52
+      ],
+      "moss_sun": [
+        98,
+        124,
+        58
+      ],
+      "moss_deep": [
+        56,
+        78,
+        40
+      ],
+      "moss_gold": [
+        112,
+        118,
+        56
+      ]
+    }
+  },
+  "MossyLog_bark": {
+    "name": "MossyLog_bark",
+    "studs": [
+      26.3,
+      4.11,
+      6.54
+    ],
+    "triangles": 814,
+    "parts": 1,
+    "replaces": "Nothing yet: the log across the pool (plan, Cedar Creek row)",
+    "notes": "Plant kit (Cedar Creek), Layer B, bark family: MaterialVariant bark with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/MossyLog_bark.glb. Pivot at the bottom centre; the ground line is 0.27 studs above it, so place the pivot at ground height minus 0.27. It stands 3.8 studs above the ground line. Both meshes share one box, centred on the foot of the trunk (or the middle of the log), so both go at the same CFrame. Across the pool, each end on a bank top. Lies along X; the root-plate end is at Roblox +X, the broken end at Roblox -X. The ends sink their bury into the banks; the middle may hang over the water.",
+    "model": "MossyLog",
+    "family": "bark",
+    "variant": "bark",
+    "area": "creek",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.27,
+    "height_above_ground": 3.84,
+    "true_studs": [
+      25.81,
+      4.11,
+      6.41
+    ],
+    "model_triangles": 1152,
+    "source": "hand-built in this script",
+    "palette_seen_rgb": {
+      "log": [
+        96,
+        76,
+        60
+      ],
+      "log_grey": [
+        118,
+        106,
+        92
+      ],
+      "log_dark": [
+        62,
+        50,
+        42
+      ],
+      "log_end": [
+        150,
+        118,
+        86
+      ],
+      "root": [
+        92,
+        72,
+        56
+      ]
+    }
+  },
+  "MossyLog_leaf": {
+    "name": "MossyLog_leaf",
+    "studs": [
+      26.3,
+      4.11,
+      6.54
+    ],
+    "triangles": 338,
+    "parts": 1,
+    "replaces": "Nothing yet: the log across the pool (plan, Cedar Creek row)",
+    "notes": "Plant kit (Cedar Creek), Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/MossyLog_leaf.glb. Pivot at the bottom centre; the ground line is 0.27 studs above it, so place the pivot at ground height minus 0.27. It stands 3.8 studs above the ground line. Both meshes share one box, centred on the foot of the trunk (or the middle of the log), so both go at the same CFrame. Across the pool, each end on a bank top. Lies along X; the root-plate end is at Roblox +X, the broken end at Roblox -X. The ends sink their bury into the banks; the middle may hang over the water.",
+    "model": "MossyLog",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "area": "creek",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.27,
+    "height_above_ground": 3.84,
+    "true_studs": [
+      25.81,
+      4.11,
+      6.41
+    ],
+    "model_triangles": 1152,
+    "source": "hand-built in this script",
+    "palette_seen_rgb": {
+      "moss": [
+        78,
+        104,
+        52
+      ],
+      "moss_sun": [
+        98,
+        124,
+        58
+      ],
+      "moss_deep": [
+        56,
+        78,
+        40
+      ],
+      "cfern": [
+        74,
+        110,
+        52
+      ]
+    }
   }
 }
