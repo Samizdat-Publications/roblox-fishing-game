@@ -6,7 +6,7 @@ Written 11/26/2026, when Stewart's account hit Roblox's audio upload cap. Code: 
 
 - From Roblox's audio guide (https://create.roblox.com/docs/audio/assets.md): unverified accounts can import **100** free audio assets per 30 days; **ID-verified accounts can import 2,000** per 30 days. A daily limit, if any, is replaced by the monthly one.
 - The count is per account, so the Fishing Game and Dont Wave Back (Dead Calm) share it while one account uploads for both. Today's 100 were 27 for this game and 73 for Dead Calm. The window resets about 12/26/2026.
-- **The fix is ID verification** (Stewart, planned for 11/27/2026), which lifts the cap to 2,000. Only the account that uploads needs it: the one Studio is signed in as when Claude uploads. Until it's done, the rules below apply.
+- **The fix is ID verification** (Stewart completed age verification on the uploading account on 11/27/2026; the next upload will show whether the cap is now 2,000), which lifts the cap to 2,000. Only the account that uploads needs it: the one Studio is signed in as when Claude uploads. Until it's done, the rules below apply.
 - Models and images have their own limits and are not affected.
 
 ## Split between the two games (until verification)

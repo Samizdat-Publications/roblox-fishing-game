@@ -24,7 +24,7 @@ Stewart picked the Big Lake first (the ocean dock comes later). It is built, sav
 
 **What needs you**
 - **Playtest with Liam:** buy the dinghy (your test save has 100 coins after my test buy; ask me to top it up or wipe it), drive out to the Big Lake and try for a white bass at dawn or dusk with a spinner or minnows. Try the gamepad and a phone too.
-- **For the two-person boat:** give Liam's Roblox account access to the place (Studio: Home, Game Settings, Permissions, add him as a collaborator). Then the Deep-V can be finished and tested with two real players, moving with one player as you asked.
+- **For the two-person boat:** give Liam's Roblox account access to the place (Studio: Home, Game Settings, Permissions, add him as a collaborator). Then the Deep-V can be finished and tested with two real players, moving with one player as you asked. Stewart, 11/27/2026: he'll confirm Liam's current account when he sees him next weekend; until then everything is built and tested on Stewart's account only.
 
 ## Morning report, 11/27/2026
 
@@ -501,11 +501,11 @@ A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shor
 - The test save on the Studio account holds Claude's playtest results (as of 11/27/2026 after L7: 100 coins, the Inflatable Dinghy, the Graphite Rod, braided line, a few fish in the bag, a monster carp on the trophy wall). Ask Claude to wipe it if you want a fresh start.
 
 ## Waiting on Stewart
-- **ID verification (planned 11/27):** verify the Roblox account Studio uploads with (the account Studio is signed in to) to lift the audio cap from 100 to 2,000 uploads per 30 days. Figure out which account owns the Fishing Game first; Roblox moves games only into a group, and uploaded sounds and models stay with the account that uploaded them.
+- **ID verification: done 11/27/2026.** Stewart completed Roblox's age verification on the account Studio is signed in to (the one he and Liam have been playing on, and the one Claude uploads with). Roblox lifts the audio cap from 100 to 2,000 a month for ID-verified accounts; the next sound upload will show whether this verification counts.
 - **Voice chat off:** in Studio, File, Experience Settings, Communication, turn Enable Voice Chat off.
 - **Rating:** Creator Dashboard, the Fishing Game experience, Publish settings, Content ratings: redo the questionnaire and check it comes out Minimal or Mild.
 - **Open the place on your own phone** once now and once after the beauty pass (L5), to check the frame rate on a real device.
-- **For the two-person Deep-V (L7 phase 2):** give Liam's Roblox account access to the place. The solo dinghy and the Big Lake are done (11/27/2026); the Deep-V waits for this.
+- **For the two-person Deep-V (L7 phase 2):** give Liam's Roblox account access to the place, once Stewart confirms which account is his (next weekend). The solo dinghy and the Big Lake are done (11/27/2026); the Deep-V waits for this.
 - **Try the dinghy on a gamepad and a phone** (Studio's input tool can't move a thumbstick).
 - Playtest it: open Fishing Game in Studio and press Play (F5).
 - Optional, speeds up Claude's builds: in Studio, Assistant Settings, MCP Permissions, Connect to the internet, add `localhost:8765` to the HTTP domain allow list.
