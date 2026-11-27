@@ -1068,11 +1068,12 @@ local function onHook(player: Player)
 	s.catch = { cm = cm, kg = kg, class = class }
 	print(string.format("[Fishing] %s hooked size: %s %.1f cm %s, its shadow was %.2f studs", player.Name, species.id, cm, class, Approach.shadowLength(cm)))
 	local profile = FishLogic.fightFor(species.fight, class)
-	-- Line and drag (L4d): the fish's weight over this rod's line rating.
-	local load = RodData.lineLoad(kg, data.rod)
+	-- Line and drag (L4d): the fish's weight over this rod's line rating (plus braided line if owned).
+	local braid = data.braid == true
+	local load = RodData.lineLoad(kg, data.rod, braid)
 	s.fightCheck = FightModel.checkFor(profile, start, load)
-	local rod = RodData.byId[data.rod] or RodData.byId.Willow
-	print(string.format("[Fishing] %s hooked %s, fight starts at %.2f (%s), %.1f lb on %d lb line: load %.2f", player.Name, species.id, start, if rig then rig.grade else "lure", kg / 0.45359237, rod.lineLb, load))
+	local lineLb = RodData.lineLbFor(data.rod, braid)
+	print(string.format("[Fishing] %s hooked %s, fight starts at %.2f (%s), %.1f lb on %d lb line%s: load %.2f", player.Name, species.id, start, if rig then rig.grade else "lure", kg / 0.45359237, lineLb, if braid then " (braided)" else "", load))
 	setBobberY(s, -1)
 	local token = s.token
 	send(player, "Hooked", {
@@ -1081,7 +1082,7 @@ local function onHook(player: Player)
 		seed = rng:NextInteger(1, 1e6),
 		start = start,
 		load = load, -- L4d: fish weight over line rating, for strain
-		lineLb = rod.lineLb,
+		lineLb = lineLb,
 		note = species.fightNote,
 		sizeClass = class,
 		tier = Rarity.of(species),

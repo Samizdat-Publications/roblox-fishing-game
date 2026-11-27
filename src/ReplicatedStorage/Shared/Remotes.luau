@@ -26,6 +26,7 @@ local FUNCTIONS = {
 	"RequestState", -- () -> snapshot
 	"Buy", -- (baitId) -> (ok, message)
 	"BuyRod", -- (rodId) -> (ok, message)
+	"BuyBraid", -- () -> (ok, message), the one-time braided line upgrade
 	"BuyBoat", -- (boatId) -> (ok, message)
 	"FishFinder", -- () -> marks under the boat, for the Deep-V's navigator only
 	"PondAction", -- (action: "keep"|"sell"|"release", index) -> (ok, message)

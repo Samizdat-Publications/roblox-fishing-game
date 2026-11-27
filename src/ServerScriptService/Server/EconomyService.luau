@@ -96,6 +96,19 @@ function EconomyService.start()
 		return ok, msg
 	end
 
+	Remotes.func("BuyBraid").OnServerInvoke = function(player: Player)
+		local data = PlayerData.get(player)
+		if not data then
+			return false, "That isn't for sale."
+		end
+		local ok, msg = Inventory.buyBraid(data)
+		if ok then
+			print(string.format("[Economy] %s bought braided line (now %d coins)", player.Name, data.coins))
+			PlayerData.changed(player)
+		end
+		return ok, msg
+	end
+
 	Remotes.event("EquipRod").OnServerEvent:Connect(function(player: Player, rodId: any)
 		local data = PlayerData.get(player)
 		if data and type(rodId) == "string" and Inventory.equipRod(data, rodId) then

@@ -1,4 +1,4 @@
--- Save migration (L2b): a save from every older version the code knows (v1 to v9) loads
+-- Save migration (L2b): a save from every older version the code knows (v1 to v10) loads
 -- through the real Inventory.reconcile with its coins, journal, pond and bag intact, and no
 -- feature switch changes what a migrated save keeps. Written 2026-11-26.
 return function(t, Shared)
@@ -64,6 +64,9 @@ return function(t, Shared)
 		if v >= 9 then
 			save.giftDay = 20419
 		end
+		if v >= 10 then
+			save.braid = true
+		end
 		return save
 	end
 
@@ -87,8 +90,8 @@ return function(t, Shared)
 		return true
 	end
 
-	t.test("the code's current save version is 9", function()
-		t.eq(CURRENT, 9, "bump this test (and add the new version below) when the save changes")
+	t.test("the code's current save version is 10", function()
+		t.eq(CURRENT, 10, "bump this test (and add the new version below) when the save changes")
 	end)
 
 	for v = 1, CURRENT do
@@ -162,6 +165,8 @@ return function(t, Shared)
 			end
 			-- v9: the last day the shopkeeper's tackle box was taken; never, before v9.
 			t.eq(d.giftDay, if v >= 9 then 20419 else 0, "gift day")
+			-- v10: braided line; none before v10.
+			t.eq(d.braid, v >= 10, "braid")
 			-- Every field a new save has is filled in.
 			for k in Inventory.new() :: any do
 				t.ok((d :: any)[k] ~= nil, "has " .. k)
@@ -172,6 +177,7 @@ return function(t, Shared)
 			t.eq(snap.bagCount, 2, "snapshot bag")
 			t.eq(snap.hook, d.hook, "snapshot hook")
 			t.eq(snap.tackle.perfects, d.tackle.perfects, "snapshot perfects")
+			t.eq(snap.braid, d.braid, "snapshot braid")
 		end)
 	end
 
@@ -253,5 +259,13 @@ return function(t, Shared)
 		t.ok(ok, "a migrated save gets today's gift")
 		t.eq(d.giftDay, 20420, "gift day stored")
 		t.ok(d.bait.Worm >= worms, "nothing taken away")
+	end)
+
+	t.test("v10: a v9 save loads with no braided line, and a damaged flag is repaired", function()
+		local d = Inventory.reconcile(oldSave(9))
+		t.eq(d.v, 10, "version")
+		t.eq(d.braid, false, "no braid yet")
+		local bad = Inventory.reconcile({ v = 10, braid = "yes" })
+		t.eq(bad.braid, false, "a damaged braid flag goes back to false")
 	end)
 end

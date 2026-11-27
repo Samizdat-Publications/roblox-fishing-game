@@ -782,6 +782,7 @@ function UI.buildShop()
 	rodHeader.TextXAlignment = Enum.TextXAlignment.Left
 	rodHeader.LayoutOrder = 100
 	refs.rodRows = {}
+	refs.rodBlurbs = {}
 	for i, r in RodData.list do
 		local row = frame(scroll, "Rod_" .. r.id, UDim2.new(1, -10, 0, 70), UDim2.new(), C.panel2, 0.1)
 		row.LayoutOrder = 100 + i
@@ -805,6 +806,27 @@ function UI.buildShop()
 			end
 		end)
 		refs.rodRows[r.id] = btn
+		refs.rodBlurbs[r.id] = blurb
+	end
+	-- Braided line: one purchase, 4 lb more on every rod. UNVERIFIED in Studio (2026-11-27).
+	do
+		local row = frame(scroll, "Braid", UDim2.new(1, -10, 0, 70), UDim2.new(), C.panel2, 0.1)
+		row.LayoutOrder = 100 + #RodData.list + 1
+		corner(row, 10)
+		local swatch = frame(row, "Swatch", UDim2.fromOffset(6, 50), UDim2.fromOffset(6, 10), Color3.fromRGB(90, 140, 90), 0)
+		corner(swatch, 3)
+		label(row, "Name", "Braided Line", UDim2.fromOffset(220, 28), UDim2.fromOffset(18, 6), 20, C.text, Enum.Font.GothamBold).TextXAlignment = Enum.TextXAlignment.Left
+		local blurb = label(row, "Blurb", string.format("Stronger line on every rod you own: %d lb more.", RodData.BRAID_LB), UDim2.fromOffset(330, 34), UDim2.fromOffset(18, 32), 14, C.dim)
+		blurb.TextXAlignment = Enum.TextXAlignment.Left
+		refs.braidBtn = button(row, "Buy", "", UDim2.fromOffset(150, 50), UDim2.new(1, -162, 0, 10), C.blue, function()
+			local st = lastState
+			if not st or st.braid then
+				return
+			end
+			if callbacks.buyBraid then
+				callbacks.buyBraid()
+			end
+		end)
 	end
 	-- Boats: bought once; the chosen one waits at your slip by the dock. UNVERIFIED in Studio.
 	local boatHeader = label(scroll, "BoatsHeader", "Boats", UDim2.new(1, -10, 0, 30), UDim2.new(), 20, C.gold, Enum.Font.GothamBlack)
@@ -861,9 +883,11 @@ function UI.refreshShop()
 			r.buy.BackgroundColor3 = if s.coins >= b.price then C.blue else C.panel
 		end
 	end
+	local braid = s.braid == true
 	for _, r in RodData.list do
 		local btn = refs.rodRows[r.id]
 		local owned = s.rods and s.rods[r.id]
+		refs.rodBlurbs[r.id].Text = string.format("%s %s.", r.blurb, RodData.lineText(r.id, braid))
 		if s.rod == r.id then
 			btn.Text = "In your hands"
 			btn.BackgroundColor3 = C.panel
@@ -874,6 +898,11 @@ function UI.refreshShop()
 			btn.Text = r.price .. " coins"
 			btn.BackgroundColor3 = if s.coins >= r.price then C.blue else C.panel
 		end
+	end
+	if refs.braidBtn then
+		refs.braidBtn.Text = if braid then "Owned" else (RodData.BRAID_PRICE .. " coins")
+		refs.braidBtn.AutoButtonColor = not braid
+		refs.braidBtn.BackgroundColor3 = if braid then C.panel else (if s.coins >= RodData.BRAID_PRICE then C.blue else C.panel)
 	end
 	for _, b in BoatData.list do
 		local btn = refs.boatRows and refs.boatRows[b.id]
@@ -984,7 +1013,7 @@ function UI.refreshJournal()
 		st.totalCaught,
 		if nextIn > 0 then string.format(" New rumour in %d.", nextIn) else "",
 		rod.name,
-		RodData.lineText(rod.id)
+		RodData.lineText(rod.id, st.braid == true)
 	)
 end
 

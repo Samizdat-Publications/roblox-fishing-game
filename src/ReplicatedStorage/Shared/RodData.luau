@@ -62,17 +62,25 @@ local RodData = { list = list, byId = byId }
 
 local KG_PER_LB = 0.45359237
 
+-- Braided line (a one-time buy at Bait and Tackle): this many pounds on top of any rod's line.
+RodData.BRAID_LB = 4
+RodData.BRAID_PRICE = 120
+
+-- The line rating in pounds for this rod, with braided line if the player owns it.
+function RodData.lineLbFor(rodId: string?, braid: boolean?): number
+	local rod = byId[rodId or ""] or byId.Willow
+	return rod.lineLb + (if braid then RodData.BRAID_LB else 0)
+end
+
 -- The fish's weight over this rod's line rating (L4d, FightModel's `load`): 1 means the fish
 -- weighs exactly what the line is rated for.
-function RodData.lineLoad(kg: number, rodId: string?): number
-	local rod = byId[rodId or ""] or byId.Willow
-	return (kg / KG_PER_LB) / rod.lineLb
+function RodData.lineLoad(kg: number, rodId: string?, braid: boolean?): number
+	return (kg / KG_PER_LB) / RodData.lineLbFor(rodId, braid)
 end
 
 -- "6 lb line", for the shop, the journal and beside the fight bar.
-function RodData.lineText(rodId: string?): string
-	local rod = byId[rodId or ""] or byId.Willow
-	return string.format("%d lb line", rod.lineLb)
+function RodData.lineText(rodId: string?, braid: boolean?): string
+	return string.format("%d lb line", RodData.lineLbFor(rodId, braid))
 end
 
 -- A copy of a fish's fight profile with this rod's help applied.

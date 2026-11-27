@@ -361,6 +361,25 @@ return function(t, Shared)
 		t.eq(FightModel.nextDrag("Tight"), "Light")
 	end)
 
+	t.test("braided line adds 4 lb to any rod: Willow 10, Fiberglass 14, Graphite 19", function()
+		t.eq(RodData.BRAID_LB, 4)
+		t.eq(RodData.lineLbFor("Willow"), 6)
+		t.eq(RodData.lineLbFor("Fiberglass", false), 10)
+		t.eq(RodData.lineLbFor("Graphite", nil), 15)
+		t.eq(RodData.lineLbFor("Willow", true), 10)
+		t.eq(RodData.lineLbFor("Fiberglass", true), 14)
+		t.eq(RodData.lineLbFor("Graphite", true), 19)
+		t.eq(RodData.lineText("Graphite", true), "19 lb line")
+		t.eq(RodData.lineText("Willow", false), "6 lb line")
+		local kg = 3
+		for _, id in { "Willow", "Fiberglass", "Graphite" } do
+			t.ok(RodData.lineLoad(kg, id, true) < RodData.lineLoad(kg, id), id .. ": braid lowers the load")
+			t.eq(RodData.lineLoad(kg, id, false), RodData.lineLoad(kg, id), id .. ": no braid is unchanged")
+		end
+		local tenPounds = 10 * 0.45359237
+		t.ok(math.abs(RodData.lineLoad(tenPounds, "Willow", true) - 1) < 1e-9, "10 lb on a braided Willow is load 1")
+	end)
+
 	-- Watch a fish with progress frozen (the fight never ends by itself) under an input policy.
 	-- Returns "snapped" or "none", the highest strain seen, and when it ended.
 	local function strainRun(id: string, load: number, drag: string, seed: number, secs: number, policy: (any) -> boolean)

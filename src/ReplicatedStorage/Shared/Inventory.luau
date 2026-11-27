@@ -46,13 +46,14 @@ export type Data = {
 	tackle: { best: { [string]: string }, perfects: number }, -- v7: Tackle Box, best grade per bait
 	assistSet: boolean, -- v8: the player turned reel assist on or off by hand (it then never changes by itself)
 	giftDay: number, -- v9: the last day (Goals.dayOf) the shopkeeper's tackle box was taken; 0 for never (L6d)
+	braid: boolean, -- v10: braided line bought at Bait and Tackle (RodData.BRAID_LB more on every rod)
 }
 
 local Inventory = {}
 
 function Inventory.new(): Data
 	return {
-		v = 9,
+		v = 10,
 		coins = Config.START_COINS,
 		bait = { Worm = Config.START_WORMS },
 		lures = {},
@@ -73,6 +74,7 @@ function Inventory.new(): Data
 		tackle = { best = {}, perfects = 0 },
 		assistSet = false,
 		giftDay = 0,
+		braid = false,
 	}
 end
 
@@ -147,6 +149,13 @@ function Inventory.reconcile(saved: any): Data
 	if saved.v < 9 then
 		saved.v = 9
 	end
+	-- v10: braided line, a one-time upgrade at Bait and Tackle. Old saves have none. UNVERIFIED in Studio.
+	if type(saved.braid) ~= "boolean" then
+		saved.braid = false
+	end
+	if saved.v < 10 then
+		saved.v = 10
+	end
 	return saved
 end
 
@@ -213,6 +222,19 @@ function Inventory.buyRod(data: Data, id: string): (boolean, string)
 	data.rods[id] = true
 	data.rod = id
 	return true, "Bought the " .. r.name .. ". It's in your hands."
+end
+
+-- Braided line: one purchase, adds RodData.BRAID_LB to whatever rod is in hand.
+function Inventory.buyBraid(data: Data): (boolean, string)
+	if data.braid then
+		return false, "You already own the Braided Line."
+	end
+	if data.coins < RodData.BRAID_PRICE then
+		return false, "Not enough coins. You need " .. RodData.BRAID_PRICE .. "."
+	end
+	data.coins -= RodData.BRAID_PRICE
+	data.braid = true
+	return true, "Bought the Braided Line. Every rod you own has " .. RodData.BRAID_LB .. " lb more line."
 end
 
 function Inventory.equipRod(data: Data, id: string): boolean
@@ -335,6 +357,7 @@ function Inventory.snapshot(data: Data): any
 		pond = { fish = data.pond.fish, capacity = data.pond.capacity },
 		rods = table.clone(data.rods),
 		rod = data.rod,
+		braid = data.braid,
 		creekPass = data.creekPass,
 		boats = table.clone(data.boats),
 		boat = data.boat,

@@ -149,6 +149,26 @@ return function(t, Shared)
 		t.ok(cat.heavy == 0.6, "original untouched")
 	end)
 
+	t.test("braided line: one purchase, refuses a second buy and a buy without enough coins", function()
+		local RodData = require(Shared.RodData)
+		local d = Inventory.new()
+		t.eq(d.braid, false, "new players have none")
+		t.eq(Inventory.snapshot(d).braid, false, "snapshot shows it")
+		d.coins = RodData.BRAID_PRICE - 1
+		t.eq(Inventory.buyBraid(d), false, "too poor")
+		t.eq(d.coins, RodData.BRAID_PRICE - 1, "nothing taken")
+		t.eq(d.braid, false)
+		d.coins = RodData.BRAID_PRICE + 30
+		t.eq(Inventory.buyBraid(d), true)
+		t.eq(d.coins, 30)
+		t.eq(d.braid, true)
+		t.eq(Inventory.snapshot(d).braid, true, "snapshot shows it")
+		d.coins = 1000
+		t.eq(Inventory.buyBraid(d), false, "already owned")
+		t.eq(d.coins, 1000, "nothing taken the second time")
+		t.eq(d.rod, "Willow", "buying braid does not change the rod")
+	end)
+
 	t.test("v3 saves get the Willow Rod and no creek pass", function()
 		local d = Inventory.reconcile({ v = 3, coins = 5, journal = { entries = {} } })
 		t.ok(d.v >= 4, "version " .. d.v)
