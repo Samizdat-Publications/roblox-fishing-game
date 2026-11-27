@@ -9,6 +9,10 @@ local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared").Remotes)
+local UIStyle = require(ReplicatedStorage:WaitForChild("Shared").UIStyle)
+local Skin = require(script.Parent.Skin)
+local K = UIStyle.COLORS
+local POND_INK = Color3.fromRGB(28, 96, 92) -- the pond sign's teal as ink on paper (new look)
 
 local AwayCard = {}
 
@@ -34,6 +38,12 @@ local function label(parent: Instance, name: string, text: string, order: number
 	l.Font = font
 	l.TextWrapped = true
 	l.TextXAlignment = Enum.TextXAlignment.Left
+	if Skin.on then
+		-- New look: the title in the serif, lines in ink, the hint handwritten.
+		local face = if font == Enum.Font.GothamBlack then "title" elseif name == "Hint" then "hand" else "body"
+		local ink = if color == COLORS.pond then POND_INK elseif color == COLORS.dim then K.inkSoft else K.ink
+		Skin.text(l, face, if name == "Hint" then "note" else size, ink)
+	end
 	l.Parent = parent
 	return l
 end
@@ -82,6 +92,14 @@ local function show(report: any)
 	list.SortOrder = Enum.SortOrder.LayoutOrder
 	list.Padding = UDim.new(0, 6)
 	list.Parent = card
+	if Skin.on then
+		-- A paper note with a teal ink edge (flat paper: an image child would join the list).
+		card.BackgroundColor3 = K.paper
+		card.BackgroundTransparency = 0
+		corner.CornerRadius = UDim.new(0, UIStyle.RADIUS.card)
+		stroke.Color = POND_INK
+		stroke.Thickness = 2
+	end
 
 	label(card, "Title", tostring(report.title or "While You Were Away"), 1, 24, COLORS.pond, Enum.Font.GothamBlack)
 	local order = 2

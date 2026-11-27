@@ -18,8 +18,12 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local BaitRig = require(Shared.BaitRig)
 local BaitData = require(Shared.BaitData)
+local UIStyle = require(Shared.UIStyle)
+local Skin = require(script.Parent.Skin)
 
 local BaitBench = {}
+local LOCK = UIStyle.LOCKED.bench
+local K = UIStyle.COLORS
 
 export type Result = {
 	bait: string,
@@ -145,9 +149,49 @@ end
 local function refreshHooks()
 	for name, b in refs.hookButtons do
 		local on = name == hook
-		b.BackgroundColor3 = if on then Color3.fromRGB(70, 90, 60) else C.panel2
-		b.Stroke.Transparency = if on then 0 else 1
+		if Skin.on then
+			Skin.paint(b, if on then "sage" else "paper")
+			Skin.stroke(b, if on then K.greenInk else K.inkFaint, if on then 3 else 1)
+		else
+			b.BackgroundColor3 = if on then Color3.fromRGB(70, 90, 60) else C.panel2
+			b.Stroke.Transparency = if on then 0 else 1
+		end
 	end
+end
+
+-- The new look (Config.UI_STYLE_ON): a canvas bench with paper, ink and brass. The panel, the
+-- close-up and the timing track keep their sizes and places (UIStyle.LOCKED.bench).
+local function dress()
+	local p = refs.panel :: Frame
+	Skin.surface(p, "canvas", "panel", 3)
+	Skin.text(refs.title, "title", 22, K.ink)
+	refs.vp.BackgroundColor3 = K.water
+	Skin.corner(refs.vp, "tag")
+	Skin.stroke(refs.vp, K.leather, 2)
+	Skin.text(refs.result, "title", 44, K.brass)
+	refs.result.TextStrokeColor3 = K.ink
+	Skin.text(refs.feedback, "bodyBold", 20, K.paper)
+	refs.feedback.TextStrokeColor3 = K.ink
+	Skin.surface(refs.track, "waterTrack", "tag", 2, 0.7)
+	refs.marker.BackgroundColor3 = K.ink
+	Skin.stroke(refs.marker, K.paper, 1)
+	Skin.text(refs.hookTitle, "title", 17, K.ink)
+	Skin.text(refs.lureNote, "hand", "note", K.ink)
+	for _, b in refs.hookButtons do
+		Skin.text(b, "bodyBold", 15)
+		local old = b:FindFirstChild("Stroke")
+		if old then
+			old:Destroy()
+		end
+	end
+	Skin.text(refs.hookHint, "body", 13, K.inkSoft)
+	Skin.text(refs.how, "bodyBold", 16, K.ink)
+	Skin.text(refs.tip, "hand", 15, K.ink)
+	-- Skip: as tall as the space beside the hooks allows (the panel is locked at 340).
+	refs.skip.Size = UDim2.fromOffset(110, 40)
+	refs.skip.Position = UDim2.fromOffset(352, 252)
+	Skin.button(refs.skip, "brass", 15)
+	Skin.text(refs.skipHint, "body", 13, K.inkSoft)
 end
 
 local function build()
@@ -173,7 +217,7 @@ local function build()
 
 	-- Top centre, nudged left, so the touch Fish button (bottom right) stays clear. -100: at -50
 	-- the panel still covered half the Fish button on the smallest phone (iPhone 7, 11/27/2026).
-	local p = frame(g, "Panel", UDim2.fromOffset(600, 340), UDim2.new(0.5, -100, 0, 56), C.panel, 0.04)
+	local p = frame(g, "Panel", UDim2.fromOffset(LOCK.size[1], LOCK.size[2]), UDim2.new(LOCK.pos[1], LOCK.pos[2], LOCK.pos[3], LOCK.pos[4]), C.panel, 0.04)
 	p.AnchorPoint = Vector2.new(0.5, 0)
 	corner(p, 14)
 	refs.title = label(p, "Title", "Bait the hook", UDim2.fromOffset(400, 32), UDim2.fromOffset(16, 8), 22, C.gold, Enum.Font.GothamBlack)
@@ -181,8 +225,8 @@ local function build()
 
 	local vp = Instance.new("ViewportFrame")
 	vp.Name = "CloseUp"
-	vp.Size = UDim2.fromOffset(320, 196)
-	vp.Position = UDim2.fromOffset(16, 46)
+	vp.Size = UDim2.fromOffset(LOCK.closeUp[1], LOCK.closeUp[2])
+	vp.Position = UDim2.fromOffset(LOCK.closeUp[3], LOCK.closeUp[4])
 	vp.BackgroundColor3 = Color3.fromRGB(46, 70, 84)
 	vp.BorderSizePixel = 0
 	vp.Ambient = Color3.fromRGB(150, 150, 150)
@@ -210,7 +254,7 @@ local function build()
 	refs.feedback.ZIndex = 3
 
 	-- The timing track under the close-up: zones to hit and the moving marker (or fill bar).
-	local track = frame(p, "Track", UDim2.fromOffset(320, 22), UDim2.fromOffset(16, 250), Color3.fromRGB(20, 30, 38), 0)
+	local track = frame(p, "Track", UDim2.fromOffset(LOCK.track[1], LOCK.track[2]), UDim2.fromOffset(LOCK.track[3], LOCK.track[4]), Color3.fromRGB(20, 30, 38), 0)
 	corner(track, 6)
 	track.ClipsDescendants = true
 	refs.track = track
@@ -253,6 +297,9 @@ local function build()
 	refs.skipHint = label(p, "SkipHint", "or hold 1 s", UDim2.fromOffset(116, 30), UDim2.fromOffset(468, 258), 13, C.dim)
 	refs.panel = p
 	gui = g
+	if Skin.on then
+		dress()
+	end
 end
 
 ----------------------------------------------------------------------------------------
@@ -585,6 +632,9 @@ end
 
 local function markLabel(text: string, x: number)
 	local l = label(refs.marks, "Mark", text, UDim2.fromOffset(90, 18), UDim2.new(x, -45, 0, 0), 13, C.dim)
+	if Skin.on then
+		Skin.text(l, "body", "tiny", K.ink)
+	end
 	table.insert(refs.zones, l)
 end
 
@@ -714,9 +764,14 @@ function BaitBench.open(o: Opts)
 	refs.how.Text = r.how
 	refs.tip.Text = "Tip: " .. r.tip
 	-- The first time with a bait: a slower marker and the tip in big gold letters.
-	refs.tip.TextSize = if o.firstTime then 19 else 15
-	refs.tip.TextColor3 = if o.firstTime then C.gold else C.dim
-	refs.tip.Font = if o.firstTime then Enum.Font.GothamBold else Enum.Font.GothamMedium
+	if Skin.on then
+		Skin.resize(refs.tip, if o.firstTime then 19 else 15)
+		refs.tip.TextColor3 = if o.firstTime then K.brassInk else K.ink
+	else
+		refs.tip.TextSize = if o.firstTime then 19 else 15
+		refs.tip.TextColor3 = if o.firstTime then C.gold else C.dim
+		refs.tip.Font = if o.firstTime then Enum.Font.GothamBold else Enum.Font.GothamMedium
+	end
 	refs.result.Text = ""
 	refs.feedback.Text = if o.firstTime then "First time: slow and steady" else ""
 	refs.skipHint.Text = string.format("or hold %d s", math.floor(BaitRig.skipHold(r, o.firstTime) + 0.5))

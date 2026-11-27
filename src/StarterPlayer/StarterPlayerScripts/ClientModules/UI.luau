@@ -19,8 +19,16 @@ local Config = require(Shared.Config)
 local Journal = require(Shared.Journal)
 local Units = require(Shared.Units)
 local BaitRig = require(Shared.BaitRig)
+local UIStyle = require(Shared.UIStyle)
+local Skin = require(script.Parent.Skin)
 
 local UI = {}
+
+-- The field guide and tackle box look (leg 3, N2, Config.UI_STYLE_ON). Off, every screen is
+-- built exactly as before; on, the same screens are dressed from Shared/UIStyle.
+local STYLED = Skin.on
+local K = UIStyle.COLORS
+local LOCK = UIStyle.LOCKED
 
 local C = {
 	panel = Color3.fromRGB(24, 32, 40),
@@ -43,9 +51,62 @@ local locked = false -- true from a bite until the fight ends: no panels, no sid
 local hasGoals = false -- today's goals are on (the Goals button shows outside fights)
 local cardSpin: RBXScriptConnection? = nil -- turns the fish in the catch card
 
+-- In the new look, the old palette's colours stand for these (a background, or text on paper).
+local BG_OF = { panel = "paper", panel2 = "paperDeep", text = "ink", dim = "inkSoft", gold = "brass", green = "sage", red = "clay", blue = "brass", fish = "fish" }
+local INK_OF = { panel = "paper", panel2 = "paperDeep", text = "ink", dim = "inkSoft", gold = "brassInk", green = "greenInk", red = "redInk", blue = "waterInk", fish = "ink" }
+local BUTTON_OF = { red = "leather", blue = "brass", green = "sage", panel = "off", panel2 = "paper", gold = "brass" }
+
+local function keyOf(c: Color3): string?
+	for k, v in C do
+		if v == c then
+			return k
+		end
+	end
+	return nil
+end
+
+-- A background colour: unchanged in the old look.
+local function bg(c: Color3): Color3
+	if not STYLED then
+		return c
+	end
+	local k = keyOf(c)
+	return if k then K[BG_OF[k]] else c
+end
+
+-- A text colour: unchanged in the old look; in the new one, an ink that reads on paper.
+local function ink(c: Color3): Color3
+	if not STYLED then
+		return c
+	end
+	local k = keyOf(c)
+	return if k then K[INK_OF[k]] else c
+end
+
+-- A button's state colour: the old look sets the colour; the new one paints a surface.
+local function paint(b: GuiObject, c: Color3)
+	if STYLED then
+		Skin.paint(b, BUTTON_OF[keyOf(c) or "panel2"] or "paper")
+	else
+		b.BackgroundColor3 = c
+	end
+end
+
+local function setSize(obj: Instance, n: number)
+	if STYLED then
+		Skin.resize(obj, n)
+	else
+		(obj :: any).TextSize = n
+	end
+end
+
 local function corner(parent: Instance, r: number?)
 	local c = Instance.new("UICorner")
-	c.CornerRadius = UDim.new(0, r or 10)
+	local radius = r or 10
+	if STYLED and radius < 40 then
+		radius = UIStyle.RADIUS.card -- paper and brass, not pills (round things stay round)
+	end
+	c.CornerRadius = UDim.new(0, radius)
 	c.Parent = parent
 end
 
@@ -65,10 +126,20 @@ local function frame(parent: Instance, name: string, size: UDim2, pos: UDim2, co
 	f.Position = pos
 	f.BackgroundColor3 = color or C.panel
 	f.BackgroundTransparency = transparency or 0.15
+	if STYLED then
+		f.BackgroundColor3 = bg(color or C.panel)
+		-- Paper and canvas are opaque (nothing shows through); see-through overlays stay so.
+		f.BackgroundTransparency = if (transparency or 0.15) >= 0.3 then (transparency :: number) else 0
+	end
 	f.BorderSizePixel = 0
 	f.Parent = parent
 	return f
 end
+
+local FACE_OF: { [Enum.Font]: string } = {
+	[Enum.Font.GothamBlack] = "title",
+	[Enum.Font.GothamBold] = "bodyBold",
+}
 
 local function label(parent: Instance, name: string, text: string, size: UDim2, pos: UDim2, textSize: number?, color: Color3?, font: Enum.Font?): TextLabel
 	local l = Instance.new("TextLabel")
@@ -81,6 +152,9 @@ local function label(parent: Instance, name: string, text: string, size: UDim2, 
 	l.TextSize = textSize or 18
 	l.Font = font or Enum.Font.GothamMedium
 	l.TextWrapped = true
+	if STYLED then
+		Skin.text(l, FACE_OF[font or Enum.Font.GothamMedium] or "body", textSize or 18, ink(color or C.text))
+	end
 	l.Parent = parent
 	return l
 end
@@ -101,6 +175,9 @@ local function button(parent: Instance, name: string, text: string, size: UDim2,
 	b.TextWrapped = true
 	b.Selectable = true
 	corner(b, 8)
+	if STYLED then
+		Skin.button(b, BUTTON_OF[keyOf(color or C.panel2) or "panel2"] or "paper")
+	end
 	b.Activated:Connect(onClick)
 	b.Parent = parent
 	return b
@@ -172,17 +249,21 @@ function UI.init(cbs: { [string]: (...any) -> () })
 	gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(rescale)
 
 	-- Top bar: coins, clock, bag. Sits below Roblox's top buttons.
-	local top = frame(gui, "TopBar", UDim2.fromOffset(560, 44), UDim2.new(0.5, -280, 0, 8))
-	corner(top)
-	refs.coins = label(top, "Coins", "0 coins", UDim2.fromOffset(150, 44), UDim2.fromOffset(10, 0), 20, C.gold, Enum.Font.GothamBold)
-	refs.coins.TextXAlignment = Enum.TextXAlignment.Left
-	refs.clock = label(top, "Clock", "7:00 AM  Dawn", UDim2.fromOffset(200, 44), UDim2.fromOffset(180, 0), 20)
-	refs.clock.TextScaled = true -- room for the weather after the time
-	local clockMax = Instance.new("UITextSizeConstraint")
-	clockMax.MaxTextSize = 20
-	clockMax.Parent = refs.clock
-	refs.bag = label(top, "Bag", "Bag: 0", UDim2.fromOffset(170, 44), UDim2.fromOffset(380, 0), 18, C.dim)
-	refs.bag.TextXAlignment = Enum.TextXAlignment.Right
+	if STYLED then
+		UI.buildStyledTop()
+	else
+		local top = frame(gui, "TopBar", UDim2.fromOffset(560, 44), UDim2.new(0.5, -280, 0, 8))
+		corner(top)
+		refs.coins = label(top, "Coins", "0 coins", UDim2.fromOffset(150, 44), UDim2.fromOffset(10, 0), 20, C.gold, Enum.Font.GothamBold)
+		refs.coins.TextXAlignment = Enum.TextXAlignment.Left
+		refs.clock = label(top, "Clock", "7:00 AM  Dawn", UDim2.fromOffset(200, 44), UDim2.fromOffset(180, 0), 20)
+		refs.clock.TextScaled = true -- room for the weather after the time
+		local clockMax = Instance.new("UITextSizeConstraint")
+		clockMax.MaxTextSize = 20
+		clockMax.Parent = refs.clock
+		refs.bag = label(top, "Bag", "Bag: 0", UDim2.fromOffset(170, 44), UDim2.fromOffset(380, 0), 18, C.dim)
+		refs.bag.TextXAlignment = Enum.TextXAlignment.Right
+	end
 
 	-- Left buttons (big enough for thumbs)
 	refs.baitBtn = button(gui, "BaitButton", "Bait: Worms", UDim2.fromOffset(190, 50), UDim2.new(0, 12, 0.5, -60), C.panel2, function()
@@ -224,7 +305,8 @@ function UI.init(cbs: { [string]: (...any) -> () })
 	-- Status line and power meter (bottom center)
 	refs.status = label(gui, "Status", "", UDim2.fromOffset(640, 40), UDim2.new(0.5, -320, 1, -150), 22, C.text, Enum.Font.GothamBold)
 	refs.status.TextStrokeTransparency = 0.4
-	local power = frame(gui, "Power", UDim2.fromOffset(300, 22), UDim2.new(0.5, -150, 1, -100), C.panel, 0.2)
+	local LW = LOCK.power
+	local power = frame(gui, "Power", UDim2.fromOffset(LW[1], LW[2]), UDim2.new(LW[3], LW[4], LW[5], LW[6]), C.panel, 0.2)
 	corner(power, 11)
 	power.Visible = false
 	local fill = frame(power, "Fill", UDim2.fromScale(0, 1), UDim2.fromScale(0, 0), C.gold, 0)
@@ -238,18 +320,20 @@ function UI.init(cbs: { [string]: (...any) -> () })
 
 	-- Fight bar: left of center, so a thumb on the touch Fish button never covers it,
 	-- and short enough to clear the top bar on small phones.
-	local fight = frame(gui, "Fight", UDim2.fromOffset(150, 320), UDim2.new(0.5, -260, 0.5, -140), C.panel, 0.2)
+	local fight = frame(gui, "Fight", UDim2.fromOffset(LOCK.fight.size[1], LOCK.fight.size[2]), UDim2.new(LOCK.fight.pos[1], LOCK.fight.pos[2], LOCK.fight.pos[3], LOCK.fight.pos[4]), C.panel, 0.2)
 	corner(fight)
 	fight.Visible = false
 	refs.fightNote = label(fight, "Note", "", UDim2.fromOffset(150, 40), UDim2.fromOffset(0, 2), 15, C.dim)
-	local track = frame(fight, "Track", UDim2.fromOffset(56, 236), UDim2.fromOffset(20, 46), Color3.fromRGB(20, 60, 90), 0)
+	local LT = LOCK.fight.track
+	local track = frame(fight, "Track", UDim2.fromOffset(LT[1], LT[2]), UDim2.fromOffset(LT[3], LT[4]), Color3.fromRGB(20, 60, 90), 0)
 	corner(track, 6)
 	refs.zone = frame(track, "Zone", UDim2.new(1, 0, 0.3, 0), UDim2.fromScale(0, 0.5), C.green, 0.35)
 	corner(refs.zone, 6)
 	refs.fishMark = frame(track, "FishMark", UDim2.new(1, 8, 0, 14), UDim2.fromScale(0, 0.5), C.fish, 0)
 	refs.fishMark.Position = UDim2.new(0, -4, 0.5, 0)
 	corner(refs.fishMark, 7)
-	local prog = frame(fight, "Progress", UDim2.fromOffset(22, 236), UDim2.fromOffset(100, 46), Color3.fromRGB(40, 40, 40), 0)
+	local LP = LOCK.fight.progress
+	local prog = frame(fight, "Progress", UDim2.fromOffset(LP[1], LP[2]), UDim2.fromOffset(LP[3], LP[4]), Color3.fromRGB(40, 40, 40), 0)
 	corner(prog, 6)
 	refs.progFill = frame(prog, "Fill", UDim2.fromScale(1, 0.35), UDim2.fromScale(0, 0.65), C.gold, 0)
 	corner(refs.progFill, 6)
@@ -266,7 +350,8 @@ function UI.init(cbs: { [string]: (...any) -> () })
 	refs.cue = cue
 
 	-- Big reel prompt right of the fight bar: where and how to press, and feedback while holding.
-	local prompt = frame(gui, "ReelPrompt", UDim2.fromOffset(360, 80), UDim2.new(0.5, 70, 0.5, -40), C.panel, 0.15)
+	local LR = LOCK.fight.reelPrompt
+	local prompt = frame(gui, "ReelPrompt", UDim2.fromOffset(LR[1], LR[2]), UDim2.new(LR[3], LR[4], LR[5], LR[6]), C.panel, 0.15)
 	corner(prompt, 14)
 	prompt.Visible = false
 	refs.reelTitle = label(prompt, "Title", "HOLD TO REEL", UDim2.new(1, 0, 0, 40), UDim2.fromOffset(0, 4), 30, C.gold, Enum.Font.GothamBlack)
@@ -278,7 +363,8 @@ function UI.init(cbs: { [string]: (...any) -> () })
 	-- prompt) cycles Light, Medium, Tight (Q or gamepad Y do the same), with the rod's line
 	-- rating under it. A tap on it is not a reel press. It sat under the bar at first, which is
 	-- off the bottom of the smallest phone (iPhone 7, 11/27/2026).
-	local dragBox = frame(gui, "DragBox", UDim2.fromOffset(150, 58), UDim2.new(0.5, -100, 0.5, 60), C.panel, 0.3)
+	local LD = LOCK.fight.dragBox
+	local dragBox = frame(gui, "DragBox", UDim2.fromOffset(LD[1], LD[2]), UDim2.new(LD[3], LD[4], LD[5], LD[6]), C.panel, 0.3)
 	corner(dragBox, 8) -- a dark backing: the line rating under the button didn't read over the dock
 	dragBox.Visible = false
 	refs.dragBtn = button(dragBox, "Drag", "Drag: Medium", UDim2.fromOffset(150, 36), UDim2.fromOffset(0, 0), C.panel2, function()
@@ -286,7 +372,7 @@ function UI.init(cbs: { [string]: (...any) -> () })
 			callbacks.cycleDrag()
 		end
 	end)
-	refs.dragBtn.TextSize = 16
+	setSize(refs.dragBtn, 16)
 	refs.dragLine = label(dragBox, "Line", "Line 6 lb", UDim2.fromOffset(150, 20), UDim2.fromOffset(0, 37), 14, C.dim)
 	refs.dragLine.TextStrokeTransparency = 0.5
 	refs.dragBox = dragBox
@@ -308,48 +394,52 @@ function UI.init(cbs: { [string]: (...any) -> () })
 	-- Catch card (center)
 	-- Right of center so the fish held up on the line stays in view. +30 (was +70): on the
 	-- smallest phone the card ran about 20 px off the right edge (11/27/2026).
-	local card = frame(gui, "CatchCard", UDim2.fromOffset(420, 200), UDim2.new(0.5, 30, 0.5, -110), C.panel, 0.05)
-	corner(card, 14)
-	pad(card, 14)
-	card.Visible = false
-	refs.cardTitle = label(card, "Title", "", UDim2.new(1, -136, 0, 34), UDim2.fromOffset(0, 0), 24, C.gold, Enum.Font.GothamBlack)
-	refs.cardBody = label(card, "Body", "", UDim2.new(1, -140, 0, 60), UDim2.fromOffset(0, 38), 19, C.text)
-	refs.cardNote = label(card, "Note", "", UDim2.new(1, -140, 0, 70), UDim2.fromOffset(0, 100), 16, C.dim)
-	-- The fish itself, turning slowly in the card (the playtest critic: the reveal was text only).
-	-- Lit from the camera's side and brighter all round (it read as a dark silhouette).
-	local view = Instance.new("ViewportFrame")
-	view.Name = "Fish"
-	view.Size = UDim2.fromOffset(130, 130)
-	view.Position = UDim2.new(1, -130, 0, 38)
-	view.BackgroundColor3 = Color3.fromRGB(20, 40, 55)
-	view.BackgroundTransparency = 0.3
-	view.Ambient = Color3.fromRGB(215, 215, 215)
-	view.LightColor = Color3.fromRGB(255, 250, 240)
-	view.LightDirection = Vector3.new(-0.3, -0.6, -1)
-	-- The tier's name on a pill of its colour, over the top of the fish window.
-	local badge = label(card, "Badge", "", UDim2.fromOffset(130, 24), UDim2.new(1, -130, 0, 26), 15, Color3.new(1, 1, 1), Enum.Font.GothamBlack)
-	badge.BackgroundTransparency = 0
-	badge.ZIndex = 3
-	corner(badge, 12)
-	refs.cardBadge = badge
-	view.Visible = false
-	corner(view, 10)
-	view.Parent = card
-	-- Rare and up: a shimmer in the tier's colour sweeps across behind the fish (catchCard).
-	local shimmer = Instance.new("UIGradient")
-	shimmer.Name = "Shimmer"
-	shimmer.Enabled = false
-	shimmer.Parent = view
-	refs.cardShimmer = shimmer
-	refs.cardView = view
-	refs.card = card
-	refs.cardStroke = Instance.new("UIStroke")
-	refs.cardStroke.Thickness = 3
-	refs.cardStroke.Transparency = 0.1
-	refs.cardStroke.Parent = card
-	-- The card pops in (bigger pop for rarer fish).
-	refs.cardScale = Instance.new("UIScale")
-	refs.cardScale.Parent = card
+	if STYLED then
+		UI.buildPlate()
+	else
+		local card = frame(gui, "CatchCard", UDim2.fromOffset(420, 200), UDim2.new(0.5, 30, 0.5, -110), C.panel, 0.05)
+		corner(card, 14)
+		pad(card, 14)
+		card.Visible = false
+		refs.cardTitle = label(card, "Title", "", UDim2.new(1, -136, 0, 34), UDim2.fromOffset(0, 0), 24, C.gold, Enum.Font.GothamBlack)
+		refs.cardBody = label(card, "Body", "", UDim2.new(1, -140, 0, 60), UDim2.fromOffset(0, 38), 19, C.text)
+		refs.cardNote = label(card, "Note", "", UDim2.new(1, -140, 0, 70), UDim2.fromOffset(0, 100), 16, C.dim)
+		-- The fish itself, turning slowly in the card (the playtest critic: the reveal was text only).
+		-- Lit from the camera's side and brighter all round (it read as a dark silhouette).
+		local view = Instance.new("ViewportFrame")
+		view.Name = "Fish"
+		view.Size = UDim2.fromOffset(130, 130)
+		view.Position = UDim2.new(1, -130, 0, 38)
+		view.BackgroundColor3 = Color3.fromRGB(20, 40, 55)
+		view.BackgroundTransparency = 0.3
+		view.Ambient = Color3.fromRGB(215, 215, 215)
+		view.LightColor = Color3.fromRGB(255, 250, 240)
+		view.LightDirection = Vector3.new(-0.3, -0.6, -1)
+		-- The tier's name on a pill of its colour, over the top of the fish window.
+		local badge = label(card, "Badge", "", UDim2.fromOffset(130, 24), UDim2.new(1, -130, 0, 26), 15, Color3.new(1, 1, 1), Enum.Font.GothamBlack)
+		badge.BackgroundTransparency = 0
+		badge.ZIndex = 3
+		corner(badge, 12)
+		refs.cardBadge = badge
+		view.Visible = false
+		corner(view, 10)
+		view.Parent = card
+		-- Rare and up: a shimmer in the tier's colour sweeps across behind the fish (catchCard).
+		local shimmer = Instance.new("UIGradient")
+		shimmer.Name = "Shimmer"
+		shimmer.Enabled = false
+		shimmer.Parent = view
+		refs.cardShimmer = shimmer
+		refs.cardView = view
+		refs.card = card
+		refs.cardStroke = Instance.new("UIStroke")
+		refs.cardStroke.Thickness = 3
+		refs.cardStroke.Transparency = 0.1
+		refs.cardStroke.Parent = card
+		-- The card pops in (bigger pop for rarer fish).
+		refs.cardScale = Instance.new("UIScale")
+		refs.cardScale.Parent = card
+	end
 
 	-- Big touch Fish button, left of Roblox's jump button. Hold and release like a mouse button.
 	if UserInputService.TouchEnabled then
@@ -394,18 +484,35 @@ function UI.init(cbs: { [string]: (...any) -> () })
 	UI.buildJournal()
 	UI.buildPond()
 	UI.buildTackle()
+	if STYLED then
+		UI.dressScreen()
+		require(script.Parent.PromptStyle).start() -- brass key caps on the button prompts
+	end
 	rescale()
 end
 
 function UI.setClock(clock: number)
 	local weather = workspace:GetAttribute("WeatherName")
+	if STYLED then
+		-- The time over the weather as a word; the dial turns the sun and moon round.
+		refs.clock.Text = clockText(clock)
+		refs.weather.Text = if type(weather) == "string" and weather ~= "" then weather else "Clear"
+		refs.dialArm.Rotation = (clock - 12) / 24 * 360
+		return
+	end
 	refs.clock.Text = clockText(clock) .. "  " .. FishLogic.periodFromClock(clock) .. (if type(weather) == "string" and weather ~= "Clear" then ", " .. weather else "")
 end
 
 function UI.setState(state: any)
 	lastState = state
-	refs.coins.Text = string.format("%d coins", state.coins)
-	refs.bag.Text = string.format("Bag: %d fish (%d)", state.bagCount, state.bagValue)
+	if STYLED then
+		refs.coins.Text = tostring(state.coins)
+		refs.bag.Text = string.format("%d fish", state.bagCount)
+		refs.bagValue.Text = string.format("worth %d", state.bagValue)
+	else
+		refs.coins.Text = string.format("%d coins", state.coins)
+		refs.bag.Text = string.format("Bag: %d fish (%d)", state.bagCount, state.bagValue)
+	end
 	refs.baitBtn.Text = baitLabel(state)
 	local goals = state.goals or {}
 	local doneCount = 0
@@ -416,14 +523,14 @@ function UI.setState(state: any)
 				doneCount += 1
 			end
 			l.Text = string.format("%s %s  (%d/%d, %d coins)", if g.done then "[done]" else "-", g.text, g.progress, g.target, g.reward)
-			l.TextColor3 = if g.done then C.green else C.text
+			l.TextColor3 = ink(if g.done then C.green else C.text)
 		else
 			l.Text = ""
 		end
 	end
 	refs.goalsBtn.Text = string.format("Goals %d/%d", doneCount, #goals)
 	hasGoals = #goals > 0
-	refs.goalsBtn.Visible = hasGoals and not locked -- no goals while they're switched off; hidden in a fight
+	refs.goalsBtn.Visible = hasGoals and not locked and not (STYLED and openPanel ~= nil) -- no goals while they're switched off; hidden in a fight
 	if #goals == 0 then
 		refs.goalsBox.Visible = false
 	end
@@ -440,6 +547,19 @@ end
 
 function UI.status(text: string)
 	refs.status.Text = text
+	if STYLED then
+		-- A paper slip behind the words, only while there are words.
+		local img = refs.status:FindFirstChild("SkinImage") :: ImageLabel?
+		if img then
+			img.Visible = text ~= ""
+		else
+			refs.status.BackgroundTransparency = if text == "" then 1 else 0.04
+		end
+		local st = refs.status:FindFirstChild("SkinStroke") :: UIStroke?
+		if st then
+			st.Transparency = if text == "" then 1 else 0
+		end
+	end
 	-- Keep the key hint on the Journal button right for the current device.
 	local name = UI.inputName()
 	refs.journalBtn.Text = if name == "R2" then "Journal (Y)" elseif name == "click" then "Journal (J)" else "Journal"
@@ -529,7 +649,7 @@ function UI.showFight(s: any?, note: string?, holding: boolean?, slack: boolean?
 		refs.dragBox.Visible = false
 		if refs.touchFish then
 			refs.touchFish.Text = "Fish"
-			refs.touchFish.BackgroundColor3 = C.blue
+			refs.touchFish.BackgroundColor3 = bg(C.blue)
 		end
 		return
 	end
@@ -545,7 +665,7 @@ function UI.showFight(s: any?, note: string?, holding: boolean?, slack: boolean?
 	refs.zone.Position = UDim2.new(0, 0, 1 - s.zonePos - s.zoneSize / 2, 0)
 	refs.fishMark.Position = UDim2.new(0, -4, 1 - s.fishPos, -7)
 	local inside = math.abs(s.fishPos - s.zonePos) <= s.zoneSize / 2
-	refs.zone.BackgroundColor3 = if inside then C.green else C.red
+	refs.zone.BackgroundColor3 = bg(if inside then C.green else C.red)
 	refs.progFill.Size = UDim2.fromScale(1, s.progress)
 	refs.progFill.Position = UDim2.fromScale(0, 1 - s.progress)
 
@@ -555,13 +675,13 @@ function UI.showFight(s: any?, note: string?, holding: boolean?, slack: boolean?
 	refs.cue.Position = UDim2.new(1, 10, 0, cueY)
 	if inside then
 		refs.cue.Text = "Nice!"
-		refs.cue.TextColor3 = C.green
+		refs.cue.TextColor3 = ink(C.green)
 	elseif s.fishPos > s.zonePos then
 		refs.cue.Text = "HOLD"
-		refs.cue.TextColor3 = C.gold
+		refs.cue.TextColor3 = ink(C.gold)
 	else
 		refs.cue.Text = "LET GO"
-		refs.cue.TextColor3 = C.blue
+		refs.cue.TextColor3 = ink(C.blue)
 	end
 
 	-- Feedback while holding: bright outline, prompt turns green, touch button lights up.
@@ -570,26 +690,26 @@ function UI.showFight(s: any?, note: string?, holding: boolean?, slack: boolean?
 	if strain >= 0.5 then
 		-- Line and drag (L4d): the line is close to snapping. Let go!
 		refs.reelTitle.Text = "EASE OFF!"
-		refs.reelTitle.TextColor3 = if (os.clock() % 0.3) < 0.15 then C.red else C.text
+		refs.reelTitle.TextColor3 = ink(if (os.clock() % 0.3) < 0.15 then C.red else C.text)
 	elseif not inside and s.fishPos < s.zonePos then
 		-- The fish is below the zone: the cue says LET GO, so the big prompt says it too (the
 		-- playtest critic saw HOLD TO REEL beside LET GO).
 		refs.reelTitle.Text = if holding then "LET GO!" else "LET IT DROP"
-		refs.reelTitle.TextColor3 = C.blue
+		refs.reelTitle.TextColor3 = ink(C.blue)
 	elseif holding then
 		refs.reelTitle.Text = "REELING!"
-		refs.reelTitle.TextColor3 = C.green
+		refs.reelTitle.TextColor3 = ink(C.green)
 	elseif slack then
 		-- No press for a while: the line has gone slack and the fish is working free.
 		refs.reelTitle.Text = "KEEP REELING!"
-		refs.reelTitle.TextColor3 = if (os.clock() % 0.5) < 0.25 then C.red else C.gold
+		refs.reelTitle.TextColor3 = ink(if (os.clock() % 0.5) < 0.25 then C.red else C.gold)
 	else
 		refs.reelTitle.Text = "HOLD TO REEL"
-		refs.reelTitle.TextColor3 = if (os.clock() % 0.8) < 0.4 then C.gold else C.text
+		refs.reelTitle.TextColor3 = ink(if (os.clock() % 0.8) < 0.4 then C.gold else C.text)
 	end
 	if refs.touchFish then
 		refs.touchFish.Text = "REEL"
-		refs.touchFish.BackgroundColor3 = if holding then C.green else C.gold
+		refs.touchFish.BackgroundColor3 = bg(if holding then C.green else C.gold)
 	end
 end
 
@@ -601,6 +721,21 @@ function UI.toast(text: string, color: Color3?)
 	t.LayoutOrder = os.clock() * 1000
 	corner(t, 8)
 	pad(t, 8)
+	if STYLED then
+		-- A paper slip in ink; the colour it came with becomes a ribbon down its left edge.
+		t.TextColor3 = K.ink
+		Skin.surface(t, "paper", "card", 1)
+		Skin.pad(t, 8)
+		local u = t:FindFirstChildOfClass("UIPadding") :: UIPadding
+		u.PaddingLeft = UDim.new(0, 20)
+		local ribbon = Instance.new("Frame")
+		ribbon.Name = "Ribbon"
+		ribbon.BorderSizePixel = 0
+		ribbon.BackgroundColor3 = color or K.brass
+		ribbon.Size = UDim2.new(0, 7, 1, 16)
+		ribbon.Position = UDim2.fromOffset(-20, -8)
+		ribbon.Parent = t
+	end
 	local count = 0
 	for _, c in refs.toasts:GetChildren() do
 		if c:IsA("TextLabel") then
@@ -626,6 +761,10 @@ function UI.toast(text: string, color: Color3?)
 end
 
 function UI.catchCard(payload: any)
+	if STYLED then
+		UI.fillPlate(payload)
+		return
+	end
 	local f = payload.fish
 	-- Rarity: the tier colour on the title and border, and a banner for trophies and monsters.
 	-- UNVERIFIED in Studio (rarity plan Task 3, 2026-11-26).
@@ -669,6 +808,558 @@ function UI.catchCard(payload: any)
 		end
 	end)
 end
+
+----------------------------------------------------------------------------------------
+-- The new look (Config.UI_STYLE_ON): the top bar, the catch plate and the dressing of the
+-- rest. Nothing below runs in the old look.
+
+local function styledLabel(parent: Instance, name: string, text: string, size: UDim2, pos: UDim2, face: string, base: string | number, color: Color3): TextLabel
+	local l = Instance.new("TextLabel")
+	l.Name = name
+	l.Size = size
+	l.Position = pos
+	l.BackgroundTransparency = 1
+	l.Text = text
+	l.TextWrapped = true
+	Skin.text(l, face, base, color)
+	l.Parent = parent
+	return l
+end
+
+local function disc(parent: Instance, name: string, d: number, pos: UDim2, color: Color3, strokeColor: Color3?): Frame
+	local f = Instance.new("Frame")
+	f.Name = name
+	f.AnchorPoint = Vector2.new(0.5, 0.5)
+	f.Size = UDim2.fromOffset(d, d)
+	f.Position = pos
+	f.BorderSizePixel = 0
+	f.BackgroundColor3 = color
+	Skin.corner(f, "round")
+	if strokeColor then
+		Skin.stroke(f, strokeColor, 1.5)
+	end
+	f.Parent = parent
+	return f
+end
+
+-- Top bar: a paper strip with a brass coin and the count, a sun-and-moon dial with the time
+-- and the weather as a word, and a creel with the bag.
+function UI.buildStyledTop()
+	local top = Instance.new("Frame")
+	top.Name = "TopBar"
+	top.Size = UDim2.fromOffset(548, 60)
+	top.Position = UDim2.new(0.5, -274, 0, 6)
+	top.BorderSizePixel = 0
+	Skin.surface(top, "paper", "panel")
+	top.Parent = gui
+
+	-- The coin: brass with a rim.
+	local coin = Instance.new("Frame")
+	coin.Name = "Coin"
+	coin.Size = UDim2.fromOffset(40, 40)
+	coin.Position = UDim2.fromOffset(12, 10)
+	coin.BorderSizePixel = 0
+	Skin.surface(coin, "coin", "round")
+	coin.Parent = top
+	if not UIStyle.IMAGES.coin.id then
+		local rim = disc(coin, "Rim", 28, UDim2.fromScale(0.5, 0.5), K.brass, K.brassDark)
+		rim.BackgroundTransparency = 1
+	end
+	refs.coins = styledLabel(top, "Coins", "0", UDim2.fromOffset(136, 60), UDim2.fromOffset(60, 0), "title", "heading", K.ink)
+	refs.coins.TextXAlignment = Enum.TextXAlignment.Left
+	Skin.rule(top, "Rule1", UDim2.fromOffset(1, 40), UDim2.fromOffset(200, 10))
+
+	-- The dial: the sun at the top at noon, the moon at the top at midnight.
+	local dial = Instance.new("Frame")
+	dial.Name = "Dial"
+	dial.Size = UDim2.fromOffset(44, 44)
+	dial.Position = UDim2.fromOffset(212, 8)
+	dial.BorderSizePixel = 0
+	Skin.surface(dial, "dial", "round")
+	dial.Parent = top
+	local arm = Instance.new("Frame")
+	arm.Name = "Arm"
+	arm.AnchorPoint = Vector2.new(0.5, 0.5)
+	arm.Position = UDim2.fromScale(0.5, 0.5)
+	arm.Size = UDim2.fromScale(1, 1)
+	arm.BackgroundTransparency = 1
+	arm.Parent = dial
+	-- With the art: the dial face stays still (day on top) and its hand turns, up at noon.
+	-- Without it: a sun and a moon on a turning arm.
+	local hand = Skin.image(dial, "dialHand", UDim2.fromScale(1, 1), UDim2.fromScale(0.5, 0.5))
+	if hand then
+		hand.AnchorPoint = Vector2.new(0.5, 0.5)
+		arm:Destroy()
+		refs.dialArm = hand
+	else
+		disc(arm, "Sun", 14, UDim2.fromScale(0.5, 0.2), K.brass, K.brassDark)
+		disc(arm, "Moon", 12, UDim2.fromScale(0.5, 0.8), K.paper, K.inkSoft)
+		Skin.rule(dial, "Horizon", UDim2.new(1, -8, 0, 1), UDim2.new(0, 4, 0.5, 0), K.brassDark)
+		refs.dialArm = arm
+	end
+	refs.clock = styledLabel(top, "Clock", "7:00 AM", UDim2.fromOffset(130, 28), UDim2.fromOffset(264, 4), "bodyBold", "body", K.ink)
+	refs.clock.TextXAlignment = Enum.TextXAlignment.Left
+	refs.weather = styledLabel(top, "Weather", "Clear", UDim2.fromOffset(130, 26), UDim2.fromOffset(264, 30), "hand", "note", K.inkSoft)
+	refs.weather.TextXAlignment = Enum.TextXAlignment.Left
+	Skin.rule(top, "Rule2", UDim2.fromOffset(1, 40), UDim2.fromOffset(398, 10))
+
+	-- The creel: a wicker box with a lid strap and a handle.
+	local creel = Instance.new("Frame")
+	creel.Name = "Creel"
+	creel.Size = UDim2.fromOffset(34, 30)
+	creel.Position = UDim2.fromOffset(410, 18)
+	creel.BorderSizePixel = 0
+	Skin.surface(creel, "creel", "tag")
+	creel.Parent = top
+	if not UIStyle.IMAGES.creel.id then
+		Skin.rule(creel, "Lid", UDim2.new(1, 0, 0, 3), UDim2.fromOffset(0, 7), K.leather)
+		local handle = Instance.new("Frame")
+		handle.Name = "Handle"
+		handle.Size = UDim2.fromOffset(18, 8)
+		handle.Position = UDim2.fromOffset(8, -9)
+		handle.BackgroundTransparency = 1
+		Skin.stroke(handle, K.leather, 2)
+		Skin.corner(handle, "tag")
+		handle.Parent = creel
+	end
+	refs.bag = styledLabel(top, "Bag", "0 fish", UDim2.fromOffset(92, 30), UDim2.fromOffset(452, 4), "bodyBold", "body", K.ink)
+	refs.bag.TextXAlignment = Enum.TextXAlignment.Left
+	refs.bagValue = styledLabel(top, "BagValue", "worth 0", UDim2.fromOffset(92, 24), UDim2.fromOffset(452, 32), "body", "small", K.inkSoft)
+	refs.bagValue.TextXAlignment = Enum.TextXAlignment.Left
+	refs.top = top
+end
+
+-- The catch card as a field-guide plate: the fish in its window on paper with a ruled length
+-- line, the name in the serif, the weight on a hanging tag, the tier as a stamped seal and a
+-- ribbon of its colour along the top.
+function UI.buildPlate()
+	local card = Instance.new("Frame")
+	card.Name = "CatchCard"
+	card.Size = UDim2.fromOffset(420, 260)
+	card.Position = UDim2.new(0.5, 30, 0.5, -130)
+	card.BorderSizePixel = 0
+	Skin.surface(card, "paper", "card")
+	card.Visible = false
+	card.Parent = gui
+	local ribbon = Instance.new("Frame")
+	ribbon.Name = "Ribbon"
+	ribbon.BorderSizePixel = 0
+	ribbon.Size = UDim2.new(1, 0, 0, 8)
+	ribbon.Parent = card
+	Skin.surface(ribbon, "rarityRibbon", "tag", nil, 8 / 32)
+	refs.cardRibbon = ribbon
+	local inner = Instance.new("Frame")
+	inner.Name = "Inner"
+	inner.BackgroundTransparency = 1
+	inner.Size = UDim2.new(1, -28, 1, -36)
+	inner.Position = UDim2.fromOffset(14, 20)
+	inner.Parent = card
+
+	-- Left column: what it is and what it is worth.
+	refs.cardKicker = styledLabel(inner, "Kicker", "", UDim2.fromOffset(226, 24), UDim2.fromOffset(0, 0), "hand", "note", K.inkSoft)
+	refs.cardKicker.TextXAlignment = Enum.TextXAlignment.Left
+	refs.cardTitle = styledLabel(inner, "Title", "", UDim2.fromOffset(226, 62), UDim2.fromOffset(0, 24), "title", 24, K.ink)
+	refs.cardTitle.TextXAlignment = Enum.TextXAlignment.Left
+	refs.cardTitle.TextYAlignment = Enum.TextYAlignment.Top
+	refs.cardBody = styledLabel(inner, "Body", "", UDim2.fromOffset(226, 26), UDim2.fromOffset(0, 90), "bodyBold", "body", K.brassInk)
+	refs.cardBody.TextXAlignment = Enum.TextXAlignment.Left
+	refs.cardNote = styledLabel(inner, "Note", "", UDim2.fromOffset(210, 104), UDim2.fromOffset(0, 120), "hand", "note", K.inkSoft)
+	refs.cardNote.TextXAlignment = Enum.TextXAlignment.Left
+	refs.cardNote.TextYAlignment = Enum.TextYAlignment.Top
+	refs.cardNote.TextTruncate = Enum.TextTruncate.AtEnd
+
+	-- Right column: the window with the fish, the ruler under it, the length.
+	local window = Instance.new("Frame")
+	window.Name = "Window"
+	window.Size = UDim2.fromOffset(150, 104)
+	window.Position = UDim2.new(1, -150, 0, 6)
+	window.BorderSizePixel = 0
+	window.BackgroundColor3 = K.paper
+	Skin.corner(window, "tag")
+	Skin.stroke(window, K.ink, 2)
+	window.Parent = inner
+	local view = Instance.new("ViewportFrame")
+	view.Name = "Fish"
+	view.Size = UDim2.new(1, -6, 1, -6)
+	view.Position = UDim2.fromOffset(3, 3)
+	view.BackgroundColor3 = K.paper
+	view.BackgroundTransparency = 0
+	view.BorderSizePixel = 0
+	view.Ambient = Color3.fromRGB(215, 215, 215)
+	view.LightColor = Color3.fromRGB(255, 250, 240)
+	view.LightDirection = Vector3.new(-0.3, -0.6, -1)
+	view.Visible = false
+	view.Parent = window
+	local shimmer = Instance.new("UIGradient")
+	shimmer.Name = "Shimmer"
+	shimmer.Enabled = false
+	shimmer.Parent = view
+	refs.cardShimmer = shimmer
+	refs.cardView = view
+
+	local ruler = Instance.new("Frame")
+	ruler.Name = "Ruler"
+	ruler.BackgroundTransparency = 1
+	ruler.Size = UDim2.fromOffset(150, 12)
+	ruler.Position = UDim2.new(1, -150, 0, 116)
+	ruler.Parent = inner
+	local rulerArt = Skin.image(ruler, "ruler", UDim2.fromScale(1, 1), UDim2.new(), K.ink)
+	if rulerArt then
+		rulerArt.ScaleType = Enum.ScaleType.Tile
+		rulerArt.TileSize = UDim2.fromOffset(96, 12) -- the 256 by 32 strip at 12 tall
+	else
+		Skin.rule(ruler, "Line", UDim2.new(1, 0, 0, 2), UDim2.fromOffset(0, 0), K.ink)
+		for i = 0, 10 do
+			local tall = i % 5 == 0
+			Skin.rule(ruler, "Tick" .. i, UDim2.fromOffset(1, if tall then 10 else 5), UDim2.fromOffset(math.min(i * 15, 149), 2), K.ink)
+		end
+	end
+	refs.cardLength = styledLabel(inner, "Length", "", UDim2.fromOffset(150, 24), UDim2.new(1, -150, 0, 130), "bodyBold", "body", K.ink)
+
+	-- The weight on a brass tag hanging on a string over the window's corner.
+	local tagArt = UIStyle.IMAGES.weightTag
+	local tag = Instance.new("Frame")
+	tag.Name = "WeightTag"
+	tag.AnchorPoint = Vector2.new(0.5, 0)
+	tag.Rotation = 6
+	tag.BorderSizePixel = 0
+	tag.ZIndex = 5
+	if tagArt.id then
+		-- The drawn tag carries its own string off the top: hang it from the card's top edge,
+		-- the weight inside its text area (x 21 to 75, y 56 to 116 of 96 by 128).
+		local k = 0.6
+		tag.Size = UDim2.fromOffset(96 * k, 128 * k)
+		tag.Position = UDim2.new(1, -30, 0, -20)
+		Skin.surface(tag, "weightTag", "tag")
+		local a = tagArt.textArea :: { number }
+		refs.cardWeight = styledLabel(tag, "Weight", "", UDim2.fromOffset((a[3] - a[1]) * k, (a[4] - a[2]) * k), UDim2.fromOffset(a[1] * k, a[2] * k), "bodyBold", "body", K.ink)
+	else
+		local cord = Skin.rule(inner, "TagString", UDim2.fromOffset(2, 22), UDim2.new(1, -30, 0, -8), K.inkSoft)
+		cord.ZIndex = 4
+		tag.Size = UDim2.fromOffset(78, 34)
+		tag.Position = UDim2.new(1, -29, 0, 12)
+		Skin.surface(tag, "weightTag", "tag")
+		local hole = disc(tag, "Hole", 6, UDim2.new(0.5, 0, 0, 5), K.paper, K.brassDark)
+		hole.ZIndex = 6
+		refs.cardWeight = styledLabel(tag, "Weight", "", UDim2.new(1, 0, 1, -6), UDim2.fromOffset(0, 6), "bodyBold", "body", K.ink)
+	end
+	tag.Parent = inner
+	refs.cardWeight.ZIndex = 6
+
+	-- The stamp: a double ring and the tier's name in the tier's ink, a little crooked.
+	local stamp = Instance.new("Frame")
+	stamp.Name = "Stamp"
+	stamp.Size = UDim2.fromOffset(140, 42)
+	stamp.Position = UDim2.new(1, -146, 0, 166)
+	stamp.Rotation = -7
+	stamp.BorderSizePixel = 0
+	stamp.ZIndex = 5
+	Skin.corner(stamp, "tag")
+	refs.cardStampStroke = Skin.stroke(stamp, K.ink, 3)
+	stamp.Parent = inner
+	local ring = Instance.new("Frame")
+	ring.Name = "Ring"
+	ring.BackgroundTransparency = 1
+	ring.Size = UDim2.new(1, -8, 1, -8)
+	ring.Position = UDim2.fromOffset(4, 4)
+	ring.ZIndex = 5
+	Skin.corner(ring, "tag")
+	refs.cardStampRing = Skin.stroke(ring, K.ink, 1)
+	ring.Parent = stamp
+	refs.cardBadge = styledLabel(stamp, "Tier", "", UDim2.fromScale(1, 1), UDim2.new(), "title", 18, K.ink)
+	refs.cardBadge.ZIndex = 6
+	refs.cardStamp = stamp
+	-- With the art: the seal, a mark of the tier's colour, pressed beside the written name.
+	refs.cardSeal = Skin.image(inner, "raritySeal", UDim2.fromOffset(40, 40), UDim2.new(1, -176, 0, 164))
+	if refs.cardSeal then
+		refs.cardSeal.Rotation = -12
+		refs.cardSeal.ZIndex = 4
+	end
+
+	refs.card = card
+	refs.cardStroke = card:FindFirstChild("SkinStroke") -- nil over the paper art (its edge is drawn)
+	refs.cardScale = Instance.new("UIScale")
+	refs.cardScale.Parent = card
+end
+
+function UI.fillPlate(payload: any)
+	local f = payload.fish
+	local tier = payload.tier or Rarity.of(FishData.byId[f.id])
+	local rank = Rarity.rank[tier] or 1
+	local now = os.clock()
+	local exact = Rarity.colorAt(tier, now)
+	local tierInk = UIStyle.rarityInk(tier, now)
+	local class = Rarity.sizeClassOf(f)
+	local kicker = {}
+	if class == "monster" then
+		table.insert(kicker, "Monster!")
+	elseif class == "trophy" then
+		table.insert(kicker, "Trophy!")
+	end
+	if payload.first then
+		table.insert(kicker, "New species!")
+	end
+	if payload.best then
+		table.insert(kicker, "Personal best!")
+	end
+	refs.cardKicker.Text = table.concat(kicker, " ")
+	refs.cardKicker.TextColor3 = tierInk
+	refs.cardTitle.Text = f.name
+	refs.cardBody.Text = string.format("Worth %d coins.", f.price)
+	refs.cardNote.Text = if payload.first then ("New in your journal: " .. payload.habit) else ("Caught at " .. (FishLogic.SPOT_NAMES[f.spot] or f.spot) .. " on " .. ((BaitData.byId[f.bait] and BaitData.byId[f.bait].name) or f.bait) .. ".")
+	refs.cardLength.Text = Units.length(f.cm)
+	refs.cardWeight.Text = Units.weight(f.kg)
+	Skin.tint(refs.cardRibbon, exact)
+	local plateStroke = refs.cardStroke :: UIStroke?
+	if plateStroke then
+		plateStroke.Color = tierInk
+		plateStroke.Thickness = UIStyle.STROKE.plate
+	end
+	refs.cardBadge.Text = string.upper((Rarity.byId[tier] or Rarity.byId.Common).name)
+	refs.cardBadge.TextColor3 = tierInk
+	refs.cardStampStroke.Color = tierInk
+	refs.cardStampRing.Color = tierInk
+	refs.cardStamp.BackgroundColor3 = UIStyle.mix(exact, K.paper, UIStyle.STAMP_TINT)
+	if refs.cardSeal then
+		refs.cardSeal.ImageColor3 = exact
+	end
+	refs.card.Visible = true
+	refs.status.Visible = false
+	refs.cardScale.Scale = if rank >= 3 then 0.6 else 0.85
+	TweenService:Create(refs.cardScale, TweenInfo.new(if rank >= 3 then 0.45 else 0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
+	-- Rare and up: a sweep of the tier's colour behind the fish (a gradient multiplies the
+	-- window's own colour, so the window goes white under it).
+	local shimmer = refs.cardShimmer :: UIGradient
+	shimmer.Enabled = rank >= 3
+	refs.cardView.BackgroundColor3 = if rank >= 3 then Color3.new(1, 1, 1) else K.paper
+	if rank >= 3 then
+		shimmer.Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, K.paper),
+			ColorSequenceKeypoint.new(0.5, exact),
+			ColorSequenceKeypoint.new(1, K.paper),
+		})
+	end
+	local token = os.clock()
+	refs.card:SetAttribute("Token", token)
+	UI.showCardFish(token)
+	task.delay(if payload.first or rank >= 3 then 6 else 4, function()
+		if refs.card:GetAttribute("Token") == token then
+			closeCard()
+		end
+	end)
+end
+
+-- Dresses the screens built above (the HUD, the fight, the toasts) in the new look. Sizes and
+-- places of the fight bar, its track, the reel prompt and the power meter stay as built.
+function UI.dressScreen()
+	local T = Skin.TOUCH
+
+	-- The side buttons become tabs on the edge of a tackle box: a leather strap down the left
+	-- edge, canvas tabs with a brass rivet, each a full thumb tall.
+	local strap = Instance.new("Frame")
+	strap.Name = "TackleEdge"
+	strap.Size = UDim2.fromOffset(12, 3 * T + 40)
+	strap.Position = UDim2.new(0, 0, 0.5, -(3 * T + 40) / 2)
+	strap.BorderSizePixel = 0
+	Skin.surface(strap, "leather", "tag")
+	strap.Parent = gui
+	refs.tabStrap = strap
+	local icons = { "bait", "journal", "goals" }
+	for i, b in { refs.baitBtn, refs.journalBtn, refs.goalsBtn } do
+		b.Size = UDim2.fromOffset(176, T)
+		b.Position = UDim2.new(0, 6, 0.5, -(3 * T + 16) / 2 + (i - 1) * (T + 8))
+		Skin.button(b, "tab")
+		local u = Skin.pad(b, 6)
+		u.PaddingRight = UDim.new(0, 22)
+		local icon = Skin.image(b, icons[i], UDim2.fromOffset(34, 34), UDim2.new(0, 0, 0.5, -17))
+		if icon then
+			-- The drawn tab: text and icon from x = 22 x SliceScale.
+			icon.ZIndex = 3
+			u.PaddingLeft = UDim.new(0, math.floor(22 * T / 96))
+			b.TextXAlignment = Enum.TextXAlignment.Right
+		else
+			local rivet = disc(b, "Rivet", 10, UDim2.new(1, -12, 0.5, 0), K.brass, K.brassDark)
+			rivet.ZIndex = 2
+		end
+	end
+
+	-- Today's goals: a handwritten note pinned beside the tabs.
+	local goals = refs.goalsBox :: Frame
+	goals.Size = UDim2.fromOffset(340, 0)
+	goals.AutomaticSize = Enum.AutomaticSize.Y
+	goals.Position = UDim2.new(0, 196, 0.5, -(3 * T + 16) / 2)
+	goals.Rotation = -1
+	-- The list moves into a body frame, so the paper image is not laid out as a line.
+	local body = Instance.new("Frame")
+	body.Name = "Body"
+	body.BackgroundTransparency = 1
+	body.Size = UDim2.new(1, 0, 0, 0)
+	body.AutomaticSize = Enum.AutomaticSize.Y
+	body.ZIndex = 2
+	for _, c in goals:GetChildren() do
+		if c:IsA("UIListLayout") or c:IsA("GuiObject") then
+			c.Parent = body
+		end
+	end
+	body.Parent = goals
+	Skin.surface(goals, "paper", "card", 1)
+	Skin.pad(goals, 12, 14)
+	Skin.text(refs.goalsTitle, "title", "heading", K.ink)
+	refs.goalsTitle.Size = UDim2.new(1, 0, 0, 30)
+	for _, l in refs.goalLines do
+		Skin.text(l, "hand", "note", K.ink)
+		l.Size = UDim2.new(1, 0, 0, 0)
+		l.AutomaticSize = Enum.AutomaticSize.Y
+	end
+
+	-- The status line sits on a paper slip that hugs its words (nothing over the water glare).
+	local status = refs.status :: TextLabel
+	status.TextStrokeTransparency = 1
+	status.AnchorPoint = Vector2.new(0.5, 0)
+	status.Position = UDim2.new(0.5, 0, 1, -150)
+	status.Size = UDim2.fromOffset(0, 0)
+	status.AutomaticSize = Enum.AutomaticSize.XY
+	local cap = Instance.new("UISizeConstraint")
+	cap.MaxSize = Vector2.new(640, 140)
+	cap.Parent = status
+	Skin.text(status, "bodyBold", 20, K.ink)
+	Skin.surface(status, "paper", "card", 1)
+	Skin.pad(status, 8)
+	local su = status:FindFirstChildOfClass("UIPadding") :: UIPadding
+	su.PaddingLeft = UDim.new(0, 14)
+	su.PaddingRight = UDim.new(0, 14)
+	status.BackgroundTransparency = 1
+	local sst = status:FindFirstChild("SkinStroke") :: UIStroke?
+	if sst then
+		sst.Transparency = 1
+	end
+	local simg = status:FindFirstChild("SkinImage") :: ImageLabel?
+	if simg then
+		simg.Visible = false
+	end
+
+	-- The power meter: a wood frame with a brass fill.
+	Skin.surface(refs.power, "fightFrame", "tag", nil, 0.35)
+	local powerArt = refs.power:FindFirstChild("SkinImage") :: ImageLabel?
+	if powerArt then
+		powerArt.ZIndex = 2 -- the frame over the fill; the fill shows through its window
+	end
+	refs.powerFill.BackgroundColor3 = K.brass
+	Skin.corner(refs.powerFill, "tag")
+
+	-- The bite: a brass mark outlined in ink.
+	refs.bite.TextColor3 = K.brass
+	refs.bite.TextStrokeColor3 = K.ink
+	Skin.text(refs.bite, "title", 110, K.brass)
+
+	-- The fight bar: wood and brass, a water-blue track, a fish silhouette for the marker.
+	local fight = refs.fight :: Frame
+	Skin.surface(fight, "woodPanel", "panel", 3)
+	local track = fight:FindFirstChild("Track") :: Frame
+	Skin.surface(track, "waterTrack", "tag", 2, 0.7)
+	-- The drawn wood and brass frame lies over the track, its window see-through (window
+	-- x 16 to 240, y 15 to 46 of 256 by 64, so about 15 px of rail all round at SliceScale 1).
+	local frameArt = Skin.image(track, "fightFrame", UDim2.new(1, 22, 1, 22), UDim2.fromOffset(-11, -11))
+	if frameArt then
+		frameArt.ScaleType = Enum.ScaleType.Slice
+		frameArt.SliceCenter = UIStyle.sliceRect("fightFrame") :: Rect
+		frameArt.SliceScale = 0.7
+		frameArt.ZIndex = 6
+	end
+	refs.zoneStroke.Color = K.paper
+	local mark = refs.fishMark :: Frame
+	local fishImg = Skin.image(mark, "fishMarker", UDim2.new(1, 8, 1, 12), UDim2.fromOffset(-4, -6), K.fish)
+	if fishImg then
+		mark.BackgroundTransparency = 1
+	else
+		-- No art yet: a dark body with a paper outline and a tail.
+		mark.BackgroundColor3 = K.fish
+		Skin.corner(mark, "round")
+		Skin.stroke(mark, K.paper, 1.5)
+		local tail = Instance.new("Frame")
+		tail.Name = "Tail"
+		tail.AnchorPoint = Vector2.new(0.5, 0.5)
+		tail.Size = UDim2.fromOffset(12, 12)
+		tail.Position = UDim2.new(0, 0, 0.5, 0)
+		tail.Rotation = 45
+		tail.BorderSizePixel = 0
+		tail.BackgroundColor3 = K.fish
+		Skin.stroke(tail, K.paper, 1.5)
+		tail.ZIndex = 0
+		tail.Parent = mark
+	end
+	local prog = fight:FindFirstChild("Progress") :: Frame
+	prog.BackgroundColor3 = K.woodDark
+	Skin.stroke(prog, K.brassDark, 1)
+	refs.progFill.BackgroundColor3 = K.brass
+	Skin.text(refs.fightNote, "body", 15, K.paper)
+	refs.fightNote.LineHeight = 0.9
+	Skin.text(refs.fightHelp, "bodyBold", 15, K.paper)
+	refs.fightHelp.Text = "Hold to reel"
+	-- The cue rides beside the zone over the water: a paper chip so it reads anywhere.
+	local cue = refs.cue :: TextLabel
+	cue.TextStrokeTransparency = 1
+	cue.Size = UDim2.fromOffset(0, 40)
+	cue.AutomaticSize = Enum.AutomaticSize.X
+	Skin.surface(cue, "paper", "tag", 1)
+	Skin.pad(cue, 4).PaddingLeft = UDim.new(0, 10)
+	local cuePad = cue:FindFirstChildOfClass("UIPadding") :: UIPadding
+	cuePad.PaddingRight = UDim.new(0, 10)
+	-- The reel prompt: a paper slip with a brass edge.
+	Skin.surface(refs.reelPrompt, "paper", "card", 2)
+	Skin.stroke(refs.reelPrompt, K.brassDark, 2)
+	Skin.text(refs.reelTitle, "title", 30, K.brassInk)
+	Skin.text(refs.reelSub, "body", 17, K.ink)
+	-- The drag box keeps its place and grows to a thumb's height; the line rating rides inside
+	-- the button so the whole box is one target.
+	local dragBox = refs.dragBox :: Frame
+	dragBox.Size = UDim2.fromOffset(LOCK.fight.dragBox[1], T)
+	dragBox.BackgroundTransparency = 1
+	local dragBtn = refs.dragBtn :: TextButton
+	dragBtn.Size = UDim2.fromOffset(LOCK.fight.dragBox[1], T)
+	dragBtn.TextYAlignment = Enum.TextYAlignment.Top
+	Skin.button(dragBtn, "brass", 16)
+	Skin.pad(dragBtn, 6)
+	local line = refs.dragLine :: TextLabel
+	line.TextStrokeTransparency = 1
+	line.Parent = dragBtn
+	line.Size = UDim2.new(1, 0, 0, 22)
+	line.Position = UDim2.new(0, 0, 1, -22)
+	line.ZIndex = 3
+	Skin.text(line, "body", 14, K.ink)
+
+	-- Toasts under the taller top bar.
+	refs.toasts.Position = UDim2.new(0.5, -280, 0, 74)
+
+	-- The touch Fish button: a big brass button.
+	if refs.touchFish then
+		local fb = refs.touchFish :: TextButton
+		Skin.text(fb, "title", 28, K.ink)
+		fb.BackgroundColor3 = K.brass
+		fb.BackgroundTransparency = 0
+		Skin.stroke(fb, K.brassDark, 3)
+	end
+end
+
+-- In the new look the side tabs and the status line step aside while a panel is open (the
+-- critic saw them peeking out from behind the shop and the journal on a phone).
+local function sideTabs(show: boolean)
+	if not STYLED then
+		return
+	end
+	local on = show and not locked
+	refs.baitBtn.Visible = on
+	refs.journalBtn.Visible = on
+	refs.goalsBtn.Visible = on and hasGoals
+	refs.tabStrap.Visible = on
+	if not show then
+		refs.goalsBox.Visible = false
+	end
+	if not refs.card.Visible then
+		refs.status.Visible = show
+	end
+end
+UI.sideTabs = sideTabs
 
 -- The landed fish in the catch card: a copy of the one the server hangs on the line
 -- ("CaughtFish_<name>", FishingService.showCatch), lying flat and turning slowly. If it
@@ -731,7 +1422,113 @@ end
 ----------------------------------------------------------------------------------------
 -- Panels
 
-local function panelShell(name: string, title: string): (Frame, ScrollingFrame)
+-- New look: a tackle box ("box": canvas with a leather band, brass close button and rivets)
+-- or a field-guide page ("page": paper, ink title over a double rule). Buttons a thumb tall.
+local PANEL_HEAD = Skin.TOUCH + 12
+local PANEL_FOOT = Skin.TOUCH + 20
+local function styledShell(name: string, title: string, look: string): (Frame, ScrollingFrame)
+	local box = look == "box"
+	local p = Instance.new("Frame")
+	p.Name = name
+	p.AnchorPoint = Vector2.new(0.5, 0.5)
+	p.Size = UDim2.fromOffset(640, 470)
+	p.Position = UDim2.new(0.5, 0, 0.5, 24)
+	p.BorderSizePixel = 0
+	p.Visible = false
+	Skin.surface(p, if box then "canvas" else "paper", "panel", 3)
+	p.Parent = gui
+	if box then
+		local band = Instance.new("Frame")
+		band.Name = "Band"
+		band.Size = UDim2.new(1, 0, 0, PANEL_HEAD)
+		band.BorderSizePixel = 0
+		Skin.surface(band, "leather", "panel")
+		band.Parent = p
+		for i, at in { UDim2.fromOffset(9, 9), UDim2.new(1, -9, 0, 9), UDim2.new(0, 9, 1, -9), UDim2.new(1, -9, 1, -9) } do
+			disc(p, "Rivet" .. i, 8, at, K.brass, K.brassDark).ZIndex = 3
+		end
+	else
+		Skin.rule(p, "Rule", UDim2.new(1, -24, 0, 2), UDim2.fromOffset(12, PANEL_HEAD), K.ink)
+		Skin.rule(p, "Rule2", UDim2.new(1, -24, 0, 1), UDim2.fromOffset(12, PANEL_HEAD + 5), K.inkFaint)
+	end
+	local t = styledLabel(p, "Title", title, UDim2.new(1, -160, 0, PANEL_HEAD), UDim2.fromOffset(20, 0), "title", "title", if box then K.paper else K.ink)
+	t.TextXAlignment = Enum.TextXAlignment.Left
+	t.ZIndex = 2
+	local close = button(p, "Close", "Close", UDim2.fromOffset(112, Skin.TOUCH), UDim2.new(1, -124, 0, 6), C.red, function()
+		UI.closePanels()
+	end)
+	close.ZIndex = 2
+	if box then
+		Skin.paint(close, "brass") -- brass on the leather band
+	end
+	local scroll = Instance.new("ScrollingFrame")
+	scroll.Name = "List"
+	scroll.Size = UDim2.new(1, -24, 1, -(PANEL_HEAD + 14 + PANEL_FOOT))
+	scroll.Position = UDim2.fromOffset(12, PANEL_HEAD + 12)
+	scroll.BackgroundTransparency = 1
+	scroll.BorderSizePixel = 0
+	scroll.ScrollBarThickness = 10
+	scroll.ScrollBarImageColor3 = K.brassDark
+	scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	scroll.CanvasSize = UDim2.new()
+	scroll.Selectable = false
+	scroll.Parent = p
+	return p, scroll
+end
+
+-- New look: a shop row as a paper card that grows to fit its words, the button a thumb tall
+-- on the right with what you own under it.
+local function layoutRow(row: Frame, minH: number)
+	if not STYLED then
+		return
+	end
+	local T = Skin.TOUCH
+	row.Size = UDim2.new(1, -14, 0, 0)
+	row.AutomaticSize = Enum.AutomaticSize.Y
+	local c = Instance.new("UISizeConstraint")
+	c.MinSize = Vector2.new(0, minH)
+	c.Parent = row
+	Skin.surface(row, "paper", "card", 1)
+	local u = Instance.new("UIPadding")
+	u.PaddingBottom = UDim.new(0, 12)
+	u.Parent = row
+	local name = row:FindFirstChild("Name") :: TextLabel?
+	if name then
+		name.Position = UDim2.fromOffset(20, 8)
+		name.Size = UDim2.new(1, -206, 0, 30)
+		Skin.text(name, "title", 20, K.ink)
+	end
+	local blurb = row:FindFirstChild("Blurb") :: TextLabel?
+	if blurb then
+		blurb.Position = UDim2.fromOffset(20, 42)
+		blurb.Size = UDim2.new(1, -206, 0, 0)
+		blurb.AutomaticSize = Enum.AutomaticSize.Y
+		blurb.TextYAlignment = Enum.TextYAlignment.Top
+		Skin.text(blurb, "body", "small", K.inkSoft)
+	end
+	local owned = row:FindFirstChild("Owned") :: TextLabel?
+	if owned then
+		owned.Position = UDim2.new(1, -176, 0, T + 12)
+		owned.Size = UDim2.fromOffset(164, 26)
+		owned.TextXAlignment = Enum.TextXAlignment.Center
+	end
+	local buy = row:FindFirstChild("Buy") :: TextButton?
+	if buy then
+		buy.Size = UDim2.fromOffset(164, T)
+		buy.Position = UDim2.new(1, -176, 0, 8)
+	end
+	local swatch = row:FindFirstChild("Swatch") :: Frame?
+	if swatch then
+		-- The item's own colour as a ribbon down the card's left edge.
+		swatch.Size = UDim2.fromOffset(7, minH - 16)
+		swatch.Position = UDim2.fromOffset(6, 8)
+	end
+end
+
+local function panelShell(name: string, title: string, look: string?): (Frame, ScrollingFrame)
+	if STYLED then
+		return styledShell(name, title, look or "page")
+	end
 	local p = frame(gui, name, UDim2.fromOffset(640, 470), UDim2.new(0.5, 0, 0.5, 24), C.panel, 0.03)
 	p.AnchorPoint = Vector2.new(0.5, 0.5)
 	corner(p, 14)
@@ -755,7 +1552,7 @@ local function panelShell(name: string, title: string): (Frame, ScrollingFrame)
 end
 
 function UI.buildShop()
-	local p, scroll = panelShell("Shop", "Bait and Tackle")
+	local p, scroll = panelShell("Shop", "Bait and Tackle", "box")
 	local layout = Instance.new("UIListLayout")
 	layout.Padding = UDim.new(0, 8)
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -776,6 +1573,7 @@ function UI.buildShop()
 			end
 		end)
 		refs.shopRows[b.id] = { owned = owned, buy = buy }
+		layoutRow(row, Skin.TOUCH + 46)
 	end
 	-- Rods: each comes with its reel. Bought once, switch any time.
 	local rodHeader = label(scroll, "RodsHeader", "Rods", UDim2.new(1, -10, 0, 30), UDim2.new(), 20, C.gold, Enum.Font.GothamBlack)
@@ -807,6 +1605,7 @@ function UI.buildShop()
 		end)
 		refs.rodRows[r.id] = btn
 		refs.rodBlurbs[r.id] = blurb
+		layoutRow(row, Skin.TOUCH + 20)
 	end
 	-- Braided line: one purchase, 4 lb more on every rod. UNVERIFIED in Studio (2026-11-27).
 	do
@@ -827,6 +1626,7 @@ function UI.buildShop()
 				callbacks.buyBraid()
 			end
 		end)
+		layoutRow(row, Skin.TOUCH + 20)
 	end
 	-- Boats: bought once; the chosen one waits at your slip by the dock (L7).
 	local boatHeader = label(scroll, "BoatsHeader", "Boats", UDim2.new(1, -10, 0, 30), UDim2.new(), 20, C.gold, Enum.Font.GothamBlack)
@@ -862,8 +1662,15 @@ function UI.buildShop()
 			end
 		end)
 		refs.boatRows[b.id] = btn
+		layoutRow(row, Skin.TOUCH + 20)
 	end
 	refs.shopHint = label(p, "Hint", "", UDim2.new(1, -24, 0, 40), UDim2.new(0, 12, 1, -48), 15, C.dim)
+	if STYLED then
+		refs.shopHint.Size = UDim2.new(1, -40, 0, PANEL_FOOT - 12)
+		refs.shopHint.Position = UDim2.new(0, 20, 1, -(PANEL_FOOT - 4))
+		refs.shopHint.TextXAlignment = Enum.TextXAlignment.Left
+		Skin.text(refs.shopHint, "hand", "note", K.ink)
+	end
 	refs.shop = p
 end
 
@@ -879,11 +1686,11 @@ function UI.refreshShop()
 			r.owned.Text = if has then "Owned" else "Lure, keep forever"
 			r.buy.Text = if has then "Owned" else (b.price .. " coins")
 			r.buy.AutoButtonColor = not has
-			r.buy.BackgroundColor3 = if has then C.panel else (if s.coins >= b.price then C.blue else C.panel)
+			paint(r.buy, if has then C.panel else (if s.coins >= b.price then C.blue else C.panel))
 		else
 			r.owned.Text = "You have " .. (s.bait[b.id] or 0)
 			r.buy.Text = string.format("%d for %d", b.pack, b.price)
-			r.buy.BackgroundColor3 = if s.coins >= b.price then C.blue else C.panel
+			paint(r.buy, if s.coins >= b.price then C.blue else C.panel)
 		end
 	end
 	local braid = s.braid == true
@@ -893,19 +1700,19 @@ function UI.refreshShop()
 		refs.rodBlurbs[r.id].Text = string.format("%s %s.", r.blurb, RodData.lineText(r.id, braid))
 		if s.rod == r.id then
 			btn.Text = "In your hands"
-			btn.BackgroundColor3 = C.panel
+			paint(btn, C.panel)
 		elseif owned then
 			btn.Text = "Use this rod"
-			btn.BackgroundColor3 = C.green
+			paint(btn, C.green)
 		else
 			btn.Text = r.price .. " coins"
-			btn.BackgroundColor3 = if s.coins >= r.price then C.blue else C.panel
+			paint(btn, if s.coins >= r.price then C.blue else C.panel)
 		end
 	end
 	if refs.braidBtn then
 		refs.braidBtn.Text = if braid then "Owned" else (RodData.BRAID_PRICE .. " coins")
 		refs.braidBtn.AutoButtonColor = not braid
-		refs.braidBtn.BackgroundColor3 = if braid then C.panel else (if s.coins >= RodData.BRAID_PRICE then C.blue else C.panel)
+		paint(refs.braidBtn, if braid then C.panel else (if s.coins >= RodData.BRAID_PRICE then C.blue else C.panel))
 	end
 	for _, b in BoatData.list do
 		local btn = refs.boatRows and refs.boatRows[b.id]
@@ -914,16 +1721,16 @@ function UI.refreshShop()
 			if not b.forSale then
 				btn.Text = "Coming soon"
 				btn.AutoButtonColor = false
-				btn.BackgroundColor3 = C.panel
+				paint(btn, C.panel)
 			elseif s.boat == b.id then
 				btn.Text = "At your slip"
-				btn.BackgroundColor3 = C.panel
+				paint(btn, C.panel)
 			elseif owned then
 				btn.Text = "Use this boat"
-				btn.BackgroundColor3 = C.green
+				paint(btn, C.green)
 			else
 				btn.Text = b.price .. " coins"
-				btn.BackgroundColor3 = if s.coins >= b.price then C.blue else C.panel
+				paint(btn, if s.coins >= b.price then C.blue else C.panel)
 			end
 		end
 	end
@@ -953,6 +1760,41 @@ function UI.buildJournal()
 		habit.TextXAlignment = Enum.TextXAlignment.Left
 		habit.TextYAlignment = Enum.TextYAlignment.Top
 		refs.journalCards[s.id] = { name = name, stats = stats, habit = habit }
+		if STYLED then
+			-- An entry in the field guide: full width, as tall as its words.
+			card.Size = UDim2.new(1, -14, 0, 0)
+			card.AutomaticSize = Enum.AutomaticSize.Y
+			Skin.surface(card, "paper", "card", 1)
+			Skin.pad(card, 12)
+			local body = Instance.new("Frame")
+			body.Name = "Body"
+			body.BackgroundTransparency = 1
+			body.Size = UDim2.new(1, 0, 0, 0)
+			body.AutomaticSize = Enum.AutomaticSize.Y
+			body.ZIndex = 2
+			body.Parent = card
+			local lines = Instance.new("UIListLayout")
+			lines.SortOrder = Enum.SortOrder.LayoutOrder
+			lines.Padding = UDim.new(0, 4)
+			lines.Parent = body
+			for order, l in { name, stats, habit } do
+				l.Parent = body
+				l.LayoutOrder = order
+				l.Size = UDim2.new(1, 0, 0, 0)
+				l.AutomaticSize = Enum.AutomaticSize.Y
+			end
+			Skin.text(name, "title", 20, K.ink)
+			Skin.text(stats, "bodyBold", 15, K.brassInk)
+			Skin.text(habit, "hand", "note", K.inkSoft)
+		end
+	end
+	if STYLED then
+		-- One column of entries (the grid's cells could not grow to fit a phone's bigger text).
+		grid:Destroy()
+		local list = Instance.new("UIListLayout")
+		list.Padding = UDim.new(0, 8)
+		list.SortOrder = Enum.SortOrder.LayoutOrder
+		list.Parent = scroll
 	end
 	refs.assistBtn = button(p, "Assist", "Reel assist: On", UDim2.fromOffset(170, 40), UDim2.new(0, 12, 1, -48), C.panel2, function()
 		if callbacks.toggleAssist then
@@ -970,6 +1812,24 @@ function UI.buildJournal()
 	end)
 	-- The summary sits in the title row, so the three switches fit along the bottom.
 	refs.journalSummary = label(p, "Summary", "", UDim2.new(1, -330, 0, 44), UDim2.fromOffset(220, 6), 13, C.dim)
+	if STYLED then
+		-- A handwritten note at the top of the page instead (the title row was too narrow for
+		-- it on a phone), and the three switches a thumb tall along the bottom.
+		local sum = refs.journalSummary :: TextLabel
+		sum.Parent = scroll
+		sum.LayoutOrder = 0
+		sum.Size = UDim2.new(1, -14, 0, 0)
+		sum.AutomaticSize = Enum.AutomaticSize.Y
+		sum.TextXAlignment = Enum.TextXAlignment.Left
+		Skin.text(sum, "hand", "note", K.ink)
+		local x = 12
+		for _, b in { refs.assistBtn, refs.quickBtn, refs.tackleBtn } do
+			local w = if b == refs.tackleBtn then 160 else 190
+			b.Size = UDim2.fromOffset(w, Skin.TOUCH)
+			b.Position = UDim2.new(0, x, 1, -(Skin.TOUCH + 10))
+			x += w + 10
+		end
+	end
 	refs.journal = p
 end
 
@@ -983,7 +1843,8 @@ function UI.refreshJournal()
 		local c = refs.journalCards[s.id]
 		local best = st.bests[s.id]
 		local listed = Journal.listed(s, best ~= nil)
-		c.name.Parent.Visible = listed
+		local entry = if STYLED then (c.name.Parent :: Instance).Parent else c.name.Parent
+		;(entry :: any).Visible = listed
 		if listed then
 			shown += 1
 		end
@@ -991,7 +1852,7 @@ function UI.refreshJournal()
 		if best then
 			kinds += 1
 			c.name.Text = s.name .. "  (" .. Rarity.of(s) .. ")"
-			c.name.TextColor3 = Rarity.colorAt(Rarity.of(s), 0)
+			c.name.TextColor3 = if STYLED then UIStyle.rarityInk(Rarity.of(s), 0) else Rarity.colorAt(Rarity.of(s), 0)
 			local big = ""
 			local nT, nM = (st.trophies or {})[s.id] or 0, (st.monsters or {})[s.id] or 0
 			if nM > 0 then
@@ -1004,7 +1865,7 @@ function UI.refreshJournal()
 		else
 			-- Not caught yet: show its tier, and a rumour once enough fish are caught overall.
 			c.name.Text = "???  (" .. Rarity.of(s) .. ")"
-			c.name.TextColor3 = Rarity.colorAt(Rarity.of(s), 0)
+			c.name.TextColor3 = if STYLED then UIStyle.rarityInk(Rarity.of(s), 0) else Rarity.colorAt(Rarity.of(s), 0)
 			c.stats.Text = "Not caught yet."
 			c.habit.Text = Journal.rumour(s, st.totalCaught) or "Catch more fish to hear rumours about this one."
 		end
@@ -1030,6 +1891,9 @@ function UI.setLocked(on: boolean)
 	refs.baitBtn.Visible = not on
 	refs.journalBtn.Visible = not on
 	refs.goalsBtn.Visible = hasGoals and not on -- the playtest critic: it floated alone in fights
+	if STYLED then
+		refs.tabStrap.Visible = not on
+	end
 	if on then
 		refs.goalsBox.Visible = false
 	end
@@ -1057,6 +1921,7 @@ function UI.closePanels()
 	end
 	openPanel = nil
 	GuiService.SelectedObject = nil
+	sideTabs(true)
 end
 
 function UI.openShop()
@@ -1065,6 +1930,7 @@ function UI.openShop()
 	end
 	UI.closePanels()
 	openPanel = "Shop"
+	sideTabs(false)
 	UI.refreshShop()
 	refs.shop.Visible = true
 	if UI.inputName() == "R2" then
@@ -1082,6 +1948,7 @@ function UI.toggleJournal()
 	end
 	UI.closePanels()
 	openPanel = "Journal"
+	sideTabs(false)
 	UI.refreshJournal()
 	refs.journal.Visible = true
 	if UI.inputName() == "R2" then
@@ -1100,6 +1967,12 @@ function UI.buildPond()
 	layout.Parent = scroll
 	refs.pondList = scroll
 	refs.pondHint = label(p, "Hint", "Fish grow while you're away (up to 8 hours). Two grown fish of a kind can have babies.", UDim2.new(1, -24, 0, 40), UDim2.new(0, 12, 1, -48), 14, C.dim)
+	if STYLED then
+		refs.pondHint.Size = UDim2.new(1, -40, 0, PANEL_FOOT - 12)
+		refs.pondHint.Position = UDim2.new(0, 20, 1, -(PANEL_FOOT - 4))
+		refs.pondHint.TextXAlignment = Enum.TextXAlignment.Left
+		Skin.text(refs.pondHint, "hand", "note", K.ink)
+	end
 	refs.pond = p
 end
 
@@ -1119,6 +1992,23 @@ local function pondRow(parent: Instance, order: number, title: string, detail: s
 	end
 	for i, b in buttons do
 		button(row, "Btn" .. i, b.text, UDim2.fromOffset(100, 42), UDim2.new(1, -(110 * (#buttons - i + 1)), 0, 8), b.color, b.fn)
+	end
+	if STYLED then
+		local T = Skin.TOUCH
+		row.Size = UDim2.new(1, -14, 0, T + 16)
+		Skin.surface(row, "paper", "card", 1)
+		name.Position = UDim2.fromOffset(14, 8)
+		name.Size = UDim2.fromOffset(230, 30)
+		info.Position = UDim2.fromOffset(14, 40)
+		info.Size = UDim2.new(1, -(14 + 114 * #buttons), 0, 28)
+		for i = 1, #buttons do
+			local btn = row:FindFirstChild("Btn" .. i) :: TextButton
+			btn.Size = UDim2.fromOffset(104, T)
+			btn.Position = UDim2.new(1, -(114 * (#buttons - i + 1)), 0, 8)
+			if buttons[i].color == C.panel then
+				Skin.paint(btn, "paper") -- "Let go" is an action, not a greyed-out button
+			end
+		end
 	end
 	return row
 end
@@ -1192,6 +2082,7 @@ function UI.openPond()
 	end
 	UI.closePanels()
 	openPanel = "Pond"
+	sideTabs(false)
 	refs.pond.Visible = true
 	UI.refreshPond()
 	refs.pondList.CanvasPosition = Vector2.zero -- always open at the top
@@ -1201,7 +2092,7 @@ end
 -- Tackle Box (L3): the hook size, best grade per bait, and Perfects toward the gold hook.
 
 function UI.buildTackle()
-	local p, scroll = panelShell("Tackle", "Tackle Box")
+	local p, scroll = panelShell("Tackle", "Tackle Box", "box")
 	local layout = Instance.new("UIListLayout")
 	layout.Padding = UDim.new(0, 6)
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -1211,6 +2102,16 @@ function UI.buildTackle()
 		UI.toggleJournal()
 	end)
 	refs.tackleHint = label(p, "Hint", "Lures carry their own hook. Changing hooks takes the bait off, so you bait up again.", UDim2.new(1, -200, 0, 40), UDim2.new(0, 190, 1, -48), 13, C.dim)
+	if STYLED then
+		local back = p:FindFirstChild("Back") :: TextButton
+		back.Size = UDim2.fromOffset(190, Skin.TOUCH)
+		back.Position = UDim2.new(0, 12, 1, -(Skin.TOUCH + 10))
+		Skin.paint(back, "leather")
+		refs.tackleHint.Size = UDim2.new(1, -226, 0, PANEL_FOOT - 8)
+		refs.tackleHint.Position = UDim2.new(0, 214, 1, -(PANEL_FOOT - 2))
+		refs.tackleHint.TextXAlignment = Enum.TextXAlignment.Left
+		Skin.text(refs.tackleHint, "hand", "note", K.ink)
+	end
 	refs.tackle = p
 end
 
@@ -1227,7 +2128,7 @@ function UI.refreshTackle()
 	local order = 1
 	header(refs.tackleList, order, "Hook size (for live bait)")
 	order += 1
-	local hooks = frame(refs.tackleList, "Hooks", UDim2.new(1, -10, 0, 56), UDim2.new(), C.panel, 1)
+	local hooks = frame(refs.tackleList, "Hooks", UDim2.new(1, -10, 0, if STYLED then Skin.TOUCH else 56), UDim2.new(), C.panel, 1)
 	hooks.LayoutOrder = order
 	local firstBtn: TextButton? = nil
 	for i, size in BaitRig.HOOKS do
@@ -1237,8 +2138,13 @@ function UI.refreshTackle()
 				callbacks.setHook(size)
 			end
 		end)
-		b.TextSize = 15
-		if on then
+		setSize(b, 15)
+		if STYLED then
+			Skin.paint(b, if on then "sage" else "paper")
+			if on then
+				Skin.stroke(b, K.greenInk, 3)
+			end
+		elseif on then
 			local stroke = Instance.new("UIStroke")
 			stroke.Color = C.gold
 			stroke.Thickness = 2
@@ -1254,10 +2160,10 @@ function UI.refreshTackle()
 		if BaitRig.recipeFor(b.id) then -- live bait and the lures (L3b)
 			order += 1
 			local best = tackle.best[b.id]
-			local row = frame(refs.tackleList, "Row" .. b.id, UDim2.new(1, -10, 0, 34), UDim2.new(), C.panel2, 0.1)
+			local row = frame(refs.tackleList, "Row" .. b.id, UDim2.new(1, -10, 0, if STYLED then 40 else 34), UDim2.new(), C.panel2, 0.1)
 			row.LayoutOrder = order
 			corner(row, 8)
-			local name = label(row, "Name", b.name, UDim2.fromOffset(200, 34), UDim2.fromOffset(12, 0), 17, C.text, Enum.Font.GothamBold)
+			local name = label(row, "Name", b.name, if STYLED then UDim2.new(0, 200, 1, 0) else UDim2.fromOffset(200, 34), UDim2.fromOffset(12, 0), 17, C.text, Enum.Font.GothamBold)
 			name.TextXAlignment = Enum.TextXAlignment.Left
 			local grade = label(row, "Grade", best or "Not tried on the bench yet", UDim2.new(1, -230, 1, 0), UDim2.fromOffset(220, 0), 16, if best == "Perfect" then C.gold elseif best == "Good" then C.green else C.dim, Enum.Font.GothamBold)
 			grade.TextXAlignment = Enum.TextXAlignment.Left
@@ -1281,6 +2187,7 @@ function UI.openTackle()
 	end
 	UI.closePanels()
 	openPanel = "Tackle"
+	sideTabs(false)
 	refs.tackle.Visible = true
 	UI.refreshTackle()
 end

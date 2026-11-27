@@ -104,6 +104,9 @@ Config.WIND_ON = true
 -- dawn, a light chop by day. Works on its own (home water everywhere) or inside the area
 -- water with LOOK_AREAS_ON. Off, the water is left as it was.
 Config.WATER_BY_TIME_ON = true
+-- The field guide and tackle box interface (leg 3, N2): paper, canvas, leather and brass, with
+-- every colour, font and panel image in Shared/UIStyle. Off, every screen is exactly as before.
+Config.UI_STYLE_ON = false
 
 function Config.boatsOn(): boolean
 	return Config.BOATS_ON and Config.BIG_LAKE_ON

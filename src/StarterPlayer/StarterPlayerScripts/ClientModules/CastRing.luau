@@ -6,14 +6,18 @@
 -- did not render in the 11/26 playtest). White over fishable water, red over dry ground, amber over a snag
 -- (setSnag, from Shared/Cover via the Controller).
 local Players = game:GetService("Players")
-local CastLogic = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("CastLogic"))
+local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local CastLogic = require(Shared:WaitForChild("CastLogic"))
+local UIStyle = require(Shared:WaitForChild("UIStyle"))
+local Skin = require(script.Parent.Skin)
 
 local CastRing = {}
 
-local RING_RADIUS = 2 -- 4 studs across, the size of the target in the design
-local RING_INNER = 1.3 -- a thick rim so it reads from the dock on a phone
-local BEADS = 10
-local BEAD_SIZE = 0.4
+-- Sizes are locked in UIStyle.LOCKED.castRing (the new look changes the label's skin only).
+local RING_RADIUS = UIStyle.LOCKED.castRing.radius -- 4 studs across, the size of the target in the design
+local RING_INNER = UIStyle.LOCKED.castRing.inner -- a thick rim so it reads from the dock on a phone
+local BEADS = UIStyle.LOCKED.castRing.beads
+local BEAD_SIZE = UIStyle.LOCKED.castRing.beadSize
 
 local COLORS = {
 	water = Color3.fromRGB(255, 255, 255),
@@ -104,7 +108,7 @@ local function build()
 	local g = Instance.new("BillboardGui")
 	g.Name = "CastRingLabel"
 	g.Adornee = a
-	g.Size = UDim2.fromOffset(190, 34)
+	g.Size = UDim2.fromOffset(UIStyle.LOCKED.castRing.label[1], UIStyle.LOCKED.castRing.label[2])
 	g.StudsOffsetWorldSpace = Vector3.new(0, 3, 0)
 	g.AlwaysOnTop = false -- AlwaysOnTop labels didn't render in the 11/26 playtest
 	g.LightInfluence = 0
@@ -127,6 +131,18 @@ local function build()
 	local corner = Instance.new("UICorner")
 	corner.CornerRadius = UDim.new(0, 8)
 	corner.Parent = t
+	if Skin.on then
+		-- New look: a paper tag in ink; the ring's colour (white, red, amber) edges it.
+		t.BackgroundColor3 = UIStyle.COLORS.paper
+		t.BackgroundTransparency = 0.05
+		t.FontFace = UIStyle.font("bodyBold")
+		corner.CornerRadius = UDim.new(0, UIStyle.RADIUS.tag)
+		local edge = Instance.new("UIStroke")
+		edge.Name = "Edge"
+		edge.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+		edge.Thickness = 3
+		edge.Parent = t
+	end
 	t.Parent = g
 	g.Enabled = false
 	g.Parent = a -- under the anchor part: a BillboardGui in PlayerGui didn't show in the playtest
@@ -186,7 +202,15 @@ function CastRing.update(tip: Vector3, landing: Vector3, onWater: boolean, text:
 	end
 	if label then
 		label.Text = text
-		label.TextColor3 = color
+		if Skin.on then
+			label.TextColor3 = UIStyle.COLORS.ink
+			local edge = label:FindFirstChild("Edge") :: UIStroke?
+			if edge then
+				edge.Color = color
+			end
+		else
+			label.TextColor3 = color
+		end
 	end
 
 	-- A parabola from the tip to the ring: higher for longer casts. The bobber flies the same
