@@ -524,6 +524,39 @@ function Scenery.apply(lake: Model): Result
 	light.Parent = bulb
 	lantern.Parent = folder
 
+	-- 6b. The creek pool's east bank (11/27/2026): the bank path runs straight along the water
+	-- there, a bare sand ramp in every critic's pool shot. Reed clumps and rocks at the water's
+	-- edge, and a few bushes past the path, break the line (clear of the lantern). Its own
+	-- random stream, so nothing placed before or after it moves.
+	local poolRng = Random.new(SEED + 7)
+	local edge = pool.x2 -- the pool's east water edge
+	local bankBush = art(lake, "LeafyTree")
+	local z = pool.z1 + 4
+	while z < pool.z2 - 12 do -- the top end stays open: it's where you walk in and cast from
+		if math.abs(z - lz) > 5 then
+			if poolRng:NextNumber() < 0.4 and reeds then
+				for _ = 1, 1 do
+					local at = Vector3.new(edge - poolRng:NextNumber(0.6, 2.4), -1.2, z + poolRng:NextNumber(-1.5, 1.5))
+					place(reeds, shore, at, poolRng:NextNumber(0.45, 0.7), poolRng:NextNumber(0, 2 * math.pi), false)
+					shoreCount += 1
+				end
+			else
+				local template = rocks[poolRng:NextInteger(1, #rocks)]
+				if template then
+					local m = place(template, shore, Vector3.new(edge - poolRng:NextNumber(0, 1.2), 0, z), poolRng:NextNumber(0.9, 1.5), poolRng:NextNumber(0, 2 * math.pi), true)
+					seatBottom(m, -1.2)
+					shoreCount += 1
+				end
+			end
+			if bankBush and poolRng:NextNumber() < 0.4 then
+				local at = Vector3.new(-196.5 - poolRng:NextNumber(0, 2), Scenery.GROUND_TOP - 0.3, z + poolRng:NextNumber(-2, 2))
+				place(bankBush, shore, at, poolRng:NextNumber(0.3, 0.45), poolRng:NextNumber(0, 2 * math.pi), true)
+				shoreCount += 1
+			end
+		end
+		z += poolRng:NextNumber(5, 9)
+	end
+
 	-- 7. Walls at the old world edge, and along the creek fence line past its ends.
 	local walls = Instance.new("Folder")
 	walls.Name = "Walls"
