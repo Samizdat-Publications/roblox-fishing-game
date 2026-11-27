@@ -243,6 +243,24 @@ Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6
 - Still to do in L1: a Lake Sturgeon at the deep hole in its real conditions, the journal on the smallest phone (the simulated mouse wheel zoomed the camera instead of scrolling the journal; check with a real wheel), the 15 new fish models (they hang as the old shape until then), a Neon reveal clip, the StyLua reformat, and Liam's 20 minutes.
 - Look mockups for the beauty pass: five looks (Golden Afternoon, Bright Summer Day, Misty Dawn, Moonlit Night, Autumn Lake) from the all-models stills, page https://claude.ai/artifact/DjMRLNSn6t91zKmR93sGr6 (source `planner/looks.html`, images `docs/looks/`, script `tools/looks/mockup.py`). They were made in the old flat low-poly style before Stewart picked Real-ish, so treat them as light and time-of-day moods, not materials.
 
+## 2026-11-27 (night): L4c, work the lure (switched on)
+
+- **Lures are fished like lures now:** with a spinner or a plastic worm there's no bobber. The lure splashes down and you work it back.
+  - **Spinner:** hold to reel and keep the on-screen meter in the green (a steady, medium retrieve); flat out is too fast, stopped it sinks.
+  - **Plastic worm:** tap to hop it and let it fall; strikes come on the fall.
+  - **The strike:** a thump on the rod tip and the bite sound, then the usual hook press and fight. A lure that comes back with no strike just means cast again; a lure left to sink in the weeds or on a log snags.
+- **Fair:** the server scores the reel timeline itself and decides strikes from its own clock; worked well, the wait to a strike averages the bobber's bite wait for that spot, time and bait.
+- Verified in Studio (auto-fish works the lure the ideal way; the rest by hand):
+  - spinner at the dock struck after 6.5 s (5.5 s of good retrieve) and was landed;
+  - held flat out, it came back with no strike (0.7 s good);
+  - a hopped worm drew a Black Crappie after 10.8 s, landed;
+  - a spinner left still in the weed bed snagged, and the line snapped ("Tie your lure back on.").
+  - 337 tests pass in Studio and with Lune; all changed scripts match by checksum. Stills: `docs/making-of/stills/2026-11-27-reel-meter.jpg`.
+- Fixed in the playtest: the speed meter was a billboard on the rod tip that didn't show; it's now on screen above the status line. The status lines were shortened to fit one line.
+- Economy (sim `--retrieve`, 60 runs): smart player 98.9 coins a minute against 102.2 (-3.2 percent); the dock kid uses worms and is unchanged. A player with slow hands working lures badly earns about 18 percent less, so the lure is a skill, worms stay the easy road.
+- To turn it off: `Config.LURE_RETRIEVE_ON = false` puts lures back under a bobber.
+- Not verified: touch and gamepad (same hold and tap path as the bobber wait), the worm at the weed edge by hand, other players seeing your lure (they don't: it's local).
+
 ## 2026-11-27 (night): L6d, reasons to come back tomorrow
 
 - **Today on the Lake:** a chalkboard beside the bait shop with today's forecast, a **fish of the day** that bites a little more readily (x1.3, only where it already bites) and a **rumour** about a Legendary, worded as hearsay ("Old-timers swear the Lake Sturgeon feeds best after dark. Could be a fish story."). Still: `docs/making-of/stills/2026-11-27-chalkboard.jpg`.

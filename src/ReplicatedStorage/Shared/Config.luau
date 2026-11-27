@@ -61,8 +61,9 @@ Config.GOALS_ON = true
 Config.BIG_LAKE_ON = false
 Config.BOATS_ON = false
 -- Work the lure (L4c): with a lure on, no bobber; you reel a spinner or hop a plastic worm back
--- and fish strike while it moves (Shared/Retrieve). Off until a full playtest proves it.
-Config.LURE_RETRIEVE_ON = false
+-- and fish strike while it moves (Shared/Retrieve). On since the 11/27/2026 Studio playtest;
+-- false puts lures back under a bobber.
+Config.LURE_RETRIEVE_ON = true
 
 function Config.boatsOn(): boolean
 	return Config.BOATS_ON and Config.BIG_LAKE_ON

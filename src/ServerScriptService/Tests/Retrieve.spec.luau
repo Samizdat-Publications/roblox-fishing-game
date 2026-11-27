@@ -20,8 +20,9 @@ return function(t, Shared)
 		return s :: Retrieve.State
 	end
 
-	t.test("lands switched off; only the lures are worked", function()
-		t.eq(Config.LURE_RETRIEVE_ON, false, "LURE_RETRIEVE_ON")
+	-- Switched on 11/27/2026 after the Studio playtest (spinner, worm, no strike, snag).
+	t.test("switched on; only the lures are worked", function()
+		t.eq(Config.LURE_RETRIEVE_ON, true, "LURE_RETRIEVE_ON")
 		t.ok(Retrieve.isLure("Spinner"), "spinner")
 		t.ok(Retrieve.isLure("PlasticWorm"), "plastic worm")
 		for _, live in { "Worm", "Cricket", "Minnow", "Stinkbait" } do

@@ -41,7 +41,7 @@ type View = {
 	anchor: Part, -- the line's end: the spinner itself, or the worm's entry point
 	blade: Part?, -- the spinner's flash
 	beam: Beam?,
-	meter: BillboardGui?,
+	meter: ScreenGui?,
 	marker: Frame?,
 	label: TextLabel?,
 	lastRipple: number,
@@ -71,15 +71,20 @@ local function part(name: string, size: Vector3, color: Color3): Part
 	return p
 end
 
-local function makeMeter(tip: Attachment): (BillboardGui, Frame, TextLabel)
-	local g = Instance.new("BillboardGui")
+-- The meter sits on screen just above the status line (a billboard on the rod tip didn't show
+-- in the first Studio playtest and would be tiny on a phone).
+local function makeMeter(): (ScreenGui, Frame, TextLabel)
+	local g = Instance.new("ScreenGui")
 	g.Name = "ReelMeter"
-	g.Adornee = tip
-	g.Size = UDim2.fromOffset(METER_W + 8, 40)
-	g.StudsOffset = Vector3.new(0, 1.3, 0)
-	g.AlwaysOnTop = true
-	g.LightInfluence = 0
 	g.ResetOnSpawn = false
+	g.IgnoreGuiInset = false
+	local box = Instance.new("Frame")
+	box.Name = "Box"
+	box.AnchorPoint = Vector2.new(0.5, 1)
+	box.Position = UDim2.new(0.5, 0, 1, -170)
+	box.Size = UDim2.fromOffset(METER_W + 8, 40)
+	box.BackgroundTransparency = 1
+	box.Parent = g
 	local label = Instance.new("TextLabel")
 	label.Name = "Say"
 	label.BackgroundTransparency = 1
@@ -89,7 +94,7 @@ local function makeMeter(tip: Attachment): (BillboardGui, Frame, TextLabel)
 	label.TextColor3 = Color3.new(1, 1, 1)
 	label.TextStrokeTransparency = 0.4
 	label.Text = ""
-	label.Parent = g
+	label.Parent = box
 	local bar = Instance.new("Frame")
 	bar.Name = "Bar"
 	bar.Position = UDim2.fromOffset(4, 24)
@@ -97,7 +102,7 @@ local function makeMeter(tip: Attachment): (BillboardGui, Frame, TextLabel)
 	bar.BackgroundColor3 = Color3.fromRGB(25, 30, 35)
 	bar.BackgroundTransparency = 0.25
 	bar.BorderSizePixel = 0
-	bar.Parent = g
+	bar.Parent = box
 	local function zone(from: number, to: number, color: Color3)
 		local z = Instance.new("Frame")
 		z.BackgroundColor3 = color
@@ -162,9 +167,9 @@ function RetrieveView.start(payload: any)
 		bm.Parent = anchor
 		beam = bm
 	end
-	local meter: BillboardGui?, marker: Frame?, label: TextLabel? = nil, nil, nil
-	if lure == "Spinner" and tip then
-		meter, marker, label = makeMeter(tip)
+	local meter: ScreenGui?, marker: Frame?, label: TextLabel? = nil, nil, nil
+	if lure == "Spinner" then
+		meter, marker, label = makeMeter()
 	end
 	anchor.Position = Vector3.new(land.X, CastLogic.LAND_Y - SPIN_UNDER, land.Z)
 	anchor.Parent = folder

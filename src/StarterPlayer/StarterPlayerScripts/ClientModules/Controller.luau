@@ -419,9 +419,9 @@ end
 -- What to do with a worked lure, for the status line (short: one line on a phone).
 local function retrieveHint(lure: string): string
 	if lure == "Spinner" then
-		return "Hold to reel. Keep the meter on Just right."
+		return "Hold to reel. Keep it green."
 	end
-	return "Tap to hop it, then wait: fish hit it as it falls."
+	return "Tap to hop it, then let it fall."
 end
 
 -- Studio test hook (DebugAutoFish): work the lure the way Retrieve.wellTimeline does.
