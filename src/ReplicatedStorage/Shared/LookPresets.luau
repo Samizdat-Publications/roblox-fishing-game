@@ -179,14 +179,15 @@ LookPresets.PRESETS = {
 				ExposureCompensation = 0.8,
 			},
 			Atmosphere = {
-				Density = 0.3,
+				Density = 0.36,
 				Offset = 0.1,
-				-- Darker than at first (11/27): the pale blue haze lit the far hills against the
-				-- black sky; now they read as dark shapes, like real hills at night.
-				Color = rgb(34, 42, 64),
-				Decay = rgb(14, 18, 34),
+				-- 11/27: first darkened (the pale blue haze lit the far hills), then a moonlit navy
+				-- haze so the sky's horizon isn't black either: the critics kept naming the hills
+				-- glowing against a pitch-black sky.
+				Color = rgb(40, 52, 86),
+				Decay = rgb(28, 36, 66),
 				Glare = 0,
-				Haze = 0.15,
+				Haze = 1.1,
 			},
 			BloomEffect = { Intensity = 0.9, Size = 30, Threshold = 1.2 },
 			ColorCorrectionEffect = { Brightness = 0.04, Contrast = 0.08, Saturation = -0.12, TintColor = rgb(212, 226, 255) },
