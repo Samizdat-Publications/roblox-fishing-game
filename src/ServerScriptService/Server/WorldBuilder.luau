@@ -66,7 +66,9 @@ local function sign(parent: Instance, adornee: BasePart, text: string, color: Co
 	gui.Name = "Sign"
 	gui.Size = UDim2.new(9, 0, 2.2, 0)
 	gui.StudsOffset = Vector3.new(0, lift or 4, 0)
-	gui.AlwaysOnTop = false
+	-- On top (11/27/2026): roofs and trees kept slicing the stall and pond signs (the critic named
+	-- it in every run). MaxDistance keeps them from showing through the far side of the map.
+	gui.AlwaysOnTop = true
 	gui.MaxDistance = SIGN_RANGE
 	gui.Adornee = adornee
 	local label = Instance.new("TextLabel")

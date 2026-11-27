@@ -46,7 +46,8 @@ local ROCK = Color3.fromRGB(118, 114, 104)
 
 Scenery.HILLS = 70
 Scenery.OUTCROPS = 14
-Scenery.CLUSTERS = 48
+Scenery.CLUSTERS = 44
+Scenery.POND_R = 8 -- the round home pond's radius (it was a 22 x 14 box)
 local HILL_CLEAR = 18 -- studs between the world edge and where a hill starts to rise
 local SHADOW_RANGE = 160 -- trees farther than this from the world cast no shadow (cheaper)
 
@@ -226,8 +227,10 @@ function Scenery.apply(lake: Model): Result
 		-- Keep most clusters close in: accept a far one only sometimes.
 		if d >= 10 and not reserved(x, z, 12) and rng:NextNumber() < math.clamp(1.2 - d / 340, 0.15, 1) then
 			clusters += 1
-			local n = rng:NextInteger(3, 8)
-			local spread = rng:NextNumber(8, 22)
+			-- Tight clumps (11/27/2026; was 3 to 8 trees over 8 to 22 studs, which the critic read
+			-- as single trees dotted about).
+			local n = rng:NextInteger(4, 9)
+			local spread = rng:NextNumber(5, 12)
 			for _ = 1, n do
 				local tx = x + rng:NextNumber(-spread, spread)
 				local tz = z + rng:NextNumber(-spread, spread)
@@ -416,6 +419,16 @@ function Scenery.apply(lake: Model): Result
 		end
 		lampPart(fence, "ArchBeam", Vector3.new(0.9, 0.9, half * 2 + 2), CFrame.new(g.X, Scenery.GROUND_TOP + 10.2, g.Z), RAIL, Enum.Material.Wood, false)
 	end
+	-- The gray-box sign post stood just in front of the arch's post as a stubby block (critic,
+	-- 11/27/2026). It still carries the "Cedar Creek" sign and the gate prompt, so it stays,
+	-- unseen; the arch is the post now.
+	local gatePost = creek and creek:FindFirstChild("GatePost")
+	if gatePost and gatePost:IsA("BasePart") then
+		if gatePost:GetAttribute("OrigTransparency") == nil then
+			gatePost:SetAttribute("OrigTransparency", gatePost.Transparency)
+		end
+		gatePost.Transparency = 1
+	end
 
 	-- 4e. The lake path follows the rounded corners (L5d): the four straight paths stop where
 	-- the shore starts to curve, and a quarter-circle bend joins them at each corner (radius 35
@@ -529,6 +542,72 @@ function Scenery.apply(lake: Model): Result
 	wall(walls, "CreekFenceNorth", -162.5, -161.5, W.z1, -80)
 	wall(walls, "CreekFenceSouth", -162.5, -161.5, 80, W.z2)
 
+	-- 8. A round home pond (11/27/2026). The critic read the 22 x 14 box with its square stone rim
+	-- as "a flat grey rectangle". Its water and bottom parts become discs on the same centre (the
+	-- water a shade of the lake's own colour), a ring of rocks edges them, and the box rim model
+	-- hides. PondView keeps the fish inside the water's PondRadius. Revert puts the box back.
+	local pond = lake:FindFirstChild("HomePond")
+	local water = pond and pond:FindFirstChild("Water")
+	local bottom = pond and pond:FindFirstChild("Bottom")
+	if water and water:IsA("BasePart") and bottom and bottom:IsA("BasePart") then
+		local R = Scenery.POND_R
+		local top = Scenery.GROUND_TOP
+		for _, p in { water, bottom } do
+			if p:GetAttribute("OrigSize") == nil then
+				p:SetAttribute("OrigSize", p.Size)
+				p:SetAttribute("OrigCFrame", p.CFrame)
+				p:SetAttribute("OrigColor", p.Color)
+				p:SetAttribute("OrigTransparency", p.Transparency)
+				p:SetAttribute("OrigMaterial", p.Material.Name)
+				p:SetAttribute("OrigReflectance", p.Reflectance)
+			end
+		end
+		local c = (water:GetAttribute("OrigCFrame") :: CFrame).Position
+		local upright = CFrame.Angles(0, 0, math.pi / 2) -- a cylinder's axis is its X; stand it up
+		-- Water from inside the ground to 0.4 above it (the stones hide its edge); the mud bottom
+		-- sits at the ground's top. Plastic, not glass: glass mirrored the sky bright blue.
+		water.Shape = Enum.PartType.Cylinder
+		water.Size = Vector3.new(0.7, R * 2, R * 2)
+		water.CFrame = CFrame.new(c.X, top + 0.05, c.Z) * upright
+		water.Material = Enum.Material.SmoothPlastic
+		water.Reflectance = 0.2
+		water.Color = Color3.fromRGB(34, 82, 76)
+		water.Transparency = 0.25
+		water:SetAttribute("PondRadius", R - 1)
+		water:SetAttribute("PondFishY", top + 0.05)
+		bottom.Shape = Enum.PartType.Cylinder
+		bottom.Size = Vector3.new(0.2, R * 2, R * 2)
+		bottom.CFrame = CFrame.new(c.X, top + 0.05, c.Z) * upright
+		local rim = art(lake, "PondRim")
+		if rim then
+			for _, d in rim:GetDescendants() do
+				if d:IsA("BasePart") then
+					if d:GetAttribute("OrigTransparency") == nil then
+						d:SetAttribute("OrigTransparency", d.Transparency)
+					end
+					d.Transparency = 1
+					d.CanCollide = false
+				end
+			end
+		end
+		local stones = Instance.new("Folder")
+		stones.Name = "PondStones"
+		stones.Parent = folder
+		local small, medium = art(lake, "RockSmall"), art(lake, "RockMedium")
+		local n = 24
+		for i = 1, n do
+			local a = (i + rng:NextNumber(-0.3, 0.3)) / n * 2 * math.pi
+			local big = i % 4 == 0 and medium ~= nil
+			local template = if big then medium else small
+			if template then
+				local r = R + rng:NextNumber(0.2, 0.8) + (if big then 0.8 else 0)
+				local scale = if big then rng:NextNumber(0.4, 0.55) else rng:NextNumber(0.9, 1.4)
+				local m = place(template, stones, Vector3.new(c.X + math.cos(a) * r, top, c.Z + math.sin(a) * r), scale, rng:NextNumber(0, 2 * math.pi), true)
+				seatBottom(m, top - 0.3)
+			end
+		end
+	end
+
 	folder.Parent = lake
 	return { hills = #hills, trees = treeCount, shore = shoreCount, walls = #walls:GetChildren() }
 end
@@ -548,8 +627,39 @@ function Scenery.revert(lake: Model)
 			p:SetAttribute("OrigSize", nil)
 		end
 	end
+	-- The home pond back to its box (section 8).
+	local pond = lake:FindFirstChild("HomePond")
+	for _, name in { "Water", "Bottom" } do
+		local p = pond and pond:FindFirstChild(name)
+		local size = p and p:GetAttribute("OrigSize")
+		if p and p:IsA("BasePart") and typeof(size) == "Vector3" then
+			p.Shape = Enum.PartType.Block
+			p.Size = size
+			p.CFrame = p:GetAttribute("OrigCFrame") :: CFrame
+			p.Color = p:GetAttribute("OrigColor") :: Color3
+			p.Transparency = p:GetAttribute("OrigTransparency") :: number
+			local material = p:GetAttribute("OrigMaterial")
+			if type(material) == "string" then
+				p.Material = (Enum.Material :: any)[material]
+			end
+			p.Reflectance = (p:GetAttribute("OrigReflectance") :: number?) or 0
+			for _, k in { "OrigSize", "OrigCFrame", "OrigColor", "OrigTransparency", "OrigMaterial", "OrigReflectance", "PondRadius", "PondFishY" } do
+				p:SetAttribute(k, nil)
+			end
+		end
+	end
+	local artFolder = lake:FindFirstChild("Art")
+	local rim = artFolder and artFolder:FindFirstChild("PondRim")
+	for _, d in (if rim then rim:GetDescendants() else {}) do
+		local was = d:GetAttribute("OrigTransparency")
+		if d:IsA("BasePart") and type(was) == "number" then
+			d.Transparency = was
+			d.CanCollide = true
+			d:SetAttribute("OrigTransparency", nil)
+		end
+	end
 	local creek = lake:FindFirstChild("CedarCreek")
-	for _, name in { "FenceNorth", "FenceSouth" } do
+	for _, name in { "FenceNorth", "FenceSouth", "GatePost" } do
 		local p = creek and creek:FindFirstChild(name)
 		local was = p and p:GetAttribute("OrigTransparency")
 		if p and p:IsA("BasePart") and type(was) == "number" then

@@ -10,7 +10,8 @@ Overnight, every step was built, pushed into Studio, playtested there and commit
 - **Bait the hook:** a short timing minigame for each bait, with Okay, Good and Perfect results, and hook sizes to match the fish's mouth.
 - **The wait and the reel:** the camera eases onto the bobber, a fish's shadow swims in before the bite, you can twitch the bait, and the fight gives warnings and a line that changes colour as it strains.
 - **Line and drag:** every rod has a line rating (6, 10, 15 lb) and you set the drag (Q): Medium is the fight you know, Tight is faster but a big fish running will snap the line unless you ease off, Light never snaps but the fish takes line. A heavier rod now matters for big fish.
-- **The lake looks real now:** light that changes from dawn to night, real water, land and hills out to the horizon, about 290 trees, clouds, a curved shore with rounded corners and five points of land to fish from, a split-rail creek fence with an arch, and the bobber glows at night. The look critic went from 3/10 to 6/10.
+- **The lake looks real now:** light that changes from a cool misty dawn through day, a warm golden hour and a violet blue hour to night; real water; land and hills out to the horizon with clumps of trees; clouds; a curved shore with rounded corners and five points of land to fish from; a round, rock-edged home pond with your fish in it; a creek you can see from its path; a split-rail creek fence with an arch; and the bobber glows at night. **The look critic went from 3/10 to 7/10,** the plan's target.
+- **Real rods in your hands** (Willow, Fiberglass, Graphite models), and the catch card shows the fish you caught, turning in a little window.
 - **Weather, frenzies and daily goals are switched on.** Fog, storms with rain, cold fronts; schools that boil at a spot with gulls overhead; three goals a day.
 - **Reasons to come back:** a chalkboard by the bait shop (today's forecast, a fish of the day, a rumour about a Legendary), a free tackle box from the shopkeeper once a day, and a "while you were away" pond card. Every server has the same forecast for a date. Nothing is lost by missing a day.
 
@@ -242,6 +243,22 @@ Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6
 - **Bug found and fixed:** with boats switched off, the journal still listed the seven Big Lake fish and their rumours sent players to "the blue-water drop-off" and "the open basin", which don't exist yet. `Journal.listed` now hides a species until its water can be reached (or once it has been caught); the journal reads "10 of 19 species found" and every rumour points at home water.
 - Still to do in L1: a Lake Sturgeon at the deep hole in its real conditions, the journal on the smallest phone (the simulated mouse wheel zoomed the camera instead of scrolling the journal; check with a real wheel), the 15 new fish models (they hang as the old shape until then), a Neon reveal clip, the StyLua reformat, and Liam's 20 minutes.
 - Look mockups for the beauty pass: five looks (Golden Afternoon, Bright Summer Day, Misty Dawn, Moonlit Night, Autumn Lake) from the all-models stills, page https://claude.ai/artifact/DjMRLNSn6t91zKmR93sGr6 (source `planner/looks.html`, images `docs/looks/`, script `tools/looks/mockup.py`). They were made in the old flat low-poly style before Stewart picked Real-ish, so treat them as light and time-of-day moods, not materials.
+
+## 2026-11-27 (early morning): the look reaches 7/10, a real rod, a fish on the catch card
+
+- **Look critic: median 7/10** (6.9, 7, 7.2), the beauty target in the plan. It was 3 at the start of the night. What moved it:
+  - **Noon light:** the place's skybox is a warm one, and at full strength it tinted the far trees red-brown and put orange blotches on the noon water. The day look now borrows less of it (environment light 0.45, reflections 0.25). Dawn and golden keep it, which is where its warm horizon belongs.
+  - **Dawn and golden hour look different now:** dawn is a cool lavender mist, golden hour a warm amber (the critic couldn't tell them apart before).
+  - **The home pond is round,** edged with a ring of rocks, its water the lake's colour, with your fish swimming in it (the box and its square rim are gone).
+  - **The creek shows from the path:** grass blades within 14 studs of the creek are gone (a meadow grass without blades), and the grass everywhere is shorter, so the riffle isn't a wall of grass from a low camera.
+  - **Trees stand in clumps** (4 to 9 trees close together) instead of dotted singly; the count is the same (293).
+  - **Signs draw on top,** so roofs and trees stop slicing "Sell Fish", "Bait and Tackle" and "Your Pond".
+  - **The creek gate:** the old gray-box sign post (a stubby block in front of the arch) is hidden; it still holds the sign and the prompt. An open gate is gone, not a faint grey pane.
+- **The real rods are in your hands:** Willow, Fiberglass and Graphite models (cork handle, reel, guides) replace the gray stick. The gray stick stays as the invisible logical rod that the line hangs from; the model hides while the rod is drawn bending. Still: `docs/making-of/stills/2026-11-27-rod-in-hand.jpg`.
+- **The catch card shows the fish,** turning slowly in a little window, and the Goals list hides during a fight. Still: `docs/making-of/stills/2026-11-27-catch-card-fish.jpg`.
+- **Blue hour:** a fifth light between golden hour and night (sun down, violet sky). Still: `docs/making-of/stills/2026-11-27-dusk-blue-hour.jpg`.
+- Critic's next asks (not done): night water and the bobber at night still read dark; signs should hide sooner than 140 studs so they don't float over far trees; the creek pool's straight sand bank and the even width of the lake path; light blue text on Bait and Tackle's dark sign is low contrast. Reports: `docs/critic/2026-11-27-l5f2-light-signs-neon*.md`.
+- All checks pass with Lune; every changed script matches Studio by checksum. Place version 93.
 
 ## 2026-11-27 (night): L5e and the smallest phone
 

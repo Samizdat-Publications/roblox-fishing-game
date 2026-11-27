@@ -28,6 +28,9 @@ WaterLook.TERRAIN = {
 	WaterReflectance = 0.35,
 	WaterWaveSize = 0.12, -- gentle
 	WaterWaveSpeed = 8,
+	-- 11/27/2026: shorter grass blades (Roblox default 0.7) so the meadows by the lake don't
+	-- wall off the water from a low camera.
+	GrassLength = 0.45,
 }
 
 local SAND = Color3.fromRGB(198, 182, 134)
@@ -165,6 +168,43 @@ local function creekBanks(lake: Model)
 	end
 end
 
+-- A strip of meadow along the creek (11/27/2026): grass with no blades (LeafyGrass) within
+-- CREEK_MEADOW studs of the creek's water, so the narrow creek shows from the bank path. With
+-- blades, the critic's riffle shot was all grass and no water.
+WaterLook.CREEK_MEADOW = 14
+local function creekMeadow(t: Terrain)
+	for _, a in Shore.AREAS do
+		if a.name ~= "Lake" then
+			local m = WaterLook.CREEK_MEADOW
+			local region = Region3.new(Vector3.new(a.x1 - m, -4, a.z1 - m), Vector3.new(a.x2 + m, 12, a.z2 + m)):ExpandToGrid(CELL)
+			local lo = region.CFrame.Position - region.Size / 2
+			local ch = t:ReadVoxelChannels(region, CELL, { "SolidMaterial", "SolidOccupancy", "LiquidOccupancy" }) :: any
+			local mats = ch.SolidMaterial
+			for ix = 1, #mats do
+				local cx = lo.X + (ix - 0.5) * CELL
+				for iz = 1, #mats[1][1] do
+					local cz = lo.Z + (iz - 0.5) * CELL
+					local near = false
+					for _, b in Shore.AREAS do
+						if b.name ~= "Lake" and Shore.depthIn(b, cx, cz) < m then
+							near = true
+							break
+						end
+					end
+					if near then
+						for iy = 1, #mats[1] do
+							if mats[ix][iy][iz] == Enum.Material.Grass then
+								mats[ix][iy][iz] = Enum.Material.LeafyGrass
+							end
+						end
+					end
+				end
+			end
+			t:WriteVoxelChannels(region, CELL, { SolidMaterial = mats, SolidOccupancy = ch.SolidOccupancy, LiquidOccupancy = ch.LiquidOccupancy })
+		end
+	end
+end
+
 -- Every shaped water area: the lake (L5d) and the creek's three stretches (L5e).
 local function shoreTerrain(lake: Model)
 	local t = workspace.Terrain
@@ -172,6 +212,7 @@ local function shoreTerrain(lake: Model)
 	for _, a in Shore.AREAS do
 		shoreArea(t, a)
 	end
+	creekMeadow(t)
 end
 
 -- The creek's beds in terrain (L5c): each stretch gets a bed and shelving sides, so the pool is

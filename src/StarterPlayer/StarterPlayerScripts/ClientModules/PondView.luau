@@ -32,6 +32,14 @@ local function randomPoint(): Vector3
 	if not w then
 		return Vector3.zero
 	end
+	-- A round pond (Scenery, 11/27/2026) says how far out and how deep the fish may swim.
+	local radius = w:GetAttribute("PondRadius")
+	if type(radius) == "number" then
+		local y = w:GetAttribute("PondFishY")
+		local a = rng:NextNumber() * 2 * math.pi
+		local r = math.sqrt(rng:NextNumber()) * radius
+		return Vector3.new(w.Position.X + math.cos(a) * r, if type(y) == "number" then y else w.Position.Y, w.Position.Z + math.sin(a) * r)
+	end
 	local half = w.Size / 2 - Vector3.new(1.5, 0, 1.5)
 	return w.Position + Vector3.new((rng:NextNumber() * 2 - 1) * half.X, -0.15, (rng:NextNumber() * 2 - 1) * half.Z)
 end

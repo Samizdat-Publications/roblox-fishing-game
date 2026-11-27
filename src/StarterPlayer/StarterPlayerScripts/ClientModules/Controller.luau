@@ -761,7 +761,8 @@ local function updateCreekGate(s: any)
 	local prompt = lake and lake:FindFirstChild("CreekPrompt", true) :: ProximityPrompt?
 	if gate then
 		gate.CanCollide = not s.creekPass
-		gate.Transparency = if s.creekPass then 0.85 else 0
+		-- Open means gone (it was 0.85, a faint grey pane in the arch the critic kept naming).
+		gate.Transparency = if s.creekPass then 1 else 0
 	end
 	if prompt then
 		prompt.Enabled = not s.creekPass

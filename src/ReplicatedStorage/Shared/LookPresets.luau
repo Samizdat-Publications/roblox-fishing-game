@@ -42,13 +42,14 @@ LookPresets.PRESETS = {
 		from = 5.5,
 		to = 7.0,
 		look = {
-			-- Pink-gold low sun, haze lying on the water.
+			-- Cool rose low sun, lavender mist lying on the water. 11/27/2026: cooler than it was
+			-- (the critic could not tell dawn from golden hour); golden owns the warm amber.
 			Lighting = {
-				Ambient = rgb(72, 62, 74),
-				OutdoorAmbient = rgb(140, 128, 126),
+				Ambient = rgb(68, 64, 80),
+				OutdoorAmbient = rgb(132, 128, 142),
 				Brightness = 1.8,
-				ColorShift_Top = rgb(255, 206, 178),
-				ColorShift_Bottom = rgb(100, 90, 94),
+				ColorShift_Top = rgb(255, 212, 206),
+				ColorShift_Bottom = rgb(92, 90, 110),
 				EnvironmentDiffuseScale = 0.6,
 				EnvironmentSpecularScale = 0.7,
 				ExposureCompensation = 0.15,
@@ -56,13 +57,13 @@ LookPresets.PRESETS = {
 			Atmosphere = {
 				Density = 0.4,
 				Offset = 0.12,
-				Color = rgb(232, 204, 206),
-				Decay = rgb(206, 156, 150),
-				Glare = 1.2,
-				Haze = 1.8,
+				Color = rgb(214, 206, 228),
+				Decay = rgb(178, 160, 190),
+				Glare = 1,
+				Haze = 2,
 			},
 			BloomEffect = { Intensity = 0.6, Size = 28, Threshold = 1.6 },
-			ColorCorrectionEffect = { Brightness = 0.03, Contrast = 0.04, Saturation = -0.02, TintColor = rgb(255, 238, 240) },
+			ColorCorrectionEffect = { Brightness = 0.03, Contrast = 0.04, Saturation = -0.06, TintColor = rgb(238, 240, 255) },
 			SunRaysEffect = { Intensity = 0.12, Spread = 0.8 },
 		},
 	},
@@ -79,8 +80,10 @@ LookPresets.PRESETS = {
 				Brightness = 3,
 				ColorShift_Top = rgb(255, 248, 232),
 				ColorShift_Bottom = rgb(40, 46, 56),
-				EnvironmentDiffuseScale = 1,
-				EnvironmentSpecularScale = 1,
+				-- 11/27/2026: the place's skybox is a warm one, and at full scale it tinted the
+				-- far trees red-brown and put orange blotches on the noon water (critic, three runs).
+				EnvironmentDiffuseScale = 0.45,
+				EnvironmentSpecularScale = 0.25,
 				ExposureCompensation = 0,
 			},
 			Atmosphere = {
@@ -122,7 +125,7 @@ LookPresets.PRESETS = {
 				Haze = 1.2,
 			},
 			BloomEffect = { Intensity = 0.8, Size = 32, Threshold = 1.4 },
-			ColorCorrectionEffect = { Brightness = 0.02, Contrast = 0.12, Saturation = 0.1, TintColor = rgb(255, 236, 212) },
+			ColorCorrectionEffect = { Brightness = 0.02, Contrast = 0.12, Saturation = 0.14, TintColor = rgb(255, 226, 192) },
 			SunRaysEffect = { Intensity = 0.2, Spread = 0.9 },
 		},
 	},
