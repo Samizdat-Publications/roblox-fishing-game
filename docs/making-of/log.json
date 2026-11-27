@@ -568,6 +568,26 @@
           "caption": "The trophy wall behind the home pond"
         }
       ]
+    },
+    {
+      "id": "braided-line",
+      "tag": "Play",
+      "date": "2026-11-27",
+      "time": "04:25",
+      "commit": "a38e4b7",
+      "title": "Braided line, and a dressed creek bank",
+      "summary": "Bait and Tackle now sells braided line: 120 coins once, and every rod's line gets 4 pounds stronger (the Willow goes from 6 to 10, the Graphite from 15 to 19). Since a big fish running on a tight drag can snap the line, it's a cheaper step than saving for the next rod. In the playtest a bass hooked on the Graphite rod fought on the 19 pound braided line. The creek pool's long bare sand bank also got a few reeds, rocks and bushes.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-braided-line-shop.jpg",
+          "caption": "Bait and Tackle with braided line owned: the rods show their stronger line"
+        },
+        {
+          "src": "stills/2026-11-27-pool-bank.jpg",
+          "caption": "The creek pool's bank at golden hour"
+        }
+      ]
     }
   ]
 }

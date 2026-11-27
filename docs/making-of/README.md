@@ -4,6 +4,18 @@ A Roblox fishing game where real fishing knowledge matters: the right bait, spot
 
 Newest first. The live page with before and after sliders is `docs/making-of/index.html` (published as a Claude artifact).
 
+## Play: Braided line, and a dressed creek bank
+
+2026-11-27 04:25 · commit `a38e4b7`
+
+Bait and Tackle now sells braided line: 120 coins once, and every rod's line gets 4 pounds stronger (the Willow goes from 6 to 10, the Graphite from 15 to 19). Since a big fish running on a tight drag can snap the line, it's a cheaper step than saving for the next rod. In the playtest a bass hooked on the Graphite rod fought on the 19 pound braided line. The creek pool's long bare sand bank also got a few reeds, rocks and bushes.
+
+![Bait and Tackle with braided line owned: the rods show their stronger line](stills/2026-11-27-braided-line-shop.jpg)
+*Bait and Tackle with braided line owned: the rods show their stronger line*
+
+![The creek pool's bank at golden hour](stills/2026-11-27-pool-bank.jpg)
+*The creek pool's bank at golden hour*
+
 ## World: Reasons to come back tomorrow
 
 2026-11-27 04:07 · commit `1c09e83`
