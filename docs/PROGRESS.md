@@ -6,6 +6,7 @@ Overnight, every step was built, pushed into Studio, playtested there and commit
 
 **What's new in the game**
 - **Cast:** a ring shows where the cast will land; snags on logs and weeds; rises to cast at. Spinner and plastic worm now have their own rigging benches (a clinch knot, a Texas rig).
+- **Lures are worked back like real lures:** no bobber. Reel a spinner at a steady speed (keep the meter green) or hop a plastic worm and let it fall; fish strike while it moves. Ripped too fast it gets nothing, left still in the weeds it snags. One line in Config turns it off if you'd rather keep lures under a bobber.
 - **Bait the hook:** a short timing minigame for each bait, with Okay, Good and Perfect results, and hook sizes to match the fish's mouth.
 - **The wait and the reel:** the camera eases onto the bobber, a fish's shadow swims in before the bite, you can twitch the bait, and the fight gives warnings and a line that changes colour as it strains.
 - **The lake looks real now:** light that changes from dawn to night, real water, land and hills out to the horizon, about 290 trees, clouds, a curved shore with rounded corners and five points of land to fish from, a split-rail creek fence with an arch, and the bobber glows at night. The look critic went from 3/10 to 6/10.
@@ -18,9 +19,7 @@ Overnight, every step was built, pushed into Studio, playtested there and commit
 - **Open it on your phone** and say whether it feels smooth (the PC numbers are inside budget; one slow frame showed up once right after the camera jumped).
 - **Playtest with Liam:** the bait bench by hand (Studio's input tool can't tap fast enough to score a Perfect), touch and gamepad, the smallest phone screen.
 
-**Not verified yet:** a Perfect by real taps; touch and gamepad on the new cast ring, bench and twitch; the pond card on join; rain density on a real device; the frenzy, goal and storm sounds (stand-ins).
-
-**In progress:** L4c, working a lure back (a steady retrieve for the spinner, lift-and-drop for the worm), being built behind a switch that stays off until it passes a full playtest.
+**Not verified yet:** a Perfect by real taps; touch and gamepad on the new cast ring, bench, twitch and lure reeling; the pond card on join; rain density on a real device; the frenzy, goal and storm sounds (stand-ins).
 
 ## 2026-11-25
 
