@@ -417,6 +417,58 @@ function Scenery.apply(lake: Model): Result
 		lampPart(fence, "ArchBeam", Vector3.new(0.9, 0.9, half * 2 + 2), CFrame.new(g.X, Scenery.GROUND_TOP + 10.2, g.Z), RAIL, Enum.Material.Wood, false)
 	end
 
+	-- 4e. The lake path follows the rounded corners (L5d): the four straight paths stop where
+	-- the shore starts to curve, and a quarter-circle bend joins them at each corner (radius 35
+	-- round the same centre as the shore's corner, so it meets both straight paths exactly).
+	local bends = Instance.new("Folder")
+	bends.Name = "PathBends"
+	bends.Parent = folder
+	local L = Shore.LAKE
+	local cr = Shore.CORNER_R
+	local cx, cz = L.x2 - cr, L.z2 - cr -- 80, 50: the corner circles' centres, mirrored
+	local function trim(name: string, long: number)
+		local p = lake:FindFirstChild(name)
+		if p and p:IsA("BasePart") then
+			if p:GetAttribute("OrigSize") == nil then
+				p:SetAttribute("OrigSize", p.Size)
+			end
+			local orig = p:GetAttribute("OrigSize") :: Vector3
+			p.Size = if orig.X > orig.Z then Vector3.new(long, orig.Y, orig.Z) else Vector3.new(orig.X, orig.Y, long)
+			return p
+		end
+		return nil
+	end
+	local north = trim("PathNorth", cx * 2)
+	trim("PathSouth", cx * 2)
+	trim("PathEast", cz * 2)
+	trim("PathWest", cz * 2)
+	if north then
+		local y, width, thick = north.Position.Y, north.Size.Z, north.Size.Y
+		local radius = math.abs(north.Position.Z) - cz -- 85 - 50 = 35
+		local steps = 12
+		for _, c in { { 1, 1 }, { 1, -1 }, { -1, 1 }, { -1, -1 } } do
+			local sx, sz = c[1], c[2]
+			local centre = Vector3.new(cx * sx, y, cz * sz)
+			local function at(t: number): Vector3
+				return centre + Vector3.new(sx * math.sin(t), 0, sz * math.cos(t)) * radius
+			end
+			for i = 1, steps do
+				local a, b = at((i - 1) / steps * math.pi / 2), at(i / steps * math.pi / 2)
+				local seg = Instance.new("Part")
+				seg.Name = "Bend"
+				seg.Anchored = true
+				seg.CanCollide = true
+				seg.Material = north.Material
+				seg.Color = north.Color
+				seg.TopSurface = Enum.SurfaceType.Smooth
+				seg.BottomSurface = Enum.SurfaceType.Smooth
+				seg.Size = Vector3.new(width, thick, (b - a).Magnitude + 0.8)
+				seg.CFrame = CFrame.lookAt((a + b) / 2, b)
+				seg.Parent = bends
+			end
+		end
+	end
+
 	-- 5. The head of Cedar Creek: the riffle now comes out from under a rocky bank and a hill.
 	local head = Instance.new("Folder")
 	head.Name = "CreekHead"
@@ -487,6 +539,14 @@ function Scenery.revert(lake: Model)
 	local old = lake:FindFirstChild(FOLDER)
 	if old then
 		old:Destroy()
+	end
+	for _, name in { "PathNorth", "PathSouth", "PathEast", "PathWest" } do
+		local p = lake:FindFirstChild(name)
+		local size = p and p:GetAttribute("OrigSize")
+		if p and p:IsA("BasePart") and typeof(size) == "Vector3" then
+			p.Size = size
+			p:SetAttribute("OrigSize", nil)
+		end
 	end
 	local creek = lake:FindFirstChild("CedarCreek")
 	for _, name in { "FenceNorth", "FenceSouth" } do
