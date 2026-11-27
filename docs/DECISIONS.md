@@ -184,4 +184,4 @@ Notable design and build calls, newest last.
 - **Tie up uses E (gamepad X),** like every other prompt; F and the face buttons reel during a fight.
 - **Boats stay solid against the fallen logs** and back off with S, rather than passing through them.
 - **Studio-only test hooks:** the player attribute `DebugCoins` sets coins; the long drives used a test autopilot typed into Studio's client that sets the helm seat's throttle and steer (the same path to the server as keys); it isn't part of the game.
-
+- **A miniature lighthouse on the Big Lake's island point** (Stewart's easter egg idea, 11/27/2026): about 6 feet tall (a little taller than a player), red and white, a warm lantern light. Reeds keep 10 studs back so it shows from a boat. Built by BoatWorld, decoration only.

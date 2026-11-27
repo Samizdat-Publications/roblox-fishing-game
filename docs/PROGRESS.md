@@ -9,6 +9,7 @@ Stewart picked the Big Lake first (the ocean dock comes later). It is built, sav
 - **The Inflatable Dinghy:** 1,200 coins at Bait and Tackle (Boats heading), bought once, waits at slip 1 beside the dock. E takes the helm, W/S and A/D drive, E by the slip ties up, Space hops out. Top speed 12 studs a second. A small wake behind it.
 - **Fishing from the boat:** casting, the ring, lures and the bobber camera all work from the seat. Only when the boat is nearly stopped ("Slow the boat down to cast."). On foot you can't fish the Big Lake ("You need a boat to fish the Big Lake.").
 - The two-seat **Deep-V** shows as "Coming soon" in the shop until its two-player playtest.
+- **Easter egg:** a miniature lighthouse, about 6 feet tall, on the island's sandy point (your idea). Its lantern glows; how it looks at night is still to be seen in play.
 
 **Proven in the Studio playtests (11/27/2026)**
 - Shop: Boats heading with the dinghy at 1,200 and the Deep-V coming soon. Buying with 1,300 coins left 100 and the toast "It's waiting at the boat slip by the dock". A second buy: "You already own the Inflatable Dinghy." Buying the Deep-V through the remote: "That boat isn't for sale yet." Ownership survived restarting play.

@@ -26,6 +26,8 @@ local GROUND_TOP = 1 -- the land's top, like Scenery
 local PAD = 40 -- how far past the water the old land is cleared and rebuilt
 local NEAR_DEPTH, FAR_DEPTH = 7, 14
 local CELL = 4 -- terrain voxels are 4 studs
+local LIGHTHOUSE = Vector3.new(-72, 0, -239) -- the island's point (Shore's IslandTip circle)
+local LIGHTHOUSE_CLEAR = 10 -- reeds keep this far back so it can be seen from a boat
 
 local COLORS = {
 	wood = Color3.fromRGB(124, 92, 60),
@@ -426,7 +428,8 @@ local function dress(parent: Instance, big: Rect, island: Rect, rng: Random)
 			end
 			local d = landDepth(x, z)
 			local mouth = math.abs(x) < 26 and z > big.z2 - 20 -- keep the channel mouth open
-			if d < -0.8 and d > -6 and not mouth then
+			local nearLight = (Vector3.new(x, 0, z) - LIGHTHOUSE).Magnitude < LIGHTHOUSE_CLEAR
+			if d < -0.8 and d > -6 and not mouth and not nearLight then
 				return Vector3.new(x, 0, z)
 			end
 		end
@@ -457,7 +460,7 @@ local function dress(parent: Instance, big: Rect, island: Rect, rng: Random)
 		end
 		local wx = island.x2 + rng:NextNumber(-3, 24)
 		local wz = rng:NextNumber(island.z1 - 2, island.z2 + 2)
-		if landDepth(wx, wz) < -0.8 then
+		if landDepth(wx, wz) < -0.8 and (Vector3.new(wx, 0, wz) - LIGHTHOUSE).Magnitude >= LIGHTHOUSE_CLEAR then
 			placed += 1
 			if rng:NextNumber() < 0.7 then
 				place(reeds, weeds, Vector3.new(wx, -1.2, wz), rng:NextNumber(0.8, 1.3), rng:NextNumber(0, 2 * math.pi), false)
@@ -469,6 +472,47 @@ local function dress(parent: Instance, big: Rect, island: Rect, rng: Random)
 	weeds.Parent = folder
 	folder.Parent = parent
 	return trees, shore + placed
+end
+
+-- An easter egg (Stewart, 11/27/2026): a miniature lighthouse about 6 feet tall, a little
+-- taller than a player, on the island's point, like one on a lake the family fishes. Red and
+-- white bands, a railed gallery and a lantern that glows warm (it shows best at night).
+local function lighthouse(parent: Instance, x: number, z: number)
+	local base = groundAt(x, z) or 2
+	local model = Instance.new("Model")
+	model.Name = "Lighthouse"
+	local up = CFrame.Angles(0, 0, math.rad(90)) -- a cylinder's axis is its X; stand it up
+	local y = base - 0.2
+	local function drum(name: string, d: number, h: number, color: Color3, material: Enum.Material): Part
+		local p = part(model, name, Vector3.new(h, d, d), CFrame.new(x, y + h / 2, z) * up, color, { Material = material })
+		p.Shape = Enum.PartType.Cylinder
+		y += h
+		return p
+	end
+	local white, red = Color3.fromRGB(240, 238, 230), Color3.fromRGB(180, 40, 36)
+	drum("Footing", 2.4, 0.6, Color3.fromRGB(120, 116, 108), Enum.Material.Slate)
+	drum("Band1", 1.6, 1.0, white, Enum.Material.SmoothPlastic)
+	drum("Band2", 1.45, 1.0, red, Enum.Material.SmoothPlastic)
+	drum("Band3", 1.3, 1.0, white, Enum.Material.SmoothPlastic)
+	drum("Gallery", 1.9, 0.18, Color3.fromRGB(40, 40, 44), Enum.Material.Metal)
+	local galleryTop = y
+	local lantern = drum("Lantern", 0.95, 0.8, Color3.fromRGB(255, 214, 120), Enum.Material.Neon)
+	lantern.Transparency = 0.15
+	drum("Cap", 1.15, 0.15, Color3.fromRGB(40, 40, 44), Enum.Material.Metal)
+	local roof = part(model, "Roof", Vector3.new(0.9, 0.9, 0.9), CFrame.new(x, y + 0.3, z), red, { Material = Enum.Material.SmoothPlastic })
+	roof.Shape = Enum.PartType.Ball
+	-- A thin rail round the gallery: eight posts.
+	for i = 0, 7 do
+		local a = i * math.pi / 4
+		part(model, "RailPost", Vector3.new(0.08, 0.4, 0.08), CFrame.new(x + math.cos(a) * 0.85, galleryTop + 0.2, z + math.sin(a) * 0.85), Color3.fromRGB(40, 40, 44), { Material = Enum.Material.Metal, CanCollide = false })
+	end
+	local light = Instance.new("PointLight")
+	light.Color = Color3.fromRGB(255, 210, 140)
+	light.Range = 14
+	light.Brightness = 1.4
+	light.Shadows = false
+	light.Parent = lantern
+	model.Parent = parent
 end
 
 local function buildBigLake(parent: Instance, rng: Random)
@@ -549,6 +593,7 @@ function BoatWorld.build(): { [string]: number }
 	local removed = if lake then clearScenery(lake, big) else 0
 	buildBigLake(model, rng) -- first: it clears terrain past its edges
 	local trees, shore = dress(model, big, rectOf(BoatRules.ISLAND), rng)
+	lighthouse(model, LIGHTHOUSE.X, LIGHTHOUSE.Z)
 	if lake then
 		buildSlips(lake)
 		buildChannel(lake, model)
