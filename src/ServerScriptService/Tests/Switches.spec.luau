@@ -5,8 +5,9 @@ return function(t, Shared)
 	local FishLogic = require(Shared.FishLogic)
 	local FishData = require(Shared.FishData)
 
-	t.test("weather, frenzies, goals, the Big Lake and boats start switched off", function()
-		t.eq(Config.WEATHER_ON, false, "weather")
+	-- Switched on one at a time as each is proven in Studio (L6): weather 11/27/2026.
+	t.test("weather is on; frenzies, goals, the Big Lake and boats still off", function()
+		t.eq(Config.WEATHER_ON, true, "weather")
 		t.eq(Config.FRENZIES_ON, false, "frenzies")
 		t.eq(Config.GOALS_ON, false, "goals")
 		t.eq(Config.BIG_LAKE_ON, false, "Big Lake")

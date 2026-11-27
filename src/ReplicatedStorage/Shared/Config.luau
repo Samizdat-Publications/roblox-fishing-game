@@ -55,7 +55,7 @@ Config.POND_TICK = 30 -- seconds between pond updates while playing
 -- What players read for fish sizes: "imperial" (inches, pounds) or "metric". Data stays metric.
 Config.UNITS = "imperial"
 
-Config.WEATHER_ON = false
+Config.WEATHER_ON = true
 Config.FRENZIES_ON = false
 Config.GOALS_ON = false
 Config.BIG_LAKE_ON = false

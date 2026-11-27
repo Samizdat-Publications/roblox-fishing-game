@@ -2,8 +2,9 @@
 -- Runs the weather (Shared/Weather.luau, docs/WEATHER.md). Each game day gets a plan at
 -- midnight; the current weather, wind and moon are published as Workspace attributes so
 -- every client draws the same sky and reads the same forecast. The server alone decides.
--- UNVERIFIED in Studio: written 2026-11-26 in the cloud. The look (fog, cloud, rain) is a
--- first guess at Atmosphere and Lighting values and needs tuning with the critic.
+-- UNVERIFIED in Studio: written 2026-11-26 in the cloud. The look is not drawn here: DayNight
+-- lays LookPresets.WEATHER over the time-of-day look from the "Weather" attribute (L6a), and
+-- the client's WeatherFX draws the rain.
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -21,26 +22,6 @@ local day = 0
 local plan: Weather.DayPlan = Weather.planDay(0, seed, nil)
 local current: Weather.Now = Weather.at(plan, Lighting.ClockTime, Weather.moonOf(0))
 
--- The look of each kind: Atmosphere density and haze, and how bright the sun is.
-local LOOKS = {
-	Clear = { density = 0.3, haze = 0, brightness = 2 },
-	Overcast = { density = 0.4, haze = 2.2, brightness = 1.3 },
-	Fog = { density = 0.62, haze = 3, brightness = 1.2 },
-	Wind = { density = 0.3, haze = 0.5, brightness = 2 },
-	PreStorm = { density = 0.45, haze = 2, brightness = 1.2 },
-	Storm = { density = 0.55, haze = 3, brightness = 0.7 },
-	ColdFront = { density = 0.25, haze = 0, brightness = 2.4 },
-}
-
-local function atmosphere(): Atmosphere
-	local a = Lighting:FindFirstChildOfClass("Atmosphere")
-	if not a then
-		a = Instance.new("Atmosphere")
-		a.Parent = Lighting
-	end
-	return a :: Atmosphere
-end
-
 local function publish(announce: boolean)
 	local k = Weather.byId[current.weather] or Weather.byId.Clear
 	workspace:SetAttribute("Weather", current.weather)
@@ -48,11 +29,6 @@ local function publish(announce: boolean)
 	workspace:SetAttribute("WindFrom", current.wind)
 	workspace:SetAttribute("Moon", current.moon)
 	workspace:SetAttribute("Forecast", Weather.forecast(plan, current.moon))
-	local look = LOOKS[current.weather] or LOOKS.Clear
-	local a = atmosphere()
-	a.Density = look.density
-	a.Haze = look.haze
-	Lighting.Brightness = look.brightness
 	if announce then
 		local text = if current.weather == plan.kind or current.weather == "Clear" then Weather.forecast(plan, current.moon) else k.forecast
 		for _, p in Players:GetPlayers() do
@@ -83,6 +59,17 @@ function WeatherService.start()
 	local lastClock = Lighting.ClockTime
 	local timer = 0
 	publish(false)
+	-- Studio-only test hook: set workspace attribute DebugWeather to a kind id to force it
+	-- (scripts run from the Studio tools live in their own VM and can't call force directly).
+	if RunService:IsStudio() then
+		workspace:GetAttributeChangedSignal("DebugWeather"):Connect(function()
+			local kind = workspace:GetAttribute("DebugWeather")
+			if type(kind) == "string" and Weather.byId[kind] then
+				WeatherService.force(kind)
+				print(string.format("[Weather] forced %s (Studio test)", kind))
+			end
+		end)
+	end
 	RunService.Heartbeat:Connect(function(dt)
 		timer += dt
 		if timer < 1 then

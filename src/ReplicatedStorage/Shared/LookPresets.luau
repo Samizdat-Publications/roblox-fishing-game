@@ -3,6 +3,9 @@
 -- afternoon, moonlit night (docs/DECISIONS.md, mockups in docs/looks/realish/). Each preset
 -- holds over a stretch of the clock and blends smoothly into the next one, round midnight too.
 --
+-- Weather (L6a) is a layer on top: WEATHER holds one per kind, and at/apply take an
+-- optional kind id plus a blend amount (DayNight eases weather changes in over 20 s).
+--
 -- Pure data plus two functions: at(clock) returns the blended values, apply(clock) writes
 -- them to Lighting and its effects (Atmosphere, Bloom, ColorCorrection, SunRays), creating
 -- each effect once under a fixed name. The server calls apply as the clock runs (DayNight);
@@ -208,8 +211,8 @@ local function mix(a: number | Color3, b: number | Color3, t: number): number | 
 	return Color3.new(ca.R + (cb.R - ca.R) * t, ca.G + (cb.G - ca.G) * t, ca.B + (cb.B - ca.B) * t)
 end
 
--- The blended look at this clock (a fresh table each call).
-function LookPresets.at(clock: number): Look
+-- The blended time-of-day look at this clock, before weather (a fresh table each call).
+local function base(clock: number): Look
 	local a, b, t = pair(clock)
 	local out: Look = {}
 	for target, values in a.look do
@@ -221,6 +224,115 @@ function LookPresets.at(clock: number): Look
 		out[target] = blended
 	end
 	return out
+end
+
+-- Weather (L6a): a layer on top of the time-of-day look, one per kind in Shared/Weather.
+-- Each field modifies the blended look: density and haze are added (then capped), the
+-- Atmosphere colours are pulled toward a grey of their own brightness (times shade, so a
+-- storm night gets darker, never lighter), Lighting.Brightness and both ambients are
+-- multiplied, ColorCorrection saturation and brightness are added, SunRays intensity is
+-- multiplied. cover, cloudDensity and cloudColor are set on Terrain's Clouds outright.
+-- Clear is the identity. Storm keeps night readable: ambient only drops 15 percent and
+-- Brightness 40 percent, and night's own exposure lift stays.
+export type Layer = {
+	density: number,
+	haze: number,
+	grey: number,
+	shade: number,
+	brightness: number,
+	ambient: number,
+	saturation: number,
+	ccBrightness: number,
+	sunRays: number,
+	cover: number,
+	cloudDensity: number,
+	cloudColor: Color3,
+	dayDim: number, -- extra Brightness multiplier, by day only (night keeps its floor)
+}
+
+LookPresets.MAX_HAZE = 3 -- Roblox allows 10; past 3 the far shore vanishes
+
+-- stylua: ignore
+LookPresets.WEATHER = {
+	Clear =     { density = 0,     haze = 0,    grey = 0,    shade = 1,    brightness = 1,    ambient = 1,    saturation = 0,     ccBrightness = 0,     sunRays = 1,   cover = 0.5,  cloudDensity = 0.5,  cloudColor = rgb(255, 255, 255), dayDim = 1 },
+	Overcast =  { density = 0.06,  haze = 0.8,  grey = 0.5,  shade = 1,    brightness = 0.7,  ambient = 0.95, saturation = -0.12, ccBrightness = -0.02, sunRays = 0.2, cover = 0.9,  cloudDensity = 0.6,  cloudColor = rgb(205, 208, 214), dayDim = 0.9 },
+	Fog =       { density = 0.14,  haze = 1.8,  grey = 0.7,  shade = 1.05, brightness = 0.8,  ambient = 1,    saturation = -0.2,  ccBrightness = 0.02,  sunRays = 0,   cover = 0.75, cloudDensity = 0.4,  cloudColor = rgb(230, 230, 232), dayDim = 1 },
+	Wind =      { density = 0,     haze = 0.2,  grey = 0.1,  shade = 1,    brightness = 1,    ambient = 1,    saturation = 0,     ccBrightness = 0,     sunRays = 1,   cover = 0.6,  cloudDensity = 0.45, cloudColor = rgb(245, 245, 248), dayDim = 1 },
+	PreStorm =  { density = 0.06,  haze = 0.8,  grey = 0.4,  shade = 0.9,  brightness = 0.75, ambient = 0.92, saturation = -0.08, ccBrightness = -0.03, sunRays = 0.4, cover = 0.85, cloudDensity = 0.75, cloudColor = rgb(150, 152, 162), dayDim = 0.85 },
+	Storm =     { density = 0.1,   haze = 1.4,  grey = 0.65, shade = 0.75, brightness = 0.6,  ambient = 0.85, saturation = -0.35, ccBrightness = -0.05, sunRays = 0,   cover = 1,    cloudDensity = 0.9,  cloudColor = rgb(96, 98, 108), dayDim = 0.65 },
+	ColdFront = { density = -0.06, haze = -0.3, grey = 0,    shade = 1,    brightness = 1.1,  ambient = 1,    saturation = 0.08,  ccBrightness = 0.02,  sunRays = 1.2, cover = 0.25, cloudDensity = 0.35, cloudColor = rgb(255, 255, 255), dayDim = 1 },
+} :: { [string]: Layer }
+
+-- The layer for a kind id (nil or unknown means Clear).
+local function layerOf(weather: string?): Layer
+	return (if weather then LookPresets.WEATHER[weather] else nil) or LookPresets.WEATHER.Clear
+end
+
+-- The layer `amount` (0..1, default 1) of the way from kind `from` (default Clear) to `weather`.
+function LookPresets.layer(weather: string?, amount: number?, from: string?): Layer
+	local a, b = layerOf(from), layerOf(weather)
+	local t = math.clamp(if amount == nil then 1 else amount, 0, 1)
+	if t == 1 then
+		return b
+	elseif t == 0 then
+		return a
+	end
+	local out = {} :: any
+	for k, v in a :: any do
+		out[k] = mix(v, (b :: any)[k], t)
+	end
+	return out :: Layer
+end
+
+local function isClear(l: Layer): boolean
+	local c = LookPresets.WEATHER.Clear :: any
+	for k, v in l :: any do
+		if c[k] ~= v then
+			return false
+		end
+	end
+	return true
+end
+
+local function toward(c: Color3, grey: number, shade: number): Color3
+	local lum = math.clamp((0.299 * c.R + 0.587 * c.G + 0.114 * c.B) * shade, 0, 1)
+	return mix(c, Color3.new(lum, lum, lum), grey) :: Color3
+end
+
+local function scale(c: Color3, f: number): Color3
+	return Color3.new(math.clamp(c.R * f, 0, 1), math.clamp(c.G * f, 0, 1), math.clamp(c.B * f, 0, 1))
+end
+
+-- The look at this clock in this weather (a fresh table each call). weather is a kind id
+-- or nil (Clear); amount (default 1) blends from kind `from` (default Clear) to it.
+-- With no weather, or Clear, the values are exactly the time-of-day look.
+function LookPresets.at(clock: number, weather: string?, amount: number?, from: string?): Look
+	local out = base(clock)
+	local l = LookPresets.layer(weather, amount, from)
+	if isClear(l) then
+		return out
+	end
+	local light, atmo = out.Lighting, out.Atmosphere
+	local cc, rays = out.ColorCorrectionEffect, out.SunRaysEffect
+	-- dayDim darkens a storm by day as much as it is day, so night keeps its readable floor.
+	local dim = mix(1, l.dayDim, 1 - LookPresets.night(clock)) :: number
+	light.Brightness = (light.Brightness :: number) * l.brightness * dim
+	light.Ambient = scale(light.Ambient :: Color3, l.ambient)
+	light.OutdoorAmbient = scale(light.OutdoorAmbient :: Color3, l.ambient)
+	atmo.Density = math.clamp((atmo.Density :: number) + l.density, 0, LookPresets.MAX_DENSITY)
+	atmo.Haze = math.clamp((atmo.Haze :: number) + l.haze, 0, LookPresets.MAX_HAZE)
+	atmo.Color = toward(atmo.Color :: Color3, l.grey, l.shade)
+	atmo.Decay = toward(atmo.Decay :: Color3, l.grey, l.shade)
+	cc.Saturation = math.clamp((cc.Saturation :: number) + l.saturation, -1, 1)
+	cc.Brightness = math.clamp((cc.Brightness :: number) + l.ccBrightness, -1, 1)
+	rays.Intensity = math.clamp((rays.Intensity :: number) * l.sunRays, 0, 1)
+	return out
+end
+
+-- Terrain's Clouds in this weather: Cover, Density, Color (Clear: 0.5, 0.5, white).
+function LookPresets.clouds(weather: string?, amount: number?, from: string?): Values
+	local l = LookPresets.layer(weather, amount, from)
+	return { Cover = l.cover, Density = l.cloudDensity, Color = l.cloudColor }
 end
 
 -- The effect for this class under Lighting, created once: found by our name first, then an
@@ -241,21 +353,29 @@ local function effect(lighting: any, className: string, make: (string) -> any): 
 	return e
 end
 
--- Writes the look for this clock to `lighting` (tests pass fakes for lighting and make).
-function LookPresets.applyTo(lighting: any, clock: number, make: (string) -> any)
-	for target, values in LookPresets.at(clock) do
+-- Writes the look for this clock (and weather, see at) to `lighting` (tests pass fakes for
+-- lighting and make). With a weather given, `clouds` (Terrain's Clouds, if any) is set too;
+-- it is never created here (Scenery owns it).
+function LookPresets.applyTo(lighting: any, clock: number, make: (string) -> any, weather: string?, amount: number?, from: string?, clouds: any?)
+	for target, values in LookPresets.at(clock, weather, amount, from) do
 		local inst = if target == "Lighting" then lighting else effect(lighting, target, make)
 		for k, v in values do
 			inst[k] = v
 		end
 	end
+	if weather ~= nil and clouds ~= nil then
+		for k, v in LookPresets.clouds(weather, amount, from) do
+			clouds[k] = v
+		end
+	end
 end
 
--- Writes the look for this clock to the game's Lighting.
-function LookPresets.apply(clock: number)
+-- Writes the look for this clock (and weather) to the game's Lighting and Terrain's Clouds.
+function LookPresets.apply(clock: number, weather: string?, amount: number?, from: string?)
+	local clouds = if weather ~= nil then workspace.Terrain:FindFirstChildOfClass("Clouds") else nil
 	LookPresets.applyTo(game:GetService("Lighting"), clock, function(className: string): any
 		return Instance.new(className :: any)
-	end)
+	end, weather, amount, from, clouds)
 end
 
 -- How strongly the night look holds (0 by day, 1 at night), for the bobber's night glow.

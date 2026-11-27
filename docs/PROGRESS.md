@@ -221,6 +221,16 @@ Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6
 - Still to do in L1: a Lake Sturgeon at the deep hole in its real conditions, the journal on the smallest phone (the simulated mouse wheel zoomed the camera instead of scrolling the journal; check with a real wheel), the 15 new fish models (they hang as the old shape until then), a Neon reveal clip, the StyLua reformat, and Liam's 20 minutes.
 - Look mockups for the beauty pass: five looks (Golden Afternoon, Bright Summer Day, Misty Dawn, Moonlit Night, Autumn Lake) from the all-models stills, page https://claude.ai/artifact/DjMRLNSn6t91zKmR93sGr6 (source `planner/looks.html`, images `docs/looks/`, script `tools/looks/mockup.py`). They were made in the old flat low-poly style before Stewart picked Real-ish, so treat them as light and time-of-day moods, not materials.
 
+## 2026-11-27 (night): L6a, weather switched on
+
+- **Weather is on** (`Config.WEATHER_ON = true`). Each game day gets a plan (clear, overcast, foggy morning, windy, a storm afternoon, a cold front), announced with a toast, and it changes which fish bite as `docs/WEATHER.md` says. The three weather-only Mythics can now be caught.
+- **The look is a layer on the time of day** (`Shared/LookPresets.luau` WEATHER table): fog thickens the haze and greys the colour, overcast and storm dim the sun and fill the sky with cloud, a cold front is crisp. It blends in over 20 seconds. A storm darkens the day but never takes night below its readable floor (tested).
+- **Rain:** a local rain emitter follows the camera in a storm (a few drops before one).
+- Verified in Studio: forcing fog at dawn gave a misty lake with the far trees fading (density 0.42, haze 3, clouds 0.75); forcing a storm at 11 gave full grey cloud, dimmer light (brightness 1.17, was 3) and falling rain streaks. Stills: `docs/making-of/stills/2026-11-27-fog-dawn.jpg`, `2026-11-27-storm.jpg`. 306 tests pass in Studio and with Lune. Place version 68.
+- Economy with weather on: smart player 74 coins a minute either way; Graphite Rod at 23 min (24 without); the random player a little better (28 vs 26).
+- Studio test hook: set Workspace attribute `DebugWeather` to a kind (Fog, Storm and so on) to force it. Fog only hangs before 10 in the morning.
+- Not verified: how much rain a real device draws (Studio throttles particles in a window that isn't in front), rain falling through roofs, a whole planned day running by itself, the storm sound.
+
 ## 2026-11-27 (night): L5c, sky, banks and the creek
 
 - **Clouds** in the sky (Terrain Clouds, cover 0.5), so noon is no longer flat blue.
