@@ -129,3 +129,17 @@ Sources checked 2026-11-26:
 - [ElevenLabs models](https://elevenlabs.io/docs/overview/models)
 - [ElevenLabs SFX v3 changelog](https://elevenlabs.io/docs/changelog/2026/11/2)
 - [Gemini API models](https://ai.google.dev/gemini-api/docs/models)
+
+## 6. The long view: a sea of islands (Stewart, 11/27/2026)
+
+The game grows toward a sea beside the lakes and ponds. With a big enough boat you sail out to different islands, and each island has its own creatures (fish found nowhere else, and later the bigger "Godlike" kind Liam is designing). This is for a later planning round with Fable, not leg 3.
+
+What leg 3 already builds toward it, so nothing needs changing now:
+- The island recipe (N6): its own ground slots, its own small kit of models, its own light and water preset, its own fish, and a far silhouette that is always loaded. Every later island reuses it.
+- The fleet rules (N4, N5): every boat a different way to fish, every boat keeps a job, boats gated by where they may go (`BoatRules`). A sea-going boat is the next tier after the Deep-V.
+- Per-area looks on each player's screen (LookDirector areas), so the sea can have its own water, swell and sky.
+- The ocean dock was already named for leg 4 or 5 in the leg 3 plan; the sea of islands is what it opens onto.
+
+One thing to keep in mind while building N5: leave the Big Lake's east or west side open for a future channel or river mouth out to the sea, rather than closing it with ridgelines on every side.
+
+**The nearer version (Stewart, same day): one big lake with several islands, each with its own fish circling it.** This is the more feasible first step, and leg 3 is already most of the way there: N5 grows the Big Lake to about 900 by 860 studs of open water north of the buoy line, and N6 puts the first island in it with five fish found nowhere else. Two or three more islands fit in that water (for example a marsh island with the jon boat, a rocky islet with its own fish), each made from the N6 recipe, with the island's fish bound to the water round it the way N6 binds its own. The sea comes after that, when a bigger boat and a saltwater fish list are worth a leg of their own. Order for the planning round: more lake islands first, then the sea.
