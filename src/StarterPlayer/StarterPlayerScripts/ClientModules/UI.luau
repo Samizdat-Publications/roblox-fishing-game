@@ -2,6 +2,7 @@
 -- Code-built interface: top bar, status line, power meter, fight bar, shop, journal, toasts.
 -- Pure view: the Controller tells it what to show and passes callbacks for buttons.
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local GuiService = game:GetService("GuiService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -39,6 +40,8 @@ local callbacks: { [string]: (...any) -> () } = {}
 local lastState: any = nil
 local openPanel: string? = nil
 local locked = false -- true from a bite until the fight ends: no panels, no side buttons
+local hasGoals = false -- today's goals are on (the Goals button shows outside fights)
+local cardSpin: RBXScriptConnection? = nil -- turns the fish in the catch card
 
 local function corner(parent: Instance, r: number?)
 	local c = Instance.new("UICorner")
@@ -275,7 +278,8 @@ function UI.init(cbs: { [string]: (...any) -> () })
 	-- prompt) cycles Light, Medium, Tight (Q or gamepad Y do the same), with the rod's line
 	-- rating under it. A tap on it is not a reel press. It sat under the bar at first, which is
 	-- off the bottom of the smallest phone (iPhone 7, 11/27/2026).
-	local dragBox = frame(gui, "DragBox", UDim2.fromOffset(150, 58), UDim2.new(0.5, -100, 0.5, 60), C.panel, 1)
+	local dragBox = frame(gui, "DragBox", UDim2.fromOffset(150, 58), UDim2.new(0.5, -100, 0.5, 60), C.panel, 0.3)
+	corner(dragBox, 8) -- a dark backing: the line rating under the button didn't read over the dock
 	dragBox.Visible = false
 	refs.dragBtn = button(dragBox, "Drag", "Drag: Medium", UDim2.fromOffset(150, 36), UDim2.fromOffset(0, 0), C.panel2, function()
 		if callbacks.cycleDrag then
@@ -302,14 +306,29 @@ function UI.init(cbs: { [string]: (...any) -> () })
 	refs.toasts = toasts
 
 	-- Catch card (center)
-	-- Right of center so the fish held up on the line stays in view.
-	local card = frame(gui, "CatchCard", UDim2.fromOffset(420, 200), UDim2.new(0.5, 70, 0.5, -110), C.panel, 0.05)
+	-- Right of center so the fish held up on the line stays in view. +30 (was +70): on the
+	-- smallest phone the card ran about 20 px off the right edge (11/27/2026).
+	local card = frame(gui, "CatchCard", UDim2.fromOffset(420, 200), UDim2.new(0.5, 30, 0.5, -110), C.panel, 0.05)
 	corner(card, 14)
 	pad(card, 14)
 	card.Visible = false
 	refs.cardTitle = label(card, "Title", "", UDim2.new(1, 0, 0, 34), UDim2.fromOffset(0, 0), 24, C.gold, Enum.Font.GothamBlack)
-	refs.cardBody = label(card, "Body", "", UDim2.new(1, 0, 0, 60), UDim2.fromOffset(0, 38), 19, C.text)
-	refs.cardNote = label(card, "Note", "", UDim2.new(1, 0, 0, 70), UDim2.fromOffset(0, 100), 16, C.dim)
+	refs.cardBody = label(card, "Body", "", UDim2.new(1, -118, 0, 60), UDim2.fromOffset(0, 38), 19, C.text)
+	refs.cardNote = label(card, "Note", "", UDim2.new(1, -118, 0, 70), UDim2.fromOffset(0, 100), 16, C.dim)
+	-- The fish itself, turning slowly in the card (the playtest critic: the reveal was text only).
+	local view = Instance.new("ViewportFrame")
+	view.Name = "Fish"
+	view.Size = UDim2.fromOffset(110, 110)
+	view.Position = UDim2.new(1, -110, 0, 40)
+	view.BackgroundColor3 = Color3.fromRGB(20, 40, 55)
+	view.BackgroundTransparency = 0.3
+	view.Ambient = Color3.fromRGB(170, 170, 170)
+	view.LightColor = Color3.fromRGB(255, 245, 230)
+	view.LightDirection = Vector3.new(-0.4, -1, -0.6)
+	view.Visible = false
+	corner(view, 10)
+	view.Parent = card
+	refs.cardView = view
 	refs.card = card
 	refs.cardStroke = Instance.new("UIStroke")
 	refs.cardStroke.Thickness = 3
@@ -387,7 +406,8 @@ function UI.setState(state: any)
 		end
 	end
 	refs.goalsBtn.Text = string.format("Goals %d/%d", doneCount, #goals)
-	refs.goalsBtn.Visible = #goals > 0 -- no goals while they're switched off
+	hasGoals = #goals > 0
+	refs.goalsBtn.Visible = hasGoals and not locked -- no goals while they're switched off; hidden in a fight
 	if #goals == 0 then
 		refs.goalsBox.Visible = false
 	end
@@ -583,10 +603,62 @@ function UI.catchCard(payload: any)
 	refs.card.Visible = true
 	local token = os.clock()
 	refs.card:SetAttribute("Token", token)
+	UI.showCardFish(token)
 	task.delay(if payload.first then 6 else 4, function()
 		if refs.card:GetAttribute("Token") == token then
 			refs.card.Visible = false
+			if cardSpin then
+				cardSpin:Disconnect()
+				cardSpin = nil
+			end
 		end
+	end)
+end
+
+-- The landed fish in the catch card: a copy of the one the server hangs on the line
+-- ("CaughtFish_<name>", FishingService.showCatch), lying flat and turning slowly. If it
+-- doesn't turn up within a moment (no model), the card stays text only.
+function UI.showCardFish(token: number)
+	local view = refs.cardView :: ViewportFrame
+	view:ClearAllChildren()
+	view.Visible = false
+	if cardSpin then
+		cardSpin:Disconnect()
+		cardSpin = nil
+	end
+	task.spawn(function()
+		local name = "CaughtFish_" .. Players.LocalPlayer.Name
+		local hung: Instance? = nil
+		for _ = 1, 30 do
+			hung = workspace:FindFirstChild(name)
+			if hung or refs.card:GetAttribute("Token") ~= token then
+				break
+			end
+			task.wait(0.05)
+		end
+		local body = hung and hung:FindFirstChild("Body")
+		if not body or not body:IsA("BasePart") or refs.card:GetAttribute("Token") ~= token then
+			return
+		end
+		local fish = body:Clone()
+		fish.Anchored = true
+		local isMesh = fish:IsA("MeshPart")
+		local len = if isMesh then fish.Size.X else fish.Size.Y -- the art model runs along X; the stand-in stands along Y
+		-- Lying flat, head to the left (the art model's head points along -X).
+		local flat = if isMesh then CFrame.identity else CFrame.Angles(0, 0, math.rad(90))
+		fish.CFrame = flat
+		fish.Parent = view
+		local cam = Instance.new("Camera")
+		cam.FieldOfView = 40
+		cam.CFrame = CFrame.lookAt(Vector3.new(0, len * 0.35, len * 1.55), Vector3.zero)
+		cam.Parent = view
+		view.CurrentCamera = cam
+		view.Visible = true
+		local t0 = os.clock()
+		cardSpin = RunService.RenderStepped:Connect(function()
+			local t = os.clock() - t0
+			fish.CFrame = CFrame.Angles(0, math.sin(t * 0.9) * 0.6, 0) * flat
+		end)
 	end)
 end
 
@@ -855,6 +927,10 @@ function UI.setLocked(on: boolean)
 	locked = on
 	refs.baitBtn.Visible = not on
 	refs.journalBtn.Visible = not on
+	refs.goalsBtn.Visible = hasGoals and not on -- the playtest critic: it floated alone in fights
+	if on then
+		refs.goalsBox.Visible = false
+	end
 	if on then
 		UI.closePanels()
 	end
