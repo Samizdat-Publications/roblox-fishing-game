@@ -266,3 +266,10 @@ fable-advisor, on the N1 round 3 shots and critic reads.
 - **The custom sky is a separate A/B step after the N1 gate,** not part of N1: one day skybox, our own sun and moon, and the Clouds object kept. Before it is built, prove in Studio that the engine dims a skybox at night (a day skybox that stays lit at night is a dead end).
 - **Why round 3 stalled:** the paint record was re-taken over round 2's gravel, so round 3 shot a world that had lost round 2's footpath gravel and could not show its own gains. A paint record is only re-taken from a world that already carries the last round's paint.
 - **Audit fix:** the stock terrain share counted every voxel on slots 2 to 22 as stock, but slots 2, 6 and 12 are remapped to our own variants, which was most of the 45 percent reading. A slot from 2 to 22 that carries a variant now counts as ours (`tools/shots/audit.luau`, which also lists the remapped slots).
+
+## 11/27/2026 (night): Gemini's leg 3 review folded in
+
+- Stewart had Gemini review the game and asked for its sections 1 and 2 to join the leg 3 run. The review is `docs/reviews/2026-11-27-gemini-leg3-review.md`; its ideas are appended to `docs/IDEAS.md`; where each item lands is in the plan, section "Folded in from Gemini's review". Gemini's leg 4 prompt is saved for the next planning round at `docs/prompts/next-fable-planning-from-gemini-2026-11-27.md`.
+- Where Gemini and the advisor differ, the advisor's look ruling stands: the custom sky is an A/B step right after the N1 gate, not inside it, and the identity gate for N1 reads "engine givens excluded" (water surface, avatar, grass blades).
+- **The fallen logs stay full length.** The advisor asked for kit driftwood in place of the cut-end logs, but the driftwood would be about 8.5 studs inside 22 stud snag boxes, so casts would snag on open water. The old logs keep the bark family, and the modeler gives every variant dark water-soaked broken ends (Gemini's point about variant 1's tan end caps).
+- The three co-op additions (Buddy Tackle Loan, Double Hookup, Bow Chumming) land in N4 and N5 behind their own switches; Double Hookup's 25 percent bonus must fit the leg's economy budget.
