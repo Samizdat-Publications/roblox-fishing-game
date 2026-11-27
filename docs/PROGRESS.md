@@ -221,6 +221,14 @@ Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6
 - Still to do in L1: a Lake Sturgeon at the deep hole in its real conditions, the journal on the smallest phone (the simulated mouse wheel zoomed the camera instead of scrolling the journal; check with a real wheel), the 15 new fish models (they hang as the old shape until then), a Neon reveal clip, the StyLua reformat, and Liam's 20 minutes.
 - Look mockups for the beauty pass: five looks (Golden Afternoon, Bright Summer Day, Misty Dawn, Moonlit Night, Autumn Lake) from the all-models stills, page https://claude.ai/artifact/DjMRLNSn6t91zKmR93sGr6 (source `planner/looks.html`, images `docs/looks/`, script `tools/looks/mockup.py`). They were made in the old flat low-poly style before Stewart picked Real-ish, so treat them as light and time-of-day moods, not materials.
 
+## 2026-11-27 (night): L6b, frenzies switched on
+
+- **Feeding frenzies are on** (`Config.FRENZIES_ON = true`): now and then a school boils at a spot (more often at dawn and dusk and before a storm), everyone gets a toast, gulls circle, and for a minute bites come almost at once.
+- Verified in Studio: a forced frenzy at the dock toasted "Bluegills are boiling around the dock!" with gulls over the dock end; three short casts gave bites 0.7 s after landing and three catches back to back (a pumpkinseed and two bluegills). Still: `docs/making-of/stills/2026-11-27-frenzy-dock.jpg`. 306 tests pass in Studio.
+- Fixed: the riffle's frenzy boil was placed at the creek pool's centre.
+- Studio test hook: set Workspace attribute `DebugFrenzy` to a spot (Dock, OpenWater, Logs, Riffle).
+- Not verified: the frenzy sound (still a stand-in, the upload cap), a frenzy starting by itself, the frenzy goal (goals are next).
+
 ## 2026-11-27 (night): L6a, weather switched on
 
 - **Weather is on** (`Config.WEATHER_ON = true`). Each game day gets a plan (clear, overcast, foggy morning, windy, a storm afternoon, a cold front), announced with a toast, and it changes which fish bite as `docs/WEATHER.md` says. The three weather-only Mythics can now be caught.
