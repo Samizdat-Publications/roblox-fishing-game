@@ -1,6 +1,8 @@
 --!strict
--- Gives every character a gray-box fishing rod with a "RodTip" attachment for the line.
+-- Gives every character a fishing rod with a "RodTip" attachment for the line: an invisible
+-- logical rod (the old gray box) with the real rod model welded along it (11/27/2026).
 local Players = game:GetService("Players")
+local ServerStorage = game:GetService("ServerStorage")
 local RodData = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared").RodData)
 local PlayerData = require(script.Parent.PlayerData)
 
@@ -39,6 +41,32 @@ local function giveRod(character: Model)
 	tip.Name = "RodTip"
 	tip.Position = Vector3.new(0, 0, -spec.length / 2)
 	tip.Parent = rod
+	-- The real rod model (art/README.md: WillowRod, FiberglassRod, GraphiteRod), welded along the
+	-- gray-box rod, which stays as the invisible logical rod: it keeps the RodTip the line hangs
+	-- from and RodFeel's bend. The model's tip points along its +Z and its blank sits 0.98 above
+	-- its base (its centre 0.45 below the blank), so it's turned half round and lowered to fit.
+	local art = ServerStorage:FindFirstChild("Art")
+	local source = art and art:FindFirstChild(spec.id .. "Rod")
+	local mesh = source and source:FindFirstChildWhichIsA("MeshPart", true)
+	if mesh then
+		local model = mesh:Clone()
+		model:ClearAllChildren()
+		model.Name = "RodModel"
+		model.Anchored = false
+		model.CanCollide = false
+		model.CanQuery = false
+		model.CanTouch = false
+		model.Massless = true
+		model.CFrame = rod.CFrame * CFrame.Angles(0, math.pi, 0) * CFrame.new(0, -0.45, 0)
+		local mw = Instance.new("WeldConstraint")
+		mw.Part0 = rod
+		mw.Part1 = model
+		mw.Parent = model
+		model.Parent = rod
+		rod.Transparency = 1
+		rod.Parent = character
+		return
+	end
 	local reel = Instance.new("Part")
 	reel.Name = "Reel"
 	reel.Size = Vector3.new(0.5, 0.5, 0.5)

@@ -88,6 +88,10 @@ local function hide()
 	local rod = myRod()
 	if rod then
 		rod.LocalTransparencyModifier = characterFade()
+		local model = rod:FindFirstChild("RodModel")
+		if model and model:IsA("BasePart") then
+			model.LocalTransparencyModifier = characterFade()
+		end
 	end
 	local saved = savedTip
 	if saved and saved.att.Parent then
@@ -119,6 +123,11 @@ local function step(dt: number)
 		end
 	end
 	rod.LocalTransparencyModifier = 1
+	-- The real rod model (RodService) can't bend, so it hides while the drawn copy shows.
+	local model = rod:FindFirstChild("RodModel")
+	if model and model:IsA("BasePart") then
+		model.LocalTransparencyModifier = 1
+	end
 	local fade = characterFade()
 
 	local pitch = if swinging then FightFeel.swingPitch(swingT) else 0
