@@ -4,6 +4,15 @@ A Roblox fishing game where real fishing knowledge matters: the right bait, spot
 
 Newest first. The live page with before and after sliders is `docs/making-of/index.html` (published as a Claude artifact).
 
+## Polish: A tiny lighthouse on the island
+
+2026-11-27 10:34 · commit `b9b7a0d`
+
+An easter egg from a real lake the family fishes, where a miniature lighthouse about 6 feet tall stands on a little island. Now the Big Lake's island has one too, on its sandy point: red and white bands, a railed gallery and a lantern that glows warm. It is a little taller than a player, so it reads as a toy-sized lighthouse rather than a real one, and the reeds keep back from it so you can spot it from a boat.
+
+![The miniature lighthouse on the island's point, seen from the water](stills/2026-11-27-lighthouse.jpg)
+*The miniature lighthouse on the island's point, seen from the water*
+
 ## L7: Fishing from the boat seat
 
 2026-11-27 10:29 · commit `41d835c`
