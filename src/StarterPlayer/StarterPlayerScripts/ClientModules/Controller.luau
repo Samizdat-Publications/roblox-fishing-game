@@ -41,6 +41,7 @@ local Retrieve = require(Shared.Retrieve)
 
 local UI = require(script.Parent.UI)
 local PondView = require(script.Parent.PondView)
+local TrophyWall = require(script.Parent.TrophyWall)
 local SoundFX = require(script.Parent.SoundFX)
 local CastRing = require(script.Parent.CastRing)
 local RiseRipples = require(script.Parent.RiseRipples)
@@ -890,6 +891,7 @@ function Controller.start()
 		snapshot = s
 		UI.setState(s)
 		PondView.update(s.pond)
+		TrophyWall.update(s)
 		updateCreekGate(s)
 	end)
 	Remotes.event("FishingEvent").OnClientEvent:Connect(onFishingEvent)
@@ -902,6 +904,7 @@ function Controller.start()
 			snapshot = s
 			UI.setState(s)
 			PondView.update(s.pond)
+			TrophyWall.update(s)
 			updateCreekGate(s)
 		end
 	end)

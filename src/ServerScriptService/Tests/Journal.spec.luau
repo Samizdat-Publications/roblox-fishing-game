@@ -51,6 +51,26 @@ return function(t, Shared)
 		end
 	end)
 
+	t.test("the trophy wall mounts monsters, then trophies, then rarer, then heavier", function()
+		local by = FishData.byId
+		local bests = {
+			Bluegill = { kg = 0.3 },
+			Pumpkinseed = { kg = 0.2 },
+			LakeSturgeon = { kg = 20 },
+			LargemouthBass = { kg = 2 },
+			CommonCarp = { kg = 9 },
+			NotAFish = { kg = 99 },
+		}
+		local wall = Journal.wall(bests, { Bluegill = 1 }, { Pumpkinseed = 1 }, by, 6)
+		t.eq(#wall, 5, "five real species")
+		t.eq(wall[1], "Pumpkinseed", "a monster first")
+		t.eq(wall[2], "Bluegill", "then a trophy")
+		t.eq(wall[3], "LakeSturgeon", "then the rarest")
+		t.ok(table.find(wall, "NotAFish") == nil, "unknown ids skipped")
+		t.eq(#Journal.wall(bests, nil, nil, by, 2), 2, "capped at n")
+		t.eq(#Journal.wall({}, nil, nil, by, 6), 0, "empty journal, empty wall")
+	end)
+
 	t.test("counts down to the next rumour", function()
 		t.eq(Journal.nextRumourIn(0), 5)
 		t.eq(Journal.nextRumourIn(14), 1)

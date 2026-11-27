@@ -85,5 +85,43 @@ function Journal.nextRumourIn(totalCaught: number): number
 	return if nextAt == math.huge then 0 else nextAt - totalCaught
 end
 
+-- The trophy wall by the home pond (11/27/2026): which caught species get mounted, best
+-- first: any with a monster, then any with a trophy, then rarer, then heavier. `bests` is the
+-- journal's best catch per species ({ kg = ... }); `byId` the species table (FishData.byId).
+function Journal.wall(bests: { [string]: any }, trophies: { [string]: number }?, monsters: { [string]: number }?, byId: { [string]: any }, n: number): { string }
+	local t, m = trophies or {}, monsters or {}
+	local ids = {}
+	for id, b in bests do
+		if byId[id] and type(b) == "table" then
+			table.insert(ids, id)
+		end
+	end
+	local function key(id: string): (number, number, number, number)
+		return if (m[id] or 0) > 0 then 1 else 0,
+			if (t[id] or 0) > 0 then 1 else 0,
+			Rarity.rank[Rarity.of(byId[id])] or 1,
+			tonumber(bests[id].kg) or 0
+	end
+	table.sort(ids, function(a, b)
+		local a1, a2, a3, a4 = key(a)
+		local b1, b2, b3, b4 = key(b)
+		if a1 ~= b1 then
+			return a1 > b1
+		elseif a2 ~= b2 then
+			return a2 > b2
+		elseif a3 ~= b3 then
+			return a3 > b3
+		elseif a4 ~= b4 then
+			return a4 > b4
+		end
+		return a < b
+	end)
+	local out = {}
+	for i = 1, math.min(n, #ids) do
+		out[i] = ids[i]
+	end
+	return out
+end
+
 local _ = Weather -- weather ids above match Weather.luau's kinds
 return Journal

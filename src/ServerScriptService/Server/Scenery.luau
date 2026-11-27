@@ -606,6 +606,34 @@ function Scenery.apply(lake: Model): Result
 				seatBottom(m, top - 0.3)
 			end
 		end
+
+		-- 8b. The trophy wall behind the pond (11/27/2026): a board facing the pond and the
+		-- lake, where each player's own screen mounts their best fish (ClientModules/TrophyWall
+		-- finds it by name: Scenery.TrophyWall.Board, six slots on its front).
+		local wallAt = Vector3.new(c.X, top, c.Z + R + 3.5)
+		local tw = Instance.new("Model")
+		tw.Name = "TrophyWall"
+		tw.Parent = folder
+		local wood, dark = Color3.fromRGB(122, 86, 56), Color3.fromRGB(78, 54, 36)
+		lampPart(tw, "Board", Vector3.new(15, 6.6, 0.5), CFrame.new(wallAt + Vector3.new(0, 4.1, 0)), wood, Enum.Material.WoodPlanks, true)
+		for _, dx in { -7.8, 7.8 } do
+			lampPart(tw, "Post", Vector3.new(0.7, 8.6, 0.7), CFrame.new(wallAt + Vector3.new(dx, 4.3, 0)), dark, Enum.Material.Wood, true)
+		end
+		local header = lampPart(tw, "Header", Vector3.new(16.4, 1.3, 0.6), CFrame.new(wallAt + Vector3.new(0, 8.1, -0.05)), dark, Enum.Material.Wood, false)
+		local gui = Instance.new("SurfaceGui")
+		gui.Face = Enum.NormalId.Front
+		gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+		gui.PixelsPerStud = 40
+		gui.LightInfluence = 0.6
+		local title = Instance.new("TextLabel")
+		title.Size = UDim2.fromScale(1, 1)
+		title.BackgroundTransparency = 1
+		title.Text = "Trophy Wall"
+		title.TextScaled = true
+		title.Font = Enum.Font.GothamBlack
+		title.TextColor3 = Color3.fromRGB(255, 214, 120)
+		title.Parent = gui
+		gui.Parent = header
 	end
 
 	folder.Parent = lake

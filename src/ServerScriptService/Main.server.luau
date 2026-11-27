@@ -20,6 +20,7 @@ end
 
 require(Server.DayNight).start()
 require(Server.BobberGlow).markers() -- the deep hole's buoy glows at night
+require(Server.FishModels).start() -- fish models players' screens can mount (the trophy wall)
 if Config.WEATHER_ON then
 	require(Server.WeatherService).start() -- weather (UNVERIFIED in Studio, 2026-11-26)
 end
