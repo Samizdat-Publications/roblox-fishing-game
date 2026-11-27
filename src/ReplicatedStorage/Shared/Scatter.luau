@@ -20,7 +20,8 @@
 --    lawn and a pine, bush and fern group at each outer south lawn corner. Pines on the hills
 --    come from Scatter.hillPines, which takes the ground height as a function.
 -- Everything keeps clear of the dock and slips, the stands, the pond, the chalkboard, the trophy
--- wall, the channel and its footbridge, the creek gate and every fishing spot's cast lane.
+-- wall, the channel and its footbridge, the creek gate and every fishing spot's cast lane, and
+-- (11/27/2026) of the fixed shot cameras (Scatter.SHOT_CAMS, mirroring tools/shots/shots.json).
 local Shore = require(script.Parent.Shore)
 local ShoreEdge = require(script.Parent.ShoreEdge)
 
@@ -194,10 +195,12 @@ end
 -- Wandering paths
 ---------------------------------------------------------------------------------------------
 
-export type Sample = { x: number, z: number, w: number, s: number, off: number }
+-- `thin`: paint only the one cell under the centreline here (a single row of voxels).
+export type Sample = { x: number, z: number, w: number, s: number, off: number, thin: boolean? }
 export type Route = { name: string, samples: { Sample } }
 export type WanderOpts = {
 	amp: number, -- the wobble's reach, studs (2)
+	thin: boolean?, -- paint as a single row of cells (Scatter.pathCells)
 	bias: number?, -- a steady sideways shift (along the left-hand normal)
 	pins: { Pt }?, -- places the wobble fades to nothing (bridge feet, the gate)
 	pinEnds: boolean?,
@@ -304,7 +307,7 @@ function Scatter.wander(name: string, base: { Pt }, r: Rng, o: WanderOpts): Rout
 		if k < 1 and o.pinWidth then
 			w = math.min(w, o.pinWidth + (w - o.pinWidth) * k)
 		end
-		table.insert(samples, { x = p.x + nx * off, z = p.z + nz * off, w = w, s = s, off = off })
+		table.insert(samples, { x = p.x + nx * off, z = p.z + nz * off, w = w, s = s, off = off, thin = o.thin })
 	end
 	return { name = name, samples = samples }
 end
@@ -384,32 +387,136 @@ function Scatter.pathEdge(idx: PathIndex, x: number, z: number): number
 	return best
 end
 
--- Terrain cells (4 studs) to paint as path: every cell whose centre is on the path, and a
--- dithered fringe `soft` studs wide past its edge so the edge is not a ruler line.
+-- Terrain cells (`cell` studs, 4) to paint as path. A cell is painted when its centre lies within
+-- half the path's width of the nearest centreline sample, or on a dithered fringe up to `soft`
+-- (1.5) studs past that when the cell's seeded hash says so, and never further than just under
+-- one cell (PATH_REACH) from the centreline. Then, across the route (along the grid step nearest
+-- its normal), any run of more than 2 cells of one route loses the cells furthest from the
+-- centreline: a 4 stud voxel grid cannot draw a 6 stud path smoothly, so the path is 1 or 2
+-- cells that wander. (Before 11/27/2026 the fringe ran to 5 studs from the centreline, which put
+-- 3 or 4 cells across a diagonal stretch and read as a 15 to 20 stud swath.) Samples marked
+-- `thin` paint only the cell under the centreline, joined edge to edge: a single row. Every
+-- route goes into the one set, so where routes meet nothing is painted twice.
+Scatter.PATH_REACH = 0.975 -- of a cell: the furthest a painted cell's centre is from the centreline
+local CROSS_STEPS = { { 1, 0 }, { 0, 1 }, { 1, 1 }, { 1, -1 } }
 function Scatter.pathCells(routes: { Route }, cell: number, seed: number, soft: number?): { [number]: boolean }
 	local sf = soft or 1.5
-	local excess: { [number]: number } = {}
-	for _, rt in routes do
-		for _, q in rt.samples do
-			local R = q.w / 2 + sf
-			for ix = math.floor((q.x - R) / cell), math.floor((q.x + R) / cell) do
-				for iz = math.floor((q.z - R) / cell), math.floor((q.z + R) / cell) do
-					local cx, cz = (ix + 0.5) * cell, (iz + 0.5) * cell
-					local e = math.sqrt((cx - q.x) ^ 2 + (cz - q.z) ^ 2) - q.w / 2
-					local k = Scatter.key(ix, iz)
-					if e < (excess[k] or math.huge) then
-						excess[k] = e
+	local cap = cell * Scatter.PATH_REACH
+	local excess: { [number]: number } = {} -- least (distance - half width) over every sample
+	local dist: { [number]: number } = {} -- least distance to any centreline sample
+	local owner: { [number]: number } = {} -- the route of that nearest sample
+	local normal: { [number]: { number } } = {} -- and its unit normal
+	local thinSet: { [number]: boolean } = {}
+	for ri, rt in routes do
+		local prev: { x: number, z: number, ix: number, iz: number }? = nil
+		local ss = rt.samples
+		for i, q in ss do
+			if q.thin then
+				local ix, iz = math.floor(q.x / cell), math.floor(q.z / cell)
+				local p = prev
+				if p then
+					local px, pz = p.ix, p.iz
+					-- Keep the last cell's column (row) while the line is within a stud of it, so a centreline
+					-- running along a cell edge (the walk at x 0) does not flicker into two rows.
+					if math.abs(q.x - (px + 0.5) * cell) <= cell / 2 + 1 then
+						ix = px
+					end
+					if math.abs(q.z - (pz + 0.5) * cell) <= cell / 2 + 1 then
+						iz = pz
+					end
+					if px ~= ix and pz ~= iz then
+						-- A diagonal step: fill the corner nearer the step's middle, so the row joins
+						-- edge to edge.
+						local mx, mz = (p.x + q.x) / 2, (p.z + q.z) / 2
+						local ax, az = (ix + 0.5) * cell, (pz + 0.5) * cell
+						local bx, bz = (px + 0.5) * cell, (iz + 0.5) * cell
+						if (ax - mx) ^ 2 + (az - mz) ^ 2 <= (bx - mx) ^ 2 + (bz - mz) ^ 2 then
+							thinSet[Scatter.key(ix, pz)] = true
+						else
+							thinSet[Scatter.key(px, iz)] = true
+						end
+					end
+				end
+				thinSet[Scatter.key(ix, iz)] = true
+				prev = { x = q.x, z = q.z, ix = ix, iz = iz }
+			else
+				prev = nil
+				local a, b = ss[math.max(1, i - 1)], ss[math.min(#ss, i + 1)]
+				local tx, tz = b.x - a.x, b.z - a.z
+				local tl = math.max(1e-9, math.sqrt(tx * tx + tz * tz))
+				local R = math.min(q.w / 2 + sf, cap)
+				for ix = math.floor((q.x - R) / cell), math.floor((q.x + R) / cell) do
+					for iz = math.floor((q.z - R) / cell), math.floor((q.z + R) / cell) do
+						local cx, cz = (ix + 0.5) * cell, (iz + 0.5) * cell
+						local d = math.sqrt((cx - q.x) ^ 2 + (cz - q.z) ^ 2)
+						local k = Scatter.key(ix, iz)
+						if d - q.w / 2 < (excess[k] or math.huge) then
+							excess[k] = d - q.w / 2
+						end
+						if d < (dist[k] or math.huge) then
+							dist[k] = d
+							owner[k] = ri
+							normal[k] = { -tz / tl, tx / tl }
+						end
 					end
 				end
 			end
 		end
 	end
 	local set: { [number]: boolean } = {}
+	local band: { number } = {}
 	for k, e in excess do
 		local ix, iz = Scatter.unkey(k)
-		if e <= 0 or (e < sf and Scatter.hash(ix, iz, seed + 7) > e / sf) then
+		if dist[k] < cap and (e <= 0 or (e < sf and Scatter.hash(ix, iz, seed + 7) > e / sf)) then
 			set[k] = true
+			if not thinSet[k] then
+				table.insert(band, k)
+			end
 		end
+	end
+	-- At most 2 cells across: walk each band cell's run along its cross step (cells of the same
+	-- route only, so where routes meet both stay whole) and drop the furthest until 2 are left.
+	table.sort(band)
+	local function prunable(k: number, ri: number): boolean
+		return set[k] == true and not thinSet[k] and owner[k] == ri
+	end
+	for _, k in band do
+		while set[k] do
+			local ix, iz = Scatter.unkey(k)
+			local n = normal[k]
+			local sx, sz, best = 1, 0, -1
+			for _, st in CROSS_STEPS do
+				local c = math.abs(st[1] * n[1] + st[2] * n[2]) / (if st[1] ~= 0 and st[2] ~= 0 then math.sqrt(2) else 1)
+				if c > best then
+					sx, sz, best = st[1], st[2], c
+				end
+			end
+			local run = { k }
+			for _, dir in { 1, -1 } do
+				local j = 1
+				while true do
+					local k2 = Scatter.key(ix + sx * dir * j, iz + sz * dir * j)
+					if not prunable(k2, owner[k]) then
+						break
+					end
+					table.insert(run, k2)
+					j += 1
+				end
+			end
+			if #run <= 2 then
+				break
+			end
+			local far = run[1]
+			for _, k2 in run do
+				if dist[k2] > dist[far] or (dist[k2] == dist[far] and k2 > far) then
+					far = k2
+				end
+			end
+			set[far] = nil
+		end
+	end
+	for k in thinSet do
+		set[k] = true
 	end
 	return set
 end
@@ -658,6 +765,84 @@ function Scatter.kept(x: number, z: number, pad: number?): boolean
 	return false
 end
 
+-- The fixed shot cameras. This table MIRRORS tools/shots/shots.json (sets A and B, each shot's
+-- `eye` and `look`; shots that share a camera are listed once): change both together. Nothing
+-- stands within SHOT_EYE_R of an eye (a sphere), and no tree within SHOT_LINE_R of the first
+-- SHOT_LINE studs of the line from the eye toward its look (a capsule). Props may stand
+-- anywhere outside the spheres.
+export type ShotCam = { id: string, eye: { number }, look: { number } }
+Scatter.SHOT_CAMS = {
+	{ id = "01-dock-dawn, 02-dock-golden", eye = { 0, 8, 117 }, look = { 0, 0, 25 } },
+	{ id = "03-dockend-noon, 04-dockend-night", eye = { 0, 6, 37 }, look = { 0, 0, -55 } },
+	{ id = "05-weedbed-golden", eye = { -94, 7, 87 }, look = { -77, -1, 38 } },
+	{ id = "06-logs-dawn", eye = { 126, 7, 65 }, look = { 76, -1, 46 } },
+	{ id = "07-overview-golden", eye = { 86, 80, 165 }, look = { 0, 0, 0 } },
+	{ id = "08-stands-noon", eye = { 0, 6, 50 }, look = { 11, 4, 100 } },
+	{ id = "09-riffle-dawn", eye = { -210, 7, 28 }, look = { -230, -1, 72 } },
+	{ id = "10-pool-golden, 12-pool-night", eye = { -206, 8, -15 }, look = { -230, -8, -45 } },
+	{ id = "11-gate-noon", eye = { -129, 7, 15 }, look = { -162, 3, 0 } },
+	{ id = "b01-bridge-dawn", eye = { 12, 5, -48 }, look = { 0, 5, -95 } },
+	{ id = "b02-basin-boat-noon", eye = { -20, 4, -180 }, look = { -90, 3, -245 } },
+	{ id = "b03-lighthouse-golden", eye = { -32, 5, -224 }, look = { -72, 2, -239 } },
+	{ id = "b04-buoys-dusk", eye = { 52, 4, -282 }, look = { -80, 0, -292 } },
+	{ id = "b05-bluewater-noon", eye = { 24, 5, -280 }, look = { 50, 0, -420 } },
+	{ id = "b06-marina-night", eye = { 80, 7, -205 }, look = { 40, 2, -140 } },
+} :: { ShotCam }
+Scatter.SHOT_EYE_R = 8
+Scatter.SHOT_LINE = 25
+Scatter.SHOT_LINE_R = 3
+-- How tall a placed thing is taken to be, from y 0 (the water; the ground is y 1): trees and the
+-- rest.
+Scatter.TREE_H = 40
+Scatter.PROP_H = 4
+
+-- Distance in x, z from (x, z) to the segment (ax, az)-(bx, bz).
+local function segDist(x: number, z: number, ax: number, az: number, bx: number, bz: number): number
+	local dx, dz = bx - ax, bz - az
+	local l2 = dx * dx + dz * dz
+	local t = if l2 > 0 then math.clamp(((x - ax) * dx + (z - az) * dz) / l2, 0, 1) else 0
+	return math.sqrt((x - ax - dx * t) ^ 2 + (z - az - dz * t) ^ 2)
+end
+
+-- True when something standing at (x, z) (a tree when `tree`) keeps clear of every shot camera:
+-- its upright (y 0 to its height) stays SHOT_EYE_R from each eye, and a tree's stays SHOT_LINE_R
+-- from the first SHOT_LINE studs of each eye-to-look line.
+function Scatter.shotClear(x: number, z: number, tree: boolean): boolean
+	local H = if tree then Scatter.TREE_H else Scatter.PROP_H
+	local R = Scatter.SHOT_EYE_R
+	for _, c in Scatter.SHOT_CAMS do
+		local ex, ey, ez = c.eye[1], c.eye[2], c.eye[3]
+		local h2 = (x - ex) ^ 2 + (z - ez) ^ 2
+		local dy = math.max(0, ey - H, -ey)
+		if h2 + dy * dy < R * R then
+			return false
+		end
+		if tree then
+			local lx, ly, lz = c.look[1] - ex, c.look[2] - ey, c.look[3] - ez
+			local len = math.sqrt(lx * lx + ly * ly + lz * lz)
+			local f = math.min(1, Scatter.SHOT_LINE / len)
+			-- The part of the first SHOT_LINE studs whose height is within the tree's (0 to H): the
+			-- line is straight, so that is one stretch t0..t1 of it.
+			local y0, y1 = ey, ey + ly * f
+			local t0, t1 = 0, 1
+			if y1 ~= y0 then
+				local ta, tb = (0 - y0) / (y1 - y0), (H - y0) / (y1 - y0)
+				t0, t1 = math.max(0, math.min(ta, tb)), math.min(1, math.max(ta, tb))
+			elseif y0 < 0 or y0 > H then
+				t0, t1 = 1, 0
+			end
+			if t0 <= t1 then
+				local ax, az = ex + lx * f * t0, ez + lz * f * t0
+				local bx, bz = ex + lx * f * t1, ez + lz * f * t1
+				if segDist(x, z, ax, az, bx, bz) < Scatter.SHOT_LINE_R then
+					return false
+				end
+			end
+		end
+	end
+	return true
+end
+
 -- Distance from (x, z) to a lane's centre segment.
 function Scatter.laneDist(l: Lane, x: number, z: number): number
 	local dx, dz = l.x2 - l.x1, l.z2 - l.z1
@@ -733,18 +918,21 @@ function Scatter.homeRoutes(seed: number): { Route }
 	}
 	-- N1 round 2: the walk from the back lawn, between the two stands (x +-18), to the dock head,
 	-- where it meets the loop (z 85). Its own stream, so the three routes above do not move.
+	-- (11/27/2026) It is painted as a single row of cells (thin), so it reads as a footworn track
+	-- across the lawn and not a second road; it joins the loop's band at the dock head.
 	local rw = Scatter.rng(seed + 102)
-	table.insert(routes, Scatter.wander("StandsWalk", Scatter.spline(Scatter.WALK), rw, { amp = 2, pins = { { x = 0, z = 97 }, { x = 0, z = 86 } }, pinFade = 9, pinWidth = 6, wMin = 5, wMax = 7 }))
+	table.insert(routes, Scatter.wander("StandsWalk", Scatter.spline(Scatter.WALK), rw, { amp = 2, thin = true, pins = { { x = 0, z = 97 }, { x = 0, z = 86 } }, pinFade = 9, pinWidth = 6, wMin = 5, wMax = 7 }))
 	return routes
 end
 
 -- The walk's control points (back lawn to the dock head): it bends one way, then the other, so
--- no 30 stud stretch runs straight.
+-- no 30 stud stretch runs straight, but keeps close to north-south (11/27/2026: it started at
+-- x -12 and swung 18 studs across the lawn, a broad diagonal in shots 01 and 02).
 Scatter.WALK = {
-	{ x = -12, z = 136 },
-	{ x = -4, z = 125 },
-	{ x = 6, z = 116 },
-	{ x = 4, z = 106 },
+	{ x = -5, z = 136 },
+	{ x = -1, z = 126 },
+	{ x = 4, z = 117 },
+	{ x = 3, z = 107 },
 	{ x = 0, z = 97 },
 	{ x = 0, z = 86 },
 } :: { Pt }
@@ -773,7 +961,8 @@ function Scatter.homeLake(seed: number, tuning: { [string]: any }?): Plan
 		return Scatter.range(r, -124, 124), Scatter.range(r, -94, 94)
 	end
 	local function free(x: number, z: number, pad: number?): boolean
-		return not Scatter.kept(x, z, pad)
+		-- (11/27/2026) and out of every shot camera's sphere (Scatter.shotClear).
+		return not Scatter.kept(x, z, pad) and Scatter.shotClear(x, z, false)
 	end
 
 	-- 1. Reeds, in clusters in the shallows. Heavy at the weed bed (the west bank and the
@@ -871,7 +1060,7 @@ function Scatter.homeLake(seed: number, tuning: { [string]: any }?): Plan
 			local rho = p.r - ShoreEdge.WATERLINE_D - Scatter.range(rb, 1, 3)
 			local x, z = p.x + math.cos(a) * rho, p.z + math.sin(a) * rho
 			local w = Scatter.waterline(x, z)
-			if w >= 1 and w <= 3 and Scatter.pathEdge(pidx, x, z) > 1.5 and free(x, z, 2) and farEnough(birches, x, z, 10) then
+			if w >= 1 and w <= 3 and Scatter.pathEdge(pidx, x, z) > 1.5 and free(x, z, 2) and Scatter.shotClear(x, z, true) and farEnough(birches, x, z, 10) then
 				local wx, wz = math.cos(a), math.sin(a) -- straight out from the point
 				table.insert(birches, { x = x, z = z })
 				add({ model = pick(rb, "BirchLean1", "BirchLean2"), group = "Birches", x = x, z = z, yaw = Scatter.yawMinusX(wx, wz) + Scatter.range(rb, -0.25, 0.25), scale = Scatter.range(rb, 0.9, 1.15), water = false, shadow = true })
@@ -937,7 +1126,7 @@ function Scatter.homeLake(seed: number, tuning: { [string]: any }?): Plan
 		return Scatter.range(r, -152, 152), Scatter.range(r, -126, 76)
 	end, function(x, z)
 		local d = Scatter.roundBox(x, z)
-		if d < band[1] or d > band[2] or not treeSide(x, z) or not free(x, z, 3) then
+		if d < band[1] or d > band[2] or not treeSide(x, z) or not free(x, z, 3) or not Scatter.shotClear(x, z, true) then
 			return false
 		end
 		if Scatter.pathEdge(pidx, x, z) <= 2.5 then
@@ -986,7 +1175,7 @@ function Scatter.homeLake(seed: number, tuning: { [string]: any }?): Plan
 		return Scatter.range(r, -175, 175), Scatter.range(r, -146, 76)
 	end, function(x, z)
 		local d = Scatter.roundBox(x, z)
-		if d < fb[1] or d > fb[2] or z < T.farZMin or x < T.farXMin or not treeSide(x, z) or not free(x, z, 3) then
+		if d < fb[1] or d > fb[2] or z < T.farZMin or x < T.farXMin or not treeSide(x, z) or not free(x, z, 3) or not Scatter.shotClear(x, z, true) then
 			return false
 		end
 		if Scatter.pathEdge(pidx, x, z) <= 2.5 or not farEnough(trees, x, z, 5) then
@@ -1031,7 +1220,7 @@ function Scatter.homeLake(seed: number, tuning: { [string]: any }?): Plan
 		local function ok(x: number, z: number, gap: number): boolean
 			return free(x, z, 2) and Scatter.pathEdge(pidx, x, z) > 1.5 and Scatter.roundBox(x, z) >= 10 and farEnough(cornerPts, x, z, gap)
 		end
-		if ok(centre.x, centre.z, 0) then
+		if ok(centre.x, centre.z, 0) and Scatter.shotClear(centre.x, centre.z, true) then
 			table.insert(cornerPts, centre)
 			add({ model = pick(rc, "ShorePine1", "ShorePine2"), group = "CornerTree", x = centre.x, z = centre.z, yaw = Scatter.range(rc, 0, TAU), scale = Scatter.range(rc, 0.85, 1.1), water = false, shadow = dockDist(centre.x, centre.z) < T.shadowDist })
 		end
@@ -1078,7 +1267,7 @@ function Scatter.hillPines(seed: number, height: (number, number) -> number?, tu
 		return Scatter.range(rr, -420, 420), Scatter.range(rr, -400, 420)
 	end, function(x, z)
 		local d = Scatter.roundBox(x, z)
-		if d < hb[1] or d > hb[2] or Scatter.inBigLake(x, z) then
+		if d < hb[1] or d > hb[2] or Scatter.inBigLake(x, z) or not Scatter.shotClear(x, z, true) then
 			return false
 		end
 		local h = height(x, z)

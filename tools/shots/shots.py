@@ -108,6 +108,8 @@ for _, g in game.Players.LocalPlayer.PlayerGui:GetChildren() do
 \tif g:IsA("ScreenGui") then g.Enabled = false end
 end
 pcall(function() SG:SetCoreGuiEnabled(Enum.CoreGuiType.All, false) end)
+-- The Roblox top bar (menu and chat buttons) is not covered by CoreGuiType.All.
+pcall(function() SG:SetCore("TopbarEnabled", false) end)
 -- Studio's Automatic quality drops low when its window is not in front (no lantern light, no
 -- Soft vs Realistic difference), so pin the desktop tier's top level for every shot.
 pcall(function() settings().Rendering.QualityLevel = Enum.QualityLevel.Level21 end)
@@ -335,6 +337,9 @@ def cmd_score(a):
     run = Path(a.run)
     set_name = run_set(run, a.set)
     shots = need_set(set_name)
+    if a.group:
+        # Score one group of a set (set A holds the home lake and the creek; N1 is judged on the lake).
+        shots = [s for s in shots if s.get("group", s.get("place")) == a.group]
     found = images(run, shots)
     files = [str(p) for _, p in found if p]
     if not files:
@@ -376,6 +381,7 @@ def main():
     p.add_argument("--also", action="append", help="another rubric scored in the same call, like identity (repeatable)")
     p.add_argument("--audit", default=None, help="audit.luau output saved as JSON (default: <run>/audit.json if present)")
     p.add_argument("--note", default="")
+    p.add_argument("--group", default=None, help="score only this group of the set, like lake or creek")
     p.set_defaults(fn=cmd_score)
     a = ap.parse_args()
     a.fn(a)

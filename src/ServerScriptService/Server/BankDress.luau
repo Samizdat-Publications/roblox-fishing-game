@@ -254,17 +254,34 @@ local function paint(plan: Scatter.Plan, seed: number): (number, number, number,
 			local onPath = paths[k] == true and Scatter.dry(cx, cz, DRY)
 			local inForest = forest[k] == true
 			local inMeadow = meadow[k] == true
-			if onPath or inForest or inMeadow then
+			if onPath then
+				-- Only the surface: the top solid voxel, and the one under it when the top is a thin
+				-- skin. (Before 11/27/2026 the whole column was painted, so on a bank every voxel down
+				-- to the water turned to gravel and showed in the slope beside the path: shot 06's
+				-- gravel bank.)
+				local top = 0
+				for y = size.Y, 1, -1 do
+					if occ[x][y][z] > 0 then
+						top = y
+						break
+					end
+				end
+				local depth = if top > 1 and occ[x][top][z] < 0.5 then 1 else 0
+				for y = top, math.max(1, top - depth), -1 do
+					local s = idx[x][y][z]
+					if top > 0 and (PATH_OVER[s] or (s == SAND and Scatter.dry(cx, cz, 3))) then
+						idx[x][y][z] = BankDress.FOOTPATH_SLOT
+						nPath += 1
+					end
+				end
+			elseif inForest or inMeadow then
 				for y = 1, size.Y do
 					local s = idx[x][y][z]
 					if occ[x][y][z] > 0 then
-						if onPath and (PATH_OVER[s] or (s == SAND and Scatter.dry(cx, cz, 3))) then
-							idx[x][y][z] = BankDress.FOOTPATH_SLOT
-							nPath += 1
-						elseif inForest and not onPath and FOREST_OVER[s] then
+						if inForest and FOREST_OVER[s] then
 							idx[x][y][z] = BankDress.FOREST_SLOT
 							nForest += 1
-						elseif inMeadow and not onPath and MEADOW_OVER[s] then
+						elseif inMeadow and MEADOW_OVER[s] then
 							idx[x][y][z] = BankDress.MEADOW_SLOT
 							nMeadow += 1
 						end
@@ -389,7 +406,7 @@ export type Result = {
 	artSkinned: number,
 	swapKit: number, -- old trees replaced by kit trees (near the lake)
 	swapFar: number, -- old trees replaced 1:1 by far trees
-	swapDropped: number, -- old trees near the lake hidden without a copy (a new tree or the path is there)
+	swapDropped: number, -- old trees hidden without a copy (a new tree, the path or a shot camera's keep-clear is there)
 	swapMissing: number, -- old trees left standing: their replacement model is not in ServerStorage.Art
 	swapNoGround: number,
 	hillPines: number,
@@ -611,7 +628,7 @@ function BankDress.apply(lake: Instance, seed: number?, tuning: { [string]: any 
 		local u = Scatter.next(rt)
 		local it: Scatter.Item? = nil
 		if near and swapKit < BankDress.NEAR_CAP then
-			if Scatter.kept(o.x, o.z, 1) or Scatter.pathEdge(pidx, o.x, o.z) <= 1.5 or not Scatter.farEnough(standing, o.x, o.z, 4) then
+			if Scatter.kept(o.x, o.z, 1) or not Scatter.shotClear(o.x, o.z, true) or Scatter.pathEdge(pidx, o.x, o.z) <= 1.5 or not Scatter.farEnough(standing, o.x, o.z, 4) then
 				hideModel(o.m) -- a new tree or the walk stands here now
 				swapDropped += 1
 				continue
@@ -629,6 +646,10 @@ function BankDress.apply(lake: Instance, seed: number?, tuning: { [string]: any 
 					it = { model = model, group = "TreeSwap", x = o.x, z = o.z, yaw = Scatter.yawMinusX(wx, wz) + (u - 0.5), scale = sc, water = false, shadow = false }
 				end
 			end
+		elseif not Scatter.shotClear(o.x, o.z, true) then
+			hideModel(o.m) -- it stands in a shot camera's keep-clear (Scatter.SHOT_CAMS)
+			swapDropped += 1
+			continue
 		else
 			local model = if o.kind == "pine" then (if u < 0.5 then "FarPine1" else "FarPine2") else (if u < 0.5 then "FarLeafy1" else "FarLeafy2")
 			local sc = scaleFor(model, o.h, 0.6, 2.5)

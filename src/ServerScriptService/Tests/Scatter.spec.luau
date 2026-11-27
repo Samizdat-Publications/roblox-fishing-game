@@ -245,6 +245,148 @@ return function(t, Shared)
 		end
 	end)
 
+	t.test("path cells: at most 2 across the route away from crossings, the walk one row", function()
+		-- The fix of 11/27/2026: the gravel painted 15 to 20 studs wide in shots 01, 02 and 06.
+		for _, seed in { SEED, 1, 2, 3, 77, 9999 } do
+			local p = if seed == SEED then plan else Scatter.homeLake(seed)
+			local cells = Scatter.pathCells(p.routes, 4, seed)
+			-- Every sample with its route's index and its unit normal.
+			type S = { x: number, z: number, r: number, nx: number, nz: number, thin: boolean }
+			local all: { S } = {}
+			local ends: { any } = {}
+			for ri, rt in p.routes do
+				local ss = rt.samples
+				table.insert(ends, ss[1])
+				table.insert(ends, ss[#ss])
+				for i, q in ss do
+					local a, b = ss[math.max(1, i - 1)], ss[math.min(#ss, i + 1)]
+					local tx, tz = b.x - a.x, b.z - a.z
+					local l = math.sqrt(tx * tx + tz * tz)
+					table.insert(all, { x = q.x, z = q.z, r = ri, nx = -tz / l, nz = tx / l, thin = q.thin == true })
+				end
+			end
+			local function nearest(x: number, z: number): (S, number)
+				local best, bd = all[1], math.huge
+				for _, q in all do
+					local d = (q.x - x) ^ 2 + (q.z - z) ^ 2
+					if d < bd then
+						best, bd = q, d
+					end
+				end
+				return best, math.sqrt(bd)
+			end
+			-- Near a crossing: within 10 studs of another route's sample, or of a route's end.
+			local function crossing(x: number, z: number, r: number): boolean
+				for _, e in ends do
+					if (e.x - x) ^ 2 + (e.z - z) ^ 2 < 100 then
+						return true
+					end
+				end
+				for _, q in all do
+					if q.r ~= r and (q.x - x) ^ 2 + (q.z - z) ^ 2 < 100 then
+						return true
+					end
+				end
+				return false
+			end
+			local steps = { { 1, 0 }, { 0, 1 }, { 1, 1 }, { 1, -1 } }
+			local worst, checked = 0, 0
+			for k in cells do
+				local ix, iz = Scatter.unkey(k)
+				local cx, cz = (ix + 0.5) * 4, (iz + 0.5) * 4
+				local q = nearest(cx, cz)
+				if not crossing(cx, cz, q.r) then
+					checked += 1
+					-- Across the route: the grid step that runs most nearly along its normal (largest cosine).
+					local sx, sz, bestDot = 1, 0, -1
+					for _, st in steps do
+						local d = math.abs(st[1] * q.nx + st[2] * q.nz) / (if st[1] ~= 0 and st[2] ~= 0 then math.sqrt(2) else 1)
+						if d > bestDot then
+							sx, sz, bestDot = st[1], st[2], d
+						end
+					end
+					local run = 1
+					for _, dir in { 1, -1 } do
+						local j = 1
+						while cells[Scatter.key(ix + sx * dir * j, iz + sz * dir * j)] do
+							run += 1
+							j += 1
+						end
+					end
+					worst = math.max(worst, run)
+					t.ok(run <= 2, string.format("seed %d: %d path cells across the route at (%.0f, %.0f)", seed, run, cx, cz))
+				end
+			end
+			if seed == SEED then
+				print(string.format("  [Scatter] path cells checked across the route: %d, widest run %d", checked, worst))
+			end
+			t.ok(checked > 300, "most path cells are away from crossings")
+		end
+		-- The walk is one row: every cell it paints off the loop's band is under its centreline.
+		local walk
+		for _, rt in plan.routes do
+			if rt.name == "StandsWalk" then
+				walk = rt
+			end
+		end
+		for _, q in walk.samples do
+			t.ok(q.thin == true, "the walk is painted thin")
+		end
+		-- One row: about one cell per 4 studs of walk (a staircase adds a corner now and then).
+		local wc = Scatter.pathCells({ walk }, 4, SEED)
+		local nw = 0
+		for _ in wc do
+			nw += 1
+		end
+		local len = walk.samples[#walk.samples].s
+		print(string.format("  [Scatter] the walk: %.0f studs, %d cells", len, nw))
+		t.ok(nw <= len / 4 * 1.5, string.format("the walk paints %d cells over %.0f studs: wider than one row", nw, len))
+	end)
+
+	t.test("nothing stands at a shot camera; no tree on the first 25 studs of its line", function()
+		-- Scatter.SHOT_CAMS mirrors tools/shots/shots.json sets A and B.
+		t.eq(#Scatter.SHOT_CAMS, 15, "15 distinct cameras in sets A and B")
+		t.eq(Scatter.SHOT_CAMS[4].eye[1], 126, "06-logs-dawn's eye x")
+		local hillItems = Scatter.hillPines(SEED, function()
+			return 10
+		end)
+		for _, seed in { SEED, 1, 2 } do
+			local p = if seed == SEED then plan else Scatter.homeLake(seed)
+			local list = table.clone(p.items)
+			if seed == SEED then
+				for _, it in hillItems do
+					table.insert(list, it)
+				end
+			end
+			for _, it in list do
+				local tree = Scatter.TAGS[it.group] == "FoliageTree"
+				for _, c in Scatter.SHOT_CAMS do
+					local ex, ey, ez = c.eye[1], c.eye[2], c.eye[3]
+					local H = if tree then Scatter.TREE_H else Scatter.PROP_H
+					local dy = math.max(0, ey - H, -ey)
+					t.ok((it.x - ex) ^ 2 + (it.z - ez) ^ 2 + dy * dy >= 64, string.format("seed %d: %s at (%.1f, %.1f) is within 8 of the %s camera", seed, it.model, it.x, it.z, c.id))
+					if tree then
+						-- Walk the first 25 studs of the line at a quarter stud.
+						local lx, ly, lz = c.look[1] - ex, c.look[2] - ey, c.look[3] - ez
+						local len = math.sqrt(lx * lx + ly * ly + lz * lz)
+						for s = 0, 25, 0.25 do
+							local px, py, pz = ex + lx / len * s, ey + ly / len * s, ez + lz / len * s
+							if py >= 0 and py <= H then
+								t.ok((it.x - px) ^ 2 + (it.z - pz) ^ 2 >= 9 - 1e-6, string.format("seed %d: %s at (%.1f, %.1f) is on the %s camera's line", seed, it.model, it.x, it.z, c.id))
+							end
+						end
+					end
+				end
+			end
+		end
+		-- The checks themselves: the pine that stood at 06's camera is refused, a spot well off is not.
+		t.ok(not Scatter.shotClear(124, 62, true), "a tree at 06's eye is refused")
+		t.ok(not Scatter.shotClear(110, 60, true), "a tree on 06's line is refused")
+		t.ok(not Scatter.shotClear(124, 62, false), "a prop at 06's eye is refused")
+		t.ok(Scatter.shotClear(110, 70, false), "a prop beside 06's line is fine")
+		t.ok(Scatter.shotClear(140, 20, true), "a tree well away is fine")
+	end)
+
 	-- N1 round 2 (the advisor's ruling after review 1).
 
 	t.test("the walk from the back lawn to the dock head wanders and lands on the loop", function()
