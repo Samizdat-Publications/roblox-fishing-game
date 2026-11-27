@@ -312,19 +312,26 @@ function UI.init(cbs: { [string]: (...any) -> () })
 	corner(card, 14)
 	pad(card, 14)
 	card.Visible = false
-	refs.cardTitle = label(card, "Title", "", UDim2.new(1, 0, 0, 34), UDim2.fromOffset(0, 0), 24, C.gold, Enum.Font.GothamBlack)
-	refs.cardBody = label(card, "Body", "", UDim2.new(1, -118, 0, 60), UDim2.fromOffset(0, 38), 19, C.text)
-	refs.cardNote = label(card, "Note", "", UDim2.new(1, -118, 0, 70), UDim2.fromOffset(0, 100), 16, C.dim)
+	refs.cardTitle = label(card, "Title", "", UDim2.new(1, -136, 0, 34), UDim2.fromOffset(0, 0), 24, C.gold, Enum.Font.GothamBlack)
+	refs.cardBody = label(card, "Body", "", UDim2.new(1, -140, 0, 60), UDim2.fromOffset(0, 38), 19, C.text)
+	refs.cardNote = label(card, "Note", "", UDim2.new(1, -140, 0, 70), UDim2.fromOffset(0, 100), 16, C.dim)
 	-- The fish itself, turning slowly in the card (the playtest critic: the reveal was text only).
+	-- Lit from the camera's side and brighter all round (it read as a dark silhouette).
 	local view = Instance.new("ViewportFrame")
 	view.Name = "Fish"
-	view.Size = UDim2.fromOffset(110, 110)
-	view.Position = UDim2.new(1, -110, 0, 40)
+	view.Size = UDim2.fromOffset(130, 130)
+	view.Position = UDim2.new(1, -130, 0, 38)
 	view.BackgroundColor3 = Color3.fromRGB(20, 40, 55)
 	view.BackgroundTransparency = 0.3
-	view.Ambient = Color3.fromRGB(170, 170, 170)
-	view.LightColor = Color3.fromRGB(255, 245, 230)
-	view.LightDirection = Vector3.new(-0.4, -1, -0.6)
+	view.Ambient = Color3.fromRGB(215, 215, 215)
+	view.LightColor = Color3.fromRGB(255, 250, 240)
+	view.LightDirection = Vector3.new(-0.3, -0.6, -1)
+	-- The tier's name on a pill of its colour, over the top of the fish window.
+	local badge = label(card, "Badge", "", UDim2.fromOffset(130, 24), UDim2.new(1, -130, 0, 26), 15, Color3.new(1, 1, 1), Enum.Font.GothamBlack)
+	badge.BackgroundTransparency = 0
+	badge.ZIndex = 3
+	corner(badge, 12)
+	refs.cardBadge = badge
 	view.Visible = false
 	corner(view, 10)
 	view.Parent = card
@@ -542,8 +549,9 @@ function UI.showFight(s: any?, note: string?, holding: boolean?, slack: boolean?
 	refs.progFill.Size = UDim2.fromScale(1, s.progress)
 	refs.progFill.Position = UDim2.fromScale(0, 1 - s.progress)
 
-	-- Cue beside the zone (the track sits 46 px down and is 236 px tall).
-	local cueY = 46 + (1 - s.zonePos) * 236 - 20
+	-- Cue beside the zone (the track sits 46 px down and is 236 px tall), but never lower than
+	-- the drag box's top (200 px down the bar), which used to cover it (playtest critic).
+	local cueY = math.min(46 + (1 - s.zonePos) * 236 - 20, 158)
 	refs.cue.Position = UDim2.new(1, 10, 0, cueY)
 	if inside then
 		refs.cue.Text = "Nice!"
@@ -563,6 +571,11 @@ function UI.showFight(s: any?, note: string?, holding: boolean?, slack: boolean?
 		-- Line and drag (L4d): the line is close to snapping. Let go!
 		refs.reelTitle.Text = "EASE OFF!"
 		refs.reelTitle.TextColor3 = if (os.clock() % 0.3) < 0.15 then C.red else C.text
+	elseif not inside and s.fishPos < s.zonePos then
+		-- The fish is below the zone: the cue says LET GO, so the big prompt says it too (the
+		-- playtest critic saw HOLD TO REEL beside LET GO).
+		refs.reelTitle.Text = if holding then "LET GO!" else "LET IT DROP"
+		refs.reelTitle.TextColor3 = C.blue
 	elseif holding then
 		refs.reelTitle.Text = "REELING!"
 		refs.reelTitle.TextColor3 = C.green
@@ -630,6 +643,9 @@ function UI.catchCard(payload: any)
 	-- back under the card at once).
 	refs.status.Visible = false
 	local rank = Rarity.rank[tier] or 1
+	refs.cardBadge.Text = string.upper((Rarity.byId[tier] or Rarity.byId.Common).name)
+	refs.cardBadge.BackgroundColor3 = color
+	refs.cardBadge.TextColor3 = if rank == 1 or rank == 7 then Color3.fromRGB(25, 25, 30) else Color3.new(1, 1, 1)
 	refs.cardScale.Scale = if rank >= 3 then 0.6 else 0.85
 	TweenService:Create(refs.cardScale, TweenInfo.new(if rank >= 3 then 0.45 else 0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
 	-- Rare and up: the fish sits in a sweep of the tier's colour.
@@ -694,7 +710,7 @@ function UI.showCardFish(token: number)
 		fish.Parent = view
 		local cam = Instance.new("Camera")
 		cam.FieldOfView = 40
-		cam.CFrame = CFrame.lookAt(Vector3.new(0, len * 0.35, len * 1.55), Vector3.zero)
+		cam.CFrame = CFrame.lookAt(Vector3.new(0, len * 0.25, len * 1.2), Vector3.zero) -- closer (was 1.55): the fish filled too little of the window
 		cam.Parent = view
 		view.CurrentCamera = cam
 		view.Visible = true

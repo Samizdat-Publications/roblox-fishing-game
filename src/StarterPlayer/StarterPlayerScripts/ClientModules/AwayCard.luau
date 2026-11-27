@@ -92,7 +92,9 @@ local function show(report: any)
 	label(card, "Hint", tostring(report.hint or ""), order, 16, COLORS.dim, Enum.Font.GothamMedium)
 
 	local info = TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	TweenService:Create(card, info, { Position = UDim2.new(0, 20, 0.42, 0) }):Play()
+	-- Just right of the side buttons (Bait, Journal, Goals end at 202): at 20 it covered them
+	-- (the playtest critic, 11/27/2026).
+	TweenService:Create(card, info, { Position = UDim2.new(0, 216, 0.42, 0) }):Play()
 	local closed = false
 	local function close()
 		if closed then
