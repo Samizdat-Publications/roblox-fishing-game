@@ -588,6 +588,80 @@
           "caption": "The creek pool's bank at golden hour"
         }
       ]
+    },
+    {
+      "id": "big-lake",
+      "tag": "L7",
+      "date": "2026-11-27",
+      "time": "10:29",
+      "commit": "41d835c",
+      "title": "The Big Lake, through a channel in the north shore",
+      "summary": "North of the home lake there is now a second, much bigger lake (about 400 by 300 studs) that you can only reach by boat. A 30 stud channel cuts through the north shore, with a wooden footbridge so the shore path still goes all the way round. The Big Lake follows the same shore rules as the home lake: rounded corners, three wooded headlands, a sandy point, and a round island whose little east tip is the weedy island point where muskie hide. Its water is terrain, written one voxel at a time from those shore numbers, so the sand shallows, the mud bed 7 studs down and the darker bed 14 down past the line of orange buoys all match what the fishing rules think is there. Hills and stands of trees ring its banks, and invisible walls keep swimmers from climbing out into the land beyond.",
+      "pairs": [
+        {
+          "before": "stills/2026-11-27-big-lake-before.jpg",
+          "after": "stills/2026-11-27-big-lake-after.jpg",
+          "caption": "Looking north from over the dock: open grass before, the channel, the footbridge and the Big Lake after"
+        }
+      ],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-big-lake-shore.jpg",
+          "caption": "A rounded corner of the Big Lake: beach, reeds and the buoy line"
+        }
+      ]
+    },
+    {
+      "id": "dinghy",
+      "tag": "L7",
+      "date": "2026-11-27",
+      "time": "10:29",
+      "commit": "41d835c",
+      "title": "An inflatable dinghy you can buy and drive",
+      "summary": "Bait and Tackle has a new Boats heading. The Inflatable Dinghy costs 1,200 coins, once, and then waits at slip 1 beside the dock every time you play. Walk up and press E to take the helm; W and S drive and A and D steer. In the playtest it reached 12 studs a second and eased to a stop when let go, stopped against the fallen logs instead of driving through them, went through the channel onto the Big Lake, and was turned back at the buoys with a message that it is too small for the blue water. Pressing E by the slip ties it up and stands you on the dock. Jump out on the water and the empty boat sails home by itself a minute later; reset at the helm and it goes home straight away. Two bugs found and fixed on the way: sitting down dragged the boat onto the dock, and tying up left the player in the water. The two-seat Deep-V shows as coming soon.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-dinghy-shop.jpg",
+          "caption": "Bought: 1,300 coins to 100, and the dinghy is waiting at the slip"
+        },
+        {
+          "src": "stills/2026-11-27-dinghy-slip.jpg",
+          "caption": "The dinghy at slip 1, beside the dock"
+        },
+        {
+          "src": "stills/2026-11-27-dinghy-big-lake.jpg",
+          "caption": "Out on the Big Lake, with the buoy line ahead"
+        },
+        {
+          "src": "stills/2026-11-27-dinghy-buoy-line.jpg",
+          "caption": "Turned back at the buoys at night"
+        }
+      ]
+    },
+    {
+      "id": "boat-fishing",
+      "tag": "L7",
+      "date": "2026-11-27",
+      "time": "10:29",
+      "commit": "41d835c",
+      "title": "Fishing from the boat seat",
+      "summary": "Everything about casting works from the dinghy: the landing ring, the bait bench, the lures, the wait and the reel. You can only cast when the boat is nearly stopped, so no trolling at full speed. The first catch on the Big Lake was a Lake Whitefish in the open basin on worms, then a White Bass at dusk on a spinner, the fish the basin is known for. The playtest caught two more problems: a long spinner cast from the Graphite rod lands 65 studs out, past the 60 stud limit where a boat's line came free, so the limit is now the longest possible cast plus 15; and the camera followed the boat's seat instead of the player, so the bobber camera never started. Now it frames the bobber from the boat just as it does from the dock.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-boat-cast-ring.jpg",
+          "caption": "The cast ring from the seat at dusk: The open basin"
+        },
+        {
+          "src": "stills/2026-11-27-boat-bobber-cam.jpg",
+          "caption": "The bobber camera, from the boat"
+        },
+        {
+          "src": "stills/2026-11-27-boat-slow-down.jpg",
+          "caption": "Casting at full speed: Slow the boat down to cast (and the wake behind)"
+        }
+      ]
     }
   ]
 }

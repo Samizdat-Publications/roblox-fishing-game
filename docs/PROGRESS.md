@@ -1,6 +1,31 @@
 # Progress
 
-## Morning report, 11/27/2026 (read this first)
+## L7 report, 11/27/2026 (read this first): the Big Lake and the dinghy
+
+Stewart picked the Big Lake first (the ocean dock comes later). It is built, saved in the place (version 110, "L7: Big Lake and the dinghy") and switched on, and the dinghy works end to end. 355 tests pass in Studio (TestRunner, Edit) and with Lune, the gate passes, Studio matches `src/` byte for byte, and the playtests below logged zero errors. The illustrated story: https://claude.ai/artifact/HNbZAtLhoHCoeMQ6pNVWQd (three new steps).
+
+**What's new in the game**
+- **The Big Lake**, north of the home lake, reached through a 30 stud channel in the north shore. A wooden footbridge carries the shore path over the channel. Rounded corners, three wooded headlands, a sandy point, a round island whose small east tip is the weedy island point, a line of orange buoys, and the deep blue water past them (dinghies are turned back there). Sand shallows, a mud bed 7 studs down and a dark bed 14 down past the buoys. It has the same light and water as the home lake; its full beauty pass is next leg.
+- **The Inflatable Dinghy:** 1,200 coins at Bait and Tackle (Boats heading), bought once, waits at slip 1 beside the dock. E takes the helm, W/S and A/D drive, E by the slip ties up, Space hops out. Top speed 12 studs a second. A small wake behind it.
+- **Fishing from the boat:** casting, the ring, lures and the bobber camera all work from the seat. Only when the boat is nearly stopped ("Slow the boat down to cast."). On foot you can't fish the Big Lake ("You need a boat to fish the Big Lake.").
+- The two-seat **Deep-V** shows as "Coming soon" in the shop until its two-player playtest.
+
+**Proven in the Studio playtests (11/27/2026)**
+- Shop: Boats heading with the dinghy at 1,200 and the Deep-V coming soon. Buying with 1,300 coins left 100 and the toast "It's waiting at the boat slip by the dock". A second buy: "You already own the Inflatable Dinghy." Buying the Deep-V through the remote: "That boat isn't for sale yet." Ownership survived restarting play.
+- Driving (real W/A/S/D keys): 12.0 to 12.4 studs a second at full throttle over 3 seconds, easing to a stop when let go; turning about 60 degrees a second. Stops against the fallen logs instead of driving through them; S backs it off. The server owns the boat the whole time (`GetNetworkOwner` nil) and it felt responsive in Studio.
+- The long drive (dock, channel, Big Lake, buoys, home) used a small test autopilot that sets the helm seat's throttle and steer on the client, so it still went through the same path to the server as real keys.
+- Big Lake: drove through the channel under the bridge; at the buoy line the dinghy was turned back with "The Inflatable Dinghy is too small for blue water. Turn back toward the shore."
+- Fishing from the seat: a Lake Whitefish in the basin by day on worms, a White Bass at dusk on a spinner (the basin's fish), a Freshwater Drum and a second White Bass on a 61 stud spinner cast. Casting at speed: "Slow the boat down to cast." Standing on the island on foot and casting: "You need a boat to fish the Big Lake."
+- Tie up by the slip with E: boat anchored at slip 1, the player standing on the dock. Jumped out mid-lake: the empty boat was back at its slip 58 seconds later. Reset at the helm: boat home within 2.5 seconds. Stopping play while seated: no errors.
+- Bugs found and fixed in the playtests: sitting down dragged the boat onto the dock (the character became the physics root; the hull now leads); tying up left the player in the water (the client took its character back too early); reset at the helm left the boat out (the seat emptied before the death signal arrived); a 65 stud Graphite spinner cast lost its line at once (the boat's line limit was a flat 60; now the longest cast plus 15); the camera followed the boat's seat, so the bobber camera never started (it now stays on the player); the slip signs were huge up close (now sized in studs).
+
+**Not verified yet:** driving on gamepad and touch (Studio's input tool can't move a thumbstick; the seat reads them through Roblox's own vehicle controls, which should work, but it needs a real try); the Deep-V, its navigator seat and the fish finder (they need two players); a muskie at the island point (rare by design); how the Big Lake looks on a phone; motor sounds (stand-ins until the audio cap resets).
+
+**What needs you**
+- **Playtest with Liam:** buy the dinghy (your test save has 100 coins after my test buy; ask me to top it up or wipe it), drive out to the Big Lake and try for a white bass at dawn or dusk with a spinner or minnows. Try the gamepad and a phone too.
+- **For the two-person boat:** give Liam's Roblox account access to the place (Studio: Home, Game Settings, Permissions, add him as a collaborator). Then the Deep-V can be finished and tested with two real players, moving with one player as you asked.
+
+## Morning report, 11/27/2026
 
 Overnight, every step was built, pushed into Studio, playtested there and committed to main. All of the leg plan is done except boats (L7, which waits on one decision below). 355 tests pass in Studio and with Lune, and an end-of-night run (cast, a natural bite, land, sell) showed no errors. The illustrated story of the night is on the making-of page: https://claude.ai/artifact/HNbZAtLhoHCoeMQ6pNVWQd . Details for each step are in the dated sections below.
 
@@ -20,7 +45,7 @@ Overnight, every step was built, pushed into Studio, playtested there and commit
 - **Voice chat off and the content rating questionnaire** (Studio: File, Experience Settings, Communication; Creator Dashboard: Content ratings).
 - **Open it on your phone** and say whether it feels smooth (the PC numbers are inside budget; one slow frame showed up once right after the camera jumped).
 - **Playtest with Liam:** the bait bench by hand (Studio's input tool can't tap fast enough to score a Perfect), touch and gamepad, the smallest phone screen.
-- **One decision before boats (L7, left alone on purpose):** the plan has the dinghy on the Big Lake north of the home lake; you also asked for an ocean or Great Lake dock where how far out you can go depends on the boat. Build the Big Lake first as planned, or go straight to the ocean dock?
+- **One decision before boats (L7):** decided 11/27/2026: the Big Lake first, the ocean dock later. Built the same day (see the L7 report above).
 - **Optional:** Lighting.Technology to Future for crisper shadows (a Studio setting scripts can't change); check it on a phone first.
 
 **Not verified yet:** a Perfect by real taps; touch and gamepad on the new cast ring, bench, twitch, lure reeling and the drag button; rain density and how many fireflies show on a real device (Studio thins particles); the frenzy, goal and storm sounds (stand-ins); a Lake Sturgeon caught in its real conditions without the test hook; the spinner's wake rings by eye.
@@ -470,16 +495,17 @@ A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shor
 
 ## What's left (next version, after Stewart and Liam playtest)
 - More tuning once Stewart and Liam have played more (prices, fight lengths).
-- Later versions from `DESIGN.md`: a boat (next), weather, co-op, art pass. (Home pond, rods and Cedar Creek are in.)
+- Later versions from `DESIGN.md`: the two-person Deep-V (next, once Liam's account is in the place), co-op, the ocean dock. (Home pond, rods, Cedar Creek, weather and the dinghy on the Big Lake are in.)
 - Pond ideas for later: upgrades for more space, feeding to speed growth, rare color variants from breeding.
-- The test save on the Studio account holds Claude's playtest results (as of 11/27/2026: 1,055 coins, an empty bag, the Graphite Rod, braided line, a monster carp on the trophy wall). Ask Claude to wipe it if you want a fresh start.
+- The test save on the Studio account holds Claude's playtest results (as of 11/27/2026 after L7: 100 coins, the Inflatable Dinghy, the Graphite Rod, braided line, a few fish in the bag, a monster carp on the trophy wall). Ask Claude to wipe it if you want a fresh start.
 
 ## Waiting on Stewart
 - **ID verification (planned 11/27):** verify the Roblox account Studio uploads with (the account Studio is signed in to) to lift the audio cap from 100 to 2,000 uploads per 30 days. Figure out which account owns the Fishing Game first; Roblox moves games only into a group, and uploaded sounds and models stay with the account that uploaded them.
 - **Voice chat off:** in Studio, File, Experience Settings, Communication, turn Enable Voice Chat off.
 - **Rating:** Creator Dashboard, the Fishing Game experience, Publish settings, Content ratings: redo the questionnaire and check it comes out Minimal or Mild.
 - **Open the place on your own phone** once now and once after the beauty pass (L5), to check the frame rate on a real device.
-- **Before L7:** give Liam's Roblox account access to the place, for the two-person boat.
+- **For the two-person Deep-V (L7 phase 2):** give Liam's Roblox account access to the place. The solo dinghy and the Big Lake are done (11/27/2026); the Deep-V waits for this.
+- **Try the dinghy on a gamepad and a phone** (Studio's input tool can't move a thumbstick).
 - Playtest it: open Fishing Game in Studio and press Play (F5).
 - Optional, speeds up Claude's builds: in Studio, Assistant Settings, MCP Permissions, Connect to the internet, add `localhost:8765` to the HTTP domain allow list.
 - Done already: the place is saved to Roblox and Studio API access is on.

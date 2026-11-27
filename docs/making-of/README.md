@@ -4,6 +4,54 @@ A Roblox fishing game where real fishing knowledge matters: the right bait, spot
 
 Newest first. The live page with before and after sliders is `docs/making-of/index.html` (published as a Claude artifact).
 
+## L7: Fishing from the boat seat
+
+2026-11-27 10:29 · commit `41d835c`
+
+Everything about casting works from the dinghy: the landing ring, the bait bench, the lures, the wait and the reel. You can only cast when the boat is nearly stopped, so no trolling at full speed. The first catch on the Big Lake was a Lake Whitefish in the open basin on worms, then a White Bass at dusk on a spinner, the fish the basin is known for. The playtest caught two more problems: a long spinner cast from the Graphite rod lands 65 studs out, past the 60 stud limit where a boat's line came free, so the limit is now the longest possible cast plus 15; and the camera followed the boat's seat instead of the player, so the bobber camera never started. Now it frames the bobber from the boat just as it does from the dock.
+
+![The cast ring from the seat at dusk: The open basin](stills/2026-11-27-boat-cast-ring.jpg)
+*The cast ring from the seat at dusk: The open basin*
+
+![The bobber camera, from the boat](stills/2026-11-27-boat-bobber-cam.jpg)
+*The bobber camera, from the boat*
+
+![Casting at full speed: Slow the boat down to cast (and the wake behind)](stills/2026-11-27-boat-slow-down.jpg)
+*Casting at full speed: Slow the boat down to cast (and the wake behind)*
+
+## L7: An inflatable dinghy you can buy and drive
+
+2026-11-27 10:29 · commit `41d835c`
+
+Bait and Tackle has a new Boats heading. The Inflatable Dinghy costs 1,200 coins, once, and then waits at slip 1 beside the dock every time you play. Walk up and press E to take the helm; W and S drive and A and D steer. In the playtest it reached 12 studs a second and eased to a stop when let go, stopped against the fallen logs instead of driving through them, went through the channel onto the Big Lake, and was turned back at the buoys with a message that it is too small for the blue water. Pressing E by the slip ties it up and stands you on the dock. Jump out on the water and the empty boat sails home by itself a minute later; reset at the helm and it goes home straight away. Two bugs found and fixed on the way: sitting down dragged the boat onto the dock, and tying up left the player in the water. The two-seat Deep-V shows as coming soon.
+
+![Bought: 1,300 coins to 100, and the dinghy is waiting at the slip](stills/2026-11-27-dinghy-shop.jpg)
+*Bought: 1,300 coins to 100, and the dinghy is waiting at the slip*
+
+![The dinghy at slip 1, beside the dock](stills/2026-11-27-dinghy-slip.jpg)
+*The dinghy at slip 1, beside the dock*
+
+![Out on the Big Lake, with the buoy line ahead](stills/2026-11-27-dinghy-big-lake.jpg)
+*Out on the Big Lake, with the buoy line ahead*
+
+![Turned back at the buoys at night](stills/2026-11-27-dinghy-buoy-line.jpg)
+*Turned back at the buoys at night*
+
+## L7: The Big Lake, through a channel in the north shore
+
+2026-11-27 10:29 · commit `41d835c`
+
+North of the home lake there is now a second, much bigger lake (about 400 by 300 studs) that you can only reach by boat. A 30 stud channel cuts through the north shore, with a wooden footbridge so the shore path still goes all the way round. The Big Lake follows the same shore rules as the home lake: rounded corners, three wooded headlands, a sandy point, and a round island whose little east tip is the weedy island point where muskie hide. Its water is terrain, written one voxel at a time from those shore numbers, so the sand shallows, the mud bed 7 studs down and the darker bed 14 down past the line of orange buoys all match what the fishing rules think is there. Hills and stands of trees ring its banks, and invisible walls keep swimmers from climbing out into the land beyond.
+
+**Looking north from over the dock: open grass before, the channel, the footbridge and the Big Lake after**
+
+| Before | After |
+|---|---|
+| ![before](stills/2026-11-27-big-lake-before.jpg) | ![after](stills/2026-11-27-big-lake-after.jpg) |
+
+![A rounded corner of the Big Lake: beach, reeds and the buoy line](stills/2026-11-27-big-lake-shore.jpg)
+*A rounded corner of the Big Lake: beach, reeds and the buoy line*
+
 ## Play: Braided line, and a dressed creek bank
 
 2026-11-27 04:25 · commit `a38e4b7`
