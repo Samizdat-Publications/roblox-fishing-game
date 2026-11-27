@@ -22,9 +22,10 @@ local CELL = 4 -- terrain voxels are 4 studs
 WaterLook.TERRAIN = {
 	-- L5c: greener and a little less clear (the critic read 24, 92, 112 at 0.72 as a swimming
 	-- pool at noon: bright sand seen through very clear water).
-	WaterColor = Color3.fromRGB(34, 86, 76),
-	WaterTransparency = 0.6,
-	WaterReflectance = 0.5,
+	-- L5d: deeper again and less mirror-like (still read as cyan at noon from the dock).
+	WaterColor = Color3.fromRGB(26, 66, 62),
+	WaterTransparency = 0.55,
+	WaterReflectance = 0.35,
 	WaterWaveSize = 0.12, -- gentle
 	WaterWaveSpeed = 8,
 }
