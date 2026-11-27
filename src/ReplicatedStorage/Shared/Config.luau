@@ -56,7 +56,7 @@ Config.POND_TICK = 30 -- seconds between pond updates while playing
 Config.UNITS = "imperial"
 
 Config.WEATHER_ON = true
-Config.FRENZIES_ON = false
+Config.FRENZIES_ON = true
 Config.GOALS_ON = false
 Config.BIG_LAKE_ON = false
 Config.BOATS_ON = false

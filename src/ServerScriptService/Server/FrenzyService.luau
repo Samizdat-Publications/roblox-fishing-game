@@ -27,7 +27,7 @@ local SHOW_AT = {
 	Dock = Vector3.new(0, 0, 36),
 	OpenWater = Vector3.new(50, 0, -50),
 	Logs = Vector3.new(78, 0, 42),
-	Riffle = Vector3.new(-230, 0, -45),
+	Riffle = Vector3.new(-230, 0, 52), -- was -45, the creek pool's centre (L6b fix)
 	Basin = Vector3.new(60, 0, -200),
 	DropOff = Vector3.new(0, 0, -350),
 }
@@ -96,6 +96,16 @@ end
 
 function FrenzyService.run()
 	local timer = 0
+	-- Studio-only test hook: set workspace attribute DebugFrenzy to a spot name to start one
+	-- there (scripts run from the Studio tools live in their own VM).
+	if RunService:IsStudio() then
+		workspace:GetAttributeChangedSignal("DebugFrenzy"):Connect(function()
+			local spot = workspace:GetAttribute("DebugFrenzy")
+			if type(spot) == "string" and SHOW_AT[spot] then
+				FrenzyService.start(spot)
+			end
+		end)
+	end
 	RunService.Heartbeat:Connect(function(dt)
 		timer += dt
 		if timer < 1 then
