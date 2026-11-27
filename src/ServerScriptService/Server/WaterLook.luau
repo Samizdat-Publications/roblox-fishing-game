@@ -12,6 +12,7 @@
 -- where they are, only invisible: casts, zones and every other fishing rule read their boxes.
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local WaterMap = require(Shared:WaitForChild("WaterMap"))
+local Shore = require(Shared:WaitForChild("Shore"))
 
 local WaterLook = {}
 
@@ -74,6 +75,54 @@ local function shelfWedge(t: Terrain, side: string, c: Vector3, hx: number, hz: 
 		pos, len = Vector3.new(c.X - hx + inset, y, c.Z), hz * 2
 	end
 	t:FillWedge(CFrame.new(pos) * CFrame.Angles(0, YAW[side], 0), Vector3.new(len, drop, width), material)
+end
+
+-- The lake's shore in terrain (L5d), from the same Shore.depth the fishing rules use: rounded
+-- corners and points of land rise out of the water as grass with a sandy edge, and every bank
+-- slopes into sand shallows. Written voxel by voxel with solid and liquid occupancy, so the
+-- shore is smooth and the water fills right up to it.
+WaterLook.SHALLOWS = 20 -- studs of sloping sand off a bank (the same as SHELF below, so no step)
+local GRASS_FROM = 1.5 -- studs into the land where sand gives way to grass
+
+-- Height of the ground at this signed distance to land (nil: leave the bed as it is).
+function WaterLook.shoreHeight(d: number): number?
+	local top = -WaterLook.SHORE_DEPTH
+	if d <= -WaterLook.SHALLOWS then
+		return nil
+	elseif d < 0 then
+		return top + (d / WaterLook.SHALLOWS) * (top - WaterLook.BED_TOP)
+	end
+	return math.min(1, top + d * 0.6) -- up the beach to the ground's top (y = 1)
+end
+
+local function shoreTerrain()
+	local t = workspace.Terrain
+	local L = Shore.LAKE
+	local y1, y2 = -12, 4
+	local region = Region3.new(Vector3.new(L.x1, y1, L.z1), Vector3.new(L.x2, y2, L.z2)):ExpandToGrid(CELL)
+	local lo = region.CFrame.Position - region.Size / 2
+	local ch = t:ReadVoxelChannels(region, CELL, { "SolidMaterial", "SolidOccupancy", "LiquidOccupancy" }) :: any
+	local mats, solid, liquid = ch.SolidMaterial, ch.SolidOccupancy, ch.LiquidOccupancy
+	local nx, ny, nz = #mats, #mats[1], #mats[1][1]
+	for ix = 1, nx do
+		local cx = lo.X + (ix - 0.5) * CELL
+		for iz = 1, nz do
+			local cz = lo.Z + (iz - 0.5) * CELL
+			local d = Shore.depth(cx, cz)
+			local h = WaterLook.shoreHeight(d)
+			if h then
+				local material = if d >= GRASS_FROM then Enum.Material.Grass else Enum.Material.Sand
+				for iy = 1, ny do
+					local y0 = lo.Y + (iy - 1) * CELL
+					local s = math.clamp((h - y0) / CELL, 0, 1)
+					mats[ix][iy][iz] = if s > 0 then material else Enum.Material.Air
+					solid[ix][iy][iz] = s
+					liquid[ix][iy][iz] = if y0 + CELL <= 0.01 then 1 else 0 -- the water's surface is y = 0
+				end
+			end
+		end
+	end
+	t:WriteVoxelChannels(region, CELL, { SolidMaterial = mats, SolidOccupancy = solid, LiquidOccupancy = liquid })
 end
 
 -- The creek's beds in terrain (L5c): each stretch gets a bed and shelving sides, so the pool is
@@ -144,6 +193,7 @@ local function terrainBed(lake: Model, surfaceY: number)
 		shelfWedge(t, side, c, hx, hz, bed, top, WaterLook.SHELF, Enum.Material.Sand)
 	end
 	creekBed(surfaceY)
+	shoreTerrain()
 	-- Hide the old flat bed parts (kept, so revert can show them again).
 	for _, name in HIDDEN_BEDS do
 		local p = find(lake, name)

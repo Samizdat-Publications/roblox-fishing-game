@@ -166,5 +166,33 @@
       "docs\\critic\\2026-11-26-l5c-neon-2.md",
       "docs\\critic\\2026-11-26-l5c-neon-3.md"
     ]
+  },
+  {
+    "date": "2026-11-27",
+    "step": "l5d",
+    "rubric": "look",
+    "run": "2026-11-27-0023",
+    "commit": "7ababd4",
+    "shots": 12,
+    "median": 6.0,
+    "scores": [
+      6.0,
+      6,
+      5.5
+    ],
+    "points": {
+      "composition": 6,
+      "light": 6,
+      "water": 6,
+      "mood": 5.5,
+      "want_to_fish": 6,
+      "phone_readability": 6.5,
+      "broken_or_ugly": 5
+    },
+    "reports": [
+      "docs\\critic\\2026-11-27-l5d-neon.md",
+      "docs\\critic\\2026-11-27-l5d-neon-2.md",
+      "docs\\critic\\2026-11-27-l5d-neon-3.md"
+    ]
   }
 ]

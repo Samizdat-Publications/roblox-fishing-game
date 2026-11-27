@@ -38,3 +38,14 @@ Client memory 2,245 MB (Studio included), 58,122 instances (Studio included), 58
 | 10-pool-golden | 5.17 ms | 7.17 ms | 9.05 ms | 10.37 ms |
 
 Inside the budget. Client memory 2,116 MB, 58,555 instances (Studio included).
+
+## After L5b, L5c and L6 (land, trees, clouds, weather), 11/27/2026 (place version 71)
+
+| Shot | Render CPU avg | CPU p95 | CPU worst | GPU avg |
+|------|---------------:|--------:|----------:|--------:|
+| 01-dock-dawn | 5.30 ms | 8.26 ms | 28.10 ms | 9.37 ms |
+| 04-dockend-night | 4.54 ms | 7.82 ms | 8.67 ms | 9.05 ms |
+| 07-overview-golden | 4.35 ms | 7.31 ms | 8.47 ms | 7.39 ms |
+| 10-pool-golden | 4.18 ms | 6.68 ms | 7.69 ms | 7.35 ms |
+
+Averages inside the budget. One 28 ms frame on the first view (the first seconds after the camera jumps, likely terrain and clouds loading in); watch for it on the phone check. Client memory 2,371 MB, 60,052 instances (Studio included).

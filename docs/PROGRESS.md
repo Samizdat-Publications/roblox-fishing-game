@@ -221,6 +221,14 @@ Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6
 - Still to do in L1: a Lake Sturgeon at the deep hole in its real conditions, the journal on the smallest phone (the simulated mouse wheel zoomed the camera instead of scrolling the journal; check with a real wheel), the 15 new fish models (they hang as the old shape until then), a Neon reveal clip, the StyLua reformat, and Liam's 20 minutes.
 - Look mockups for the beauty pass: five looks (Golden Afternoon, Bright Summer Day, Misty Dawn, Moonlit Night, Autumn Lake) from the all-models stills, page https://claude.ai/artifact/DjMRLNSn6t91zKmR93sGr6 (source `planner/looks.html`, images `docs/looks/`, script `tools/looks/mockup.py`). They were made in the old flat low-poly style before Stewart picked Real-ish, so treat them as light and time-of-day moods, not materials.
 
+## 2026-11-27 (night): L5d, a lake that isn't a box
+
+- **The shore curves:** the lake's four corners are rounded (radius 30) and five grassy points jut into the water (Birch Point and Pine Point on the north bank, East Point, West Point, and Pond Point east of the dock), each with a tree. Every bank slopes into sandy shallows. You can walk out onto a point and fish from it (`Shared/Shore.luau`).
+- **One shore for the rules and the picture:** `FishLogic.isOnWaterAny` asks `Shore.isLand` first, so casts, the landing ring, near-miss help, rises and fish shadows all see the same shore that WaterLook draws in terrain, voxel by voxel, from the same numbers. Shore decorations now follow the real shoreline.
+- Critic (median of 3): **6/10** (5.5 before; 3 at the start of the night). Sheet: `artifacts/shots/2026-11-27-0023` (local). Score shots are now taken with the weather forced Clear, since weather sets the clouds.
+- 311 tests pass with Lune (new `Tests/Shore.spec`: corners are land, the dock and every zone's middle are water, each point's nose is land and not castable, the creek is untouched).
+- Not verified in Studio by hand: a cast onto a point reading "Dry ground", walking out on every point. The rules are tested; the look is in the sheet.
+
 ## 2026-11-27 (night): L6c, daily goals switched on
 
 - **Three goals a day** (easy 25, medium 60, hard 120 coins), in a Goals list under the journal (`Config.GOALS_ON = true`). Missing a day loses nothing; tomorrow just brings new ones.

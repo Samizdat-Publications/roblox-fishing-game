@@ -22,6 +22,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local BoatRules = require(Shared:WaitForChild("BoatRules"))
 local Config = require(Shared:WaitForChild("Config"))
 local WaterMap = require(Shared:WaitForChild("WaterMap"))
+local Shore = require(Shared:WaitForChild("Shore"))
 
 local Scenery = {}
 
@@ -266,22 +267,32 @@ function Scenery.apply(lake: Model): Result
 			local probe = bank.at(s, 0)
 			local skip = bank.name == "south" and math.abs(probe.X) < 14 -- the dock
 			if not skip then
+				-- Where the water really starts here: past a rounded corner or a point of land
+				-- (Shore, L5d) that's further in than the straight bank line.
+				local base = 0
+				while base < 40 do
+					local q = bank.at(s, base + 1)
+					if Shore.depth(q.X, q.Z) <= 0 then
+						break
+					end
+					base += 1
+				end
 				local roll = rng:NextNumber()
 				local bush = art(lake, "LeafyTree")
 				if roll >= 0.62 and roll < 0.74 and bush then
 					-- A low bush on the bank's lip (a leafy tree at a third the size), L5c: the
 					-- critic read the even row of reed clumps as artificial.
-					local p = bank.at(s, rng:NextNumber(-1.4, -0.6)) -- the 2 stud lip before the path
+					local p = bank.at(s, base + rng:NextNumber(-1.4, -0.6)) -- the lip before the path (or the point's edge)
 					place(bush, shore, Vector3.new(p.X, Scenery.GROUND_TOP - 0.3, p.Z), rng:NextNumber(0.28, 0.42), rng:NextNumber(0, 2 * math.pi), true)
 					shoreCount += 1
 				elseif roll < 0.35 and reeds then
 					for _ = 1, rng:NextInteger(1, 3) do
-						local p = bank.at(s + rng:NextNumber(-0.02, 0.02), rng:NextNumber(0.5, 3.5))
+						local p = bank.at(s + rng:NextNumber(-0.02, 0.02), base + rng:NextNumber(0.5, 3.5))
 						place(reeds, shore, Vector3.new(p.X, -1.2, p.Z), rng:NextNumber(0.7, 1.2), rng:NextNumber(0, 2 * math.pi), false)
 						shoreCount += 1
 					end
 					if lily and rng:NextNumber() < 0.35 then
-						local p = bank.at(s, rng:NextNumber(4, 9))
+						local p = bank.at(s, base + rng:NextNumber(4, 9))
 						place(lily, shore, Vector3.new(p.X, -0.3, p.Z), rng:NextNumber(0.8, 1.3), rng:NextNumber(0, 2 * math.pi), false)
 						shoreCount += 1
 					end
@@ -289,7 +300,7 @@ function Scenery.apply(lake: Model): Result
 					local template = rocks[rng:NextInteger(1, #rocks)]
 					if template then
 						-- Kept small and just off the bank: bigger ones filled the view of anyone fishing there.
-						local p = bank.at(s, rng:NextNumber(0.5, 2.5))
+						local p = bank.at(s, base + rng:NextNumber(0.5, 2.5))
 						local m = place(template, shore, Vector3.new(p.X, 0, p.Z), rng:NextNumber(1.0, 1.8), rng:NextNumber(0, 2 * math.pi), true)
 						seatBottom(m, -1.6)
 						shoreCount += 1
@@ -297,6 +308,19 @@ function Scenery.apply(lake: Model): Result
 				end
 			end
 			along += rng:NextNumber(7, 15)
+		end
+	end
+
+	-- 4a. A tree on each point of land (L5d), back from the nose so it shades the bank without
+	-- standing in anyone's cast.
+	local pointTree = art(lake, "LeafyTree")
+	if pointTree then
+		for _, pt in Shore.POINTS do
+			local dx, dz = -pt.x, -pt.z
+			local len = math.sqrt(dx * dx + dz * dz)
+			local at = Vector3.new(pt.x + dx / len * pt.r * 0.25, Scenery.GROUND_TOP - 0.3, pt.z + dz / len * pt.r * 0.25)
+			place(pointTree, shore, at, rng:NextNumber(0.6, 0.85), rng:NextNumber(0, 2 * math.pi), true)
+			shoreCount += 1
 		end
 	end
 
@@ -310,6 +334,7 @@ function Scenery.apply(lake: Model): Result
 		{ x1 = -36, x2 = 76, z1 = 84, z2 = 140 }, -- stands, spawn, home pond
 		{ x1 = -24, x2 = 24, z1 = -140, z2 = -84 }, -- the north path's middle (the boat channel later)
 		{ x1 = -160, x2 = -110, z1 = -24, z2 = 24 }, -- the walk to the creek gate
+		{ x1 = 110, x2 = 145, z1 = 25, z2 = 85 }, -- the east bank facing the fallen logs (a favourite place to stand)
 	}
 	local function clear(x: number, z: number): boolean
 		for _, r in KEEP_CLEAR do

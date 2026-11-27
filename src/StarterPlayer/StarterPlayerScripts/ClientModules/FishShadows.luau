@@ -10,6 +10,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local FishLogic = require(Shared.FishLogic)
 local BaitData = require(Shared.BaitData)
 local Config = require(Shared.Config)
+local Shore = require(Shared.Shore)
 
 local FishShadows = {}
 
@@ -45,13 +46,21 @@ local function activity(spot: string, period: string): number
 	return best
 end
 
+-- A point in the area, kept off the lake's rounded corners and points of land (Shore, L5d):
+-- a few tries, then the area's centre, which is always water.
 local function randomPoint(area: Area, rng: Random): Vector3
-	local p = area.cframe:PointToWorldSpace(Vector3.new(
-		(rng:NextNumber() - 0.5) * area.size.X * 0.9,
-		0,
-		(rng:NextNumber() - 0.5) * area.size.Z * 0.9
-	))
-	return Vector3.new(p.X, DEPTH, p.Z)
+	for _ = 1, 8 do
+		local p = area.cframe:PointToWorldSpace(Vector3.new(
+			(rng:NextNumber() - 0.5) * area.size.X * 0.9,
+			0,
+			(rng:NextNumber() - 0.5) * area.size.Z * 0.9
+		))
+		if Shore.depth(p.X, p.Z) < -3 then
+			return Vector3.new(p.X, DEPTH, p.Z)
+		end
+	end
+	local c = area.cframe.Position
+	return Vector3.new(c.X, DEPTH, c.Z)
 end
 
 local rng = Random.new()

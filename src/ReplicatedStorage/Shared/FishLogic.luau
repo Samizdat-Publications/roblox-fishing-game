@@ -5,6 +5,7 @@ local Config = require(Shared.Config)
 local FishData = require(Shared.FishData)
 local Rarity = require(Shared.Rarity)
 local Weather = require(Shared.Weather)
+local Shore = require(Shared.Shore)
 
 local FishLogic = {}
 
@@ -175,8 +176,12 @@ function FishLogic.isOnWater(pos: Vector3, waterCFrame: CFrame, waterSize: Vecto
 	return inBox(pos, waterCFrame, waterSize)
 end
 
--- True when the point is over any of the water boxes (the lake and the creek's stretches).
+-- True when the point is over any of the water boxes (the lake and the creek's stretches),
+-- and not on the lake's rounded corners or points of land (Shore, L5d).
 function FishLogic.isOnWaterAny(pos: Vector3, boxes: { { cframe: CFrame, size: Vector3 } }): boolean
+	if Shore.isLand(pos) then
+		return false
+	end
 	for _, b in boxes do
 		if inBox(pos, b.cframe, b.size) then
 			return true
