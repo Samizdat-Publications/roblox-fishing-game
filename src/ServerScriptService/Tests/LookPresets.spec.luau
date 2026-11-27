@@ -515,7 +515,7 @@ return function(t, Shared)
 			t.ok(math.abs(a - b) < 1e-9, string.format("%s: %.3f want %.3f", what, a, b))
 		end
 		local gold = LookPresets.at(17.5, nil, nil, nil, g)
-		near(gold.Lighting.ExposureCompensation, -0.3, "golden exposure")
+		near(gold.Lighting.ExposureCompensation, -0.4, "golden exposure (review 2)")
 		near(gold.Atmosphere.Glare, 0.3, "golden glare")
 		near(gold.Atmosphere.Haze, 0.4, "golden haze")
 		near(gold.BloomEffect.Intensity, 0.4, "golden bloom")
@@ -523,12 +523,32 @@ return function(t, Shared)
 		near(gold.SunRaysEffect.Intensity, 0.03, "golden sun rays")
 		local noon = LookPresets.at(12, nil, nil, nil, g)
 		near(noon.Lighting.ExposureCompensation, -0.35, "day exposure")
-		near(noon.ColorCorrectionEffect.Saturation, 0.02, "day saturation")
+		near(noon.ColorCorrectionEffect.Saturation, -0.05, "day saturation (review 2)")
 		near(noon.Atmosphere.Haze, 1.5, "day haze")
 		t.ok(noon.Lighting.Ambient == Color3.fromRGB(96, 104, 112), "day ambient lifted (canopies not black)")
 		t.ok(noon.Lighting.OutdoorAmbient == LookPresets.at(12).Lighting.OutdoorAmbient, "day outdoor ambient untouched")
 		-- Fields the grade leaves alone stay exactly the preset's.
 		t.eq(noon.Lighting.Brightness, LookPresets.at(12).Lighting.Brightness, "day brightness untouched")
+	end)
+
+	t.test("grade: N1 review 2 numbers (golden from height, noon, the night water)", function()
+		local g = LookPresets.REALISTIC_GRADE
+		local function near(a, b, what)
+			t.ok(math.abs(a - b) < 1e-9, string.format("%s: %.3f want %.3f", what, a, b))
+		end
+		local gold = LookPresets.at(17.5, nil, nil, nil, g)
+		near(gold.Atmosphere.Density, 0.25, "golden density net 0.25")
+		t.ok(gold.Atmosphere.Color == Color3.fromRGB(224, 186, 140), "golden haze colour 224,186,140")
+		local noon = LookPresets.at(12, nil, nil, nil, g)
+		near(noon.Atmosphere.Density, LookPresets.at(12).Atmosphere.Density + 0.04, "day density +0.04")
+		near(noon.Atmosphere.Density, 0.3, "day density net 0.30")
+		t.ok(noon.Atmosphere.Color == Color3.fromRGB(212, 220, 228), "day haze colour 212,220,228")
+		local night = LookPresets.at(22, nil, nil, nil, g)
+		near(night.Lighting.EnvironmentSpecularScale, 0.2, "night specular net 0.2")
+		near(LookPresets.at(22).Lighting.EnvironmentSpecularScale, 0.6, "ungraded night specular as before")
+		local w = LookPresets.homeWaterAt(22)
+		near(w.WaterReflectance, 0.25, "night water reflectance 0.25")
+		near(w.WaterWaveSize, 0.08, "night water wave size 0.08")
 	end)
 
 	t.test("grade: blends between presets with their weights, and stays in range", function()
@@ -539,7 +559,7 @@ return function(t, Shared)
 		local want = (wts.day or 0) * g.day.Lighting.ExposureCompensation + (wts.golden or 0) * g.golden.Lighting.ExposureCompensation
 		local got = LookPresets.gradeAt(c, g).Lighting.ExposureCompensation
 		t.ok(math.abs(got - want) < 1e-9, "blended exposure offset")
-		t.ok(math.abs(got - -0.325) < 1e-9, "half way is -0.325")
+		t.ok(math.abs(got - -0.375) < 1e-9, "half way is -0.375")
 		for i = 0, 240 do
 			local clock = i * 0.1
 			for _, w in { "Clear", "Storm", "Fog", "ColdFront" } do
@@ -607,7 +627,7 @@ return function(t, Shared)
 		end
 		local a = fake()
 		LookPresets.applyTo(a, 17.5, make, nil, nil, nil, nil, nil, LookPresets.gradeFor(LookPresets.TIERS.desktop, true))
-		t.ok(math.abs(a.ExposureCompensation - -0.3) < 1e-9, "desktop graded exposure")
+		t.ok(math.abs(a.ExposureCompensation - -0.4) < 1e-9, "desktop graded exposure")
 		t.ok(math.abs(made.Atmosphere.Glare - 0.3) < 1e-9, "desktop graded glare")
 		local b = fake()
 		LookPresets.applyTo(b, 17.5, make, nil, nil, nil, nil, nil, LookPresets.gradeFor(LookPresets.TIERS.phone, false))

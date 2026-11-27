@@ -5,13 +5,16 @@
 -- While the player attribute LookTierActive is "phone" (ClientModules/LookDirector), on this
 -- screen only:
 --   * no tagged foliage casts a shadow;
---   * undergrowth past 80 studs from the camera is hidden (LocalTransparencyModifier 1);
+--   * undergrowth past 40 studs from the camera is hidden (LocalTransparencyModifier 1);
 --   * every second reed clump and stone group (FoliageAlt 1) past 80 studs is hidden;
---   * every second tree (FoliageAlt 1) past 150 studs is hidden.
+--   * every second far tree (FoliageFar, FoliageAlt 1) past 40 studs is hidden;
+--   * every second kit tree (FoliageAlt 1) past 150 studs is hidden.
+-- (N1 round 4, the advisor: from shot 01's view that drops every second far pine and all the
+-- undergrowth, for about 300 draw calls on a phone. The overview, shot 07, is no player's view.)
 -- On the desktop tier it does nothing (and puts everything back when the tier changes to it).
 --
 -- Cheap by design: copies sit in 24 stud buckets; twice a second it works out, per bucket, which
--- of the two distance bands (past 80, past 150) its centre is in, and touches only the copies in
+-- distance band (past 40, past 80, past 150) its centre is in, and touches only the copies in
 -- buckets whose band changed. Copies that stream in or out are added and dropped as they go.
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -19,8 +22,9 @@ local Players = game:GetService("Players")
 local FoliageTier = {}
 
 FoliageTier.TAGS = { "FoliageUnder", "FoliageReed", "FoliageStone", "FoliageTree" }
-FoliageTier.NEAR = 80 -- undergrowth, and every second reed and stone group, hide past this
-FoliageTier.FAR = 150 -- every second tree hides past this
+FoliageTier.UNDER = 40 -- undergrowth, and every second far tree, hide past this
+FoliageTier.NEAR = 80 -- every second reed and stone group hides past this
+FoliageTier.FAR = 150 -- every second kit tree hides past this
 FoliageTier.EVERY = 0.5 -- seconds between checks
 local BUCKET = 24
 
@@ -28,6 +32,7 @@ type Entry = {
 	model: Model,
 	tag: string,
 	alt: number,
+	far: boolean, -- a far model (FoliageFar)
 	parts: { BasePart },
 	shadows: { boolean }, -- each part's CastShadow before this tier touched it
 	hidden: boolean,
@@ -44,22 +49,22 @@ local function key(ix: number, iz: number): number
 	return (ix + 4096) * 8192 + (iz + 4096)
 end
 
--- Which copies hide in a band (0: within NEAR, 1: NEAR to FAR, 2: past FAR).
-function FoliageTier.hides(tag: string, alt: number, band: number): boolean
+-- Which copies hide in a band (0: within UNDER, 1: UNDER to NEAR, 2: NEAR to FAR, 3: past FAR).
+function FoliageTier.hides(tag: string, alt: number, band: number, far: boolean?): boolean
 	if band == 0 then
 		return false
 	elseif tag == "FoliageUnder" then
 		return true
 	elseif tag == "FoliageReed" or tag == "FoliageStone" then
-		return alt == 1
+		return band >= 2 and alt == 1
 	elseif tag == "FoliageTree" then
-		return band == 2 and alt == 1
+		return alt == 1 and (band >= 3 or far == true)
 	end
 	return false
 end
 
 function FoliageTier.band(d: number): number
-	return if d > FoliageTier.FAR then 2 elseif d > FoliageTier.NEAR then 1 else 0
+	return if d > FoliageTier.FAR then 3 elseif d > FoliageTier.NEAR then 2 elseif d > FoliageTier.UNDER then 1 else 0
 end
 
 local function setHidden(e: Entry, hide: boolean)
@@ -104,6 +109,7 @@ local function add(model: Instance, tag: string)
 		model = model,
 		tag = tag,
 		alt = if type(alt) == "number" then alt else (ix + iz) % 2,
+		far = model:GetAttribute("FoliageFar") == true,
 		parts = parts,
 		shadows = shadows,
 		hidden = false,
@@ -113,7 +119,7 @@ local function add(model: Instance, tag: string)
 	b.entries[model] = e
 	if phone then
 		setShadows(e, true)
-		setHidden(e, FoliageTier.hides(e.tag, e.alt, b.band))
+		setHidden(e, FoliageTier.hides(e.tag, e.alt, b.band, e.far))
 	end
 end
 
@@ -142,7 +148,7 @@ local function tick(all: boolean?)
 		if all or band ~= b.band then
 			b.band = band
 			for _, e in b.entries do
-				setHidden(e, FoliageTier.hides(e.tag, e.alt, band))
+				setHidden(e, FoliageTier.hides(e.tag, e.alt, band, e.far))
 			end
 		end
 	end

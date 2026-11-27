@@ -1591,5 +1591,224 @@
       "alwaysOnTopLabels": 0,
       "parts": 1742
     }
+  },
+  {
+    "date": "2026-11-27",
+    "step": "n1-round3-lake",
+    "set": "A",
+    "rubric": "look",
+    "run": "2026-11-27-1818",
+    "commit": "d700a22",
+    "shots": 8,
+    "median": 7,
+    "scores": [
+      7.2,
+      7,
+      7
+    ],
+    "points": {
+      "composition": 7.5,
+      "light": 7,
+      "water": 6.5,
+      "mood": 7.5,
+      "want_to_fish": 8,
+      "phone_readability": 6.5,
+      "broken_or_ugly": 6
+    },
+    "reports": [
+      "docs\\critic\\2026-11-27-n1-round3-lake-neon.md",
+      "docs\\critic\\2026-11-27-n1-round3-lake-neon-2.md",
+      "docs\\critic\\2026-11-27-n1-round3-lake-neon-3.md"
+    ],
+    "audit": {
+      "floatingLabels": 0,
+      "alwaysOnTopLabelsNotPrompt": 0,
+      "wind": 4,
+      "stockMaterial": 151,
+      "lightingStyle": "Realistic",
+      "plastic": 388,
+      "surfaceAppearances": 1,
+      "heroSets": 1,
+      "stockTerrain_homeLake": 0.44878754976474844,
+      "materialVariants": 20,
+      "terrainCustomSlots": 5,
+      "plasticTop": "Reeds_Node 101, PineShort_Node 57, PineTall_Node 54, LeafyTree_Node 51, LilyPads_Node 27, FishShadows 25, BigLake 20, MyPondFish 12, RockMedium_Node 10, ProBabyTurtle_Dinghy 7",
+      "stockTerrain_bigLakeBasin": 1,
+      "stockGround": 3,
+      "alwaysOnTopLabels": 0,
+      "parts": 2192
+    }
+  },
+  {
+    "date": "2026-11-27",
+    "step": "n1-round3-lake",
+    "set": "A",
+    "rubric": "identity",
+    "run": "2026-11-27-1818",
+    "commit": "d700a22",
+    "shots": 8,
+    "median": 4.5,
+    "scores": [
+      4,
+      5,
+      4.5
+    ],
+    "points": {
+      "materials": 5,
+      "signature": 4,
+      "cohesion": 4,
+      "stock_free": 4,
+      "identity": 4.5
+    },
+    "reports": [
+      "docs\\critic\\2026-11-27-n1-round3-lake-identity-neon.md",
+      "docs\\critic\\2026-11-27-n1-round3-lake-identity-neon-2.md",
+      "docs\\critic\\2026-11-27-n1-round3-lake-identity-neon-3.md"
+    ],
+    "stock_items": [
+      {
+        "item": "Stock Roblox Terrain Water in 03-dockend-noon.jpg (bottom two-thirds), 04-dockend-night.jpg (bottom two-thirds), 06-logs-dawn.jpg (center), and 08-stands-noon.jpg (bottom corners)",
+        "reason": "Displays the immediately recognizable default Roblox Terrain Water normal ripple pattern, glossy specular highlights, and harsh night reflection banding.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Terrain Grass, Ground/Gravel, Sand, Mud, and LeafyGrass with scalloped paint edges in 01-dock-dawn.jpg and 02-dock-golden.jpg (foreground), 05-weedbed-golden.jpg (left sand and lower-right grass/mud), 06-logs-dawn.jpg (mud, gravel, and grass shore), and 08-stands-noon.jpg (shoreline)",
+        "reason": "Uses default Roblox Terrain textures with the telltale blobby brush blending between ground materials.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Terrain Decoration grass blades in 03-dockend-noon.jpg (far shore), 07-overview-golden.jpg (bottom-left and bottom-right fields), and 08-stands-noon.jpg (far left shore and horizon ridge)",
+        "reason": "Uniform default Roblox smooth-terrain grass tufts.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox Sky and wispy Clouds in 03-dockend-noon.jpg (upper half), 08-stands-noon.jpg (upper half), and 04-dockend-night.jpg (night clouds)",
+        "reason": "Standard bright cyan noon sky gradient and default Roblox Clouds instance with no custom atmosphere or skybox character.",
+        "runs": 1
+      },
+      {
+        "item": "Low-poly faceted bush and trees in 06-logs-dawn.jpg (green bush on lower-right gravel shore and jagged pine branch top-right), 08-stands-noon.jpg (lumpy flat-shaded deciduous trees far left behind 'Your Pond' and faceted cone pines left and right), and 05-weedbed-golden.jpg (flat-disc pine upper left)",
+        "reason": "Flat-shaded low-poly asset-pack style that reads as generic Roblox free models and clashes sharply with the detailed PBR wood dock and boulders.",
+        "runs": 1
+      },
+      {
+        "item": "Plain flat SurfaceGui signs with default fonts in 08-stands-noon.jpg ('Bait and Tackle', 'Sell Fish', 'Your Pond', and the green rules chalkboard) and 05-weedbed-golden.jpg ('Boat Slips' on far right)",
+        "reason": "Untextured solid-color panels with standard SurfaceGui lettering that look like default Roblox UI boards rather than physical painted wood signs.",
+        "runs": 1
+      },
+      {
+        "item": "Default blocky Roblox player avatar in 01-dock-dawn.jpg, 02-dock-golden.jpg, and 08-stands-noon.jpg (center on the dock)",
+        "reason": "Standard blocky Roblox avatar in casual clothes and a Santa hat immediately signals a default Roblox experience.",
+        "runs": 1
+      },
+      {
+        "item": "Plain white untextured rectangular block next to the right side of the dock in 01-dock-dawn.jpg, 02-dock-golden.jpg, 06-logs-dawn.jpg, and 07-overview-golden.jpg",
+        "reason": "Reads as a raw SmoothPlastic or Plastic placeholder part.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Terrain ground and grass (01-dock-dawn.jpg foreground, 02-dock-golden.jpg foreground, 06-logs-dawn.jpg foreground, 07-overview-golden.jpg bottom corners, 08-stands-noon.jpg shoreline and hills, 05-weedbed-golden.jpg foreground sand/grass):",
+        "reason": "Default Roblox smooth terrain Grass, Sand, Mud, and Ground textures with jagged voxel paint transitions and repeating built-in Decoration grass tufts.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Terrain Water (03-dockend-noon.jpg, 04-dockend-night.jpg, 05-weedbed-golden.jpg, 06-logs-dawn.jpg, 08-stands-noon.jpg):",
+        "reason": "Recognizable glossy procedural Terrain Water ripple normal map and screen-space reflection artifacts, especially stark at noon (03-dockend-noon.jpg) and night (04-dockend-night.jpg).",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox Sky and procedural Clouds (03-dockend-noon.jpg upper half, 08-stands-noon.jpg upper half, 04-dockend-night.jpg upper half):",
+        "reason": "Standard saturated default blue Roblox sky gradient paired with built-in wispy Clouds that immediately read as default Roblox once sunset tinting is gone.",
+        "runs": 1
+      },
+      {
+        "item": "Default blocky Roblox character look (01-dock-dawn.jpg center, 02-dock-golden.jpg center, 08-stands-noon.jpg center on dock):",
+        "reason": "Standard blocky Roblox avatar in casual cosmetics (Santa hat, black hoodie, plaid pants) that breaks the grounded lakeside fishing atmosphere.",
+        "runs": 1
+      },
+      {
+        "item": "Plain white untextured block by the dock (01-dock-dawn.jpg center-right, 02-dock-golden.jpg center-right, 06-logs-dawn.jpg center-left, 07-overview-golden.jpg right side of dock):",
+        "reason": "Reads as a raw white SmoothPlastic/Plastic placeholder part floating next to the detailed wooden dock.",
+        "runs": 1
+      },
+      {
+        "item": "Low-poly faceted bush and blob trees (06-logs-dawn.jpg bottom-right bush and top-right pine needles; 08-stands-noon.jpg far-left rounded trees):",
+        "reason": "Flat-shaded faceted geometry and blob canopies look like generic Roblox low-poly kit foliage and clash with the realistic wood planks and boulders.",
+        "runs": 1
+      },
+      {
+        "item": "Glossy red-and-white buoy (03-dockend-noon.jpg center, 04-dockend-night.jpg center):",
+        "reason": "Simple banded cylinder/capsule with smooth SmoothPlastic-like shading rather than weathered painted metal or wood.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Smooth Terrain (Grass, Ground, Sand, Mud, LeafyGrass) in 01-dock-dawn.jpg (foreground), 02-dock-golden.jpg (foreground), 06-logs-dawn.jpg (bottom half), 07-overview-golden.jpg (shoreline and slopes), and 08-stands-noon.jpg (midground bank and lawns).",
+        "reason": "Displays default Roblox terrain textures and unmistakable jagged voxel-blended edges between grass, dirt, sand, and mud.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Terrain Water in 03-dockend-noon.jpg (lower half), 04-dockend-night.jpg (lower half), 05-weedbed-golden.jpg (center), 06-logs-dawn.jpg (center), and 08-stands-noon.jpg (foreground left and right).",
+        "reason": "Shows the default Roblox water normal-map ripple pattern, glossy specular dots, and sharp terrain-water shoreline edges.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Terrain Decoration grass in 03-dockend-noon.jpg (far shoreline banks), 07-overview-golden.jpg (bottom-left meadow), and 08-stands-noon.jpg (far-left bank and background horizon ridge).",
+        "reason": "Standard uniform spiky Roblox terrain grass tufts.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox Sky and Dynamic Clouds in 03-dockend-noon.jpg (top half), 08-stands-noon.jpg (top half), and the wispy cloud layer in 01-dock-dawn.jpg, 02-dock-golden.jpg, and 04-dockend-night.jpg.",
+        "reason": "Unmistakable default bright-blue noon sky gradient and stock Terrain Clouds appearance.",
+        "runs": 1
+      },
+      {
+        "item": "Untextured white/grey SmoothPlastic rectangular block beside the right edge of the dock in 01-dock-dawn.jpg (center), 02-dock-golden.jpg (center), 06-logs-dawn.jpg (midground left-center), and 07-overview-golden.jpg (center).",
+        "reason": "Reads as a raw default SmoothPlastic part left in the water.",
+        "runs": 1
+      },
+      {
+        "item": "Default blocky Roblox player avatar in 01-dock-dawn.jpg (center), 02-dock-golden.jpg (center), and 08-stands-noon.jpg (center).",
+        "reason": "Standard blocky Roblox character proportions (in a Santa hat and plaid pants) immediately anchor the scene as default Roblox.",
+        "runs": 1
+      },
+      {
+        "item": "Low-poly faceted bush in 06-logs-dawn.jpg (lower right) and lumpy low-poly deciduous trees in 08-stands-noon.jpg (midground far left).",
+        "reason": "Generic stylized free-model mesh look with flat shaded facets that clashes heavily with the realistic dock wood.",
+        "runs": 1
+      },
+      {
+        "item": "Smooth cylindrical floating logs in 06-logs-dawn.jpg (center water) and 07-overview-golden.jpg (lower-right cove).",
+        "reason": "Read as simple smooth dark cylinder parts with flat light-colored ends and tiny cone nubs rather than weathered bark-covered timber.",
+        "runs": 1
+      },
+      {
+        "item": "Flat single-color signboard panels with plain Roblox fonts in 08-stands-noon.jpg (blue 'Bait and Tackle', red 'Sell Fish', green chalkboard, and small 'Your Pond' sign) and 05-weedbed-golden.jpg (far right 'Boat Slips' sign).",
+        "reason": "Plain untextured rectangular slabs with default-looking system fonts and no bespoke framing or surface wear.",
+        "runs": 1
+      },
+      {
+        "item": "Primitive geometric fish roof-topper in 01-dock-dawn.jpg (far upper left), 02-dock-golden.jpg (far upper left), and 08-stands-noon.jpg (upper right atop Sell Fish).",
+        "reason": "Built from obvious basic shapes (a triangular wedge tail beside a rounded oval body).",
+        "runs": 1
+      }
+    ],
+    "audit": {
+      "floatingLabels": 0,
+      "alwaysOnTopLabelsNotPrompt": 0,
+      "wind": 4,
+      "stockMaterial": 151,
+      "lightingStyle": "Realistic",
+      "plastic": 388,
+      "surfaceAppearances": 1,
+      "heroSets": 1,
+      "stockTerrain_homeLake": 0.44878754976474844,
+      "materialVariants": 20,
+      "terrainCustomSlots": 5,
+      "plasticTop": "Reeds_Node 101, PineShort_Node 57, PineTall_Node 54, LeafyTree_Node 51, LilyPads_Node 27, FishShadows 25, BigLake 20, MyPondFish 12, RockMedium_Node 10, ProBabyTurtle_Dinghy 7",
+      "stockTerrain_bigLakeBasin": 1,
+      "stockGround": 3,
+      "alwaysOnTopLabels": 0,
+      "parts": 2192
+    }
   }
 ]

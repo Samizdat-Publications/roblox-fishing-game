@@ -1,6 +1,13 @@
 Judge whether this fishing game looks like itself or like a default Roblox game (stills and/or screen captures).
 
-First, list in stock_items everything you can see that reads as stock Roblox, each with a short reason: for example default Plastic or SmoothPlastic parts, stock terrain grass or rock, the default sky or clouds, plain untextured blocks, floating always-on-top name labels, default fonts or the stock dark rounded UI boxes, free-model props, stock trees, the default character look. Name the exact thing and where it is (file name and part of the frame). List nothing you are unsure of; an empty list is a fine answer.
+First, list in stock_items everything you can see that reads as stock Roblox, each with a short reason: for example default Plastic or SmoothPlastic parts, stock terrain grass or rock, the default sky or clouds, plain untextured blocks, floating always-on-top name labels, default fonts or the stock dark rounded UI boxes, free-model props, stock trees. Name the exact thing and where it is (file name and part of the frame). List nothing you are unsure of; an empty list is a fine answer.
+
+Engine givens: do not list these as stock items and do not mark the shot down for them, because every Roblox game has them and this game keeps them on purpose:
+- the terrain water surface itself (its ripples, its reflections and its colour shift); judge what is in or beside the water, not the water's surface;
+- the player's avatar and how it looks (the character, its clothes and its animations);
+- terrain grass blades (the short moving blades on grass terrain).
+
+Signs (painted boards, wording, fonts on signs) are judged in N2, the signs and interface step. Do not list them or score them here.
 
 Then score each point 0 to 10, then an overall score:
 

@@ -42,7 +42,7 @@ local list: { Boat } = {
 		forSale = true,
 		length = 8,
 		width = 4,
-		color = Color3.fromRGB(226, 220, 204), -- off-white (leg 3, N1 round 2; was orange 235,120,40)
+		color = Color3.fromRGB(204, 108, 48), -- orange (N1 review 2; the off-white 226,220,204 read as a stock white block; first orange was 235,120,40)
 		blurb = "A one-person inflatable with a tiny motor. Gets you out to the Big Lake, but it's too small for blue water.",
 	},
 	{

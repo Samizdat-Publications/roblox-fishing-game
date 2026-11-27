@@ -34,6 +34,20 @@
 -- voxel in the paint region is kept in Lake.BankKit.TerrainRecord, and of each hill patch in
 -- Lake.BankKit.HillRecords). The variants MaterialKit.skinPlaced gives the old Art copies are
 -- MaterialKit's to undo (MaterialKit.undress(workspace.Lake)).
+--
+-- N1 round 4 (the advisor's ruling after review 2):
+--  * the gravel was baked in: the terrain record had been taken again over round 2's paint, so
+--    revert put the old gravel back as if it were the original ground. BankDress.cleanGravel
+--    (once) clears it, `apply` refuses to paint while gravel lies outside the current paths (a
+--    baked record), the kit folder is parented before anything is placed (so a failed apply still
+--    leaves its record), and `revert` reports `gravelOutside` (the main session asserts 0);
+--  * the paint itself lives in Scatter.paintGrid (pure, so the specs run it): it also repaints the
+--    sand ring's far side as meadow and lays the green floor (slot 27) behind the north shore;
+--  * the old trees swap by distance to the dock: kit trees within 90 studs (40 at most);
+--  * far models carry a FoliageFar attribute, with their own FoliageAlt count, for the phone tier.
+--
+--   require(game.ServerScriptService.Server.BankDress).cleanGravel(workspace.Lake)
+--   require(game.ServerScriptService.Server.BankDress).undoClean() -- right after, if needed
 local ServerStorage = game:GetService("ServerStorage")
 local MaterialService = game:GetService("MaterialService")
 local CollectionService = game:GetService("CollectionService")
@@ -52,9 +66,10 @@ BankDress.HILL_SLOT = 27 -- the green forest floor on the hills (MaterialKit.SLO
 BankDress.MEADOW_SLOT = 2 -- the stock Grass slot (MeadowGrass, with blades)
 local CELL = 4
 
--- The old trees: kit trees within this far of the lake loop (it runs 5 studs off the rounded
--- box), at most NEAR_CAP of them; far trees 1:1 everywhere else.
-BankDress.NEAR = 120
+-- The old trees: kit trees within this far of the dock (N1 round 4: was 120 from the lake loop;
+-- the blob trees left of the pond in shot 08 stayed far models), nearest first, at most NEAR_CAP
+-- of them; far trees 1:1 everywhere else.
+BankDress.NEAR = 90
 BankDress.NEAR_CAP = 40
 
 -- The paint region: the lake loop, the treeline band, the far row and its forest floor, the
@@ -62,13 +77,15 @@ BankDress.NEAR_CAP = 40
 BankDress.REGION_LO = Vector3.new(-212, -8, -150)
 BankDress.REGION_HI = Vector3.new(180, 8, 140)
 
--- Terrain slots each paint may cover (2 Grass/meadow, 14 Ground, 19 LeafyGrass, 26 the bladeless
--- lawn, 6 Sand only well away from water: the creek paths' sand underlays).
-local SAND, LAWN = 6, 26
-local FOREST_OVER = { [2] = true, [19] = true, [LAWN] = true }
-local PATH_OVER = { [2] = true, [14] = true, [19] = true, [LAWN] = true, [25] = true }
-local MEADOW_OVER = { [LAWN] = true }
-local DRY = 2 -- studs from any water before a footpath cell is painted
+-- Terrain slots the hill patches may cover (2 Grass/meadow, 19 LeafyGrass, 26 the bladeless
+-- lawn). The main paint's rules are Scatter.paintGrid's.
+local FOREST_OVER = Scatter.GROUND_OVER
+
+-- The south lawn for cleanGravel: the old GroundSouth part's box (x -160..160, z 80..140), read
+-- from Lake.GroundSouth when it is there.
+BankDress.LAWN_LO = Vector3.new(-160, 0, 85)
+BankDress.LAWN_HI = Vector3.new(160, 0, 145)
+BankDress.CLEAN_RECORD = "BankDressCleanRecord" -- in ServerStorage: the ground before cleanGravel
 
 -- Family variants for kit meshes that arrive without one (art/models/manifest.json, by suffix).
 local VARIANT_BY_SUFFIX = {
@@ -215,11 +232,13 @@ local function unhide(root: Instance): number
 	return n
 end
 
-local function hexRecord(idx: any, size: Vector3): string
-	local record = table.create(size.X * size.Y * size.Z)
-	for x = 1, size.X do
-		for y = 1, size.Y do
-			for z = 1, size.Z do
+-- Every voxel's slot, two hex digits each, x outermost, then y, then z (the order
+-- ReadVoxelChannels' arrays are walked in).
+local function hexRecord(idx: any, nx: number, ny: number, nz: number): string
+	local record = table.create(nx * ny * nz)
+	for x = 1, nx do
+		for y = 1, ny do
+			for z = 1, nz do
 				record[#record + 1] = string.format("%02x", idx[x][y][z])
 			end
 		end
@@ -227,71 +246,41 @@ local function hexRecord(idx: any, size: Vector3): string
 	return table.concat(record)
 end
 
--- Repaints the region's voxels: forest floor under the treeline, meadow blobs on the lawn, then
--- the footpaths over both. Returns the voxel counts and the record of every voxel's original slot
--- (two hex digits each, x outermost, then y, then z: the order ReadVoxelChannels' arrays are
--- walked in).
-local function paint(plan: Scatter.Plan, seed: number): (number, number, number, string, Region3)
-	local t = workspace.Terrain
+-- The paint region's voxels as a Scatter.Grid.
+local function readGrid(): (Scatter.Grid, Region3)
 	local region = Region3.new(BankDress.REGION_LO, BankDress.REGION_HI):ExpandToGrid(CELL)
 	local lo = region.CFrame.Position - region.Size / 2
-	local ch = t:ReadVoxelChannels(region, CELL, { "SolidMaterialIndex", "SolidOccupancy" }) :: any
-	local idx, occ = ch.SolidMaterialIndex, ch.SolidOccupancy
+	local ch = workspace.Terrain:ReadVoxelChannels(region, CELL, { "SolidMaterialIndex", "SolidOccupancy" }) :: any
 	local size = ch.Size :: Vector3
-	local record = hexRecord(idx, size)
-	local paths = Scatter.pathCells(plan.routes, CELL, seed)
-	local forest = Scatter.blobCells(plan.forest, CELL, seed)
-	local meadow = Scatter.blobCells(plan.meadow, CELL, seed + 1)
-	local ix0, iz0 = math.floor(lo.X / CELL + 0.5), math.floor(lo.Z / CELL + 0.5)
-	local nPath, nForest, nMeadow = 0, 0, 0
-	for x = 1, size.X do
-		local ix = ix0 + x - 1
-		local cx = (ix + 0.5) * CELL
-		for z = 1, size.Z do
-			local iz = iz0 + z - 1
-			local cz = (iz + 0.5) * CELL
-			local k = Scatter.key(ix, iz)
-			local onPath = paths[k] == true and Scatter.dry(cx, cz, DRY)
-			local inForest = forest[k] == true
-			local inMeadow = meadow[k] == true
-			if onPath then
-				-- Only the surface: the top solid voxel, and the one under it when the top is a thin
-				-- skin. (Before 11/27/2026 the whole column was painted, so on a bank every voxel down
-				-- to the water turned to gravel and showed in the slope beside the path: shot 06's
-				-- gravel bank.)
-				local top = 0
-				for y = size.Y, 1, -1 do
-					if occ[x][y][z] > 0 then
-						top = y
-						break
-					end
-				end
-				local depth = if top > 1 and occ[x][top][z] < 0.5 then 1 else 0
-				for y = top, math.max(1, top - depth), -1 do
-					local s = idx[x][y][z]
-					if top > 0 and (PATH_OVER[s] or (s == SAND and Scatter.dry(cx, cz, 3))) then
-						idx[x][y][z] = BankDress.FOOTPATH_SLOT
-						nPath += 1
-					end
-				end
-			elseif inForest or inMeadow then
-				for y = 1, size.Y do
-					local s = idx[x][y][z]
-					if occ[x][y][z] > 0 then
-						if inForest and FOREST_OVER[s] then
-							idx[x][y][z] = BankDress.FOREST_SLOT
-							nForest += 1
-						elseif inMeadow and MEADOW_OVER[s] then
-							idx[x][y][z] = BankDress.MEADOW_SLOT
-							nMeadow += 1
-						end
-					end
-				end
-			end
-		end
-	end
-	t:WriteVoxelChannels(region, CELL, { SolidMaterialIndex = idx })
-	return nPath, nForest, nMeadow, record, region
+	local g: Scatter.Grid = {
+		idx = ch.SolidMaterialIndex,
+		occ = ch.SolidOccupancy,
+		nx = size.X,
+		ny = size.Y,
+		nz = size.Z,
+		ix0 = math.floor(lo.X / CELL + 0.5),
+		iz0 = math.floor(lo.Z / CELL + 0.5),
+		cell = CELL,
+	}
+	return g, region
+end
+
+-- Repaints the region's voxels (Scatter.paintGrid: footpaths, forest floor, meadow blobs, the
+-- green floor behind the north shore, the sand ring's far side). Returns the counts and the
+-- record of every voxel's original slot.
+local function paint(plan: Scatter.Plan, seed: number, tuning: { [string]: any }?): (Scatter.PaintCounts, string, Region3)
+	local g, region = readGrid()
+	local record = hexRecord(g.idx, g.nx, g.ny, g.nz)
+	local counts = Scatter.paintGrid(g, plan, seed, tuning)
+	workspace.Terrain:WriteVoxelChannels(region, CELL, { SolidMaterialIndex = g.idx })
+	return counts, record, region
+end
+
+-- Slot 24 voxels in the paint region outside the footpath cells of `seed`'s plan.
+function BankDress.gravelOutsidePaths(seed: number?): number
+	local s = seed or BankDress.SEED
+	local g = readGrid()
+	return Scatter.countSlot(g, BankDress.FOOTPATH_SLOT, Scatter.pathCells(Scatter.homeRoutes(s), CELL, s))
 end
 
 -- Paints one hill patch (the green forest floor) round a blob whose ground is at `g`, and keeps
@@ -304,7 +293,7 @@ local function paintHill(b: Scatter.Blob, g: number, seed: number, records: Fold
 	local ch = t:ReadVoxelChannels(region, CELL, { "SolidMaterialIndex", "SolidOccupancy" }) :: any
 	local idx, occ = ch.SolidMaterialIndex, ch.SolidOccupancy
 	local size = ch.Size :: Vector3
-	local record = hexRecord(idx, size)
+	local record = hexRecord(idx, size.X, size.Y, size.Z)
 	local cells = Scatter.blobCells({ b }, CELL, seed + 2)
 	local ix0, iz0 = math.floor(lo.X / CELL + 0.5), math.floor(lo.Z / CELL + 0.5)
 	local n = 0
@@ -332,11 +321,13 @@ local function paintHill(b: Scatter.Blob, g: number, seed: number, records: Fold
 	return n
 end
 
--- Puts back every voxel in a record's region that still holds one of `slots`, from the record.
-local function restore(rec: StringValue, slots: { [number]: boolean }): number
+-- Puts back every voxel in a record's region that still holds one of `slots` (every voxel when
+-- nil), from the record. Second result: false when the record does not match its region.
+local function restore(rec: StringValue, slots: { [number]: boolean }?): (number, boolean)
 	local lo, hi = rec:GetAttribute("Lo"), rec:GetAttribute("Hi")
 	if typeof(lo) ~= "Vector3" or typeof(hi) ~= "Vector3" then
-		return 0
+		warn("[BankDress] terrain record " .. rec.Name .. " has no region; terrain left as it is")
+		return 0, false
 	end
 	local t = workspace.Terrain
 	local region = Region3.new(lo :: Vector3, hi :: Vector3):ExpandToGrid(CELL)
@@ -346,7 +337,7 @@ local function restore(rec: StringValue, slots: { [number]: boolean }): number
 	local data = rec.Value
 	if #data ~= size.X * size.Y * size.Z * 2 then
 		warn("[BankDress] terrain record " .. rec.Name .. " does not match its region; terrain left as it is")
-		return 0
+		return 0, false
 	end
 	local n, i = 0, 0
 	for x = 1, size.X do
@@ -354,7 +345,7 @@ local function restore(rec: StringValue, slots: { [number]: boolean }): number
 			for z = 1, size.Z do
 				i += 1
 				local s = idx[x][y][z]
-				if slots[s] then
+				if slots == nil or slots[s] then
 					local was = tonumber(string.sub(data, i * 2 - 1, i * 2), 16) :: number
 					if was ~= s then
 						idx[x][y][z] = was
@@ -367,13 +358,21 @@ local function restore(rec: StringValue, slots: { [number]: boolean }): number
 	if n > 0 then
 		t:WriteVoxelChannels(region, CELL, { SolidMaterialIndex = idx })
 	end
-	return n
+	return n, true
 end
 
+-- The slots the main paint writes (footpath, forest floor, meadow, the north shore's green floor).
+local MAIN_SLOTS = {
+	[BankDress.FOOTPATH_SLOT] = true,
+	[BankDress.FOREST_SLOT] = true,
+	[BankDress.MEADOW_SLOT] = true,
+	[BankDress.HILL_SLOT] = true,
+}
+
 -- Undoes the hill patches (newest first, so overlapping patches end on the true original), then
--- the main region.
-local function unpaint(folder: Instance): number
-	local n = 0
+-- the main region. Second result: false when any record failed to match.
+local function unpaint(folder: Instance): (number, boolean)
+	local n, ok = 0, true
 	local hills = folder:FindFirstChild("HillRecords")
 	if hills then
 		local list = hills:GetChildren()
@@ -382,15 +381,22 @@ local function unpaint(folder: Instance): number
 		end)
 		for _, rec in list do
 			if rec:IsA("StringValue") then
-				n += restore(rec, { [BankDress.HILL_SLOT] = true })
+				local m, good = restore(rec, { [BankDress.HILL_SLOT] = true })
+				n += m
+				ok = ok and good
 			end
 		end
 	end
 	local rec = folder:FindFirstChild("TerrainRecord")
 	if rec and rec:IsA("StringValue") then
-		n += restore(rec, { [BankDress.FOOTPATH_SLOT] = true, [BankDress.FOREST_SLOT] = true, [BankDress.MEADOW_SLOT] = true })
+		local m, good = restore(rec, MAIN_SLOTS)
+		n += m
+		ok = ok and good
+	else
+		warn("[BankDress] the kit folder has no TerrainRecord")
+		ok = false
 	end
-	return n
+	return n, ok
 end
 
 export type Result = {
@@ -414,22 +420,133 @@ export type Result = {
 	forestVoxels: number,
 	meadowVoxels: number,
 	hillVoxels: number,
+	sandVoxels: number, -- the sand ring's far side, repainted meadow (N1 round 4)
+	northVoxels: number, -- the green floor behind the north shore (N1 round 4)
+	farTagged: number, -- copies of far models (FoliageFar)
 }
 
-function BankDress.revert(lake: Instance): { voxels: number, unhidden: number }
+export type RevertResult = {
+	voxels: number,
+	unhidden: number,
+	ok: boolean, -- false: a terrain record did not match; the kit folder is left in place
+	gravelOutside: number, -- slot 24 voxels in the paint region outside the paths (must be 0)
+}
+
+-- Takes the dress pass off. When a terrain record does not match its region, nothing more is
+-- touched (the kit folder and the hidden parts stay, so the records are not lost) and `ok` is
+-- false. `gravelOutside` is counted for the seed the kit was applied with.
+function BankDress.revert(lake: Instance): RevertResult
 	local folder = lake:FindFirstChild(BankDress.FOLDER)
-	local voxels = 0
+	local voxels, ok = 0, true
+	local seed = BankDress.SEED
 	if folder then
-		voxels = unpaint(folder)
-		folder:Destroy()
+		local fs = folder:GetAttribute("Seed")
+		if type(fs) == "number" then
+			seed = fs
+		end
+		voxels, ok = unpaint(folder)
+		if ok then
+			folder:Destroy()
+		else
+			warn("[BankDress] revert: a terrain record did not match; the kit folder is kept")
+		end
 	end
-	local unhidden = unhide(lake)
-	return { voxels = voxels, unhidden = unhidden }
+	local unhidden = if ok then unhide(lake) else 0
+	return { voxels = voxels, unhidden = unhidden, ok = ok, gravelOutside = BankDress.gravelOutsidePaths(seed) }
 end
 
+-- The south lawn test for cleanGravel: inside the old GroundSouth part's box.
+local function lawnTest(lake: Instance): (number, number) -> boolean
+	local lo, hi = BankDress.LAWN_LO, BankDress.LAWN_HI
+	local p = lake:FindFirstChild("GroundSouth")
+	if p and p:IsA("BasePart") then
+		lo = p.Position - p.Size / 2
+		hi = p.Position + p.Size / 2
+	end
+	return function(x: number, z: number): boolean
+		return x >= lo.X and x <= hi.X and z >= lo.Z and z <= hi.Z
+	end
+end
+
+export type CleanResult = {
+	outside: number, -- slot 24 outside the paths, back to lawn or meadow
+	deep: number, -- slot 24 under a path's surface (unbake)
+	forest: number, -- slot 25 anywhere in the region (unbake)
+	lawnMeadow: number, -- slot 2 on the south lawn, back to lawn (unbake)
+	left: number, -- slot 24 still outside the paths afterwards (0)
+	reverted: boolean, -- the kit was on and was taken off first
+}
+
+-- (N1 round 4, run once) Clears the paint baked into the ground by the round 2 record. Takes the
+-- kit off first if it is on (refuses if that revert fails). Every slot 24 voxel in the paint
+-- region outside `seed`'s footpath cells goes back to the lawn (26) on the south lawn, else to
+-- meadow (2). With `unbake` (default true) it also clears the gravel under the paths' surface,
+-- every forest-floor voxel (25) and the meadow (2) on the south lawn, all of which only BankDress
+-- paints, so the next apply records clean ground; with `unbake` false it follows the advisor's
+-- rule to the letter (25 inside the forest blobs, nothing else). The ground before it is kept in
+-- ServerStorage.BankDressCleanRecord: BankDress.undoClean() right after puts it back.
+function BankDress.cleanGravel(lake: Instance, seed: number?, unbake: boolean?): CleanResult
+	local s = seed or BankDress.SEED
+	local reverted = false
+	if lake:FindFirstChild(BankDress.FOLDER) then
+		local r = BankDress.revert(lake)
+		if not r.ok then
+			error("[BankDress] cleanGravel: the revert failed (a terrain record does not match); nothing cleaned")
+		end
+		reverted = true
+	end
+	local deep = unbake ~= false
+	local g, region = readGrid()
+	local old = ServerStorage:FindFirstChild(BankDress.CLEAN_RECORD)
+	if old then
+		old:Destroy()
+	end
+	local rec = Instance.new("StringValue")
+	rec.Name = BankDress.CLEAN_RECORD
+	rec.Value = hexRecord(g.idx, g.nx, g.ny, g.nz)
+	rec:SetAttribute("Lo", region.CFrame.Position - region.Size / 2)
+	rec:SetAttribute("Hi", region.CFrame.Position + region.Size / 2)
+	rec.Parent = ServerStorage
+	local paths = Scatter.pathCells(Scatter.homeRoutes(s), CELL, s)
+	local forest = if deep then nil else Scatter.blobCells(Scatter.homeLake(s).forest, CELL, s)
+	local c = Scatter.cleanGrid(g, { paths = paths, forest = forest, lawn = lawnTest(lake), unbake = deep })
+	workspace.Terrain:WriteVoxelChannels(region, CELL, { SolidMaterialIndex = g.idx })
+	return {
+		outside = c.outside,
+		deep = c.deep,
+		forest = c.forest,
+		lawnMeadow = c.lawnMeadow,
+		left = Scatter.countSlot(g, BankDress.FOOTPATH_SLOT, paths),
+		reverted = reverted,
+	}
+end
+
+-- Puts the ground back as it was before the last cleanGravel (only right after it: it restores
+-- every voxel of the region from the record). Returns the voxels changed.
+function BankDress.undoClean(): number
+	local rec = ServerStorage:FindFirstChild(BankDress.CLEAN_RECORD)
+	if not (rec and rec:IsA("StringValue")) then
+		return 0
+	end
+	return (restore(rec, nil))
+end
+
+-- Paints and places the dress pass. If the kit is already on, it is reverted first, and apply
+-- stops with an error if that revert fails or if slot 24 gravel lies outside this seed's paths
+-- afterwards (a baked terrain record: run BankDress.cleanGravel first), so a record is never
+-- taken over paint.
 function BankDress.apply(lake: Instance, seed: number?, tuning: { [string]: any }?): Result
 	local s = seed or BankDress.SEED
-	BankDress.revert(lake)
+	if lake:FindFirstChild(BankDress.FOLDER) then
+		local r = BankDress.revert(lake)
+		if not r.ok then
+			error("[BankDress] apply: the revert failed (a terrain record does not match); nothing applied")
+		end
+	end
+	local left = BankDress.gravelOutsidePaths(s)
+	if left > 0 then
+		error(string.format("[BankDress] apply: %d footpath voxels (slot 24) lie outside this seed's paths, so the ground holds baked paint; run BankDress.cleanGravel(workspace.Lake) first", left))
+	end
 	local T: { [string]: any } = table.clone(Scatter.TUNING)
 	for k, v in tuning or {} do
 		T[k] = v
@@ -452,7 +569,7 @@ function BankDress.apply(lake: Instance, seed: number?, tuning: { [string]: any 
 	end
 
 	-- Terrain first, so the ground raycasts read the finished ground (painting moves no surface).
-	local nPath, nForest, nMeadow, record, region = paint(plan, s)
+	local pc, record, region = paint(plan, s, tuning)
 	local rec = Instance.new("StringValue")
 	rec.Name = "TerrainRecord"
 	rec.Value = record
@@ -462,6 +579,9 @@ function BankDress.apply(lake: Instance, seed: number?, tuning: { [string]: any 
 	local hillRecords = Instance.new("Folder")
 	hillRecords.Name = "HillRecords"
 	hillRecords.Parent = folder
+	-- (N1 round 4) In the world before anything else can fail, so the record is never lost (a
+	-- lost record is how paint gets baked in: the next apply takes the painted ground as original).
+	folder.Parent = lake
 
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Include
@@ -484,7 +604,7 @@ function BankDress.apply(lake: Instance, seed: number?, tuning: { [string]: any 
 	local groupCounts: { [string]: number } = {}
 	local missingSet: { [string]: boolean } = {}
 	local altCount: { [string]: number } = {}
-	local noGround, total, liteCount = 0, 0, 0
+	local noGround, total, liteCount, farTagged = 0, 0, 0, 0
 
 	-- Places one item; returns the copy (nil if its model is missing or there is no ground).
 	local function placeItem(it: Scatter.Item, countMissing: boolean): Model?
@@ -531,9 +651,16 @@ function BankDress.apply(lake: Instance, seed: number?, tuning: { [string]: any 
 		local tag = Scatter.TAGS[it.group]
 		if tag then
 			CollectionService:AddTag(m, tag)
-			local c = (altCount[tag] or 0) + 1
-			altCount[tag] = c
+			-- Far models count their own every-second, so the phone tier drops half of them.
+			local far = Scatter.isFar(it.model)
+			local key = if far then tag .. ":far" else tag
+			local c = (altCount[key] or 0) + 1
+			altCount[key] = c
 			m:SetAttribute("FoliageAlt", c % 2)
+			if far then
+				m:SetAttribute("FoliageFar", true)
+				farTagged += 1
+			end
 		end
 		m.Parent = groupFolder(it.group)
 		placed[it.model] = (placed[it.model] or 0) + 1
@@ -589,9 +716,11 @@ function BankDress.apply(lake: Instance, seed: number?, tuning: { [string]: any 
 		end
 	end
 
-	-- The old Scenery trees, nearest the lake first: kit trees near the loop (40 at most), far
-	-- trees 1:1 everywhere else. A tree is hidden only once its replacement stands.
+	-- The old Scenery trees, nearest the dock first (N1 round 4: was nearest the lake): kit trees
+	-- within NEAR of the dock (40 at most), far trees 1:1 everywhere else. A tree is hidden only
+	-- once its replacement stands.
 	local pidx = Scatter.pathIndex(plan.routes)
+	local pcells = Scatter.pathCells(plan.routes, CELL, s)
 	local standing: { Scatter.Pt } = {}
 	for _, it in plan.items do
 		if Scatter.TAGS[it.group] == "FoliageTree" then
@@ -601,12 +730,15 @@ function BankDress.apply(lake: Instance, seed: number?, tuning: { [string]: any 
 	for _, it in hillItems do
 		table.insert(standing, { x = it.x, z = it.z })
 	end
-	type Old = { m: Model, x: number, z: number, d: number, kind: string, h: number }
+	-- d: distance to the dock (the order and the kit test); rb: to the lake's rounded box (the
+	-- hill floor test).
+	type Old = { m: Model, x: number, z: number, d: number, rb: number, kind: string, h: number }
 	local olds: { Old } = {}
 	for _, m in Scenery.oldTrees(lake) do
 		if not skipTree[m] then
 			local p = m:GetPivot().Position
-			table.insert(olds, { m = m, x = p.X, z = p.Z, d = Scatter.roundBox(p.X, p.Z), kind = Scenery.OLD_TREES[m.Name], h = m:GetExtentsSize().Y })
+			local dock = math.sqrt((p.X - Scatter.DOCK.x) ^ 2 + (p.Z - Scatter.DOCK.z) ^ 2)
+			table.insert(olds, { m = m, x = p.X, z = p.Z, d = dock, rb = Scatter.roundBox(p.X, p.Z), kind = Scenery.OLD_TREES[m.Name], h = m:GetExtentsSize().Y })
 		end
 	end
 	table.sort(olds, function(a, b)
@@ -623,12 +755,12 @@ function BankDress.apply(lake: Instance, seed: number?, tuning: { [string]: any 
 		return if th > 0 then math.clamp(h / th, lo, hi) else 1
 	end
 	for _, o in olds do
-		local near = o.d - 5 <= BankDress.NEAR and homeLake(Vector3.new(o.x, 0, o.z))
+		local near = o.d <= BankDress.NEAR and homeLake(Vector3.new(o.x, 0, o.z))
 		local yaw = Scatter.range(rt, 0, 2 * math.pi)
 		local u = Scatter.next(rt)
 		local it: Scatter.Item? = nil
 		if near and swapKit < BankDress.NEAR_CAP then
-			if Scatter.kept(o.x, o.z, 1) or not Scatter.shotClear(o.x, o.z, true) or Scatter.pathEdge(pidx, o.x, o.z) <= 1.5 or not Scatter.farEnough(standing, o.x, o.z, 4) then
+			if Scatter.kept(o.x, o.z, 1) or not Scatter.shotClear(o.x, o.z, true) or Scatter.pathEdge(pidx, o.x, o.z) <= 1.5 or Scatter.onCells(pcells, o.x, o.z, 1.5, CELL) or not Scatter.farEnough(standing, o.x, o.z, 4) then
 				hideModel(o.m) -- a new tree or the walk stands here now
 				swapDropped += 1
 				continue
@@ -683,13 +815,12 @@ function BankDress.apply(lake: Instance, seed: number?, tuning: { [string]: any 
 			swapFar += 1
 			-- Far trees on a hill near the lake get the green forest floor too.
 			local g = groundY(params, o.x, o.z)
-			if g and g >= T.hillMinHeight and o.d <= T.hillBand[2] then
+			if g and g >= T.hillMinHeight and o.rb <= T.hillBand[2] then
 				nHillVox += paintHill({ x = o.x, z = o.z, r = Scatter.range(rt, 7, 10) }, g, s, hillRecords)
 			end
 		end
 	end
 
-	folder.Parent = lake
 	local missing = {}
 	for name in missingSet do
 		table.insert(missing, name)
@@ -715,10 +846,13 @@ function BankDress.apply(lake: Instance, seed: number?, tuning: { [string]: any 
 		swapMissing = swapMissing,
 		swapNoGround = swapNoGround,
 		hillPines = nHill,
-		footpathVoxels = nPath,
-		forestVoxels = nForest,
-		meadowVoxels = nMeadow,
+		footpathVoxels = pc.path,
+		forestVoxels = pc.forest,
+		meadowVoxels = pc.meadow,
 		hillVoxels = nHillVox,
+		sandVoxels = pc.sand,
+		northVoxels = pc.north,
+		farTagged = farTagged,
 	}
 end
 

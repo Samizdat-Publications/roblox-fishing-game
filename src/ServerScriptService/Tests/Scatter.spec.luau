@@ -103,20 +103,23 @@ return function(t, Shared)
 				end
 				t.ok(cv > least, string.format("seed %d: %s spacing too even (CV %.2f)", seed, name, cv))
 			end
-			-- Clustered kinds: clumped, not strung out. They sit far closer to their nearest
-			-- neighbour than the same number spread evenly round the shore (about 700 studs).
+			-- Clustered kinds: clumped, not strung out. Their mean nearest-neighbour distance sits
+			-- near their minimum spacing, far below the same number spread evenly round the shore
+			-- (about 700 studs). Measured from the minimum spacing up (0: packed at it, 1: even),
+			-- because at round 4's counts (110 reeds) the minimum spacing alone is 0.4 of even.
 			local SHORE = 2 * (220 + 160 - 4 * 30) + 2 * math.pi * 30
-			for _, name in { "Reeds", "Stones" } do
+			for name, minD in { Reeds = Scatter.TUNING.reedSpacing, Stones = Scatter.TUNING.stoneSpacing } do
 				local g = kind(name)
 				local sum = 0
 				for _, d in Scatter.nearest(g) do
 					sum += d
 				end
-				local ratio = (sum / #g) / (SHORE / #g)
+				local even = SHORE / #g
+				local ratio = (sum / #g - minD) / (even - minD)
 				if seed == SEED then
-					print(string.format("  [Scatter] %s: %d, mean nearest neighbour is %.2f of even spacing", name, #g, ratio))
+					print(string.format("  [Scatter] %s: %d, mean nearest neighbour %.2f of the way from packed to even", name, #g, ratio))
 				end
-				t.ok(ratio < 0.4, string.format("seed %d: %s strung out evenly (%.2f)", seed, name, ratio))
+				t.ok(ratio < 0.3, string.format("seed %d: %s strung out evenly (%.2f)", seed, name, ratio))
 			end
 		end
 	end)
@@ -360,11 +363,13 @@ return function(t, Shared)
 			end
 			for _, it in list do
 				local tree = Scatter.TAGS[it.group] == "FoliageTree"
+				-- N1 round 4: trees keep 16 from an eye and 9 from the line (canopies, not trunks).
+				local R = if tree then 16 else 8
 				for _, c in Scatter.SHOT_CAMS do
 					local ex, ey, ez = c.eye[1], c.eye[2], c.eye[3]
 					local H = if tree then Scatter.TREE_H else Scatter.PROP_H
 					local dy = math.max(0, ey - H, -ey)
-					t.ok((it.x - ex) ^ 2 + (it.z - ez) ^ 2 + dy * dy >= 64, string.format("seed %d: %s at (%.1f, %.1f) is within 8 of the %s camera", seed, it.model, it.x, it.z, c.id))
+					t.ok((it.x - ex) ^ 2 + (it.z - ez) ^ 2 + dy * dy >= R * R, string.format("seed %d: %s at (%.1f, %.1f) is within %d of the %s camera", seed, it.model, it.x, it.z, R, c.id))
 					if tree then
 						-- Walk the first 25 studs of the line at a quarter stud.
 						local lx, ly, lz = c.look[1] - ex, c.look[2] - ey, c.look[3] - ez
@@ -372,7 +377,7 @@ return function(t, Shared)
 						for s = 0, 25, 0.25 do
 							local px, py, pz = ex + lx / len * s, ey + ly / len * s, ez + lz / len * s
 							if py >= 0 and py <= H then
-								t.ok((it.x - px) ^ 2 + (it.z - pz) ^ 2 >= 9 - 1e-6, string.format("seed %d: %s at (%.1f, %.1f) is on the %s camera's line", seed, it.model, it.x, it.z, c.id))
+								t.ok((it.x - px) ^ 2 + (it.z - pz) ^ 2 >= 81 - 1e-6, string.format("seed %d: %s at (%.1f, %.1f) is on the %s camera's line", seed, it.model, it.x, it.z, c.id))
 							end
 						end
 					end
@@ -385,6 +390,13 @@ return function(t, Shared)
 		t.ok(not Scatter.shotClear(124, 62, false), "a prop at 06's eye is refused")
 		t.ok(Scatter.shotClear(110, 70, false), "a prop beside 06's line is fine")
 		t.ok(Scatter.shotClear(140, 20, true), "a tree well away is fine")
+		-- N1 round 4 radii: a tree 12 from 06's eye, or 7 off its line, is refused; a prop there is not.
+		t.eq(Scatter.SHOT_EYE_R, 8, "props keep 8 from an eye")
+		t.eq(Scatter.SHOT_EYE_R_TREE, 16, "trees keep 16 from an eye")
+		t.eq(Scatter.SHOT_LINE_R, 9, "trees keep 9 from the line")
+		t.ok(not Scatter.shotClear(126, 77, true), "a tree 12 from 06's eye is refused")
+		t.ok(Scatter.shotClear(126, 77, false), "a prop 12 from 06's eye is fine")
+		t.ok(not Scatter.shotClear(103, 63, true), "a tree 7 off 06's line is refused")
 	end)
 
 	-- N1 round 2 (the advisor's ruling after review 1).
@@ -546,5 +558,291 @@ return function(t, Shared)
 		end
 		t.eq(Scatter.TAGS.TreeSwap, "FoliageTree", "swapped trees are trees")
 		t.eq(Scatter.TAGS.HillPines, "FoliageTree", "hill pines are trees")
+	end)
+
+	-- N1 round 4 (the advisor's ruling after review 2).
+
+	t.test("round 4 tuning: the sand ring's counts and the treeline from 6 back", function()
+		local T = Scatter.TUNING
+		t.eq(T.treeBand[1], 6, "treeBand from 6")
+		t.eq(T.treeBand[2], 34, "treeBand to 34")
+		t.eq(T.reedClusters, 26, "reedClusters")
+		t.eq(T.stoneGroups, 30, "stoneGroups")
+		t.eq(T.lipClusters, 20, "lipClusters")
+		t.eq(T.driftwood, 12, "driftwood")
+		t.eq(T.frontRow, 30, "frontRow")
+		t.eq(T.backFar, 25, "backFar")
+		t.eq(T.backKit, 6, "backKit")
+		t.eq(#group("Driftwood"), 12, "12 driftwood")
+		-- More than round 3 drew at the same seed (66 reeds, 30 stones, 11 lip plants).
+		t.ok(#group("Reeds") >= 90, string.format("reeds %d", #group("Reeds")))
+		t.ok(#group("Stones") >= 40, string.format("stones %d", #group("Stones")))
+		t.ok(#group("Lip") >= 12, string.format("lip %d", #group("Lip")))
+		for _, it in group("Treeline") do
+			local d = Scatter.roundBox(it.x, it.z)
+			t.ok(d >= 6 and d <= 34, "the treeline is 6 to 34 back")
+		end
+	end)
+
+	t.test("the front row: 30 far trees by the water, out of lanes, keep-clears and off the gravel", function()
+		local cells = Scatter.pathCells(plan.routes, 4, SEED)
+		for _, seed in { SEED, 1, 2, 3 } do
+			local p = if seed == SEED then plan else Scatter.homeLake(seed)
+			local pc = if seed == SEED then cells else Scatter.pathCells(p.routes, 4, seed)
+			local pidx = Scatter.pathIndex(p.routes)
+			local front, byWater = 0, 0
+			for _, it in p.items do
+				if it.group == "FrontRow" then
+					front += 1
+					t.ok(Scatter.isFar(it.model), it.model .. " is a far model (frontKitShare 0)")
+					t.ok(Scatter.treeSide(it.x, it.z), "on a treeline side")
+					t.ok(not Scatter.kept(it.x, it.z, 3), "out of the keep-clears")
+					t.ok(not Scatter.onCells(pc, it.x, it.z, 1.5, 4), string.format("seed %d: front tree at (%.1f, %.1f) on the gravel", seed, it.x, it.z))
+					t.ok(Scatter.shotClear(it.x, it.z, true), "clear of the shot cameras")
+					for _, l in Scatter.LANES do
+						t.ok(Scatter.laneDist(l, it.x, it.z) > l.r + 2, string.format("seed %d: front tree at (%.1f, %.1f) in the %s lane", seed, it.x, it.z, l.name))
+					end
+					local w = Scatter.waterline(it.x, it.z)
+					t.ok(w >= 2, "on land, 2 or more from the water")
+					if w <= 6 then
+						byWater += 1
+					else
+						-- The fallback: just behind the path, in front of the treeline band's far edge.
+						local e = Scatter.pathEdge(pidx, it.x, it.z)
+						t.ok(e > 1 and e <= 3.5, string.format("seed %d: a fallback front tree %.1f from the path", seed, e))
+					end
+				end
+			end
+			if seed == SEED then
+				print(string.format("  [Scatter] front row: %d (%d between the water and the path)", front, byWater))
+			end
+			t.ok(front >= 25 and front <= 30, string.format("seed %d: front row %d", seed, front))
+		end
+	end)
+
+	t.test("behind the stands: 25 far pines and 6 kit pines, 30 to 70 south of the stands", function()
+		local far, kit = 0, 0
+		for _, it in group("BackRow") do
+			t.ok(it.z >= 126 and it.z <= 166 and it.x >= -75 and it.x <= 75, "in the band behind the stands")
+			t.ok(Scatter.shotClear(it.x, it.z, true), "clear of the shot cameras")
+			t.ok(not Scatter.kept(it.x, it.z, 3), "out of the keep-clears")
+			if Scatter.isFar(it.model) then
+				far += 1
+				t.ok(it.shadow == false, "far pines cast no shadow")
+			else
+				kit += 1
+				t.ok(it.z <= 140, "kit pines nearest the stands")
+			end
+		end
+		print(string.format("  [Scatter] behind the stands: %d far, %d kit", far, kit))
+		t.eq(far, 25, "25 far pines")
+		t.eq(kit, 6, "6 kit pines")
+	end)
+
+	t.test("nothing on land stands on the painted gravel", function()
+		for _, seed in { SEED, 1, 2 } do
+			local p = if seed == SEED then plan else Scatter.homeLake(seed)
+			local cells = Scatter.pathCells(p.routes, 4, seed)
+			for _, it in p.items do
+				if not it.water and it.group ~= "Stones" then
+					local r = if Scatter.TAGS[it.group] == "FoliageTree" then 1.5 else 1.2
+					if it.group == "Birches" then
+						r = 1
+					end
+					t.ok(not Scatter.onCells(cells, it.x, it.z, r, 4), string.format("seed %d: %s (%s) at (%.1f, %.1f) stands on a path cell", seed, it.model, it.group, it.x, it.z))
+				end
+			end
+		end
+		local one = { [Scatter.key(2, 3)] = true }
+		t.ok(Scatter.onCells(one, 9, 13, 0, 4), "a point in the cell")
+		t.ok(Scatter.onCells(one, 13.4, 13, 1.5, 4), "a point 1.4 past the edge reaches it")
+		t.ok(not Scatter.onCells(one, 14, 13, 1.5, 4), "2 past the edge does not")
+	end)
+
+	-- A simulated ground: the home lake's water (no voxels over the bed), a 10 stud sand ring,
+	-- meadow beyond it, the lawn (26) on the south lawn, some thin skins on top.
+	local LAWN_LO, LAWN_HI = { x = -160, z = 80 }, { x = 160, z = 140 }
+	local function lawn(x: number, z: number): boolean
+		return x >= LAWN_LO.x and x <= LAWN_HI.x and z >= LAWN_LO.z and z <= LAWN_HI.z
+	end
+	local function makeGrid(): any
+		local g = { nx = 66, ny = 4, nz = 70, ix0 = -33, iz0 = -33, cell = 4, idx = {}, occ = {} }
+		for x = 1, g.nx do
+			g.idx[x], g.occ[x] = {}, {}
+			for y = 1, g.ny do
+				g.idx[x][y], g.occ[x][y] = {}, {}
+			end
+			for z = 1, g.nz do
+				local cx, cz = (g.ix0 + x - 0.5) * 4, (g.iz0 + z - 0.5) * 4
+				local w = Scatter.waterline(cx, cz)
+				local top = if lawn(cx, cz) then 26 else 2
+				if w >= 0 and w <= 10 then
+					top = 6
+				end
+				g.idx[x][1][z], g.occ[x][1][z] = 12, 1
+				g.idx[x][2][z], g.occ[x][2][z] = if w > -6 then 6 else 12, 1
+				if w >= 0 then
+					g.idx[x][3][z], g.occ[x][3][z] = top, 1
+					local skin = (x + z) % 3 == 0
+					g.idx[x][4][z], g.occ[x][4][z] = if skin then top else 0, if skin then 0.3 else 0
+				else
+					g.idx[x][3][z], g.occ[x][3][z] = 0, 0
+					g.idx[x][4][z], g.occ[x][4][z] = 0, 0
+				end
+			end
+		end
+		return g
+	end
+	local function copy(g: any): any
+		local c = table.clone(g)
+		c.idx = {}
+		for x = 1, g.nx do
+			c.idx[x] = {}
+			for y = 1, g.ny do
+				c.idx[x][y] = table.clone(g.idx[x][y])
+			end
+		end
+		return c
+	end
+	-- BankDress's restore: every voxel holding one of `slots` goes back to the record's slot.
+	local function restore(g: any, rec: any, slots: { [number]: boolean })
+		for x = 1, g.nx do
+			for y = 1, g.ny do
+				for z = 1, g.nz do
+					if slots[g.idx[x][y][z]] then
+						g.idx[x][y][z] = rec.idx[x][y][z]
+					end
+				end
+			end
+		end
+	end
+	local MAIN = { [24] = true, [25] = true, [2] = true, [27] = true }
+	-- Round 2's paint, baked: whole-column gravel on another seed's paths, forest floor and meadow
+	-- blobs from that plan.
+	local function bake(g: any)
+		local old = Scatter.homeLake(SEED + 5)
+		local paths = Scatter.pathCells(old.routes, 4, SEED + 5)
+		local forest = Scatter.blobCells(old.forest, 4, SEED + 5)
+		local meadow = Scatter.blobCells(old.meadow, 4, SEED + 6)
+		for x = 1, g.nx do
+			for z = 1, g.nz do
+				local k = Scatter.key(g.ix0 + x - 1, g.iz0 + z - 1)
+				for y = 1, g.ny do
+					local s = g.idx[x][y][z]
+					if g.occ[x][y][z] > 0 then
+						if paths[k] and (s == 2 or s == 26 or s == 6) then
+							g.idx[x][y][z] = 24
+						elseif forest[k] and (s == 2 or s == 26) then
+							g.idx[x][y][z] = 25
+						elseif meadow[k] and s == 26 then
+							g.idx[x][y][z] = 2
+						end
+					end
+				end
+			end
+		end
+	end
+
+	t.test("baked gravel: cleanGravel, then apply and revert, leaves no gravel outside the paths", function()
+		local paths = Scatter.pathCells(plan.routes, 4, SEED)
+		local g = makeGrid()
+		bake(g)
+		-- A revert over a baked record changes nothing: the gravel is the "original".
+		local baked = copy(g)
+		restore(g, baked, MAIN)
+		local before = Scatter.countSlot(g, 24, paths)
+		print(string.format("  [Scatter] simulated grid: %d baked gravel voxels outside the paths", before))
+		t.ok(before > 100, "the bake left gravel outside the paths")
+		local c = Scatter.cleanGrid(g, { paths = paths, lawn = lawn, unbake = true })
+		print(string.format("  [Scatter] cleanGrid: %d outside, %d deep, %d forest, %d lawn meadow", c.outside, c.deep, c.forest, c.lawnMeadow))
+		t.eq(c.outside, before, "every outside voxel cleaned")
+		t.eq(Scatter.countSlot(g, 24, paths), 0, "no gravel outside the paths after cleaning")
+		t.eq(Scatter.countSlot(g, 25), 0, "no forest floor left (unbake)")
+		t.ok(c.deep > 0, "gravel under the paths' surface cleaned")
+		-- Under every path cell nothing below the surface the path paints is gravel.
+		for x = 1, g.nx do
+			for z = 1, g.nz do
+				local top, depth = Scatter.surface(g, x, z)
+				for y = 1, math.max(1, top - depth) - 1 do
+					t.ok(g.idx[x][y][z] ~= 24, "no gravel under a path's surface")
+				end
+			end
+		end
+		-- Then a normal apply (record, paint) and revert (restore): back exactly to the cleaned ground.
+		local rec = copy(g)
+		local pc = Scatter.paintGrid(g, plan, SEED)
+		print(string.format("  [Scatter] paintGrid: path %d, forest %d, meadow %d, sand %d, north %d", pc.path, pc.forest, pc.meadow, pc.sand, pc.north))
+		-- (Most path cells already hold the baked surface gravel, so few are newly painted.)
+		t.ok(pc.path > 0 and pc.forest > 300 and pc.meadow > 50 and pc.sand > 50 and pc.north > 200, "every paint lands")
+		local onPaths = 0
+		for x = 1, g.nx do
+			for z = 1, g.nz do
+				local top = Scatter.surface(g, x, z)
+				if top > 0 and paths[Scatter.key(g.ix0 + x - 1, g.iz0 + z - 1)] and g.idx[x][top][z] == 24 then
+					onPaths += 1
+				end
+			end
+		end
+		t.ok(onPaths > 300, string.format("the paths are gravel (%d cells)", onPaths))
+		t.eq(Scatter.countSlot(g, 24, paths), 0, "the paint puts gravel only on path cells")
+		restore(g, rec, MAIN)
+		t.eq(Scatter.countSlot(g, 24, paths), 0, "after revert: no gravel outside the paths")
+		local same = true
+		for x = 1, g.nx do
+			for y = 1, g.ny do
+				for z = 1, g.nz do
+					if g.idx[x][y][z] ~= rec.idx[x][y][z] then
+						same = false
+					end
+				end
+			end
+		end
+		t.ok(same, "revert puts the cleaned ground back exactly")
+		t.eq(Scatter.countSlot(g, 25), 0, "after revert: no forest floor")
+		-- The advisor's literal rule (unbake false): gravel outside the paths still goes, to forest
+		-- floor inside the blobs.
+		local g2 = makeGrid()
+		bake(g2)
+		local c2 = Scatter.cleanGrid(g2, { paths = paths, forest = Scatter.blobCells(plan.forest, 4, SEED), lawn = lawn, unbake = false })
+		t.ok(c2.outside > 0 and c2.deep == 0 and c2.forest == 0, "literal mode cleans only the outside gravel")
+		t.eq(Scatter.countSlot(g2, 24, paths), 0, "literal mode: no gravel outside the paths")
+	end)
+
+	t.test("the sand ring's far side turns meadow; the north shore gets the green floor", function()
+		local g = makeGrid()
+		Scatter.paintGrid(g, plan, SEED)
+		local T = Scatter.TUNING
+		local paths = Scatter.pathCells(plan.routes, 4, SEED)
+		local sandLeft, north, southSand = 0, 0, 0
+		for x = 1, g.nx do
+			for z = 1, g.nz do
+				local cx, cz = (g.ix0 + x - 0.5) * 4, (g.iz0 + z - 0.5) * 4
+				for y = 1, g.ny do
+					local s = g.idx[x][y][z]
+					-- (Under a path only the surface is painted.)
+					if g.occ[x][y][z] > 0 and s == 6 and Scatter.sandOff(cx, cz, T) and not paths[Scatter.key(g.ix0 + x - 1, g.iz0 + z - 1)] then
+						sandLeft += 1
+					end
+					if s == 27 then
+						north += 1
+						local w = Scatter.waterline(cx, cz)
+						t.ok(w >= 6 and w <= 70, "the green floor is 6 to 70 back")
+						local side = Scatter.side(cx, cz)
+						t.ok(side == "north" or side == "ne" or side == "nw", "the green floor is behind the north shore")
+					end
+					if s == 6 and Scatter.side(cx, cz) == "south" and g.occ[x][y][z] > 0 and y == 3 then
+						southSand += 1
+					end
+				end
+				-- The 4 studs by the water stay sand.
+				local w = Scatter.waterline(cx, cz)
+				if w >= 0.5 and w <= 3.5 and Scatter.treeSide(cx, cz) and g.occ[x][3][z] > 0 then
+					t.ok(g.idx[x][3][z] == 6 or g.idx[x][3][z] == 24, string.format("sand by the water at (%.0f, %.0f) kept", cx, cz))
+				end
+			end
+		end
+		t.eq(sandLeft, 0, "no sand more than 4 from the water on the treeline sides")
+		t.ok(north > 200, "the green floor is laid")
+		t.ok(southSand > 50, "the dock beach (south) keeps its sand")
 	end)
 end

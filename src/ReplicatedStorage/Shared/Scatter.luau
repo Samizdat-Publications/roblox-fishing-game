@@ -542,6 +542,22 @@ function Scatter.blobCells(blobs: { Blob }, cell: number, seed: number): { [numb
 	return set
 end
 
+-- The terrain grid BankDress paints on (studs per voxel).
+local PAINT_CELL = 4
+Scatter.PAINT_CELL = PAINT_CELL
+
+-- True when (x, z), or any point `r` studs from it in the four grid directions and the four
+-- diagonals, falls in a cell of `cells`.
+function Scatter.onCells(cells: { [number]: boolean }, x: number, z: number, r: number, cell: number): boolean
+	local d = r * 0.7071
+	for _, o in { { 0, 0 }, { r, 0 }, { -r, 0 }, { 0, r }, { 0, -r }, { d, d }, { d, -d }, { -d, d }, { -d, -d } } do
+		if cells[Scatter.key(math.floor((x + o[1]) / cell), math.floor((z + o[2]) / cell))] then
+			return true
+		end
+	end
+	return false
+end
+
 ---------------------------------------------------------------------------------------------
 -- The home lake
 ---------------------------------------------------------------------------------------------
@@ -634,18 +650,40 @@ end
 
 -- How much of each kind, and where. The main session tunes these against the frame budget.
 Scatter.TUNING = {
-	reedClusters = 12,
+	-- N1 round 4 (the advisor, review 2: the bare sand ring): reeds 12 to 26, stones 14 to 30,
+	-- the lip 7 to 20, driftwood 8 to 12, and the treeline from 6 studs back (was 13).
+	reedClusters = 26,
 	reedPer = { 3, 6 },
 	reedSpacing = 2.4,
-	stoneGroups = 14,
+	stoneGroups = 30,
 	stonePer = { 2, 4 },
 	stoneSpacing = 1.6,
 	birches = { 3, 5 }, -- leaning out from the points of land
-	driftwood = 8,
-	lipClusters = 7, -- undergrowth on the far bank's lip
+	driftwood = 12,
+	lipClusters = 20, -- undergrowth on the far bank's lip
 	treeMinDist = 8,
 	treeMax = 140,
-	treeBand = { 13, 34 }, -- studs back from the bank (the path's outer edge is at most 10.5)
+	treeBand = { 6, 34 }, -- studs back from the bank (the path's outer edge is at most 10.5)
+	-- N1 round 4: a front row of trees 2 to 6 studs back from the water on the treeline sides,
+	-- lite and far models (ShorePine2's lite copy and the far leafy trees), clear of the path.
+	frontRow = 30,
+	frontBand = { 2, 6 }, -- studs back from the drawn waterline (Scatter.waterline)
+	frontMinDist = 6,
+	frontFallback = { 1, 3.5 }, -- studs from the path's edge, land side, where the strip is too narrow
+	frontKitShare = 0, -- share of ShorePine2 (lite, 697 triangles); the rest far leafy 60%, far pine 40%
+	-- N1 round 4: behind the stands (z 96), far pines and a few kit pines 30 to 70 studs south,
+	-- so the sky never meets a bare hill in shot 08.
+	backFar = 25,
+	backKit = 6,
+	backZ = { 126, 166 },
+	backX = { -75, 75 },
+	backMinDist = 7,
+	-- N1 round 4: ground. Sand more than sandKeep studs from the water on the treeline sides goes
+	-- to meadow (forest floor in a blob); the green hill floor (slot 27) runs northFloor studs back
+	-- behind the north shore.
+	sandKeep = 4,
+	sandReach = 30, -- only within this far of the water (the home lake's beach ring)
+	northFloor = { 6, 70 },
 	birchMix = 0.1,
 	underPer = { 0, 3 },
 	underSpacing = 2,
@@ -671,7 +709,7 @@ Scatter.TUNING = {
 export type Item = {
 	model: string,
 	group: string, -- Reeds, Stones, Birches, Driftwood, Lip, Treeline, Undergrowth, FarRow,
-	-- HillPines, CornerTree, CornerUnder (and BankDress's TreeSwap)
+	-- HillPines, CornerTree, CornerUnder, FrontRow, BackRow (and BankDress's TreeSwap)
 	x: number,
 	z: number,
 	yaw: number,
@@ -702,7 +740,15 @@ Scatter.TAGS = {
 	HillPines = "FoliageTree",
 	CornerTree = "FoliageTree",
 	TreeSwap = "FoliageTree",
+	FrontRow = "FoliageTree",
+	BackRow = "FoliageTree",
 } :: { [string]: string }
+
+-- True for the far models (FarPine1/2, FarLeafy1/2): the phone tier hides every second one
+-- nearer than the kit trees (ClientModules/FoliageTier, FoliageFar).
+function Scatter.isFar(model: string): boolean
+	return string.sub(model, 1, 3) == "Far"
+end
 
 -- Signed distance to the drawn waterline (ShoreEdge): positive on land. Shore's depth is only
 -- true inside the lake's box (outside a corner it measures to the nearer edge line), so out
@@ -789,8 +835,12 @@ Scatter.SHOT_CAMS = {
 	{ id = "b06-marina-night", eye = { 80, 7, -205 }, look = { 40, 2, -140 } },
 } :: { ShotCam }
 Scatter.SHOT_EYE_R = 8
+-- N1 round 4 (the advisor, review 2): a tree's keep-clear counts its canopy, not just its trunk
+-- (a pine 9 studs off 06's line still filled the frame), so trees keep 16 from an eye and 9 from
+-- the line. Props keep SHOT_EYE_R.
+Scatter.SHOT_EYE_R_TREE = 16
 Scatter.SHOT_LINE = 25
-Scatter.SHOT_LINE_R = 3
+Scatter.SHOT_LINE_R = 9
 -- How tall a placed thing is taken to be, from y 0 (the water; the ground is y 1): trees and the
 -- rest.
 Scatter.TREE_H = 40
@@ -805,11 +855,11 @@ local function segDist(x: number, z: number, ax: number, az: number, bx: number,
 end
 
 -- True when something standing at (x, z) (a tree when `tree`) keeps clear of every shot camera:
--- its upright (y 0 to its height) stays SHOT_EYE_R from each eye, and a tree's stays SHOT_LINE_R
--- from the first SHOT_LINE studs of each eye-to-look line.
+-- its upright (y 0 to its height) stays SHOT_EYE_R (a tree: SHOT_EYE_R_TREE) from each eye, and a
+-- tree's stays SHOT_LINE_R from the first SHOT_LINE studs of each eye-to-look line.
 function Scatter.shotClear(x: number, z: number, tree: boolean): boolean
 	local H = if tree then Scatter.TREE_H else Scatter.PROP_H
-	local R = Scatter.SHOT_EYE_R
+	local R = if tree then Scatter.SHOT_EYE_R_TREE else Scatter.SHOT_EYE_R
 	for _, c in Scatter.SHOT_CAMS do
 		local ex, ey, ez = c.eye[1], c.eye[2], c.eye[3]
 		local h2 = (x - ex) ^ 2 + (z - ez) ^ 2
@@ -873,6 +923,18 @@ function Scatter.side(x: number, z: number): string
 		return ns .. ew
 	end
 	return if ns == "s" then "south" elseif ns == "n" then "north" elseif ew == "e" then "east" elseif ew == "w" then "west" else "middle"
+end
+
+-- The treeline's sides: north, east and west, and the south corners only up to z 72 (the near
+-- shore, the dock's, stays open).
+function Scatter.treeSide(x: number, z: number): boolean
+	local side = Scatter.side(x, z)
+	if side == "south" or side == "middle" then
+		return false
+	elseif side == "se" or side == "sw" then
+		return z < 72
+	end
+	return true
 end
 
 -- True when (x, z) sits more than `margin` studs from every lake and creek water (dry ground).
@@ -957,9 +1019,18 @@ function Scatter.homeLake(seed: number, tuning: { [string]: any }?): Plan
 	end
 	local routes = Scatter.homeRoutes(seed)
 	local pidx = Scatter.pathIndex(routes)
+	-- (N1 round 4) The painted gravel itself: nothing on land stands on a path cell (a bush stood
+	-- on the gravel in shot 06; the cells reach past the path's drawn edge).
+	local pcells = Scatter.pathCells(routes, PAINT_CELL, seed)
+	local function offPath(x: number, z: number, r: number): boolean
+		return not Scatter.onCells(pcells, x, z, r, PAINT_CELL)
+	end
 	local function shoreSample(r: Rng): (number, number)
 		return Scatter.range(r, -124, 124), Scatter.range(r, -94, 94)
 	end
+	-- Darts for the shore bands (N1 round 4: was 4000, which capped the stones at about 14 groups
+	-- whatever the tuning asked for; the bands are a stud or two wide).
+	local SHORE_TRIES = 16000
 	local function free(x: number, z: number, pad: number?): boolean
 		-- (11/27/2026) and out of every shot camera's sphere (Scatter.shotClear).
 		return not Scatter.kept(x, z, pad) and Scatter.shotClear(x, z, false)
@@ -981,7 +1052,7 @@ function Scatter.homeLake(seed: number, tuning: { [string]: any }?): Plan
 		end
 		return 0.5
 	end
-	local reedCentres = Scatter.poisson(rr, T.reedClusters, 18, 4000, shoreSample, function(x, z)
+	local reedCentres = Scatter.poisson(rr, T.reedClusters, 18, SHORE_TRIES, shoreSample, function(x, z)
 		local w = Scatter.waterline(x, z)
 		return w >= -5 and w <= -1.5 and free(x, z, 4) and not Scatter.inLane(x, z) and Scatter.next(rr) < reedWeight(x, z)
 	end)
@@ -1012,7 +1083,7 @@ function Scatter.homeLake(seed: number, tuning: { [string]: any }?): Plan
 
 	-- 2. Stones in small groups at the waterline, half sunk; fewer along the near shore.
 	local rs = Scatter.rng(seed + 2)
-	local stoneCentres = Scatter.poisson(rs, T.stoneGroups, 16, 4000, shoreSample, function(x, z)
+	local stoneCentres = Scatter.poisson(rs, T.stoneGroups, 16, SHORE_TRIES, shoreSample, function(x, z)
 		local w = Scatter.waterline(x, z)
 		local near = Scatter.side(x, z) == "south"
 		return math.abs(w) <= 0.5 and free(x, z, 3) and not Scatter.inLane(x, z) and Scatter.next(rs) < (if near then 0.35 else 1)
@@ -1060,7 +1131,7 @@ function Scatter.homeLake(seed: number, tuning: { [string]: any }?): Plan
 			local rho = p.r - ShoreEdge.WATERLINE_D - Scatter.range(rb, 1, 3)
 			local x, z = p.x + math.cos(a) * rho, p.z + math.sin(a) * rho
 			local w = Scatter.waterline(x, z)
-			if w >= 1 and w <= 3 and Scatter.pathEdge(pidx, x, z) > 1.5 and free(x, z, 2) and Scatter.shotClear(x, z, true) and farEnough(birches, x, z, 10) then
+			if w >= 1 and w <= 3 and Scatter.pathEdge(pidx, x, z) > 1.5 and offPath(x, z, 1) and free(x, z, 2) and Scatter.shotClear(x, z, true) and farEnough(birches, x, z, 10) then
 				local wx, wz = math.cos(a), math.sin(a) -- straight out from the point
 				table.insert(birches, { x = x, z = z })
 				add({ model = pick(rb, "BirchLean1", "BirchLean2"), group = "Birches", x = x, z = z, yaw = Scatter.yawMinusX(wx, wz) + Scatter.range(rb, -0.25, 0.25), scale = Scatter.range(rb, 0.9, 1.15), water = false, shadow = true })
@@ -1072,10 +1143,10 @@ function Scatter.homeLake(seed: number, tuning: { [string]: any }?): Plan
 	-- 4. Driftwood here and there at the waterline: branches and logs along the shore or poking
 	-- into the water, stumps just up the bank.
 	local rd = Scatter.rng(seed + 4)
-	local drift = Scatter.poisson(rd, T.driftwood, 14, 4000, shoreSample, function(x, z)
+	local drift = Scatter.poisson(rd, T.driftwood, 14, SHORE_TRIES, shoreSample, function(x, z)
 		local w = Scatter.waterline(x, z)
 		local near = Scatter.side(x, z) == "south"
-		return w >= -1 and w <= 1.4 and free(x, z, 3) and not Scatter.inLane(x, z) and Scatter.pathEdge(pidx, x, z) > 0.5 and Scatter.next(rd) < (if near then 0.3 else 1)
+		return w >= -1 and w <= 1.4 and free(x, z, 3) and not Scatter.inLane(x, z) and Scatter.pathEdge(pidx, x, z) > 0.5 and offPath(x, z, 1.2) and Scatter.next(rd) < (if near then 0.3 else 1)
 	end, birches)
 	for _, p in drift do
 		local wx, wz = Scatter.toWater(p.x, p.z)
@@ -1096,13 +1167,13 @@ function Scatter.homeLake(seed: number, tuning: { [string]: any }?): Plan
 		local side = Scatter.side(x, z)
 		return side == "north" or side == "ne" or side == "nw" or ((side == "east" or side == "west") and z < 10)
 	end
-	local lipCentres = Scatter.poisson(rl, T.lipClusters, 20, 4000, shoreSample, function(x, z)
+	local lipCentres = Scatter.poisson(rl, T.lipClusters, 20, SHORE_TRIES, shoreSample, function(x, z)
 		local w = Scatter.waterline(x, z)
-		return w >= 0.6 and w <= 2.2 and farLip(x, z) and free(x, z, 3) and not Scatter.inLane(x, z) and Scatter.pathEdge(pidx, x, z) > 0.6
+		return w >= 0.6 and w <= 2.2 and farLip(x, z) and free(x, z, 3) and not Scatter.inLane(x, z) and Scatter.pathEdge(pidx, x, z) > 0.6 and offPath(x, z, 1.2)
 	end)
 	local lip = Scatter.cluster(rl, lipCentres, { 2, 3 }, { 2, 4 }, 2.2, function(x, z)
 		local w = Scatter.waterline(x, z)
-		return w >= 0.6 and w <= 2.4 and free(x, z, 1) and not Scatter.inLane(x, z) and Scatter.pathEdge(pidx, x, z) > 0.6 and farEnough(birches, x, z, 2.5)
+		return w >= 0.6 and w <= 2.4 and free(x, z, 1) and not Scatter.inLane(x, z) and Scatter.pathEdge(pidx, x, z) > 0.6 and offPath(x, z, 1.2) and farEnough(birches, x, z, 2.5)
 	end)
 	for _, p in lip do
 		local fern = Scatter.next(rl) < 0.6
@@ -1113,15 +1184,7 @@ function Scatter.homeLake(seed: number, tuning: { [string]: any }?): Plan
 	-- Poisson-spaced under a slow density mask so stands and gaps come and go.
 	local rt = Scatter.rng(seed + 6)
 	local band = T.treeBand
-	local function treeSide(x: number, z: number): boolean
-		local side = Scatter.side(x, z)
-		if side == "south" or side == "middle" then
-			return false
-		elseif side == "se" or side == "sw" then
-			return z < 72
-		end
-		return true
-	end
+	local treeSide = Scatter.treeSide
 	local trees = Scatter.poisson(rt, T.treeMax, T.treeMinDist, 9000, function(r: Rng)
 		return Scatter.range(r, -152, 152), Scatter.range(r, -126, 76)
 	end, function(x, z)
@@ -1129,7 +1192,7 @@ function Scatter.homeLake(seed: number, tuning: { [string]: any }?): Plan
 		if d < band[1] or d > band[2] or not treeSide(x, z) or not free(x, z, 3) or not Scatter.shotClear(x, z, true) then
 			return false
 		end
-		if Scatter.pathEdge(pidx, x, z) <= 2.5 then
+		if Scatter.pathEdge(pidx, x, z) <= 2.5 or not offPath(x, z, 1.5) then
 			return false
 		end
 		local mask = 0.3 + 0.7 * Scatter.noise(x, z, 30, seed + 11)
@@ -1157,7 +1220,7 @@ function Scatter.homeLake(seed: number, tuning: { [string]: any }?): Plan
 			local a = Scatter.range(rt, 0, TAU)
 			local d = Scatter.range(rt, 2.5, 6)
 			local x, z = p.x + math.cos(a) * d, p.z + math.sin(a) * d
-			if Scatter.roundBox(x, z) >= 9 and Scatter.pathEdge(pidx, x, z) > 0.8 and free(x, z, 1) and farEnough(under, x, z, T.underSpacing) and farEnough(trees, x, z, 2) then
+			if Scatter.roundBox(x, z) >= 9 and Scatter.pathEdge(pidx, x, z) > 0.8 and offPath(x, z, 1.2) and free(x, z, 1) and farEnough(under, x, z, T.underSpacing) and farEnough(trees, x, z, 2) then
 				local u = Scatter.next(rt)
 				local model = if u < 0.55 then pick(rt, "Fern1", "Fern2") elseif u < 0.9 then pick(rt, "Bush1", "Bush2") else "DriftwoodStump"
 				table.insert(under, { x = x, z = z })
@@ -1178,7 +1241,7 @@ function Scatter.homeLake(seed: number, tuning: { [string]: any }?): Plan
 		if d < fb[1] or d > fb[2] or z < T.farZMin or x < T.farXMin or not treeSide(x, z) or not free(x, z, 3) or not Scatter.shotClear(x, z, true) then
 			return false
 		end
-		if Scatter.pathEdge(pidx, x, z) <= 2.5 or not farEnough(trees, x, z, 5) then
+		if Scatter.pathEdge(pidx, x, z) <= 2.5 or not offPath(x, z, 1.5) or not farEnough(trees, x, z, 5) then
 			return false
 		end
 		return Scatter.next(rf) < 0.35 + 0.65 * Scatter.noise(x, z, 34, seed + 14)
@@ -1218,7 +1281,7 @@ function Scatter.homeLake(seed: number, tuning: { [string]: any }?): Plan
 	for _, cx in { -100, 100 } do
 		local centre = { x = cx + Scatter.range(rc, -4, 4), z = 118 + Scatter.range(rc, -4, 4) }
 		local function ok(x: number, z: number, gap: number): boolean
-			return free(x, z, 2) and Scatter.pathEdge(pidx, x, z) > 1.5 and Scatter.roundBox(x, z) >= 10 and farEnough(cornerPts, x, z, gap)
+			return free(x, z, 2) and Scatter.pathEdge(pidx, x, z) > 1.5 and offPath(x, z, 1.5) and Scatter.roundBox(x, z) >= 10 and farEnough(cornerPts, x, z, gap)
 		end
 		if ok(centre.x, centre.z, 0) and Scatter.shotClear(centre.x, centre.z, true) then
 			table.insert(cornerPts, centre)
@@ -1238,6 +1301,82 @@ function Scatter.homeLake(seed: number, tuning: { [string]: any }?): Plan
 				placed += 1
 			end
 		end
+	end
+
+	-- 10. The front row (N1 round 4): trees 2 to 6 studs back from the water on the treeline
+	-- sides, so the bank is not a bare sand ring with the woods starting 13 back. Far models by
+	-- default (the overview's triangle budget, 40k for all of round 4; frontKitShare brings in
+	-- ShorePine2's lite copy). Out of the cast lanes (with a 2 stud margin), the keep-clears, the
+	-- shot cameras and off the path's gravel.
+	local rfr = Scatter.rng(seed + 19)
+	local fbd = T.frontBand
+	local frontOthers: { Pt } = table.clone(birches)
+	for _, p in trees do
+		table.insert(frontOthers, p)
+	end
+	local function frontOk(x: number, z: number): boolean
+		if not treeSide(x, z) or not free(x, z, 3) or not Scatter.shotClear(x, z, true) then
+			return false
+		end
+		for _, l in Scatter.LANES do
+			if Scatter.laneDist(l, x, z) <= l.r + 2 or (x - l.x1) ^ 2 + (z - l.z1) ^ 2 <= (Scatter.LANE_FOOT + 2) ^ 2 then
+				return false
+			end
+		end
+		return offPath(x, z, 1.5)
+	end
+	local front = Scatter.poisson(rfr, T.frontRow, T.frontMinDist, SHORE_TRIES, shoreSample, function(x, z)
+		local w = Scatter.waterline(x, z)
+		return w >= fbd[1] and w <= fbd[2] and Scatter.pathEdge(pidx, x, z) > 1 and frontOk(x, z)
+	end, frontOthers)
+	-- The lake loop runs 5 studs off the bank, so the strip between the water and the gravel is
+	-- mostly too narrow for a tree (about 7 fit). The rest stand just behind the path, frontFallback
+	-- studs from its edge on the land side, still in front of the treeline.
+	if #front < T.frontRow then
+		local fbk = T.frontFallback
+		local more = Scatter.poisson(rfr, T.frontRow - #front, T.frontMinDist, SHORE_TRIES, function(r: Rng)
+			return Scatter.range(r, -132, 132), Scatter.range(r, -102, 102)
+		end, function(x, z)
+			local e = Scatter.pathEdge(pidx, x, z)
+			return Scatter.roundBox(x, z) > 5 and e > fbk[1] and e <= fbk[2] and frontOk(x, z) and farEnough(front, x, z, T.frontMinDist)
+		end, frontOthers)
+		for _, p in more do
+			table.insert(front, p)
+		end
+	end
+	for _, p in front do
+		local u = Scatter.next(rfr)
+		if u < T.frontKitShare then
+			local shadow = dockDist(p.x, p.z) < T.shadowDist
+			add({ model = "ShorePine2", group = "FrontRow", x = p.x, z = p.z, yaw = Scatter.range(rfr, 0, TAU), scale = Scatter.range(rfr, 0.8, 1.05), water = false, shadow = shadow })
+		elseif u < T.frontKitShare + (1 - T.frontKitShare) * 0.6 then
+			add({ model = pick(rfr, "FarLeafy1", "FarLeafy2"), group = "FrontRow", x = p.x, z = p.z, yaw = Scatter.range(rfr, 0, TAU), scale = Scatter.range(rfr, 0.8, 1.1), water = false, shadow = false })
+		else
+			add({ model = pick(rfr, "FarPine1", "FarPine2"), group = "FrontRow", x = p.x, z = p.z, yaw = Scatter.range(rfr, 0, TAU), scale = Scatter.range(rfr, 0.8, 1.1), water = false, shadow = false })
+		end
+	end
+
+	-- 11. Behind the stands (N1 round 4): a few kit pines in the first 14 studs of the band and far
+	-- pines through all of it (30 to 70 studs south of the stands), so the sky in shot 08 meets
+	-- trees, not a bare hill. Clear of the walk, the corner groups and the shot cameras.
+	local rbk = Scatter.rng(seed + 20)
+	local bz, bx = T.backZ, T.backX
+	local function backOk(x: number, z: number): boolean
+		return free(x, z, 3) and Scatter.shotClear(x, z, true) and Scatter.pathEdge(pidx, x, z) > 2.5 and offPath(x, z, 1.5) and farEnough(cornerPts, x, z, 4)
+	end
+	local backKit = Scatter.poisson(rbk, T.backKit, T.backMinDist + 3, 3000, function(r: Rng)
+		return Scatter.range(r, bx[1], bx[2]), Scatter.range(r, bz[1], bz[1] + 14)
+	end, backOk)
+	for _, p in backKit do
+		add({ model = pick(rbk, "ShorePine1", "ShorePine2"), group = "BackRow", x = p.x, z = p.z, yaw = Scatter.range(rbk, 0, TAU), scale = Scatter.range(rbk, 0.9, 1.15), water = false, shadow = dockDist(p.x, p.z) < T.shadowDist })
+	end
+	local backFar = Scatter.poisson(rbk, T.backFar, T.backMinDist, 6000, function(r: Rng)
+		return Scatter.range(r, bx[1], bx[2]), Scatter.range(r, bz[1], bz[2])
+	end, function(x, z)
+		return backOk(x, z) and Scatter.next(rbk) < 0.45 + 0.55 * Scatter.noise(x, z, 26, seed + 21)
+	end, backKit)
+	for _, p in backFar do
+		add({ model = pick(rbk, "FarPine1", "FarPine2"), group = "BackRow", x = p.x, z = p.z, yaw = Scatter.range(rbk, 0, TAU), scale = Scatter.range(rbk, 1.0, 1.4), water = false, shadow = false })
 	end
 
 	return { items = items, routes = routes, forest = forest, meadow = meadow, counts = counts }
@@ -1278,6 +1417,196 @@ function Scatter.hillPines(seed: number, height: (number, number) -> number?, tu
 		table.insert(blobs, { x = p.x, z = p.z, r = Scatter.range(r, 8, 12) })
 	end
 	return items, blobs
+end
+
+---------------------------------------------------------------------------------------------
+-- Ground paint (BankDress), pure over the arrays Terrain:ReadVoxelChannels gives, so the specs
+-- run the same paint, clean and check on a simulated grid.
+---------------------------------------------------------------------------------------------
+
+-- idx[x][y][z] material slot, occ[x][y][z] occupancy (both 1-based, x outermost); column x, z
+-- covers the cell ix0 + x - 1, iz0 + z - 1 (`cell` studs square).
+export type Grid = { idx: any, occ: any, nx: number, ny: number, nz: number, ix0: number, iz0: number, cell: number }
+
+Scatter.SLOT = { MEADOW = 2, SAND = 6, FOOTPATH = 24, FOREST = 25, LAWN = 26, HILL = 27 }
+Scatter.PATH_DRY = 2 -- studs from any water before a footpath cell is painted
+-- What each paint may cover (2 Grass/meadow, 14 Ground, 19 LeafyGrass, 26 the bladeless lawn;
+-- the footpath also forest floor, and sand away from the water).
+local GROUND_OVER = { [2] = true, [19] = true, [26] = true }
+local PATH_OVER = { [2] = true, [14] = true, [19] = true, [26] = true, [25] = true }
+Scatter.GROUND_OVER = GROUND_OVER
+Scatter.PATH_OVER = PATH_OVER
+
+-- The top solid voxel of a column (0 for none) and how many under it the path paints too (1 when
+-- the top is a thin skin, else 0).
+function Scatter.surface(g: Grid, x: number, z: number): (number, number)
+	for y = g.ny, 1, -1 do
+		if g.occ[x][y][z] > 0 then
+			return y, if y > 1 and g.occ[x][y][z] < 0.5 then 1 else 0
+		end
+	end
+	return 0, 0
+end
+
+-- (N1 round 4) Sand to repaint: on the treeline sides, more than sandKeep studs from the water and
+-- within sandReach of it, away from the keep-clears (the channel), the Big Lake's banks and any
+-- creek water. The bare 10 stud beach ring in the overview.
+function Scatter.sandOff(x: number, z: number, T: { [string]: any }): boolean
+	local w = Scatter.waterline(x, z)
+	return w > T.sandKeep and w <= T.sandReach and Scatter.treeSide(x, z) and not Scatter.kept(x, z) and not Scatter.inBigLake(x, z) and Scatter.dry(x, z, T.sandKeep)
+end
+
+-- (N1 round 4) The green floor (slot 27) behind the north shore: northFloor studs back, not past
+-- the far row's south limit (the Big Lake's bank).
+function Scatter.northFloor(x: number, z: number, T: { [string]: any }): boolean
+	local side = Scatter.side(x, z)
+	if side ~= "north" and side ~= "ne" and side ~= "nw" then
+		return false
+	end
+	local w = Scatter.waterline(x, z)
+	return w >= T.northFloor[1] and w <= T.northFloor[2] and z >= T.farZMin
+end
+
+export type PaintCounts = { path: number, forest: number, meadow: number, sand: number, north: number }
+
+-- Paints the grid for a plan: the footpaths (surface only), then off the paths forest floor
+-- under the trees, meadow blobs on the lawn, the green floor behind the north shore, and the sand
+-- ring's far side as meadow.
+function Scatter.paintGrid(g: Grid, plan: Plan, seed: number, tuning: { [string]: any }?): PaintCounts
+	local T: { [string]: any } = table.clone(Scatter.TUNING)
+	for k, v in tuning or {} do
+		T[k] = v
+	end
+	local S = Scatter.SLOT
+	local paths = Scatter.pathCells(plan.routes, g.cell, seed)
+	local forest = Scatter.blobCells(plan.forest, g.cell, seed)
+	local meadow = Scatter.blobCells(plan.meadow, g.cell, seed + 1)
+	local c: PaintCounts = { path = 0, forest = 0, meadow = 0, sand = 0, north = 0 }
+	local idx, occ = g.idx, g.occ
+	for x = 1, g.nx do
+		local cx = (g.ix0 + x - 1 + 0.5) * g.cell
+		for z = 1, g.nz do
+			local cz = (g.iz0 + z - 1 + 0.5) * g.cell
+			local k = Scatter.key(g.ix0 + x - 1, g.iz0 + z - 1)
+			if paths[k] == true and Scatter.dry(cx, cz, Scatter.PATH_DRY) then
+				-- Only the surface: the top solid voxel, and the one under it when the top is a thin
+				-- skin. (Before 11/27/2026 the whole column was painted: shot 06's gravel bank.)
+				local top, depth = Scatter.surface(g, x, z)
+				for y = top, math.max(1, top - depth), -1 do
+					local s = idx[x][y][z]
+					if top > 0 and (PATH_OVER[s] or (s == S.SAND and Scatter.dry(cx, cz, 3))) then
+						idx[x][y][z] = S.FOOTPATH
+						c.path += 1
+					end
+				end
+			else
+				local inForest, inMeadow = forest[k] == true, meadow[k] == true
+				local sandOff = Scatter.sandOff(cx, cz, T)
+				local north = Scatter.northFloor(cx, cz, T)
+				if inForest or inMeadow or sandOff or north then
+					for y = 1, g.ny do
+						if occ[x][y][z] > 0 then
+							local s = idx[x][y][z]
+							local ground = GROUND_OVER[s] or (s == S.SAND and sandOff)
+							if inForest and ground then
+								idx[x][y][z] = S.FOREST
+								c.forest += 1
+							elseif inMeadow and s == S.LAWN then
+								idx[x][y][z] = S.MEADOW
+								c.meadow += 1
+							elseif north and ground then
+								idx[x][y][z] = S.HILL
+								c.north += 1
+							elseif s == S.SAND and sandOff then
+								idx[x][y][z] = S.MEADOW
+								c.sand += 1
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+	return c
+end
+
+export type CleanOpts = {
+	paths: { [number]: boolean }, -- the footpath cells (Scatter.pathCells) of the plan about to be applied
+	forest: { [number]: boolean }?, -- its forest-floor cells (used only when not unbake)
+	lawn: (number, number) -> boolean, -- true on the south lawn (the old GroundSouth box)
+	unbake: boolean, -- see Scatter.cleanGrid
+}
+export type CleanCounts = { outside: number, deep: number, forest: number, lawnMeadow: number }
+
+-- (N1 round 4) Undoes paint that got baked into BankDress's terrain record (the record was taken
+-- again over round 2's paint, so revert only puts back what it holds):
+--  * every footpath voxel (24) outside `paths` goes back to the lawn (26) on the south lawn, else
+--    to meadow (2); with `unbake` false, to forest floor (25) inside `forest` instead of meadow
+--    (the advisor's literal rule).
+-- With `unbake` (the default in BankDress) also:
+--  * footpath voxels inside `paths` below the surface the path paints (the old whole-column
+--    paint: shot 06's gravel bank) take the solid material under them;
+--  * every forest-floor voxel (25, a slot only BankDress paints) goes to the lawn or meadow;
+--  * every meadow voxel (2) on the south lawn goes back to the lawn (MaterialKit.paintLawns turned
+--    all of it to 26 there, so any 2 is BankDress's meadow blobs).
+-- The next apply paints the current plan over clean ground, so its record holds no paint and a
+-- revert after it leaves no slot 24 or 25 at all.
+function Scatter.cleanGrid(g: Grid, o: CleanOpts): CleanCounts
+	local S = Scatter.SLOT
+	local c: CleanCounts = { outside = 0, deep = 0, forest = 0, lawnMeadow = 0 }
+	local idx, occ = g.idx, g.occ
+	for x = 1, g.nx do
+		local cx = (g.ix0 + x - 1 + 0.5) * g.cell
+		for z = 1, g.nz do
+			local cz = (g.iz0 + z - 1 + 0.5) * g.cell
+			local k = Scatter.key(g.ix0 + x - 1, g.iz0 + z - 1)
+			local lawn = o.lawn(cx, cz)
+			local inPath = o.paths[k] == true
+			local target = if lawn then S.LAWN elseif not o.unbake and o.forest and o.forest[k] then S.FOREST else S.MEADOW
+			local top, depth = Scatter.surface(g, x, z)
+			local keepLo = if inPath and top > 0 then math.max(1, top - depth) else math.huge
+			local under: number? = nil -- the last solid, non-gravel material below, walking up
+			for y = 1, g.ny do
+				local s = idx[x][y][z]
+				if s == S.FOOTPATH then
+					if not inPath then
+						idx[x][y][z] = target
+						c.outside += 1
+					elseif o.unbake and y < keepLo then
+						idx[x][y][z] = under or target
+						c.deep += 1
+					end
+				elseif o.unbake and s == S.FOREST then
+					idx[x][y][z] = if lawn then S.LAWN else S.MEADOW
+					c.forest += 1
+				elseif o.unbake and lawn and s == S.MEADOW then
+					idx[x][y][z] = S.LAWN
+					c.lawnMeadow += 1
+				end
+				if occ[x][y][z] > 0 and idx[x][y][z] ~= S.FOOTPATH then
+					under = idx[x][y][z]
+				end
+			end
+		end
+	end
+	return c
+end
+
+-- How many voxels hold `slot` in columns outside `except` (every column when nil).
+function Scatter.countSlot(g: Grid, slot: number, except: { [number]: boolean }?): number
+	local n = 0
+	for x = 1, g.nx do
+		for z = 1, g.nz do
+			if not (except and except[Scatter.key(g.ix0 + x - 1, g.iz0 + z - 1)]) then
+				for y = 1, g.ny do
+					if g.idx[x][y][z] == slot then
+						n += 1
+					end
+				end
+			end
+		end
+	end
+	return n
 end
 
 return Scatter

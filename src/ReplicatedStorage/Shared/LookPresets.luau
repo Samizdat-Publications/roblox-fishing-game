@@ -360,6 +360,11 @@ end
 --   sun rays -0.17 (net 0.03); day haze +1.5 (net 1.5) and Ambient 96,104,112 (canopies read
 --   black at noon); night lifted to OutdoorAmbient 112,128,176, Ambient 66,76,104 and a navy
 --   haze 54,68,112 (still moonlit navy, brighter, never black).
+-- 11/27/2026 N1 review 2 (fable-advisor): night EnvironmentSpecularScale -0.4 (net 0.2, with
+--   the night water below: the tan band across the night water read as a reflection
+--   fallback); golden exposure -0.4, Density -0.07 (net 0.25), haze colour 224,186,140 (the
+--   view from height read washed); day Density +0.04 (net 0.30), saturation -0.2 (net -0.05),
+--   haze colour 212,220,228 (noon read yellow-green and flat).
 -- A number is an offset added to the preset's value; a Color3 is the colour that preset takes
 -- under the grade (it blends with the preset weights like everything else; see applyGrade).
 export type Grade = { [string]: { [string]: { [string]: number | Color3 } } }
@@ -374,12 +379,12 @@ LookPresets.REALISTIC_GRADE = {
 	},
 	day = {
 		Lighting = { ExposureCompensation = -0.35, Ambient = rgb(96, 104, 112) },
-		Atmosphere = { Haze = 1.5 },
-		ColorCorrectionEffect = { Saturation = -0.13 },
+		Atmosphere = { Haze = 1.5, Density = 0.04, Color = rgb(212, 220, 228) },
+		ColorCorrectionEffect = { Saturation = -0.2 },
 	},
 	golden = {
-		Lighting = { ExposureCompensation = -0.3 },
-		Atmosphere = { Glare = -2.2, Haze = -0.8 },
+		Lighting = { ExposureCompensation = -0.4 },
+		Atmosphere = { Glare = -2.2, Haze = -0.8, Density = -0.07, Color = rgb(224, 186, 140) },
 		BloomEffect = { Intensity = -0.4, Threshold = 0.5 },
 		SunRaysEffect = { Intensity = -0.17 },
 	},
@@ -389,7 +394,7 @@ LookPresets.REALISTIC_GRADE = {
 		BloomEffect = { Intensity = -0.3, Threshold = 0.3 },
 	},
 	night = {
-		Lighting = { OutdoorAmbient = rgb(112, 128, 176), Ambient = rgb(66, 76, 104) },
+		Lighting = { OutdoorAmbient = rgb(112, 128, 176), Ambient = rgb(66, 76, 104), EnvironmentSpecularScale = -0.4 },
 		Atmosphere = { Color = rgb(54, 68, 112) },
 		BloomEffect = { Intensity = -0.3, Threshold = 0.2 },
 	},
@@ -808,7 +813,7 @@ LookPresets.WATER_BY_TIME = {
 	day =    { WaterWaveSize = 0.12, WaterWaveSpeed = 8, WaterReflectance = 0.35, WaterTransparency = 0.42 }, -- small chop
 	golden = { WaterWaveSize = 0.08, WaterWaveSpeed = 6, WaterReflectance = 0.55, WaterTransparency = 0.42 }, -- settling, glints
 	dusk =   { WaterWaveSize = 0.05, WaterWaveSpeed = 4, WaterReflectance = 0.6,  WaterTransparency = 0.4 },
-	night =  { WaterWaveSize = 0.04, WaterWaveSpeed = 3, WaterReflectance = 0.5,  WaterTransparency = 0.42 }, -- calm, holds the moon
+	night =  { WaterWaveSize = 0.08, WaterWaveSpeed = 3, WaterReflectance = 0.25, WaterTransparency = 0.42 }, -- calm, holds the moon (N1 review 2: less mirror, more break-up, against the tan reflection band)
 } :: { [string]: TimeWater }
 
 local WATER_KEYS = { "WaterTransparency", "WaterReflectance", "WaterWaveSize", "WaterWaveSpeed" }

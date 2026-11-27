@@ -456,9 +456,13 @@ end
 --   { cframe = CFrame }                    the model's pivot (bottom centre) goes there
 --   { over = "Path.To.Part", anchor = "center" | "bottom", fit = true? }
 --       centred on that gray-box part (or standing on its bottom face), turned like it,
---       and with fit, scaled so the model is as wide as the part.
-type Place = { cframe: CFrame?, over: string?, anchor: string?, fit: boolean? }
-type ArtEntry = { name: string, places: { Place }, hide: { string }?, ghost: { string }? }
+--       and with fit, scaled so the model is as wide as the part; with girth, scaled so it
+--       is as deep (Z) as the part instead, for a long kit model on a long gray box.
+-- An entry's optional `variant` puts one of our MaterialVariants on every MeshPart of each
+-- copy (base material and variant name), when MaterialService has that variant.
+type Place = { cframe: CFrame?, over: string?, anchor: string?, fit: boolean?, girth: boolean? }
+type ArtVariant = { material: Enum.Material, name: string }
+type ArtEntry = { name: string, places: { Place }, hide: { string }?, ghost: { string }?, variant: ArtVariant? }
 
 local function at(x: number, y: number, z: number, yaw: number?): Place
 	return { cframe = CFrame.new(x, y, z) * CFrame.Angles(0, yaw or 0, 0) }
@@ -474,10 +478,10 @@ local function scatter(count: number, seed: number, cx: number, cz: number, hx: 
 	return out
 end
 
-local function over(paths: { string }, anchor: string, fit: boolean?): { Place }
+local function over(paths: { string }, anchor: string, fit: boolean?, girth: boolean?): { Place }
 	local out = {}
 	for _, path in paths do
-		table.insert(out, { over = path, anchor = anchor, fit = fit })
+		table.insert(out, { over = path, anchor = anchor, fit = fit, girth = girth })
 	end
 	return out
 end
@@ -528,10 +532,15 @@ local ART: { ArtEntry } = {
 		places = { at(50, 1, 106) },
 		hide = { "HomePond.RimN", "HomePond.RimS", "HomePond.RimW", "HomePond.RimE" },
 	},
-	{ name = "Log1", places = over({ "Logs.Log1", "Logs.Log4" }, "center"), hide = { "Logs.Log1", "Logs.Log4" } },
-	{ name = "Log2", places = over({ "Logs.Log2", "Logs.Log5" }, "center"), hide = { "Logs.Log2", "Logs.Log5" } },
-	{ name = "Log3", places = over({ "Logs.Log3" }, "center"), hide = { "Logs.Log3" } },
-	{ name = "Buoy", places = { at(0, -0.6, -25) }, hide = { "DeepHoleBuoy" } }, -- floats in the deep hole
+	-- The fallen logs stay the full-length Log1 to Log3 (in the bark family through
+	-- MaterialKit.skinArt): the kit driftwood would be about 8.5 studs inside 22 stud gray boxes,
+	-- and the snags are the whole box, so casts would snag on open water. A proper long fallen
+	-- log model is a follow-up (N3 brings a mossy log). The driftwood option stays in `girth`.
+	{ name = "Log1", places = over({ "Logs.Log1", "Logs.Log4" }, "center"), hide = { "Logs.Log1", "Logs.Log4" }, variant = { material = Enum.Material.Wood, name = "Bark" } },
+	{ name = "Log2", places = over({ "Logs.Log2", "Logs.Log5" }, "center"), hide = { "Logs.Log2", "Logs.Log5" }, variant = { material = Enum.Material.Wood, name = "Bark" } },
+	{ name = "Log3", places = over({ "Logs.Log3" }, "center"), hide = { "Logs.Log3" }, variant = { material = Enum.Material.Wood, name = "Bark" } },
+	-- Floats in the deep hole; painted wood family (N1 review 2: it read as stock plastic).
+	{ name = "Buoy", places = { at(0, -0.6, -25) }, hide = { "DeepHoleBuoy" }, variant = { material = Enum.Material.WoodPlanks, name = "PaintedWood" } },
 	-- Reed clumps replace the weed sticks; lily pads lie on the water round the bed.
 	{ name = "Reeds", places = scatter(18, 31, -78, 38, 24, 27, -1.2), hide = { "WeedBed" } },
 	{ name = "LilyPads", places = scatter(7, 32, -70, 38, 30, 30, -0.35) },
@@ -604,7 +613,9 @@ local function put(m: Model, place: Place, lake: Model): boolean
 		return false
 	end
 	local main = m:FindFirstChildWhichIsA("MeshPart", true)
-	if place.fit and main then
+	if place.girth and main then
+		m:ScaleTo(m:GetScale() * part.Size.Z / main.Size.Z)
+	elseif place.fit and main then
 		m:ScaleTo(m:GetScale() * part.Size.X / main.Size.X)
 	end
 	local height = if main then main.Size.Y else 0
@@ -634,9 +645,19 @@ function WorldBuilder.dress(lake: Model): number
 	local placed = 0
 	for _, entry in ART do
 		local source = art:FindFirstChild(entry.name)
+		local v = entry.variant
+		local hasVariant = v ~= nil and game:GetService("MaterialService"):FindFirstChild(v.name) ~= nil
 		if source and source:IsA("Model") then
 			for _, place in entry.places do
 				local m = prepare(source)
+				if v and hasVariant then
+					for _, d in m:GetDescendants() do
+						if d:IsA("MeshPart") and d.Material ~= Enum.Material.Neon then
+							d.Material = v.material
+							d.MaterialVariant = v.name
+						end
+					end
+				end
 				if put(m, place, lake) then
 					m.Parent = folder
 					placed += 1

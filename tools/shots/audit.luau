@@ -215,6 +215,27 @@ local slots = try(function()
 	return n
 end)
 out.terrainCustomSlots = slots
+-- Slots 2..22 start as the stock materials; one remapped to a MaterialVariant of ours
+-- (GetMaterialSlot returns base, variant, tint) is ours, so its voxels are not stock (N1 review 2:
+-- the old count read our own slots 2, 6 and 12 as stock).
+local ourStockSlots: { [number]: boolean } = {}
+try(function()
+	for i = 2, 22 do
+		local _, variant = (terrain :: any):GetMaterialSlot(i)
+		if type(variant) == "string" and variant ~= "" then
+			ourStockSlots[i] = true
+		end
+	end
+	return true
+end)
+out.terrainRemappedStockSlots = (function()
+	local list = {}
+	for i in ourStockSlots do
+		table.insert(list, i)
+	end
+	table.sort(list)
+	return list
+end)()
 local function stockShare(a): (number?, number?)
 	return try(function()
 		local region = Region3.new(a.min, a.max):ExpandToGrid(4)
@@ -227,7 +248,7 @@ local function stockShare(a): (number?, number?)
 					if occ[x][y][z] > 0 then
 						solid += 1
 						local i = idx[x][y][z]
-						if i >= 2 and i <= 22 then
+						if i >= 2 and i <= 22 and not ourStockSlots[i] then
 							stock += 1
 						end
 					end

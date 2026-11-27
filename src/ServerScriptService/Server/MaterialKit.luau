@@ -344,6 +344,10 @@ MaterialKit.SLOTS = {
 	-- stock mud of the lake beds is our lake mud.
 	{ slot = 6, base = Enum.Material.Sand, variant = "ShoreSand", tint = Color3.new(1, 1, 1) },
 	{ slot = 12, base = Enum.Material.Mud, variant = "LakeMud", tint = Color3.new(1, 1, 1) },
+	-- N1 round 4 (the advisor, review 2): every stock Ground voxel shows our gravel and every stock
+	-- LeafyGrass voxel our bladeless lawn (MaterialKit.revert puts the stock tints back).
+	{ slot = 14, base = Enum.Material.Ground, variant = "FootpathGravel", tint = Color3.new(1, 1, 1) },
+	{ slot = 19, base = Enum.Material.LeafyGrass, variant = "MeadowLawn", tint = Color3.new(1, 1, 1) },
 	-- N1 dress pass (BankDress paints these by slot index): the wandering footpaths and the
 	-- forest floor under the treeline.
 	{ slot = 24, base = Enum.Material.Ground, variant = "FootpathGravel", tint = Color3.new(1, 1, 1) },
