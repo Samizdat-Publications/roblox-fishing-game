@@ -100,7 +100,7 @@ LookPresets.PRESETS = {
 		id = "golden",
 		hour = 17.5,
 		from = 16.75,
-		to = 18.6,
+		to = 17.9, -- was 18.6, past sunset (see dusk)
 		look = {
 			-- Warm low sun, long shadows, glints on the water.
 			Lighting = {
@@ -124,6 +124,38 @@ LookPresets.PRESETS = {
 			BloomEffect = { Intensity = 0.8, Size = 32, Threshold = 1.4 },
 			ColorCorrectionEffect = { Brightness = 0.02, Contrast = 0.12, Saturation = 0.1, TintColor = rgb(255, 236, 212) },
 			SunRaysEffect = { Intensity = 0.2, Spread = 0.9 },
+		},
+	},
+	{
+		-- Blue hour (added 11/27/2026): the sun is down (Roblox sets it at 18.0), the sky goes
+		-- violet and the land dims with it. Golden used to hold to 18.6, so its warm haze sat over
+		-- a sunless sky and the dusk read as olive-brown murk.
+		id = "dusk",
+		hour = 18.7,
+		from = 18.45,
+		to = 19.0,
+		look = {
+			Lighting = {
+				Ambient = rgb(54, 50, 72),
+				OutdoorAmbient = rgb(112, 106, 140),
+				Brightness = 1.85, -- a storm at dusk must still clear the readable-night floor (spec)
+				ColorShift_Top = rgb(255, 176, 196),
+				ColorShift_Bottom = rgb(48, 44, 78),
+				EnvironmentDiffuseScale = 0.55,
+				EnvironmentSpecularScale = 0.8,
+				ExposureCompensation = 0.3,
+			},
+			Atmosphere = {
+				Density = 0.32,
+				Offset = 0.12,
+				Color = rgb(156, 128, 170),
+				Decay = rgb(64, 56, 108),
+				Glare = 0.4,
+				Haze = 0.9,
+			},
+			BloomEffect = { Intensity = 0.8, Size = 30, Threshold = 1.3 },
+			ColorCorrectionEffect = { Brightness = 0.02, Contrast = 0.08, Saturation = -0.04, TintColor = rgb(238, 228, 255) },
+			SunRaysEffect = { Intensity = 0, Spread = 0.5 },
 		},
 	},
 	{

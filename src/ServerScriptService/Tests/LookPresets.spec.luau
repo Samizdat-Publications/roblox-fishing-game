@@ -90,7 +90,7 @@ return function(t, Shared)
 		end
 		t.ok(LookPresets.night(2) == 1, "2 AM is full night, not half dawn")
 		t.ok(LookPresets.night(12) == 0, "no night at noon")
-		local fixed = { [6.6] = "dawn", [12] = "day", [18.4] = "golden", [22] = "night" } -- tools/shots/shots.json
+		local fixed = { [6.6] = "dawn", [12] = "day", [17.4] = "golden", [18.7] = "dusk", [22] = "night" } -- tools/shots/shots.json (golden shots at 17.4 since L5a)
 		for clock, id in fixed do
 			t.ok(LookPresets.weights(clock)[id] == 1, "shot clock " .. clock .. " is pure " .. id)
 		end
