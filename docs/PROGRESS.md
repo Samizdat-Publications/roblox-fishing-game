@@ -267,7 +267,7 @@ Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6
 - **Trophy wall** behind the home pond (the last L6 piece): your six best catches mounted on plaques, monsters first, then trophies, then the rarest, then the heaviest, each with a strip in its tier colour and its name and weight. Each player sees their own, like their pond fish; no new save data (it reads the journal). Verified in Studio with the test save: MONSTER Common Carp 41.7 lb, TROPHY Channel Catfish 17.4 lb, Northern Pike, Walleye, Largemouth Bass, Rainbow Trout, no errors in the log. Still: `docs/making-of/stills/2026-11-27-trophy-wall.jpg`.
 - **Fireflies** on clear nights: green-gold sparks drifting low around you, blinking twice and gone, from the night look in (none in a storm or before one). Verified in Studio that they switch on at night (18 a second round the camera); how many you see at once needs a real look, since Studio thins particles in a window that isn't in front.
 - Kept a Roblox account name and a child's age out of the docs again (an earlier scrub had been undone by tonight's L2a notes).
-- All checks pass with Lune; every changed script matches Studio by checksum. Place version 93.
+- All checks pass with Lune; every changed script matches Studio by checksum. After everything in this section: **351 tests pass in Studio** (Edit runner) and with Lune. Place version 101.
 
 ## 2026-11-27 (night): L5e and the smallest phone
 
