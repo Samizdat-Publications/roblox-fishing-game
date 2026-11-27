@@ -1,8 +1,8 @@
 # Progress
 
-## Leg 3 plan, 11/27/2026: waiting for Stewart's go-ahead
+## Leg 3 plan, 11/27/2026: approved, the build starts at N0
 
-The plan for the next leg is written and nothing has been built: `docs/superpowers/plans/2026-11-27-leg-3.md` (N0 to N7, the look and the boats). Readable page: https://claude.ai/artifact/VGTVnvkZnfBfGQEfaYFhwH . Its calls are in `docs/DECISIONS.md` under 11/27/2026 (evening). It is written to be built unattended on Opus 5.5, with Fable ruling on looks through the `fable-advisor` and `modeler` agents. Do not start N0 until Stewart approves it.
+Stewart approved the plan for the next leg on 11/27/2026. Nothing has been built yet: `docs/superpowers/plans/2026-11-27-leg-3.md` (N0 to N7, the look and the boats). Readable page: https://claude.ai/artifact/VGTVnvkZnfBfGQEfaYFhwH . Its calls are in `docs/DECISIONS.md` under 11/27/2026 (evening). It is written to be built unattended on Opus 5.5, with Fable ruling on looks through the `fable-advisor` and `modeler` agents. The defaults for its seven questions stand unless he says otherwise. Next: N0 (steady ground and the proof corner).
 
 ## L7 report, 11/27/2026 (read this first): the Big Lake and the dinghy
 
@@ -505,7 +505,7 @@ A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shor
 - The test save on the Studio account holds Claude's playtest results (as of 11/27/2026 after L7: 100 coins, the Inflatable Dinghy, the Graphite Rod, braided line, a few fish in the bag, a monster carp on the trophy wall). Ask Claude to wipe it if you want a fresh start.
 
 ## Waiting on Stewart
-- **Approve the leg 3 plan** (11/27/2026): https://claude.ai/artifact/VGTVnvkZnfBfGQEfaYFhwH . Seven questions near the end each have a default that is used unless you say otherwise.
+- **Leg 3 plan: approved 11/27/2026.** Still to come from you during the leg: read the frame counter on your PC and your phone after N1 and after N6, and confirm Liam's account on the weekend of 12/05/2026.
 - **ID verification: done 11/27/2026.** Stewart completed Roblox's age verification on the account Studio is signed in to (the one he and Liam have been playing on, and the one Claude uploads with). Roblox lifts the audio cap from 100 to 2,000 a month for ID-verified accounts; the next sound upload will show whether this verification counts.
 - **Voice chat off:** in Studio, File, Experience Settings, Communication, turn Enable Voice Chat off.
 - **Rating:** Creator Dashboard, the Fishing Game experience, Publish settings, Content ratings: redo the questionnaire and check it comes out Minimal or Mild.
