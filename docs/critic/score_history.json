@@ -110,5 +110,33 @@
       "docs\\critic\\2026-11-26-l5a-polish-neon-2.md",
       "docs\\critic\\2026-11-26-l5a-polish-neon-3.md"
     ]
+  },
+  {
+    "date": "2026-11-26",
+    "step": "l5b",
+    "rubric": "look",
+    "run": "2026-11-26-2320",
+    "commit": "66b8eb1",
+    "shots": 12,
+    "median": 5.5,
+    "scores": [
+      5.5,
+      5.5,
+      5.5
+    ],
+    "points": {
+      "composition": 5,
+      "light": 7,
+      "water": 5,
+      "mood": 5,
+      "want_to_fish": 6,
+      "phone_readability": 7,
+      "broken_or_ugly": 5
+    },
+    "reports": [
+      "docs\\critic\\2026-11-26-l5b-neon.md",
+      "docs\\critic\\2026-11-26-l5b-neon-2.md",
+      "docs\\critic\\2026-11-26-l5b-neon-3.md"
+    ]
   }
 ]

@@ -6,10 +6,10 @@
 --   require(game.ServerScriptService.Server.WaterLook).apply(workspace.Lake)
 --
 -- What it touches: Terrain water inside the WaterMap water boxes (bed up to the surface),
--- Terrain's water settings, the colour and material of the lake and creek bed parts (the
--- originals are kept as attributes, see revert), and a folder Lake.WaterLook of decoration
--- parts (no collision, no queries, no touches). The flat Water parts stay exactly where
--- they are, only invisible: casts, zones and every other fishing rule read their boxes.
+-- Terrain's water settings, the colour and material of the creek bed parts (the originals are
+-- kept as attributes, see revert), and since L5b a terrain lake bed (mud, sand shelves, a
+-- stepped deep hole) that hides the lake's flat Floor parts. The flat Water parts stay exactly
+-- where they are, only invisible: casts, zones and every other fishing rule read their boxes.
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local WaterMap = require(Shared:WaitForChild("WaterMap"))
 
@@ -28,13 +28,9 @@ WaterLook.TERRAIN = {
 
 local SAND = Color3.fromRGB(198, 182, 134)
 local BED = Color3.fromRGB(96, 88, 66)
-local DEEP_EDGE = Color3.fromRGB(58, 60, 50)
-local DEEP = Color3.fromRGB(26, 34, 36)
 
 -- Bed parts to tint: path under Lake, colour, material.
 local TINTS: { { path: string, color: Color3, material: Enum.Material } } = {
-	{ path = "Floor", color = BED, material = Enum.Material.Mud },
-	{ path = "DeepHoleFloor", color = DEEP, material = Enum.Material.Mud },
 	{ path = "CedarCreek.RiffleBed", color = Color3.fromRGB(140, 126, 100), material = Enum.Material.Pebble },
 	{ path = "CedarCreek.RocksBed", color = Color3.fromRGB(96, 92, 80), material = Enum.Material.Slate },
 	{ path = "CedarCreek.PoolBed", color = Color3.fromRGB(30, 38, 40), material = Enum.Material.Mud },
@@ -51,31 +47,54 @@ local function find(root: Instance, path: string): Instance?
 	return node
 end
 
-local function deco(parent: Instance, name: string, size: Vector3, cf: CFrame, color: Color3, material: Enum.Material): Part
-	local p = Instance.new("Part")
-	p.Name = name
-	p.Anchored = true
-	p.CanCollide = false
-	p.CanQuery = false
-	p.CanTouch = false
-	p.CastShadow = false
-	p.Size = size
-	p.CFrame = cf
-	p.Color = color
-	p.Material = material
-	p.TopSurface = Enum.SurfaceType.Smooth
-	p.BottomSurface = Enum.SurfaceType.Smooth
-	p.Parent = parent
-	return p
-end
+-- The lake's own bed parts. L5b hides them under a terrain bed (they sat in the water as flat
+-- slabs with straight edges); nothing in the game reads them.
+local HIDDEN_BEDS = { "Floor", "DeepHoleFloor" }
 
--- A tilted slab from `shore` (high) down to `inner` (low), `width` wide, its top on the line.
-local function slope(parent: Instance, name: string, shore: Vector3, inner: Vector3, width: number)
-	local thick = 0.6
-	local down = Vector3.new(0, thick / 2, 0)
-	local a, b = shore - down, inner - down
-	local len = (a - b).Magnitude + 1
-	deco(parent, name, Vector3.new(width, thick, len), CFrame.lookAt((a + b) / 2, a), SAND, Enum.Material.Sand)
+-- The lake bed in terrain (L5b). The old tilted shelf parts showed their straight edges through
+-- the water as seams; terrain sand slopes smooth into a mud bed instead, and the deep hole is a
+-- real two-step bowl. Whole-voxel heights (multiples of 4) so the bed and the water meet cleanly.
+WaterLook.BED_TOP = -8 -- top of the mud bed
+WaterLook.SHELF = 20 -- studs from the bank to where the sand meets the bed
+WaterLook.SHORE_DEPTH = 0.7 -- the shallowest sand sits under this much water
+local HOLE_OUTER = Vector3.new(60, 0, 50) -- first step of the deep hole, 4 studs deeper
+local HOLE_INNER = Vector3.new(40, 0, 30) -- second step, 8 studs deeper
+
+local function terrainBed(lake: Model, surfaceY: number)
+	local t = workspace.Terrain
+	t:SetMaterialColor(Enum.Material.Sand, SAND)
+	t:SetMaterialColor(Enum.Material.Mud, BED)
+	local size = WaterMap.WATER_SIZE
+	local c = WaterMap.WATER_CF.Position
+	local bed = WaterLook.BED_TOP
+	-- Mud from bed - 8 up to the bed (it was air under the water before).
+	t:FillBlock(CFrame.new(c.X, bed - 4, c.Z), Vector3.new(size.X, 8, size.Z), Enum.Material.Mud)
+	-- The deep hole: two steps of water cut into the mud, mud under the deepest step.
+	local hole = lake:FindFirstChild("DeepHoleFloor")
+	local hc = if hole and hole:IsA("BasePart") then hole.Position else Vector3.new(c.X, 0, c.Z - 25)
+	t:FillBlock(CFrame.new(hc.X, bed - 2, hc.Z), Vector3.new(HOLE_OUTER.X, 4, HOLE_OUTER.Z), Enum.Material.Water)
+	t:FillBlock(CFrame.new(hc.X, bed - 6, hc.Z), Vector3.new(HOLE_INNER.X, 4, HOLE_INNER.Z), Enum.Material.Water)
+	t:FillBlock(CFrame.new(hc.X, bed - 10, hc.Z), Vector3.new(HOLE_INNER.X, 4, HOLE_INNER.Z), Enum.Material.Mud)
+	-- Sand shelves, high side (a terrain wedge's local +Z) at the bank.
+	local hx, hz = size.X / 2, size.Z / 2
+	local shelf = WaterLook.SHELF
+	local drop = (surfaceY - WaterLook.SHORE_DEPTH) - bed
+	local y = bed + drop / 2
+	local inset = shelf / 2
+	t:FillWedge(CFrame.new(c.X, y, c.Z + hz - inset), Vector3.new(size.X, drop, shelf), Enum.Material.Sand)
+	t:FillWedge(CFrame.new(c.X, y, c.Z - hz + inset) * CFrame.Angles(0, math.pi, 0), Vector3.new(size.X, drop, shelf), Enum.Material.Sand)
+	t:FillWedge(CFrame.new(c.X + hx - inset, y, c.Z) * CFrame.Angles(0, math.pi / 2, 0), Vector3.new(size.Z, drop, shelf), Enum.Material.Sand)
+	t:FillWedge(CFrame.new(c.X - hx + inset, y, c.Z) * CFrame.Angles(0, -math.pi / 2, 0), Vector3.new(size.Z, drop, shelf), Enum.Material.Sand)
+	-- Hide the old flat bed parts (kept, so revert can show them again).
+	for _, name in HIDDEN_BEDS do
+		local p = lake:FindFirstChild(name)
+		if p and p:IsA("BasePart") then
+			if p:GetAttribute("OrigTransparency") == nil then
+				p:SetAttribute("OrigTransparency", p.Transparency)
+			end
+			p.Transparency = 1
+		end
+	end
 end
 
 -- Bed height under each water box: the lake's Floor top, or the creek stretch's bed.
@@ -139,30 +158,13 @@ function WaterLook.apply(lake: Model): { filled: number, tinted: number, shelves
 		end
 	end
 
-	-- Decoration, rebuilt from scratch each run.
+	-- The bed: terrain since L5b. The old decoration folder (tilted shelf parts) goes.
 	local old = lake:FindFirstChild(FOLDER)
 	if old then
 		old:Destroy()
 	end
-	local folder = Instance.new("Folder")
-	folder.Name = FOLDER
 	local size = WaterMap.WATER_SIZE
-	local hx, hz = size.X / 2, size.Z / 2
-	local surfaceY = WaterMap.WATER_CF.Position.Y + size.Y / 2
-	local floorY = bedOf(lake, 1)
-	local SHELF = 16 -- studs from the shore to where the shelf meets the bed
-	local shoreY = surfaceY - 0.7 -- the shallowest sand sits under 0.7 studs of water
-	slope(folder, "ShelfSouth", Vector3.new(0, shoreY, hz), Vector3.new(0, floorY, hz - SHELF), size.X)
-	slope(folder, "ShelfNorth", Vector3.new(0, shoreY, -hz), Vector3.new(0, floorY, -hz + SHELF), size.X)
-	slope(folder, "ShelfEast", Vector3.new(hx, shoreY, 0), Vector3.new(hx - SHELF, floorY, 0), size.Z)
-	slope(folder, "ShelfWest", Vector3.new(-hx, shoreY, 0), Vector3.new(-hx + SHELF, floorY, 0), size.Z)
-	-- A darker ring round the deep hole so the bed darkens towards it, not in one step.
-	local hole = lake:FindFirstChild("DeepHoleFloor")
-	if hole and hole:IsA("BasePart") then
-		local top = hole.Position.Y + hole.Size.Y / 2
-		deco(folder, "DeepHoleEdge", Vector3.new(hole.Size.X + 20, 0.2, hole.Size.Z + 16), CFrame.new(hole.Position.X, top - 0.35, hole.Position.Z), DEEP_EDGE, Enum.Material.Mud)
-	end
-	folder.Parent = lake
+	terrainBed(lake, WaterMap.WATER_CF.Position.Y + size.Y / 2)
 
 	return { filled = filled, tinted = tinted, shelves = 4 }
 end
@@ -188,6 +190,14 @@ function WaterLook.revert(lake: Model)
 	local old = lake:FindFirstChild(FOLDER)
 	if old then
 		old:Destroy()
+	end
+	for _, name in HIDDEN_BEDS do
+		local p = lake:FindFirstChild(name)
+		local was = p and p:GetAttribute("OrigTransparency")
+		if p and p:IsA("BasePart") and type(was) == "number" then
+			p.Transparency = was
+			p:SetAttribute("OrigTransparency", nil)
+		end
 	end
 end
 

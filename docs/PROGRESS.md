@@ -221,6 +221,23 @@ Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6
 - Still to do in L1: a Lake Sturgeon at the deep hole in its real conditions, the journal on the smallest phone (the simulated mouse wheel zoomed the camera instead of scrolling the journal; check with a real wheel), the 15 new fish models (they hang as the old shape until then), a Neon reveal clip, the StyLua reformat, and Liam's 20 minutes.
 - Look mockups for the beauty pass: five looks (Golden Afternoon, Bright Summer Day, Misty Dawn, Moonlit Night, Autumn Lake) from the all-models stills, page https://claude.ai/artifact/DjMRLNSn6t91zKmR93sGr6 (source `planner/looks.html`, images `docs/looks/`, script `tools/looks/mockup.py`). They were made in the old flat low-poly style before Stewart picked Real-ish, so treat them as light and time-of-day moods, not materials.
 
+## 2026-11-27 (night): L5b, land to the horizon
+
+- **No more void:** terrain grass runs out to the horizon on every side, with about 70 rolling hills, rock outcrops on a few tops, and about 290 trees in stands (copies of the Art pines and leafy trees). The lake's straight banks have reeds, small rocks and lily pads along them. Cedar Creek's riffle now comes out from under a rocky, pine-topped bank instead of hanging into the sky. A lantern lights the creek pool at night (`Server/Scenery.luau`, run once in Edit and saved in the place). Stills: `docs/making-of/stills/2026-11-27-hills-dock-golden.jpg`, `2026-11-27-creek-head.jpg`.
+- **Lake bed in terrain:** sand shelves slope smoothly to a mud bed and the deep hole is a real two-step bowl (`Server/WaterLook.luau`); the old tilted shelf parts and their straight seams are gone.
+- **Invisible walls** at the old world edge and along the creek fence line past its ends: the land outside is for looking at, and the gate still guards Cedar Creek.
+- **The bobber glows at night** (warm tip and a soft light that fade in with the night look), now wired into every bobber.
+- Critic (Gemini Neon, median of 3): **5.5/10** (was 4.5 after L5a, 3 at the start). Its next asks: curved banks instead of rectangles (the lake, the riffle and the pool), a greener, less swimming-pool water colour, the straight seam across the creek pool, clouds and haze at noon, a nicer creek gate than the plank wall.
+- Speed: unchanged in feel; the trees are copies of one mesh each. Not re-probed yet (next step).
+
+## 2026-11-27 (night): L3b, rig the lures
+
+- **Spinner:** tap on each of five wraps as the marker passes, then hold and let go when the knot is snug. **Plastic worm:** nose tap, then slide it up the hook and let go in the band (a Texas rig). First time is slower with the tip in gold, like the live baits. Still: `docs/making-of/stills/2026-11-27-lure-bench.jpg`.
+- A lure stays tied on: the bench opens only on the first cast with it, after switching to it, or after the line snaps or a fight is lost ("Tie your lure back on.").
+- **Grades:** Good and Perfect lures start the fight at 0.45 and 0.50 like baits, but don't bring bites sooner (a lure is never used up, so it would pay forever: 12.7 percent over Okay, cap 10; now 7.5). A Perfect plastic worm is weedless; Okay or Good snags in the weed core. An Okay spinner knot casts 5 percent shorter.
+- Verified in Studio: the bench opened as "Rig the lure: Spinner" with "Lures carry their own hook."; the built-in test player tied it Perfect ("baited Spinner ... Perfect"), then "hooked YellowPerch, fight starts at 0.50 (Perfect)" and the catch; the next cast went straight out with no bench. 301 tests pass in Studio and with Lune; all 11 changed scripts match by checksum. Place version 64.
+- Not verified: the plastic worm in the weed core, snap and lost-fight rebench, touch and gamepad, real taps.
+
 ## 2026-11-27 (night): L5a, light and water
 
 - **Four lights by the clock** (`Shared/LookPresets.luau`): misty pink dawn, clear day, golden afternoon, blue moonlit night, each blending into the next. The server's clock applies them every quarter second (`Server/DayNight.luau`), so every player sees the same sky. Atmosphere density is capped at 0.42 so the bobber stays visible at full reach.

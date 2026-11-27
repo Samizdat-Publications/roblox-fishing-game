@@ -3,9 +3,7 @@
 -- glowing tip on top of the bobber and a soft light on the water round it, fading in with the
 -- night look (LookPresets.night) and out again at dawn. Nothing changes by day.
 --
--- Not wired in yet: FishingService (owned by another task right now) should call
---   BobberGlow.watch(b)
--- once in makeBobber, after the bobber is made (it works before or after parenting). The
+-- FishingService.makeBobber calls BobberGlow.watch(b) once per bobber. The
 -- tip is a BillboardGui, so it follows the bobber as it bobs without any welds; the bobber's
 -- own small PointLight (FishingService) stays as it is.
 local Lighting = game:GetService("Lighting")

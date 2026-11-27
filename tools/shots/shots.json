@@ -135,16 +135,16 @@
       "place": "creek",
       "clock": 6.6,
       "eye": [
-        -219,
+        -210,
         7,
-        87
+        28
       ],
       "look": [
         -230,
-        -2,
-        50
+        -1,
+        72
       ],
-      "what": "Down the riffle at dawn"
+      "what": "Up the riffle to its rocky head at dawn (moved in L5b: the old eye, past the map edge, is now inside the creek head)"
     },
     {
       "id": "10-pool-golden",

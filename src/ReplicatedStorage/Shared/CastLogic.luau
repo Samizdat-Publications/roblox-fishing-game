@@ -17,18 +17,19 @@ CastLogic.LAND_Y = 0.3 -- height of the bobber on the water
 CastLogic.ASSIST_MAX = 3 -- near-miss help: how far back toward the caster a dry landing may slide
 CastLogic.ASSIST_STEP = 0.5
 
--- The extra reach above CAST_MIN for this rod and bait at full power.
-function CastLogic.range(rodId: string?, baitId: string?): number
+-- The extra reach above CAST_MIN for this rod and bait at full power. `scale` is how the
+-- lure is tied (BaitRig.castScale: a spinner knot tied Okay is 0.95); missing means 1.
+function CastLogic.range(rodId: string?, baitId: string?, scale: number?): number
 	local rod = RodData.byId[rodId or ""] or RodData.byId.Willow
 	local bait = BaitData.byId[baitId or ""]
 	local mult = (bait and bait.castMult) or 1
-	return (Config.CAST_RANGE + rod.castBonus) * mult
+	return (Config.CAST_RANGE + rod.castBonus) * mult * (scale or 1)
 end
 
 -- Power (0..1) after holding for this long: a triangle wave, out then back, so the ring
 -- moves at RING_SPEED studs per second the whole time.
-function CastLogic.powerAt(heldSeconds: number, rodId: string?, baitId: string?): number
-	local range = CastLogic.range(rodId, baitId)
+function CastLogic.powerAt(heldSeconds: number, rodId: string?, baitId: string?, scale: number?): number
+	local range = CastLogic.range(rodId, baitId, scale)
 	if range <= 0 or heldSeconds <= 0 then
 		return 0
 	end
@@ -41,18 +42,18 @@ function CastLogic.powerAt(heldSeconds: number, rodId: string?, baitId: string?)
 end
 
 -- How far the cast flies (studs) at this power.
-function CastLogic.distance(power: number, rodId: string?, baitId: string?): number
-	return Config.CAST_MIN + math.clamp(power, 0, 1) * CastLogic.range(rodId, baitId)
+function CastLogic.distance(power: number, rodId: string?, baitId: string?, scale: number?): number
+	return Config.CAST_MIN + math.clamp(power, 0, 1) * CastLogic.range(rodId, baitId, scale)
 end
 
 -- The landing point on the water, along the flat direction `dir` from `origin`. Nil when
 -- the direction has no flat part (the caller picks a fallback direction).
-function CastLogic.landing(origin: Vector3, dir: Vector3, power: number, rodId: string?, baitId: string?): Vector3?
+function CastLogic.landing(origin: Vector3, dir: Vector3, power: number, rodId: string?, baitId: string?, scale: number?): Vector3?
 	local flat = Vector3.new(dir.X, 0, dir.Z)
 	if flat.Magnitude < 0.01 then
 		return nil
 	end
-	local p = origin + flat.Unit * CastLogic.distance(power, rodId, baitId)
+	local p = origin + flat.Unit * CastLogic.distance(power, rodId, baitId, scale)
 	return Vector3.new(p.X, CastLogic.LAND_Y, p.Z)
 end
 

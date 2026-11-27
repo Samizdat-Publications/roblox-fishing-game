@@ -210,10 +210,21 @@ local function castGear(): (string?, string?)
 	return nil, nil
 end
 
+-- How the bait or lure on the hook went on: the rig's grade, or Okay when nothing is rigged
+-- yet (the server ties it on Okay at the cast). Same rule as the server's onCast.
+local function rigGrade(bait: string?): string
+	local r = rig
+	if r and bait and r.bait == bait then
+		return r.grade
+	end
+	return "Okay"
+end
+
 -- Power rises and falls while held (the ring travels out and back), see CastLogic.powerAt.
+-- A spinner knot tied Okay casts a little shorter (BaitRig.castScale, L3b).
 local function chargePower(): number
 	local rod, bait = castGear()
-	return CastLogic.powerAt(os.clock() - chargeStart, rod, bait)
+	return CastLogic.powerAt(os.clock() - chargeStart, rod, bait, BaitRig.castScale(bait, rigGrade(bait)))
 end
 
 -- Where a cast at this power would land, worked out exactly the way the server does it.
@@ -231,7 +242,7 @@ local function predictCast(power: number): (Vector3?, Vector3?, Vector3?)
 	if flat.Magnitude < 0.01 then
 		flat = hrp.CFrame.LookVector * Vector3.new(1, 0, 1)
 	end
-	local raw = CastLogic.landing(origin, flat, power, rod, bait)
+	local raw = CastLogic.landing(origin, flat, power, rod, bait, BaitRig.castScale(bait, rigGrade(bait)))
 	if not raw then
 		return nil, nil, nil
 	end
@@ -254,9 +265,10 @@ local function drawRing(power: number)
 		return
 	end
 	if assisted then
-		-- Amber over a snag: right on a log, or deep in the weeds without a weedless lure.
+		-- Amber over a snag: right on a log, or deep in the weeds without a weedless rig (only
+		-- a Perfect plastic worm is, L3b).
 		local _, bait = castGear()
-		local snag = Cover.snagAt(assisted, bait)
+		local snag = Cover.snagAt(assisted, bait, rigGrade(bait))
 		CastRing.setSnag(snag)
 		CastRing.update(tip, assisted, true, spotLabel(assisted) .. (if snag then " (snag)" else ""))
 	else
@@ -269,17 +281,25 @@ end
 -- The bait bench (L3)
 
 -- The bench opens when you go to cast with live bait, the hook is empty (or tied on a
--- different bait or hook size), and Quick Bait is off.
+-- different bait or hook size), and Quick Bait is off. A lure (L3b) is tied once: the bench
+-- opens only when it isn't the one tied on (you switched to it, its line snapped, or it's
+-- the first cast with it this visit). Hook size doesn't matter for a lure.
 local function needsBench(): boolean
 	if not snapshot or snapshot.quickBait then
 		return false
 	end
 	local id = snapshot.equipped
 	local b = BaitData.byId[id]
-	if not b or b.kind ~= "live" or (snapshot.bait[id] or 0) <= 0 or not BaitRig.recipeFor(id) then
+	if not b or not BaitRig.recipeFor(id) then
 		return false
 	end
 	local r = rig
+	if b.kind == "lure" then
+		return snapshot.lures[id] == true and not (r and r.bait == id)
+	end
+	if (snapshot.bait[id] or 0) <= 0 then
+		return false
+	end
 	return not (r and r.bait == id and r.hook == (snapshot.hook or BaitRig.DEFAULT_HOOK))
 end
 
@@ -306,7 +326,8 @@ local function onBenchDone(result: BaitBench.Result)
 	goIdle()
 	graceUntil = os.clock() + 0.3
 	needRelease = anyHeld()
-	UI.status(string.format("Bait on (%s). Hold %s and let go to cast.", result.grade, UI.inputName()))
+	local lure = BaitData.byId[result.bait] and BaitData.byId[result.bait].kind == "lure"
+	UI.status(string.format("%s (%s). Hold %s and let go to cast.", if lure then "Lure on" else "Bait on", result.grade, UI.inputName()))
 end
 
 local function openBench()

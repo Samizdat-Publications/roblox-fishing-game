@@ -1,6 +1,7 @@
 -- The bait bench (L3): each recipe grades a perfect timeline Perfect, a sloppy one Good or
 -- Okay, refuses an impossible one, and runs slower the first time; hook sizes; and Okay is
--- exactly the game before L3. Written 2026-11-26; UNVERIFIED in Studio until the L3 playtest.
+-- exactly the game before L3. The two lure recipes (L3b) run through the same cases.
+-- Written 2026-11-26; UNVERIFIED in Studio until the L3 and L3b playtests.
 return function(t, Shared)
 	local BaitRig = require(Shared.BaitRig)
 	local BaitData = require(Shared.BaitData)
@@ -9,6 +10,8 @@ return function(t, Shared)
 	local Config = require(Shared.Config)
 
 	local LIVE = { "Worm", "Cricket", "Minnow", "Stinkbait" }
+	local LURES = { "Spinner", "PlasticWorm" }
+	local ALL = { "Worm", "Cricket", "Minnow", "Stinkbait", "Spinner", "PlasticWorm" }
 
 	local function shift(timeline, dt: number, which: number?)
 		local out = {}
@@ -19,17 +22,14 @@ return function(t, Shared)
 		return out
 	end
 
-	t.test("every live bait has a recipe, and no lure does (lures wait for L3b)", function()
+	t.test("every bait and lure has a recipe (lures since L3b)", function()
 		for _, b in BaitData.list do
-			if b.kind == "live" then
-				t.ok(BaitRig.recipeFor(b.id) ~= nil, b.id .. " needs a recipe")
-			else
-				t.ok(BaitRig.recipeFor(b.id) == nil, b.id .. " is a lure")
-			end
+			t.ok(BaitRig.recipeFor(b.id) ~= nil, b.id .. " needs a recipe")
 		end
+		t.eq(#ALL, #BaitData.list, "the spec covers every bait")
 	end)
 
-	for _, bait in LIVE do
+	for _, bait in ALL do
 		local r = BaitRig.recipeFor(bait) :: BaitRig.Recipe
 		for _, first in { false, true } do
 			local tag = bait .. (if first then " (first time)" else "")
@@ -46,15 +46,20 @@ return function(t, Shared)
 			t.test(tag .. ": a little off is Good, a lot off is Okay", function()
 				local tl = BaitRig.perfectTimeline(r, first)
 				local speed = if first then BaitRig.FIRST_SPEED else 1
+				local n = r.presses
+				local hold = BaitRig.moveOf(r, n) == "hold"
+				local tight, loose = BaitRig.windowOf(r, n)
 				-- How many seconds one marker (or fill) unit is worth.
-				local unit = if r.kind == "hold" then r.fillTime / speed else r.sweep / speed
-				local good = (r.tight + r.loose) / 2 * unit
-				local bad = (r.loose + 0.02) * unit
+				local unit = if hold then r.fillTime / speed else r.sweep / speed
+				local good = (tight + loose) / 2 * unit
+				local bad = (loose + 0.02) * unit
 				local function nudge(dt: number)
-					if r.kind == "hold" then
-						return { { down = tl[1].down, up = tl[1].up + dt } } -- held longer
+					if hold then
+						local out = table.clone(tl)
+						out[n] = { down = tl[n].down, up = tl[n].up + dt } -- the last hold held longer
+						return out
 					end
-					return shift(tl, dt, r.presses) -- the last move late
+					return shift(tl, dt, n) -- the last move late
 				end
 				t.eq((BaitRig.grade(r, nudge(good), first)), "Good", "a little late")
 				t.eq((BaitRig.grade(r, nudge(bad), first)), "Okay", "far too late")
@@ -90,7 +95,18 @@ return function(t, Shared)
 				if r.kind == "hold" then
 					local quick = { { down = 0.2, up = 0.2 + BaitRig.minTotal(r, first) * 0.5 } }
 					t.ok(select(2, BaitRig.grade(r, quick, first)) ~= nil, "too quick")
+				elseif r.kind == "mixed" then
+					-- Every move as fast as hands allow, the hold let go at once: far too quick.
+					local quick = {}
+					for i = 1, r.presses do
+						local d = 0.2 + (i - 1) * (BaitRig.MIN_GAP + 0.01)
+						quick[i] = { down = d, up = d + 0.005 }
+					end
+					t.ok(quick[#quick].up < BaitRig.minTotal(r, first), "the quick timeline is under the minimum")
+					t.ok(select(2, BaitRig.grade(r, quick, first)) ~= nil, "too quick")
 				end
+				-- The soonest possible good finish is never refused (the bound is a true minimum).
+				t.ok(BaitRig.minTotal(r, first) <= tl[#tl].up + 1e-9, "minTotal under a perfect run")
 			end)
 		end
 
@@ -119,7 +135,7 @@ return function(t, Shared)
 			local learned = BaitRig.perfectTimeline(r, false)
 			local g = BaitRig.grade(r, learned, true)
 			t.ok(g ~= "Perfect", "full-speed timing on the slow first-time bench should not be Perfect")
-			if r.kind == "taps" then
+			if r.kind ~= "hold" then
 				t.ok(math.abs(BaitRig.markerAt(r, 1, true) - BaitRig.FIRST_SPEED * BaitRig.markerAt(r, 1, false)) < 1e-9 or r.sweep < 1, "marker speed")
 			else
 				t.ok(math.abs(BaitRig.fillAt(r, 0.5, true) - 0.6 * BaitRig.fillAt(r, 0.5, false)) < 1e-9, "fill speed")
@@ -134,7 +150,7 @@ return function(t, Shared)
 	end)
 
 	t.test("a learned Perfect is possible for every recipe within the bench timeout", function()
-		for _, bait in LIVE do
+		for _, bait in ALL do
 			local r = BaitRig.recipeFor(bait) :: BaitRig.Recipe
 			local tl = BaitRig.perfectTimeline(r, true)
 			t.ok(tl[#tl].up < BaitRig.BENCH_TIMEOUT, bait)
@@ -229,5 +245,160 @@ return function(t, Shared)
 		BaitRig.record(tackle, "Minnow", "Perfect")
 		t.eq(tackle.perfects, 2, "perfects across baits")
 		t.eq(tackle.best.Cricket, nil, "untouched")
+	end)
+
+	----------------------------------------------------------------------------------------
+	-- The lures (L3b)
+
+	t.test("live bait list is still the four live baits", function()
+		for _, bait in LIVE do
+			t.eq(BaitData.byId[bait].kind, "live", bait)
+		end
+		for _, bait in LURES do
+			t.eq(BaitData.byId[bait].kind, "lure", bait)
+		end
+	end)
+
+	t.test("spinner: five taps on the beat, then a hold; a learned knot takes 6 seconds or less", function()
+		local r = BaitRig.recipeFor("Spinner") :: BaitRig.Recipe
+		t.eq(r.kind, "mixed", "kind")
+		t.eq(r.presses, 6, "five wraps and a pull")
+		for i = 1, 5 do
+			t.eq(BaitRig.moveOf(r, i), "tap", "wrap " .. i)
+		end
+		t.eq(BaitRig.moveOf(r, 6), "hold", "pull snug")
+		t.ok(math.abs(r.sweep - 0.45) < 1e-9, "a wrap every 0.45 s at full speed")
+		local tl = BaitRig.perfectTimeline(r, false)
+		for i = 2, 5 do
+			t.ok(math.abs((tl[i].down - tl[i - 1].down) - r.sweep) < 1e-6, "steady beat " .. i)
+		end
+		t.ok(tl[6].up + BaitRig.LEAD_IN <= 6, "knot took " .. tl[6].up)
+		t.eq(r.tip, "Five wraps, back through the loop, then pull it snug.", "tip")
+		local ht, hl = BaitRig.windowOf(r, 6)
+		t.ok(ht < hl and ht ~= r.tight, "the pull has its own windows")
+	end)
+
+	t.test("spinner: sloppy wraps or a bad pull are Okay, near misses Good", function()
+		local r = BaitRig.recipeFor("Spinner") :: BaitRig.Recipe
+		local tl = BaitRig.perfectTimeline(r, false)
+		-- One wrap a bit off the beat (inside loose, outside tight): Good.
+		local off = (r.tight + r.loose) / 2 * r.sweep
+		t.eq((BaitRig.grade(r, shift(tl, off, 3), false)), "Good", "one wrap a little late")
+		-- One wrap right between beats: Okay.
+		t.eq((BaitRig.grade(r, shift(tl, 0.5 * r.sweep, 4), false)), "Okay", "one wrap off the beat")
+		-- Pulled too hard (the bar overflowed): Okay.
+		local kinked = table.clone(tl)
+		kinked[6] = { down = tl[6].down, up = tl[6].down + r.fillTime * 1.1 }
+		t.eq((BaitRig.grade(r, kinked, false)), "Okay", "kinked")
+		-- Too loose.
+		local slack = table.clone(tl)
+		slack[6] = { down = tl[6].down, up = tl[6].down + r.fillTime * 0.3 }
+		t.eq((BaitRig.grade(r, slack, false)), "Okay", "too loose")
+		-- Only four wraps and the pull: not finished, Okay.
+		local four = { tl[1], tl[2], tl[3], tl[4], tl[6] }
+		t.eq((BaitRig.grade(r, four, false)), "Okay", "four wraps")
+	end)
+
+	t.test("spinner: impossible knots are refused", function()
+		local r = BaitRig.recipeFor("Spinner") :: BaitRig.Recipe
+		local tl = BaitRig.perfectTimeline(r, false)
+		-- Wraps machine-gunned faster than hands can (0.05 s apart).
+		local fast = {}
+		for i = 1, 5 do
+			local d = 0.225 + (i - 1) * 0.05
+			fast[i] = { down = d, up = d + 0.01 }
+		end
+		fast[6] = { down = 0.6, up = 0.6 + r.band * r.fillTime }
+		t.ok(select(2, BaitRig.grade(r, fast, false)) ~= nil, "too fast")
+		-- A seventh press.
+		local extra = table.clone(tl)
+		table.insert(extra, { down = tl[6].up + 0.5, up = tl[6].up + 0.6 })
+		t.ok(select(2, BaitRig.grade(r, extra, false)) ~= nil, "seventh press")
+		-- The pull pressed before the last wrap let go.
+		local overlap = table.clone(tl)
+		overlap[6] = { down = tl[5].down + 0.01, up = tl[5].down + 0.01 + r.band * r.fillTime }
+		t.ok(select(2, BaitRig.grade(r, overlap, false)) ~= nil, "overlap")
+	end)
+
+	t.test("plastic worm: nose, slide, bury", function()
+		local r = BaitRig.recipeFor("PlasticWorm") :: BaitRig.Recipe
+		t.eq(r.kind, "mixed", "kind")
+		t.eq(BaitRig.moveOf(r, 1), "tap", "in at the nose")
+		t.eq(BaitRig.moveOf(r, 2), "hold", "slide it up")
+		t.eq(BaitRig.moveOf(r, 3), "tap", "bury the point")
+		t.eq(r.tip, "Hide the point in the worm and it won't snag.", "tip")
+		local tl = BaitRig.perfectTimeline(r, false)
+		t.eq((BaitRig.grade(r, tl, false)), "Perfect", "perfect")
+		t.ok(tl[3].up + BaitRig.LEAD_IN <= 6, "learned Texas rig took " .. tl[3].up)
+		-- Either swing of the worm lines its nose up with the point.
+		local other = table.clone(tl)
+		local half = 0.5 * r.sweep
+		other[1] = { down = tl[1].down + half, up = tl[1].up + half }
+		other[2] = { down = tl[2].down + half, up = tl[2].up + half }
+		t.eq((BaitRig.grade(r, other, false)), "Perfect", "the other swing")
+	end)
+
+	t.test("plastic worm: a sloppy rig is Good or Okay; impossible ones are refused", function()
+		local r = BaitRig.recipeFor("PlasticWorm") :: BaitRig.Recipe
+		local tl = BaitRig.perfectTimeline(r, false)
+		-- The slide let go a little long: Good. Far too long (torn): Okay.
+		local ht, hl = BaitRig.windowOf(r, 2)
+		local long = table.clone(tl)
+		long[2] = { down = tl[2].down, up = tl[2].up + (ht + hl) / 2 * r.fillTime }
+		t.eq((BaitRig.grade(r, long, false)), "Good", "slid a little far")
+		local torn = table.clone(tl)
+		torn[2] = { down = tl[2].down, up = tl[2].down + r.fillTime * 1.2 }
+		t.eq((BaitRig.grade(r, torn, false)), "Okay", "torn")
+		-- The bury tap way off its mark: Okay.
+		t.eq((BaitRig.grade(r, shift(tl, 0.3 * r.sweep, 3), false)), "Okay", "point not buried")
+		-- Refused: the bury tap pressed while the slide was still held.
+		local overlap = table.clone(tl)
+		overlap[3] = { down = tl[2].up - 0.1, up = tl[2].up - 0.05 }
+		t.ok(select(2, BaitRig.grade(r, overlap, false)) ~= nil, "bury during the slide")
+		-- Refused: the whole rig in half a second.
+		local quick = { { down = 0.16, up = 0.17 }, { down = 0.32, up = 0.33 }, { down = 0.48, up = 0.49 } }
+		t.ok(select(2, BaitRig.grade(r, quick, false)) ~= nil, "half a second")
+	end)
+
+	t.test("lures: the grade sets the fight start like live bait; the bite wait has its own table", function()
+		for _, g in BaitRig.GRADES do
+			t.eq(BaitRig.fightStart(g), BaitRig.FIGHT_START[g], g .. " fight start is shared")
+			t.eq(BaitRig.biteMult(g, true), BaitRig.LURE_BITE_MULT[g], g .. " lure bite")
+			t.eq(BaitRig.biteMult(g, false), BaitRig.BITE_MULT[g], g .. " live bite unchanged")
+		end
+		t.eq(BaitRig.biteMult("Okay", true), 1, "an Okay lure is exactly the old game")
+		t.eq(BaitRig.biteMult("Perfect", true), 1, "lure bites don't speed up (economy cap, see BaitRig)")
+		t.eq(BaitRig.biteMult("Perfect"), 0.8, "live bait still does")
+	end)
+
+	t.test("lures: skip waits past the pull's overflow", function()
+		for _, bait in LURES do
+			local r = BaitRig.recipeFor(bait) :: BaitRig.Recipe
+			t.ok(BaitRig.hasHold(r), bait .. " has a hold")
+			for _, first in { false, true } do
+				local full = r.fillTime / (if first then BaitRig.FIRST_SPEED else 1)
+				t.ok(BaitRig.skipHold(r, first) > full, bait .. " skip comes after the bar overflows")
+			end
+		end
+		t.ok(not BaitRig.hasHold(BaitRig.recipeFor("Worm") :: BaitRig.Recipe), "worm has no hold")
+	end)
+
+	t.test("lures: an Okay spinner knot casts 5 percent shorter; nothing else changes the cast", function()
+		t.eq(BaitRig.castScale("Spinner", "Okay"), 0.95, "okay knot")
+		t.eq(BaitRig.castScale("Spinner", nil), 0.95, "not tied yet is Okay")
+		t.eq(BaitRig.castScale("Spinner", "Good"), 1, "good knot")
+		t.eq(BaitRig.castScale("Spinner", "Perfect"), 1, "perfect knot")
+		for _, other in { "Worm", "Minnow", "PlasticWorm", "Stinkbait", "Cricket" } do
+			t.eq(BaitRig.castScale(other, "Okay"), 1, other)
+		end
+		-- An Okay spinner still outcasts a worm with every rod, and a soft cast is unchanged.
+		local CastLogic = require(Shared.CastLogic)
+		local RodData = require(Shared.RodData)
+		for _, rod in RodData.list do
+			local spin = CastLogic.distance(1, rod.id, "Spinner", BaitRig.castScale("Spinner", "Okay"))
+			t.ok(spin > CastLogic.distance(1, rod.id, "Worm"), rod.id)
+			t.eq(CastLogic.distance(0, rod.id, "Spinner", 0.95), Config.CAST_MIN, rod.id .. " soft cast unchanged")
+			t.ok(spin < CastLogic.distance(1, rod.id, "Spinner", 1), rod.id .. " shorter than a good knot")
+		end
 	end)
 end

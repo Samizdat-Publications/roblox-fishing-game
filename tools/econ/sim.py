@@ -13,7 +13,11 @@ the dock kid and the random player don't.
 
 --bait adds the bait bench (L3): an always-Perfect player against an always-Okay one, and
 hook sizes (the smart player ties on the right hook for the fish it expects, the dock kid
-keeps the Medium hook it starts with).
+keeps the Medium hook it starts with). Lures (L3b) get the same fight-start effect and
+their own bite table (LURE_BITE_MULT); a lure is tied once per session and again after a
+fight breaks the line. The
+Okay spinner's shorter cast and the Perfect plastic worm's weedless rig are not modelled
+(the sim has no cast distance or snags).
 
 Run:  python3 tools/econ/sim.py            (full report, about a minute)
       python3 tools/econ/sim.py --quick    (fewer runs, for a fast check)
@@ -196,11 +200,13 @@ def _grade_table(name):
 HOOK_MISS_ONE = _const(_rig_src, "HOOK_MISS_ONE")
 HOOK_MISS_TWO = _const(_rig_src, "HOOK_MISS_TWO")
 RIG_BITE_MULT = _grade_table("BITE_MULT")
+LURE_BITE_MULT = _grade_table("LURE_BITE_MULT")  # lures' bite wait by grade (L3b)
 RIG_FIGHT_START = _grade_table("FIGHT_START")
 RIG_SURVIVE = _grade_table("SURVIVE")
 HOOKS = {"Small": 1, "Medium": 2, "Large": 3}
 MOUTHS = {"small": 1, "medium": 2, "large": 3}
 BENCH_SECONDS = {"Okay": 0.0, "Good": 3.5, "Perfect": 3.5}  # Okay is Quick Bait: no bench at all
+LURE_BENCH_SECONDS = {"Okay": 0.0, "Good": 4.5, "Perfect": 4.5}  # a knot or a Texas rig (L3b)
 RIG_ON = False  # --bait
 
 
@@ -739,6 +745,9 @@ def play_session(p, strat, rng, clock_start, minutes=SESSION_MIN, log=None):
     here = None  # spot we stand at
     plan = None  # (spot, bait)
     start_value = p.coins + p.bag_value()
+    for b in list(p.rigged):
+        if BAIT_BY_ID[b]["kind"] == "lure":
+            p.rigged[b] = False  # a new visit: lures are tied on again at the first cast (L3b)
 
     def clock():
         return clock_start + t * 24 / CFG["DAY_LENGTH"]
@@ -856,16 +865,16 @@ def play_session(p, strat, rng, clock_start, minutes=SESSION_MIN, log=None):
         hooked = False
         first = True
         live = BAIT_BY_ID[bait]["kind"] == "live"
-        grade = strat.rig_grade if RIG_ON and live else "Okay"
+        grade = strat.rig_grade if RIG_ON else "Okay"  # lures are graded too (L3b)
         hook = None
         if RIG_ON and live and strat.hook_rule:
             hook = best_hook(w) if strat.hook_rule == "right" else strat.hook_rule
-        if RIG_ON and live and not p.rigged.get(bait):
-            t += BENCH_SECONDS[grade]  # bait the empty hook
+        if RIG_ON and not p.rigged.get(bait):
+            t += (BENCH_SECONDS if live else LURE_BENCH_SECONDS)[grade]  # bait the empty hook, or tie the lure on
             p.rigged[bait] = True
         sid = None
         while not hooked and t < end:
-            d = bite_delay(w, rng) * (COVER_DELAY if cover else 1) * RIG_BITE_MULT[grade]
+            d = bite_delay(w, rng) * (COVER_DELAY if cover else 1) * (RIG_BITE_MULT if live else LURE_BITE_MULT)[grade]
             # An attentive player casts onto a rise about once per rise interval (lake and creek).
             if first and strat.uses_rises and spot in LAKE_SPOTS + CREEK_SPOTS and t >= next_rise:
                 d = rng.uniform(RISE_BITE_MIN, RISE_BITE_MAX)
@@ -896,6 +905,8 @@ def play_session(p, strat, rng, clock_start, minutes=SESSION_MIN, log=None):
         t += ft
         if not won:
             t += AFTER_ESCAPE
+            if not live:
+                p.rigged[bait] = False  # the line broke: the lure is saved but tied on again (L3b)
             continue
         t += AFTER_CATCH
         price = price_for(s, kg)

@@ -24,8 +24,14 @@ Cover.COVER_SPECIES = {
 	ChannelCatfish = true,
 }
 
--- Rigged weedless: never snags in the weed bed (still snags on logs).
+-- Can be rigged weedless: never snags in the weed bed (still snags on logs). Only a Perfect
+-- Texas rig hides the point (L3b); an Okay or Good one snags in the weeds like live bait.
 Cover.WEEDLESS = { PlasticWorm = true }
+
+-- True when this bait, rigged at this grade, slides through the weed core.
+function Cover.weedless(baitId: string?, grade: string?): boolean
+	return Cover.WEEDLESS[baitId or ""] == true and grade == "Perfect"
+end
 
 -- Snags.
 Cover.SNAG_WIGGLES = 4 -- presses that free a snag...
@@ -118,11 +124,11 @@ function Cover.coverAt(point: Vector3): (string?, number?)
 end
 
 -- True when a cast landing here snags: on a log (or touching it), or in the weed core with
--- bait that isn't weedless.
-function Cover.snagAt(point: Vector3, baitId: string?): boolean
+-- bait that isn't rigged weedless. `grade` is how the bait went on (BaitRig grades).
+function Cover.snagAt(point: Vector3, baitId: string?, grade: string?): boolean
 	for _, f in Cover.features do
 		if f.snag and Cover.edgeDistance(f, point) <= f.margin then
-			if not (f.kind == "Weeds" and Cover.WEEDLESS[baitId or ""]) then
+			if not (f.kind == "Weeds" and Cover.weedless(baitId, grade)) then
 				return true
 			end
 		end
@@ -133,8 +139,8 @@ end
 -- True when a landing here is tight to cover: within COVER_RANGE of an edge but not on the
 -- cover and not snagged. A weedless lure inside the weed core counts too (that's where it
 -- is made to go).
-function Cover.tightAt(point: Vector3, baitId: string?): boolean
-	if Cover.snagAt(point, baitId) then
+function Cover.tightAt(point: Vector3, baitId: string?, grade: string?): boolean
+	if Cover.snagAt(point, baitId, grade) then
 		return false
 	end
 	for _, f in Cover.features do
@@ -142,7 +148,7 @@ function Cover.tightAt(point: Vector3, baitId: string?): boolean
 		if d <= Cover.COVER_RANGE then
 			if d > f.margin then
 				return true
-			elseif f.kind == "Weeds" and Cover.WEEDLESS[baitId or ""] then
+			elseif f.kind == "Weeds" and Cover.weedless(baitId, grade) then
 				return true
 			end
 		end

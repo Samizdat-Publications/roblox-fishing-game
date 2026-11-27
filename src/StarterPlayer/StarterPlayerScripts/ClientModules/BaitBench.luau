@@ -7,7 +7,10 @@
 --
 -- The close-up is built from simple parts in a ViewportFrame: a hook from cylinder
 -- segments, a worm as a chain of balls, a cricket, a minnow wedge and a lump of stinkbait.
--- UNVERIFIED in Studio (written 2026-11-26 for L3).
+-- The lures (L3b) use the same bench: the spinner's clinch knot (wraps on a beat, then a
+-- pull snug) and the plastic worm's Texas rig (nose, slide, bury). Lures carry their own
+-- hook, so the hook picker hides for them.
+-- UNVERIFIED in Studio (written 2026-11-26 for L3; lures 2026-11-26 for L3b).
 local Players = game:GetService("Players")
 local GuiService = game:GetService("GuiService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -58,9 +61,30 @@ local downAt: number? = nil -- bench time of the press being held, if it counted
 local holdStart: number? = nil -- os.clock() a hold began (any press, for skip)
 local timeline: { BaitRig.Press } = {}
 local hook = BaitRig.DEFAULT_HOOK
+local isLure = false -- the bench is rigging a lure (no hook picker, L3b)
+local trackStep = 1 -- the move the timing track is showing (mixed recipes change it per move)
 local finished = false
 local hideAt = 0
 local scene: { [string]: any } = {}
+
+-- Which tap moves show the side-to-side swing on the track (the hook point is the middle).
+local SWING: { [string]: { [number]: boolean } } = {
+	Minnow = { [1] = true, [2] = true },
+	PlasticWorm = { [1] = true },
+}
+local function swingAt(r: BaitRig.Recipe, i: number): boolean
+	local t = SWING[r.bait]
+	return t ~= nil and t[i] == true
+end
+
+-- The words for a hold move: track labels and what the feedback says on letting go.
+type HoldWords = { band: string, low: string, over: string, fbOver: string, fbTight: string, fbLoose: string, fbLow: string }
+local HOLD_WORDS: { [string]: HoldWords } = {
+	Stinkbait = { band = "pack it here", low = "too little", over = "lump", fbOver = "Too much: a lump", fbTight = "Packed firm!", fbLoose = "Not bad", fbLow = "Too little" },
+	Spinner = { band = "snug", low = "loose", over = "kinked", fbOver = "Too hard: it kinked", fbTight = "Snug!", fbLoose = "Not bad", fbLow = "Too loose" },
+	PlasticWorm = { band = "slide it here", low = "short", over = "torn", fbOver = "Too far: it tore", fbTight = "Slid up right!", fbLoose = "Not bad", fbLow = "Not far enough" },
+}
+local LINE = Color3.fromRGB(235, 238, 240)
 
 ----------------------------------------------------------------------------------------
 -- Building the panel
@@ -198,7 +222,10 @@ local function build()
 	refs.marks = frame(p, "Marks", UDim2.fromOffset(320, 18), UDim2.fromOffset(16, 274), C.panel, 1)
 
 	-- Hook size picker.
-	label(p, "HookTitle", "Hook size", UDim2.fromOffset(232, 22), UDim2.fromOffset(352, 46), 17, C.gold, Enum.Font.GothamBold).TextXAlignment = Enum.TextXAlignment.Left
+	refs.hookTitle = label(p, "HookTitle", "Hook size", UDim2.fromOffset(232, 22), UDim2.fromOffset(352, 46), 17, C.gold, Enum.Font.GothamBold)
+	refs.hookTitle.TextXAlignment = Enum.TextXAlignment.Left
+	refs.lureNote = label(p, "LureNote", "Lures carry their own hook.", UDim2.fromOffset(232, 60), UDim2.fromOffset(352, 70), 16, C.dim)
+	refs.lureNote.Visible = false
 	refs.hookButtons = {}
 	for i, name in BaitRig.HOOKS do
 		local b = button(p, "Hook" .. name, BaitRig.HOOK_LINES[name], UDim2.fromOffset(232, 50), UDim2.fromOffset(352, 70 + (i - 1) * 56), function()
@@ -253,11 +280,18 @@ local function blob(size: Vector3, cf: CFrame, color: Color3): Part
 	return pt
 end
 
+-- Stretch a cylinder part from a to b (keeps its thickness).
+local function placeRod(pt: BasePart, a: Vector3, b: Vector3)
+	local len = math.max((b - a).Magnitude, 0.01)
+	pt.Size = Vector3.new(len, pt.Size.Y, pt.Size.Z)
+	pt.CFrame = CFrame.lookAt((a + b) / 2, b) * CFrame.Angles(0, math.rad(90), 0)
+end
+
 -- A rod-like cylinder from a to b.
 local function rod(a: Vector3, b: Vector3, thick: number, color: Color3, material: Enum.Material?): Part
-	local len = (b - a).Magnitude
-	local cf = CFrame.lookAt((a + b) / 2, b) * CFrame.Angles(0, math.rad(90), 0)
-	return part(Enum.PartType.Cylinder, Vector3.new(len, thick, thick), cf, color, material)
+	local pt = part(Enum.PartType.Cylinder, Vector3.new(1, thick, thick), CFrame.new(), color, material)
+	placeRod(pt, a, b)
+	return pt
 end
 
 -- The hook as a path from the point (u = 0) round the bend (u = 0.5) up the shank (u = 1).
@@ -292,8 +326,8 @@ end
 -- Hook sizes draw a little bigger or smaller.
 local HOOK_SCALE = { Small = 0.8, Medium = 1, Large = 1.2 }
 
-local function buildHook(at: CFrame, size: string)
-	local s = HOOK_SCALE[size] or 1
+local function buildHook(at: CFrame, size: string, scale: number?)
+	local s = scale or HOOK_SCALE[size] or 1
 	local hookModel = {}
 	for i = 2, #HOOK_PATH do
 		table.insert(hookModel, rod(at:PointToWorldSpace(HOOK_PATH[i - 1] * s), at:PointToWorldSpace(HOOK_PATH[i] * s), 0.09 * s, C.steel, Enum.Material.Metal))
@@ -354,7 +388,49 @@ local function buildScene(bait: string)
 			local lump = part(Enum.PartType.Ball, Vector3.one * 0.1, CFrame.new(o), color, Enum.Material.Slate)
 			scene.lumps[i] = { part = lump, at = o }
 		end
+	elseif bait == "Spinner" then
+		-- The spinner on the left; the line runs right from its eye (the standing line). The
+		-- marker is the tag end looping round the standing line: tap as it crosses in front.
+		local eye = Vector3.new(-1.0, 0.5, 0)
+		scene.eye = eye
+		rod(Vector3.new(-3.0, 0.5, 0), eye, 0.05, C.steel, Enum.Material.Metal) -- the shaft
+		blob(Vector3.new(0.7, 0.36, 0.08), CFrame.new(-2.05, 0.8, 0) * CFrame.Angles(0, 0, math.rad(-20)), color) -- the blade
+		part(Enum.PartType.Ball, Vector3.one * 0.3, CFrame.new(-2.6, 0.5, 0), Color3.fromRGB(200, 60, 50)) -- the body
+		part(Enum.PartType.Ball, Vector3.one * 0.18, CFrame.new(-1.5, 0.5, 0), C.steel, Enum.Material.Metal) -- a bead
+		buildHook(CFrame.new(-3.0, 0.5 - 2.0 * 0.35, 0) * CFrame.Angles(0, math.rad(180), 0), hook, 0.35) -- its own small hook
+		part(Enum.PartType.Ball, Vector3.one * 0.14, CFrame.new(eye), C.steel, Enum.Material.Metal) -- the eye
+		rod(eye, Vector3.new(4.8, 0.5, 0), 0.035, LINE) -- the standing line
+		scene.tag = rod(eye, eye + Vector3.new(0.3, -0.25, 0), 0.03, LINE)
+		scene.coils = {}
+		for i = 1, 5 do
+			local c = rod(eye, eye + Vector3.new(0, 0.5, 0), 0.045, LINE)
+			c.Transparency = 1
+			scene.coils[i] = c
+		end
+	elseif bait == "PlasticWorm" then
+		-- Its own worm hook (always the same size), and a soft plastic worm as a chain of balls.
+		buildHook(CFrame.new(-0.2, -0.5, 0), hook, 1)
+		scene.pw = {}
+		for i = 1, 12 do
+			scene.pw[i] = part(Enum.PartType.Ball, Vector3.one * (if i == 1 then 0.28 else 0.25), CFrame.new(), color)
+		end
+		scene.pwColor = color
+		scene.pwCover = part(Enum.PartType.Ball, Vector3.one * 0.3, CFrame.new(), color)
+		scene.pwCover.Transparency = 1
 	end
+end
+
+-- How full a hold move's bar is: live while it's held, else as it was let go (0 before).
+local function holdFill(r: BaitRig.Recipe, step: number, t: number): number
+	local first = opts ~= nil and (opts :: Opts).firstTime
+	if downAt and #timeline + 1 == step then
+		return BaitRig.fillAt(r, t - (downAt :: number), first)
+	end
+	local p = timeline[step]
+	if p then
+		return BaitRig.fillAt(r, p.up - p.down, first)
+	end
+	return 0
 end
 
 -- Draw the close-up for this frame. `t` is bench time, `done` the presses made so far.
@@ -411,6 +487,83 @@ local function renderScene(t: number, done: number)
 			l.part.Position = at:PointToWorldSpace(l.at * s)
 		end
 		scene.marker.Transparency = 1
+	elseif r.bait == "Spinner" then
+		-- Five wraps go on as coils along the standing line; the pull draws them tight.
+		local eye: Vector3 = scene.eye
+		local wraps = math.min(done, 5)
+		local fill = holdFill(r, 6, t)
+		local snug = math.clamp(fill / r.band, 0, 1)
+		local spacing = 0.3 - 0.16 * snug
+		local start = eye.X + 0.35 - 0.15 * snug
+		for k, c in scene.coils do
+			local x = start + (k - 1) * spacing
+			c.Transparency = if k <= wraps then 0 else 1
+			c.Color = if fill > 1 then C.red else LINE
+			placeRod(c, Vector3.new(x - 0.08, eye.Y - 0.24, 0.13), Vector3.new(x + 0.08, eye.Y + 0.24, 0.13))
+		end
+		if done < 5 then
+			-- The tag end loops round the standing line once a beat; gold as it crosses in front.
+			local phase = BaitRig.markerAt(r, math.max(t, 0), first)
+			local a = 2 * math.pi * (phase - 0.5)
+			local pos = Vector3.new(start + wraps * spacing, eye.Y + 0.3 * math.sin(a), 0.3 * math.cos(a))
+			scene.marker.Position = pos
+			scene.marker.Color = if math.abs(phase - 0.5) <= r.tight then C.gold else C.marker
+			scene.marker.Transparency = if t < 0 then 0.6 else 0
+			local from = if wraps == 0 then eye + Vector3.new(0.15, -0.2, 0.1) else Vector3.new(start + (wraps - 1) * spacing, eye.Y - 0.2, 0.1)
+			placeRod(scene.tag, from, pos)
+		else
+			-- Back through the loop by the eye, then pulled: the tag end trails off down and right.
+			scene.marker.Transparency = 1
+			local last = start + 4 * spacing
+			placeRod(scene.tag, Vector3.new(eye.X + 0.15, eye.Y - 0.12, 0.12), Vector3.new(last + 0.4 + 0.5 * snug, eye.Y - 0.45 - 0.3 * snug, 0.1))
+		end
+	elseif r.bait == "PlasticWorm" then
+		local tipPos = at:PointToWorldSpace(HOOK_PATH[1] * s)
+		local n = #scene.pw
+		local gap = 0.2
+		if done == 0 then
+			-- The worm swings side to side above the point: tap when its nose is right over it.
+			local phase = BaitRig.markerAt(r, math.max(t, 0), first)
+			local noseX = tipPos.X + 1.1 * math.cos(phase * 2 * math.pi)
+			for k, ball in scene.pw do
+				local wig = math.sin(os.clock() * 4 + k * 0.6) * 0.04 * k
+				ball.Position = Vector3.new(noseX + wig, tipPos.Y + 0.18 + (k - 1) * gap, 0.2)
+			end
+			scene.marker.Position = tipPos + Vector3.new(0, 0, 0.15)
+			scene.marker.Transparency = 0
+			scene.pwCover.Transparency = 1
+		else
+			-- The nose is on: holding slides the worm round the bend and up the shank.
+			local fill = holdFill(r, 2, t)
+			local headU = math.clamp(fill / r.band, 0, 1)
+			local du = gap / (HOOK_LEN[#HOOK_LEN] * s)
+			local positions: { Vector3 } = {}
+			for k = 1, n do
+				local u = headU - (k - 1) * du
+				if u >= 0 then
+					positions[k] = at:PointToWorldSpace(hookAt(u) * s) + Vector3.new(0, 0, 0.05)
+				else
+					local over = -u / du * gap
+					positions[k] = tipPos + Vector3.new(math.sin(os.clock() * 4 + k * 0.6) * 0.03 * k, 0.18 + over, 0.05)
+				end
+			end
+			for k, ball in scene.pw do
+				ball.Position = positions[k]
+				ball.Color = if fill > 1 then Color3.fromRGB(120, 40, 60) else scene.pwColor
+			end
+			if done >= 2 then
+				-- The marker runs down the body: tap to bury the point back in.
+				local phase = BaitRig.markerAt(r, math.max(t, 0), first)
+				local f = 1 + phase * (n - 1)
+				local i0 = math.clamp(math.floor(f), 1, n - 1)
+				scene.marker.Position = positions[i0]:Lerp(positions[i0 + 1], f - i0) + Vector3.new(0, 0, 0.18)
+				scene.marker.Transparency = if done >= 3 then 1 else 0
+			else
+				scene.marker.Transparency = 1
+			end
+			scene.pwCover.Position = tipPos + Vector3.new(0, 0, 0.04)
+			scene.pwCover.Transparency = if done >= 3 then 0 else 1
+		end
 	end
 end
 
@@ -439,25 +592,37 @@ local function minnowX(phase: number): number
 	return 0.5 + 0.45 * math.cos(phase * 2 * math.pi)
 end
 
-local function buildTrack(r: BaitRig.Recipe)
+-- The track for move `step`. Taps-only recipes show every mark at once; a mixed recipe (the
+-- lures, L3b) shows just the move you're on, so the track changes as you go.
+local function buildTrack(r: BaitRig.Recipe, step: number)
 	for _, z in refs.zones do
 		z:Destroy()
 	end
 	refs.zones = {}
-	refs.fill.Visible = r.kind == "hold"
+	trackStep = step
+	local hold = BaitRig.moveOf(r, step) == "hold"
+	local tight, loose = BaitRig.windowOf(r, step)
+	refs.fill.Visible = hold
 	refs.fill.Size = UDim2.fromScale(0, 1)
-	refs.marker.Visible = r.kind == "taps"
-	if r.kind == "hold" then
-		zone(r.band - r.loose, r.band + r.loose, C.green, 0.65)
-		zone(r.band - r.tight, r.band + r.tight, C.gold, 0.2)
-		markLabel("pack it here", r.band)
-		markLabel("too little", 0.2)
-		markLabel("lump", 0.94)
-	elseif r.bait == "Minnow" then
+	refs.marker.Visible = not hold
+	if hold then
+		local words = HOLD_WORDS[r.bait] or HOLD_WORDS.Stinkbait
+		zone(r.band - loose, r.band + loose, C.green, 0.65)
+		zone(r.band - tight, r.band + tight, C.gold, 0.2)
+		markLabel(words.band, r.band)
+		markLabel(words.low, 0.2)
+		markLabel(words.over, 0.94)
+	elseif swingAt(r, step) then
 		local slope = 0.45 * 2 * math.pi -- track units per marker unit at the middle of the swing
-		zone(0.5 - r.loose * slope, 0.5 + r.loose * slope, C.green, 0.65)
-		zone(0.5 - r.tight * slope, 0.5 + r.tight * slope, C.gold, 0.2)
-		markLabel("hook point", 0.5)
+		zone(0.5 - loose * slope, 0.5 + loose * slope, C.green, 0.65)
+		zone(0.5 - tight * slope, 0.5 + tight * slope, C.gold, 0.2)
+		markLabel(if r.bait == "Minnow" then "hook point" else (r.marks[step] or ""), 0.5)
+	elseif r.kind == "mixed" then
+		for _, target in r.targets[step] or {} do
+			zone(target - loose, target + loose, C.green, 0.65)
+			zone(target - tight, target + tight, C.gold, 0.2)
+			markLabel(r.marks[step] or "", target)
+		end
 	else
 		for i, list in r.targets do
 			for _, target in list do
@@ -475,20 +640,18 @@ local function renderTrack(t: number)
 	if not r or not o then
 		return
 	end
-	if r.kind == "hold" then
-		local fill = 0
-		if downAt then
-			fill = BaitRig.fillAt(r, t - (downAt :: number), o.firstTime)
-		elseif #timeline > 0 then
-			local p = timeline[#timeline]
-			fill = BaitRig.fillAt(r, p.up - p.down, o.firstTime)
-		end
+	local step = math.min(#timeline + 1, r.presses)
+	if r.kind == "mixed" and step ~= trackStep then
+		buildTrack(r, step)
+	end
+	if BaitRig.moveOf(r, trackStep) == "hold" then
+		local fill = holdFill(r, trackStep, t)
 		refs.fill.Size = UDim2.fromScale(math.clamp(fill, 0, 1), 1)
 		refs.fill.BackgroundColor3 = if fill > 1 then C.red else Color3.fromRGB(150, 120, 70)
 		return
 	end
 	local phase = BaitRig.markerAt(r, math.max(t, 0), o.firstTime)
-	local x = if r.bait == "Minnow" then minnowX(phase) else phase
+	local x = if swingAt(r, trackStep) then minnowX(phase) else phase
 	refs.marker.Position = UDim2.new(x, -3, 0, -3)
 	refs.marker.BackgroundTransparency = if t < 0 then 0.6 else 0
 end
@@ -538,7 +701,15 @@ function BaitBench.open(o: Opts)
 	openedAt = os.clock()
 	startAt = openedAt + BaitRig.LEAD_IN
 	local b = BaitData.byId[o.bait]
-	refs.title.Text = "Bait the hook: " .. (if b then b.name else o.bait)
+	isLure = b ~= nil and b.kind == "lure"
+	refs.title.Text = (if isLure then "Rig the lure: " else "Bait the hook: ") .. (if b then b.name else o.bait)
+	-- Lures carry their own hook: no hook picker (L3b).
+	refs.hookTitle.Visible = not isLure
+	refs.hookHint.Visible = not isLure
+	refs.lureNote.Visible = isLure
+	for _, hb in refs.hookButtons do
+		hb.Visible = not isLure
+	end
 	refs.how.Text = r.how
 	refs.tip.Text = "Tip: " .. r.tip
 	-- The first time with a bait: a slower marker and the tip in big gold letters.
@@ -549,7 +720,7 @@ function BaitBench.open(o: Opts)
 	refs.feedback.Text = if o.firstTime then "First time: slow and steady" else ""
 	refs.skipHint.Text = string.format("or hold %d s", math.floor(BaitRig.skipHold(r, o.firstTime) + 0.5))
 	buildScene(o.bait)
-	buildTrack(r)
+	buildTrack(r, 1)
 	refreshHooks()
 	GuiService.SelectedObject = nil
 	;(gui :: ScreenGui).Enabled = true
@@ -583,7 +754,7 @@ function BaitBench.cancel()
 end
 
 function BaitBench.setHook(name: string)
-	if BaitRig.isHook(name) and not finished then
+	if BaitRig.isHook(name) and not finished and not isLure then
 		hook = name
 		refreshHooks()
 		if opts then
@@ -620,10 +791,13 @@ function BaitBench.press()
 		return -- before the marker moves, the press only counts toward a skip hold
 	end
 	downAt = t
-	if r.kind == "taps" then
-		local err = BaitRig.errorOf(r, #timeline + 1, { down = t, up = t }, o.firstTime)
-		refs.feedback.Text = if err <= r.tight then "Right on!" elseif err <= r.loose then "Close" else "Missed the mark"
-		refs.feedback.TextColor3 = if err <= r.tight then C.gold elseif err <= r.loose then C.green else C.red
+	local i = #timeline + 1
+	if BaitRig.moveOf(r, i) == "tap" then
+		local err = BaitRig.errorOf(r, i, { down = t, up = t }, o.firstTime)
+		local tight, loose = BaitRig.windowOf(r, i)
+		local prefix = if r.marks[i] == "wrap" then string.format("Wrap %d: ", i) else ""
+		refs.feedback.Text = prefix .. (if err <= tight then "Right on!" elseif err <= loose then "Close" else "Missed the mark")
+		refs.feedback.TextColor3 = if err <= tight then C.gold elseif err <= loose then C.green else C.red
 	end
 end
 
@@ -640,10 +814,13 @@ function BaitBench.release()
 	local press: BaitRig.Press = { down = downAt :: number, up = math.max(t, downAt :: number) }
 	downAt = nil
 	table.insert(timeline, press)
-	if r.kind == "hold" then
-		local err = BaitRig.errorOf(r, 1, press, o.firstTime)
-		refs.feedback.Text = if err == math.huge then "Too much: a lump" elseif err <= r.tight then "Packed firm!" elseif err <= r.loose then "Not bad" else "Too little"
-		refs.feedback.TextColor3 = if err <= r.tight then C.gold elseif err <= r.loose then C.green else C.red
+	local i = #timeline
+	if BaitRig.moveOf(r, i) == "hold" then
+		local err = BaitRig.errorOf(r, i, press, o.firstTime)
+		local tight, loose = BaitRig.windowOf(r, i)
+		local words = HOLD_WORDS[r.bait] or HOLD_WORDS.Stinkbait
+		refs.feedback.Text = if err == math.huge then words.fbOver elseif err <= tight then words.fbTight elseif err <= loose then words.fbLoose else words.fbLow
+		refs.feedback.TextColor3 = if err <= tight then C.gold elseif err <= loose then C.green else C.red
 	end
 	if #timeline >= r.presses then
 		finish(false)
@@ -659,11 +836,18 @@ local function autoStep(t: number)
 		return
 	end
 	local i = #timeline + 1
-	if r.kind == "hold" then
-		if not autoDown and t > 0.3 then
-			autoDown = true
-			BaitBench.press()
-		elseif autoDown and downAt and BaitRig.fillAt(r, t - (downAt :: number), o.firstTime) >= r.band then
+	if i > r.presses then
+		return
+	end
+	if BaitRig.moveOf(r, i) == "hold" then
+		if not autoDown then
+			local prev = timeline[i - 1]
+			local ready = if prev then t - prev.down >= BaitRig.MIN_GAP + 0.05 and t >= prev.up + 0.05 else t > 0.3
+			if ready then
+				autoDown = true
+				BaitBench.press()
+			end
+		elseif downAt and BaitRig.fillAt(r, t - (downAt :: number), o.firstTime) >= r.band then
 			autoDown = false
 			BaitBench.release()
 		end
@@ -677,7 +861,8 @@ local function autoStep(t: number)
 	if i > 1 and t - timeline[i - 1].down < BaitRig.MIN_GAP + 0.05 then
 		return
 	end
-	if BaitRig.errorOf(r, i, { down = t, up = t }, o.firstTime) <= r.tight * 0.5 then
+	local tight = BaitRig.windowOf(r, i)
+	if BaitRig.errorOf(r, i, { down = t, up = t }, o.firstTime) <= tight * 0.5 then
 		autoDown = true
 		BaitBench.press()
 	end

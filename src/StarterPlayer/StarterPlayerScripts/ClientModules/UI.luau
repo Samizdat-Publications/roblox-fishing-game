@@ -1009,7 +1009,7 @@ function UI.refreshTackle()
 	header(refs.tackleList, order, "Best bait job")
 	local tackle = st.tackle or { best = {}, perfects = 0 }
 	for _, b in BaitData.list do
-		if b.kind == "live" then
+		if BaitRig.recipeFor(b.id) then -- live bait and the lures (L3b)
 			order += 1
 			local best = tackle.best[b.id]
 			local row = frame(refs.tackleList, "Row" .. b.id, UDim2.new(1, -10, 0, 34), UDim2.new(), C.panel2, 0.1)

@@ -16,9 +16,10 @@ local BaitRig = {}
 
 export type Grade = "Okay" | "Good" | "Perfect"
 export type Press = { down: number, up: number }
+export type Move = "tap" | "hold"
 export type Recipe = {
 	bait: string,
-	kind: "taps" | "hold",
+	kind: "taps" | "hold" | "mixed", -- mixed (the lures, L3b): taps and a hold, see `moves`
 	presses: number, -- how many moves the recipe has
 	sweep: number, -- taps: seconds for the marker to run the hook once, at full speed
 	targets: { { number } }, -- taps: per press, the marker positions (0 to 1) that count
@@ -27,6 +28,9 @@ export type Recipe = {
 	loose: number, -- window for Good
 	fillTime: number, -- hold: seconds to fill the bar at full speed
 	band: number, -- hold: middle of the band to let go in
+	moves: { Move }?, -- mixed: what each press is (taps run on the one marker clock)
+	holdTight: number?, -- mixed: the hold move's windows in fill units (taps use tight and loose)
+	holdLoose: number?,
 	tip: string, -- the real technique, shown under the close-up
 	how: string, -- what to press, shown above the tip
 }
@@ -89,6 +93,24 @@ BaitRig.FIGHT_START = { Okay = Config.FIGHT_START, Good = 0.45, Perfect = 0.5 }
 BaitRig.SURVIVE = { Okay = 0, Good = 0, Perfect = 0.5 } -- chance live bait stays on after a catch
 BaitRig.GOLD_HOOK_PERFECTS = 25 -- Tackle Box badge (a label for now)
 
+-- Lures (L3b) get the same fight-start effect; in place of bait survival:
+--   Plastic worm  only a Perfect Texas rig is weedless (Cover.weedless)
+--   Spinner       a knot tied Okay casts a little shorter (lures are never lost, L2b)
+-- Their bite wait does NOT change with the grade (LURE_BITE_MULT). A lure is tied once and
+-- never used up, so the live-bait bite bonus paid out forever for one bench: in the economy
+-- sim always-Perfect then earned 11.7 percent over always-Okay (cap 10). With this table all
+-- ones it is about 6.6. Set it to BITE_MULT's numbers to give lures the full bonus back.
+BaitRig.LURE_BITE_MULT = { Okay = 1, Good = 1, Perfect = 1 }
+BaitRig.OKAY_KNOT_CAST = 0.95
+
+-- Times the cast's extra reach for this bait tied at this grade (1 for everything else).
+function BaitRig.castScale(bait: string?, grade: string?): number
+	if bait == "Spinner" and grade ~= "Good" and grade ~= "Perfect" then
+		return BaitRig.OKAY_KNOT_CAST
+	end
+	return 1
+end
+
 local function gradeOf(g: any): Grade
 	if g == "Perfect" or g == "Good" then
 		return g
@@ -96,7 +118,11 @@ local function gradeOf(g: any): Grade
 	return "Okay"
 end
 
-function BaitRig.biteMult(grade: string?): number
+-- Times the bite wait for a bait put on at this grade; `lure` picks the lure table (L3b).
+function BaitRig.biteMult(grade: string?, lure: boolean?): number
+	if lure then
+		return BaitRig.LURE_BITE_MULT[gradeOf(grade)]
+	end
 	return BaitRig.BITE_MULT[gradeOf(grade)]
 end
 
@@ -197,6 +223,45 @@ local recipes: { [string]: Recipe } = {
 		tip = "Pack it firm around the hook.",
 		how = "Hold to pack it on. Let go inside the band.",
 	},
+	-- The lures (L3b): tied once, and they stay tied until the line snaps.
+	Spinner = {
+		-- Improved clinch knot: the tag end wraps the standing line on a steady beat (one
+		-- wrap every `sweep` seconds; tap as it crosses in front), then a quick pull snug.
+		bait = "Spinner",
+		kind = "mixed",
+		presses = 6,
+		moves = { "tap", "tap", "tap", "tap", "tap", "hold" },
+		sweep = 0.45,
+		targets = { { 0.5 }, { 0.5 }, { 0.5 }, { 0.5 }, { 0.5 }, {} },
+		marks = { "wrap", "wrap", "wrap", "wrap", "wrap", "snug" },
+		tight = 0.12, -- about 54 ms either side of the beat at full speed
+		loose = 0.27,
+		fillTime = 0.9, -- like stinkbait's bar, but quicker
+		band = 0.8,
+		holdTight = 0.06,
+		holdLoose = 0.15,
+		tip = "Five wraps, back through the loop, then pull it snug.",
+		how = "Tap on each wrap, five times. Then hold and let go when snug.",
+	},
+	PlasticWorm = {
+		-- Texas rig: point into the worm's nose as it swings past, slide it up the hook,
+		-- then bury the point back in the body as the marker runs down it.
+		bait = "PlasticWorm",
+		kind = "mixed",
+		presses = 3,
+		moves = { "tap", "hold", "tap" },
+		sweep = 1.8,
+		targets = { { 0.25, 0.75 }, {}, { 0.7 } },
+		marks = { "nose", "slide", "bury" },
+		tight = 0.035,
+		loose = 0.09,
+		fillTime = 1.1,
+		band = 0.7,
+		holdTight = 0.05,
+		holdLoose = 0.13,
+		tip = "Hide the point in the worm and it won't snag.",
+		how = "Tap at the nose, hold to slide it up, tap to bury the point.",
+	},
 }
 BaitRig.recipes = recipes
 
@@ -206,6 +271,35 @@ end
 
 local function speedOf(firstTime: boolean): number
 	return if firstTime then BaitRig.FIRST_SPEED else 1
+end
+
+-- What press `index` of the recipe is: a tap on the marker or a hold on the fill bar.
+function BaitRig.moveOf(recipe: Recipe, index: number): Move
+	if recipe.kind == "hold" then
+		return "hold"
+	elseif recipe.kind == "mixed" then
+		local moves = recipe.moves or {}
+		return moves[index] or "tap"
+	end
+	return "tap"
+end
+
+-- The Perfect and Good windows for press `index` (marker units for a tap, fill units for a hold).
+function BaitRig.windowOf(recipe: Recipe, index: number): (number, number)
+	if recipe.kind == "mixed" and BaitRig.moveOf(recipe, index) == "hold" then
+		return recipe.holdTight or recipe.tight, recipe.holdLoose or recipe.loose
+	end
+	return recipe.tight, recipe.loose
+end
+
+-- True when any move of the recipe is a hold (its skip waits past the bar's overflow).
+function BaitRig.hasHold(recipe: Recipe): boolean
+	for i = 1, recipe.presses do
+		if BaitRig.moveOf(recipe, i) == "hold" then
+			return true
+		end
+	end
+	return false
 end
 
 -- Where the marker is (0 to 1 along the hook) `t` seconds after it starts.
@@ -224,10 +318,10 @@ function BaitRig.fillAt(recipe: Recipe, held: number, firstTime: boolean): numbe
 	return held * speedOf(firstTime) / recipe.fillTime
 end
 
--- How long to hold on the bench to skip. Stinkbait is played by holding, so its skip waits
--- until the bar has overflowed and a little more.
+-- How long to hold on the bench to skip. Stinkbait (and the lures' last pull) is played by
+-- holding, so its skip waits until the bar has overflowed and a little more.
 function BaitRig.skipHold(recipe: Recipe?, firstTime: boolean): number
-	if recipe and recipe.kind == "hold" then
+	if recipe and BaitRig.hasHold(recipe) then
 		return math.max(BaitRig.SKIP_HOLD, recipe.fillTime / speedOf(firstTime) + 0.5)
 	end
 	return BaitRig.SKIP_HOLD
@@ -240,7 +334,7 @@ end
 
 -- How far off a press was: marker units for taps, fill units for a hold. math.huge for a lump.
 function BaitRig.errorOf(recipe: Recipe, index: number, press: Press, firstTime: boolean): number
-	if recipe.kind == "hold" then
+	if BaitRig.moveOf(recipe, index) == "hold" then
 		local fill = BaitRig.fillAt(recipe, press.up - press.down, firstTime)
 		if fill > 1 then
 			return math.huge
@@ -258,6 +352,34 @@ end
 -- The soonest the recipe's last move can finish inside the loose window.
 function BaitRig.minTotal(recipe: Recipe, firstTime: boolean): number
 	local speed = speedOf(firstTime)
+	if recipe.kind == "mixed" then
+		-- Each move as soon as the rules allow and inside its loose window, one after another
+		-- (a press can't start before the last one let go, nor sooner than MIN_GAP after it).
+		local period = recipe.sweep / speed
+		local lastDown, lastUp = -math.huge, 0
+		for i = 1, recipe.presses do
+			local soonest = if i == 1 then BaitRig.MIN_FIRST else math.max(lastDown + BaitRig.MIN_GAP, lastUp)
+			local _, loose = BaitRig.windowOf(recipe, i)
+			if BaitRig.moveOf(recipe, i) == "hold" then
+				lastDown = soonest
+				lastUp = soonest + math.max(recipe.band - loose, 0) * recipe.fillTime / speed
+			else
+				local pos = BaitRig.markerAt(recipe, soonest, firstTime)
+				local wait = math.huge
+				for _, target in recipe.targets[i] or { 0 } do
+					local d = math.abs(pos - target) % 1
+					if math.min(d, 1 - d) <= loose then
+						wait = 0
+					else
+						wait = math.min(wait, ((target - loose) - pos) % 1 * period)
+					end
+				end
+				lastDown = soonest + wait
+				lastUp = lastDown
+			end
+		end
+		return lastUp
+	end
 	if recipe.kind == "hold" then
 		return (recipe.band - recipe.loose) * recipe.fillTime / speed
 	end
@@ -325,13 +447,16 @@ function BaitRig.grade(recipe: Recipe | string, timeline: any, firstTime: boolea
 	if #timeline < r.presses then
 		return "Okay", nil -- not finished
 	end
-	local worst = 0
+	local perfect, good = true, true
 	for i = 1, r.presses do
-		worst = math.max(worst, BaitRig.errorOf(r, i, timeline[i], firstTime))
+		local err = BaitRig.errorOf(r, i, timeline[i], firstTime)
+		local tight, loose = BaitRig.windowOf(r, i)
+		perfect = perfect and err <= tight + 1e-9
+		good = good and err <= loose + 1e-9
 	end
-	if worst <= r.tight + 1e-9 then
+	if perfect then
 		return "Perfect", nil
-	elseif worst <= r.loose + 1e-9 then
+	elseif good then
 		return "Good", nil
 	end
 	return "Okay", nil
@@ -351,6 +476,11 @@ function BaitRig.perfectTimeline(recipe: Recipe, firstTime: boolean, after: numb
 	local period = recipe.sweep / speed
 	for i = 1, recipe.presses do
 		local soonest = if i == 1 then t else out[i - 1].up + BaitRig.MIN_GAP
+		if BaitRig.moveOf(recipe, i) == "hold" then
+			-- A mixed recipe's hold: press right away and let go in the middle of the band.
+			table.insert(out, { down = soonest, up = soonest + recipe.band * recipe.fillTime / speed })
+			continue
+		end
 		local best = math.huge
 		for _, target in recipe.targets[i] do
 			local at = target * period

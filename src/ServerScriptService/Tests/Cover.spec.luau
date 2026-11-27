@@ -70,6 +70,7 @@ return function(t, Shared)
 				local c = f.cframe.Position
 				t.ok(Cover.snagAt(c, "Worm"), "worm on log")
 				t.ok(Cover.snagAt(c, "PlasticWorm"), "plastic worm on log")
+				t.ok(Cover.snagAt(c, "PlasticWorm", "Perfect"), "a Perfect plastic worm on a log still snags")
 				t.ok(Cover.snagAt(c, "Spinner"), "spinner on log")
 				t.ok(not Cover.tightAt(c, "Worm"), "on the log is not tight to it")
 				-- Touching the wood (inside the small margin) still snags.
@@ -92,17 +93,37 @@ return function(t, Shared)
 		t.ok(Cover.tightAt(offSide(log, 3.9), "Worm"), "3.9 studs still tight")
 	end)
 
-	t.test("the weed core snags anything but the weedless plastic worm; its edge is cover", function()
+	t.test("the weed core snags anything but a Perfect plastic worm; its edge is cover", function()
 		local core = Vector3.new(Cover.WEED_CORE.x, 0.3, Cover.WEED_CORE.z)
 		t.ok(Cover.snagAt(core, "Worm"), "worm snags")
+		t.ok(Cover.snagAt(core, "Worm", "Perfect"), "a Perfect live worm still snags")
 		t.ok(Cover.snagAt(core, "Spinner"), "spinner snags")
-		t.ok(not Cover.snagAt(core, "PlasticWorm"), "plastic worm is weedless")
-		t.ok(Cover.tightAt(core, "PlasticWorm"), "plastic worm in the weeds is fishing cover")
+		t.ok(Cover.snagAt(core, "Spinner", "Perfect"), "a Perfect spinner still snags")
+		t.ok(not Cover.snagAt(core, "PlasticWorm", "Perfect"), "a Perfect plastic worm is weedless")
+		t.ok(Cover.tightAt(core, "PlasticWorm", "Perfect"), "a Perfect plastic worm in the weeds is fishing cover")
 		local edge = Vector3.new(Cover.WEED_CORE.x + Cover.WEED_CORE.hx + 2, 0.3, Cover.WEED_CORE.z)
 		t.ok(not Cover.snagAt(edge, "Worm"), "edge doesn't snag")
 		t.ok(Cover.tightAt(edge, "Worm"), "edge is tight to cover")
 		local outer = Vector3.new(Cover.WEED_CORE.x + Cover.WEED_CORE.hx + 8, 0.3, Cover.WEED_CORE.z)
 		t.ok(not Cover.tightAt(outer, "Worm"), "the outer weed bed is not tight")
+	end)
+
+	t.test("weedless depends on the rig (L3b): an Okay or Good plastic worm snags in the weeds", function()
+		local core = Vector3.new(Cover.WEED_CORE.x, 0.3, Cover.WEED_CORE.z)
+		for _, g in { "Okay", "Good" } do
+			t.ok(Cover.snagAt(core, "PlasticWorm", g), g .. " plastic worm snags in the weed core")
+			t.ok(not Cover.tightAt(core, "PlasticWorm", g), g .. " plastic worm snagged is not tight")
+			t.ok(not Cover.weedless("PlasticWorm", g), g .. " is not weedless")
+		end
+		t.ok(Cover.snagAt(core, "PlasticWorm"), "no grade (not rigged) acts as Okay")
+		t.ok(Cover.weedless("PlasticWorm", "Perfect"), "Perfect is weedless")
+		t.ok(not Cover.weedless("Worm", "Perfect"), "only the plastic worm can be weedless")
+		-- Off the weeds a grade changes nothing.
+		local edge = Vector3.new(Cover.WEED_CORE.x + Cover.WEED_CORE.hx + 2, 0.3, Cover.WEED_CORE.z)
+		for _, g in { "Okay", "Good", "Perfect" } do
+			t.ok(not Cover.snagAt(edge, "PlasticWorm", g), g .. " at the edge")
+			t.ok(Cover.tightAt(edge, "PlasticWorm", g), g .. " edge is tight")
+		end
 	end)
 
 	t.test("the dock's edge and the creek boulders are cover, but never snag", function()
