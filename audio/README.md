@@ -9,6 +9,8 @@ How a sound gets made:
 4. The winner is uploaded to Roblox (audio must pass Roblox's upload rules and moderation) and its asset id recorded below and in `src/ReplicatedStorage/Shared/SoundIds.luau`, which is what the game reads. All 27 went up on 2026-11-26 through Open Cloud (Studio MCP), one upload each.
 5. Neon reviews the sounds in context from a playtest clip with audio.
 
+**Upload cap:** Roblox allows 100 audio uploads per 30 days on an account without ID verification and 2,000 with it (checked 11/26/2026, https://create.roblox.com/docs/audio/assets.md). The account hit 100 on 11/26/2026 (27 here, 73 for Dont Wave Back). Until Stewart verifies, follow `audio/UPLOAD-PLAN.md`: stand-ins, sound sheets, and 60 of the next 100 for this game.
+
 Note on step 3: Hydrogen picked the first variant in 19 of 27 groups, which may be a bias toward the first file it hears. Neon's in-game review is the real check.
 
 | Sound | Kind | Seconds | Loop | Prompt | File | Roblox asset id |

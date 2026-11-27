@@ -12,6 +12,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local SoundIds = require(Shared.SoundIds)
+local SoundSheets = require(Shared.SoundSheets)
 local SoundMix = require(Shared.SoundMix)
 local FishData = require(Shared.FishData)
 local BoatData = require(Shared.BoatData)
@@ -50,17 +51,27 @@ local function group(name: string, volume: number): SoundGroup
 end
 
 -- alias: a second copy of a sound under its own name (for its own volume and pitch).
+-- The id comes from SoundSheets.resolve: the sound's own upload, a region of a sound sheet,
+-- or a stand-in borrowed from an uploaded sound (audio/UPLOAD-PLAN.md).
 local function make(name: string, g: SoundGroup, looped: boolean, volume: number, alias: string?): Sound?
-	local id = SoundIds[name]
-	if not id or id == "" then
+	local r = SoundSheets.resolve(name, SoundIds)
+	if not r then
 		return nil
 	end
 	local key = alias or name
 	local s = Instance.new("Sound")
 	s.Name = key
-	s.SoundId = id
+	s.SoundId = r.id
 	s.Looped = looped
-	s.Volume = volume
+	s.Volume = volume * r.volume
+	s:SetAttribute("BaseSpeed", r.speed)
+	s.PlaybackSpeed = r.speed
+	if r.start and r.length then
+		s.PlaybackRegionsEnabled = true
+		s.PlaybackRegion = NumberRange.new(r.start, r.start + r.length)
+		s:SetAttribute("RegionStart", r.start)
+	end
+	s:SetAttribute("Via", r.via)
 	s.SoundGroup = g
 	s.Parent = g
 	sounds[key] = s
@@ -79,8 +90,9 @@ local function play(name: string, cooldown: number?, speed: number?, vary: boole
 		return
 	end
 	cooldowns[name] = now + (cooldown or 0)
-	s.PlaybackSpeed = (speed or 1) * (if vary then rng:NextNumber(0.94, 1.06) else 1)
-	s.TimePosition = 0
+	local base = (s:GetAttribute("BaseSpeed") :: number?) or 1
+	s.PlaybackSpeed = base * (speed or 1) * (if vary then rng:NextNumber(0.94, 1.06) else 1)
+	s.TimePosition = (s:GetAttribute("RegionStart") :: number?) or 0
 	s:Play()
 end
 
