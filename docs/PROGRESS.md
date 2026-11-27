@@ -221,6 +221,15 @@ Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6
 - Still to do in L1: a Lake Sturgeon at the deep hole in its real conditions, the journal on the smallest phone (the simulated mouse wheel zoomed the camera instead of scrolling the journal; check with a real wheel), the 15 new fish models (they hang as the old shape until then), a Neon reveal clip, the StyLua reformat, and Liam's 20 minutes.
 - Look mockups for the beauty pass: five looks (Golden Afternoon, Bright Summer Day, Misty Dawn, Moonlit Night, Autumn Lake) from the all-models stills, page https://claude.ai/artifact/DjMRLNSn6t91zKmR93sGr6 (source `planner/looks.html`, images `docs/looks/`, script `tools/looks/mockup.py`). They were made in the old flat low-poly style before Stewart picked Real-ish, so treat them as light and time-of-day moods, not materials.
 
+## 2026-11-27 (night): L5c, sky, banks and the creek
+
+- **Clouds** in the sky (Terrain Clouds, cover 0.5), so noon is no longer flat blue.
+- **Greener lake:** water colour 34, 86, 76 at transparency 0.6 (was a clearer teal that read as a swimming pool).
+- **The creek bed is terrain too:** the pool and the rocky run have shelving sides, so the pool is a bowl, not a box, and each stretch slopes into the next.
+- **Banks:** fewer reed clumps in a row; low bushes on the bank's lip, and about 50 bushes and small pines on the ground past the path (clear of the stands, the pond, the spawn and the walk to the creek gate).
+- **Creek fence:** the solid plank walls are now invisible walls with a weathered split-rail fence in front and a timber arch over the gate.
+- Critic: 5, 6 and 5.5 (median **5.5**, same as L5b). Its top ask every time is curved banks and coves instead of rectangles; then a deeper water colour at noon, the last seam in the creek pool, softer lamp glow on night water, and the Cedar Creek sign tucked behind the new arch beam.
+
 ## 2026-11-27 (night): L5b, land to the horizon
 
 - **No more void:** terrain grass runs out to the horizon on every side, with about 70 rolling hills, rock outcrops on a few tops, and about 290 trees in stands (copies of the Art pines and leafy trees). The lake's straight banks have reeds, small rocks and lily pads along them. Cedar Creek's riffle now comes out from under a rocky, pine-topped bank instead of hanging into the sky. A lantern lights the creek pool at night (`Server/Scenery.luau`, run once in Edit and saved in the place). Stills: `docs/making-of/stills/2026-11-27-hills-dock-golden.jpg`, `2026-11-27-creek-head.jpg`.

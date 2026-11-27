@@ -267,7 +267,14 @@ function Scenery.apply(lake: Model): Result
 			local skip = bank.name == "south" and math.abs(probe.X) < 14 -- the dock
 			if not skip then
 				local roll = rng:NextNumber()
-				if roll < 0.45 and reeds then
+				local bush = art(lake, "LeafyTree")
+				if roll >= 0.62 and roll < 0.74 and bush then
+					-- A low bush on the bank's lip (a leafy tree at a third the size), L5c: the
+					-- critic read the even row of reed clumps as artificial.
+					local p = bank.at(s, rng:NextNumber(-1.4, -0.6)) -- the 2 stud lip before the path
+					place(bush, shore, Vector3.new(p.X, Scenery.GROUND_TOP - 0.3, p.Z), rng:NextNumber(0.28, 0.42), rng:NextNumber(0, 2 * math.pi), true)
+					shoreCount += 1
+				elseif roll < 0.35 and reeds then
 					for _ = 1, rng:NextInteger(1, 3) do
 						local p = bank.at(s + rng:NextNumber(-0.02, 0.02), rng:NextNumber(0.5, 3.5))
 						place(reeds, shore, Vector3.new(p.X, -1.2, p.Z), rng:NextNumber(0.7, 1.2), rng:NextNumber(0, 2 * math.pi), false)
@@ -278,7 +285,7 @@ function Scenery.apply(lake: Model): Result
 						place(lily, shore, Vector3.new(p.X, -0.3, p.Z), rng:NextNumber(0.8, 1.3), rng:NextNumber(0, 2 * math.pi), false)
 						shoreCount += 1
 					end
-				elseif roll < 0.78 then
+				elseif roll < 0.62 then
 					local template = rocks[rng:NextInteger(1, #rocks)]
 					if template then
 						-- Kept small and just off the bank: bigger ones filled the view of anyone fishing there.
@@ -291,6 +298,98 @@ function Scenery.apply(lake: Model): Result
 			end
 			along += rng:NextNumber(7, 15)
 		end
+	end
+
+	-- 4b. Bushes and small trees on the ground ring past the lake path (L5c), so the far bank
+	-- reads as planted shore, not a lawn. Clear of the stands, the spawn, the pond and the paths.
+	local planting = Instance.new("Folder")
+	planting.Name = "BankPlanting"
+	planting.Parent = shore
+	local leafy, pine = art(lake, "LeafyTree"), art(lake, "PineShort")
+	local KEEP_CLEAR: { Rect } = {
+		{ x1 = -36, x2 = 76, z1 = 84, z2 = 140 }, -- stands, spawn, home pond
+		{ x1 = -24, x2 = 24, z1 = -140, z2 = -84 }, -- the north path's middle (the boat channel later)
+		{ x1 = -160, x2 = -110, z1 = -24, z2 = 24 }, -- the walk to the creek gate
+	}
+	local function clear(x: number, z: number): boolean
+		for _, r in KEEP_CLEAR do
+			if inRect(r, x, z, 0) then
+				return false
+			end
+		end
+		return true
+	end
+	for _ = 1, 70 do
+		-- A point on the ground ring: 10 to 26 studs outside the water's edge.
+		local side = rng:NextInteger(1, 4)
+		local out = rng:NextNumber(10, 26)
+		local x, z
+		if side == 1 then
+			x, z = rng:NextNumber(-hx - 30, hx + 30), hz + out
+		elseif side == 2 then
+			x, z = rng:NextNumber(-hx - 30, hx + 30), -hz - out
+		elseif side == 3 then
+			x, z = hx + out, rng:NextNumber(-hz, hz)
+		else
+			x, z = -hx - out, rng:NextNumber(-hz, hz)
+		end
+		if clear(x, z) and inRect(W, x, z, -4) then
+			local template = if rng:NextNumber() < 0.65 then leafy else pine
+			if template then
+				local scale = if template == leafy then rng:NextNumber(0.35, 0.75) else rng:NextNumber(0.5, 0.9)
+				place(template, planting, Vector3.new(x, Scenery.GROUND_TOP - 0.3, z), scale, rng:NextNumber(0, 2 * math.pi), true)
+				shoreCount += 1
+			end
+		end
+	end
+
+	-- 4c. Clouds (L5c): the noon sky was flat blue. Weather can change Cover later.
+	local clouds = t:FindFirstChildOfClass("Clouds") or Instance.new("Clouds")
+	clouds.Cover = 0.5
+	clouds.Density = 0.5
+	clouds.Color = Color3.fromRGB(255, 255, 255)
+	clouds.Parent = t
+
+	-- 4d. The creek fence (L5c): the solid plank walls stay as invisible walls, with a weathered
+	-- split-rail fence drawn in front of them and a timber arch over the gate.
+	local fence = Instance.new("Folder")
+	fence.Name = "CreekFence"
+	fence.Parent = folder
+	local creek = lake:FindFirstChild("CedarCreek")
+	local RAIL = Color3.fromRGB(122, 98, 72)
+	for _, name in { "FenceNorth", "FenceSouth" } do
+		local wallPart = creek and creek:FindFirstChild(name)
+		if wallPart and wallPart:IsA("BasePart") then
+			if wallPart:GetAttribute("OrigTransparency") == nil then
+				wallPart:SetAttribute("OrigTransparency", wallPart.Transparency)
+			end
+			wallPart.Transparency = 1
+			local x = wallPart.Position.X
+			local z1 = wallPart.Position.Z - wallPart.Size.Z / 2
+			local z2 = wallPart.Position.Z + wallPart.Size.Z / 2
+			local posts = math.floor((z2 - z1) / 6)
+			local step = (z2 - z1) / posts
+			for i = 0, posts do
+				local z = z1 + i * step
+				local lean = rng:NextNumber(-0.04, 0.04)
+				lampPart(fence, "Post", Vector3.new(0.6, 5, 0.6), CFrame.new(x, Scenery.GROUND_TOP + 2.3, z) * CFrame.Angles(lean, 0, lean), RAIL, Enum.Material.Wood, false)
+				if i < posts then
+					for _, h in { 1.6, 3.4 } do
+						local sag = rng:NextNumber(-0.12, 0.12)
+						lampPart(fence, "Rail", Vector3.new(0.3, 0.35, step + 0.4), CFrame.new(x, Scenery.GROUND_TOP + h + sag, z + step / 2), RAIL, Enum.Material.Wood, false)
+					end
+				end
+			end
+		end
+	end
+	local gate = creek and creek:FindFirstChild("CreekGate")
+	if gate and gate:IsA("BasePart") then
+		local g = gate.Position
+		local half = gate.Size.Z / 2 + 0.6
+		for _, dz in { -half, half } do
+			lampPart(fence, "ArchPost", Vector3.new(0.9, 10, 0.9), CFrame.new(g.X, Scenery.GROUND_TOP + 5, g.Z + dz), RAIL, Enum.Material.Wood, false)
+		end
+		lampPart(fence, "ArchBeam", Vector3.new(0.9, 0.9, half * 2 + 2), CFrame.new(g.X, Scenery.GROUND_TOP + 10.2, g.Z), RAIL, Enum.Material.Wood, false)
 	end
 
 	-- 5. The head of Cedar Creek: the riffle now comes out from under a rocky bank and a hill.
@@ -364,7 +463,20 @@ function Scenery.revert(lake: Model)
 	if old then
 		old:Destroy()
 	end
+	local creek = lake:FindFirstChild("CedarCreek")
+	for _, name in { "FenceNorth", "FenceSouth" } do
+		local p = creek and creek:FindFirstChild(name)
+		local was = p and p:GetAttribute("OrigTransparency")
+		if p and p:IsA("BasePart") and type(was) == "number" then
+			p.Transparency = was
+			p:SetAttribute("OrigTransparency", nil)
+		end
+	end
 	local t = workspace.Terrain
+	local clouds = t:FindFirstChildOfClass("Clouds")
+	if clouds then
+		clouds:Destroy()
+	end
 	local W, FAR = Scenery.WORLD, Scenery.FAR
 	local function clear(r: Rect)
 		t:FillBlock(CFrame.new((r.x1 + r.x2) / 2, 40, (r.z1 + r.z2) / 2), Vector3.new(r.x2 - r.x1, 200, r.z2 - r.z1), Enum.Material.Air)

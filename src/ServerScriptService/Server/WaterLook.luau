@@ -19,8 +19,10 @@ local FOLDER = "WaterLook"
 local CELL = 4 -- terrain voxels are 4 studs
 
 WaterLook.TERRAIN = {
-	WaterColor = Color3.fromRGB(24, 92, 112), -- teal, darkening with depth
-	WaterTransparency = 0.72, -- clear enough to see the sand shelf and the bed
+	-- L5c: greener and a little less clear (the critic read 24, 92, 112 at 0.72 as a swimming
+	-- pool at noon: bright sand seen through very clear water).
+	WaterColor = Color3.fromRGB(34, 86, 76),
+	WaterTransparency = 0.6,
 	WaterReflectance = 0.5,
 	WaterWaveSize = 0.12, -- gentle
 	WaterWaveSpeed = 8,
@@ -47,9 +49,69 @@ local function find(root: Instance, path: string): Instance?
 	return node
 end
 
--- The lake's own bed parts. L5b hides them under a terrain bed (they sat in the water as flat
--- slabs with straight edges); nothing in the game reads them.
-local HIDDEN_BEDS = { "Floor", "DeepHoleFloor" }
+-- The flat bed parts, hidden under terrain beds (L5b for the lake, L5c for the creek): they
+-- sat in the water as slabs with straight edges. Nothing in the game reads them.
+local HIDDEN_BEDS = { "Floor", "DeepHoleFloor", "CedarCreek.RiffleBed", "CedarCreek.RocksBed", "CedarCreek.PoolBed" }
+
+-- One sloping shelf along a side of a box centred at `c` (half sizes hx, hz): from `bed` at
+-- `width` studs in, up to `top` at the edge. A terrain wedge rises toward its local +Z.
+local YAW = { S = 0, N = math.pi, E = math.pi / 2, W = -math.pi / 2 }
+local function shelfWedge(t: Terrain, side: string, c: Vector3, hx: number, hz: number, bed: number, top: number, width: number, material: Enum.Material)
+	local drop = top - bed
+	if drop <= 0.2 or width <= 0 then
+		return
+	end
+	local y = bed + drop / 2
+	local inset = width / 2
+	local pos, len
+	if side == "S" then
+		pos, len = Vector3.new(c.X, y, c.Z + hz - inset), hx * 2
+	elseif side == "N" then
+		pos, len = Vector3.new(c.X, y, c.Z - hz + inset), hx * 2
+	elseif side == "E" then
+		pos, len = Vector3.new(c.X + hx - inset, y, c.Z), hz * 2
+	else
+		pos, len = Vector3.new(c.X - hx + inset, y, c.Z), hz * 2
+	end
+	t:FillWedge(CFrame.new(pos) * CFrame.Angles(0, YAW[side], 0), Vector3.new(len, drop, width), material)
+end
+
+-- The creek's beds in terrain (L5c): each stretch gets a bed and shelving sides, so the pool is
+-- a bowl, not a box. A side that opens into the next stretch rises only to that stretch's bed
+-- (`top`), so the water still runs through. Sides with no `top` rise to the shallows.
+type CreekBed = { material: Enum.Material, color: Color3, shelf: number, sides: { { side: string, top: number? } } }
+local CREEK_BEDS: { [string]: CreekBed } = {
+	Riffle = { material = Enum.Material.Limestone, color = Color3.fromRGB(140, 126, 100), shelf = 0, sides = {} },
+	Rocks = {
+		material = Enum.Material.Slate,
+		color = Color3.fromRGB(96, 92, 80),
+		shelf = 5,
+		sides = { { side = "W" }, { side = "E" }, { side = "S", top = -1.5 } }, -- south (+z) meets the riffle
+	},
+	Pool = {
+		material = Enum.Material.Ground,
+		color = Color3.fromRGB(44, 46, 40),
+		shelf = 10,
+		sides = { { side = "W" }, { side = "E" }, { side = "N" }, { side = "S", top = -4 } }, -- south (+z) meets the rocky run
+	},
+}
+
+local function creekBed(surfaceY: number)
+	local t = workspace.Terrain
+	local shore = surfaceY - WaterLook.SHORE_DEPTH
+	for _, c in WaterMap.CREEK do
+		local spec = CREEK_BEDS[c.name]
+		if spec then
+			t:SetMaterialColor(spec.material, spec.color)
+			local center = Vector3.new((c.x1 + c.x2) / 2, 0, (c.z1 + c.z2) / 2)
+			local hx, hz = (c.x2 - c.x1) / 2, (c.z2 - c.z1) / 2
+			t:FillBlock(CFrame.new(center.X, c.bed - 3, center.Z), Vector3.new(hx * 2, 6, hz * 2), spec.material)
+			for _, s in spec.sides do
+				shelfWedge(t, s.side, center, hx, hz, c.bed, s.top or shore, spec.shelf, spec.material)
+			end
+		end
+	end
+end
 
 -- The lake bed in terrain (L5b). The old tilted shelf parts showed their straight edges through
 -- the water as seams; terrain sand slopes smooth into a mud bed instead, and the deep hole is a
@@ -77,17 +139,14 @@ local function terrainBed(lake: Model, surfaceY: number)
 	t:FillBlock(CFrame.new(hc.X, bed - 10, hc.Z), Vector3.new(HOLE_INNER.X, 4, HOLE_INNER.Z), Enum.Material.Mud)
 	-- Sand shelves, high side (a terrain wedge's local +Z) at the bank.
 	local hx, hz = size.X / 2, size.Z / 2
-	local shelf = WaterLook.SHELF
-	local drop = (surfaceY - WaterLook.SHORE_DEPTH) - bed
-	local y = bed + drop / 2
-	local inset = shelf / 2
-	t:FillWedge(CFrame.new(c.X, y, c.Z + hz - inset), Vector3.new(size.X, drop, shelf), Enum.Material.Sand)
-	t:FillWedge(CFrame.new(c.X, y, c.Z - hz + inset) * CFrame.Angles(0, math.pi, 0), Vector3.new(size.X, drop, shelf), Enum.Material.Sand)
-	t:FillWedge(CFrame.new(c.X + hx - inset, y, c.Z) * CFrame.Angles(0, math.pi / 2, 0), Vector3.new(size.Z, drop, shelf), Enum.Material.Sand)
-	t:FillWedge(CFrame.new(c.X - hx + inset, y, c.Z) * CFrame.Angles(0, -math.pi / 2, 0), Vector3.new(size.Z, drop, shelf), Enum.Material.Sand)
+	local top = surfaceY - WaterLook.SHORE_DEPTH
+	for _, side in { "S", "N", "E", "W" } do
+		shelfWedge(t, side, c, hx, hz, bed, top, WaterLook.SHELF, Enum.Material.Sand)
+	end
+	creekBed(surfaceY)
 	-- Hide the old flat bed parts (kept, so revert can show them again).
 	for _, name in HIDDEN_BEDS do
-		local p = lake:FindFirstChild(name)
+		local p = find(lake, name)
 		if p and p:IsA("BasePart") then
 			if p:GetAttribute("OrigTransparency") == nil then
 				p:SetAttribute("OrigTransparency", p.Transparency)
@@ -192,7 +251,7 @@ function WaterLook.revert(lake: Model)
 		old:Destroy()
 	end
 	for _, name in HIDDEN_BEDS do
-		local p = lake:FindFirstChild(name)
+		local p = find(lake, name)
 		local was = p and p:GetAttribute("OrigTransparency")
 		if p and p:IsA("BasePart") and type(was) == "number" then
 			p.Transparency = was
