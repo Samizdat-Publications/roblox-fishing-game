@@ -2,7 +2,7 @@
   "project": "Fishing Game",
   "pitch": "A Roblox fishing game where real fishing knowledge matters: the right bait, spot and time of day decide what bites.",
   "status": "in-development",
-  "updated": "2026-11-26T16:30:00",
+  "updated": "2026-11-27",
   "entries": [
     {
       "id": "start",
@@ -388,6 +388,184 @@
         {
           "src": "stills/2026-11-26-all-models-logs.jpg",
           "caption": "Mossy logs in the east shallows"
+        }
+      ]
+    },
+    {
+      "id": "aim",
+      "tag": "Play",
+      "date": "2026-11-26",
+      "time": "20:59",
+      "commit": "ece97a0",
+      "title": "Aim your cast, and a reason to aim",
+      "summary": "Hold to cast and a ring rides out across the water to show where the bobber will land, with the spot's name on it; let go when it's where you want it. The water now gives you reasons to aim: land on a fallen log or in the thick of the weeds and you snag (four wiggles to free it), a fish dimpling the surface somewhere means a quick bite if you land close, and cover-loving fish like bass and crappie are likelier near logs, the dock and the weed edge.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-cast-ring.jpg",
+          "caption": "The cast ring, out over the water with the spot's name"
+        },
+        {
+          "src": "stills/2026-11-27-ring-at-the-logs.jpg",
+          "caption": "Amber over a log: a snag warning before you let go"
+        }
+      ]
+    },
+    {
+      "id": "wait-fight",
+      "tag": "Play",
+      "date": "2026-11-26",
+      "time": "22:34",
+      "commit": "52d538f",
+      "title": "The wait, and the fight",
+      "summary": "When the bobber lands the camera eases onto it, and a fish's shadow swims in, circles and noses the bait before it bites; a quick tap twitches the bait to tempt it. In the fight each kind of fish warns you before its big move: a runner screams the drag, a jumper splashes, a diver bends the rod tip down. The line turns white, orange, then red as it strains.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-bobber-camera.jpg",
+          "caption": "The bobber camera while you wait"
+        },
+        {
+          "src": "stills/2026-11-27-fight.jpg",
+          "caption": "A fight, with the line showing the strain"
+        }
+      ]
+    },
+    {
+      "id": "bait",
+      "tag": "Play",
+      "date": "2026-11-26",
+      "time": "23:29",
+      "commit": "b499f9e",
+      "title": "Bait the hook yourself",
+      "summary": "Every bait has its own short rigging minigame, done the real way: thread a worm with three taps, hook a cricket behind the collar, a minnow through both lips, pack stinkbait. Spinners get a clinch knot and plastic worms a Texas rig. Okay, Good or Perfect changes how fast fish bite and how the fight starts, and the hook size has to suit the fish's mouth. Skip it any time and you get Okay, which is the old game.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-bait-bench.jpg",
+          "caption": "The bait bench: hook, bait, three hook sizes and a timing track"
+        },
+        {
+          "src": "stills/2026-11-27-lure-bench.jpg",
+          "caption": "Tying a spinner on"
+        }
+      ]
+    },
+    {
+      "id": "living-lake",
+      "tag": "World",
+      "date": "2026-11-27",
+      "time": "00:12",
+      "commit": "7ababd4",
+      "title": "Weather, feeding frenzies and daily goals",
+      "summary": "Each day has weather that changes the light and the fishing: fog in the morning, storms with rain, cold fronts. Now and then a school of fish boils at a spot with gulls overhead and bites come almost at once. Three goals a day pay a few coins; missing a day costs nothing.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-fog-dawn.jpg",
+          "caption": "A foggy dawn"
+        },
+        {
+          "src": "stills/2026-11-27-storm.jpg",
+          "caption": "A storm rolls in"
+        },
+        {
+          "src": "stills/2026-11-27-frenzy-dock.jpg",
+          "caption": "A frenzy at the dock"
+        }
+      ]
+    },
+    {
+      "id": "lures-drag",
+      "tag": "Play",
+      "date": "2026-11-27",
+      "time": "02:05",
+      "commit": "b7a82ac",
+      "title": "Work the lure, mind the line",
+      "summary": "Lures are fished like lures now: no bobber. Reel a spinner back at a steady speed (a little meter shows too slow, just right, too fast) or hop a plastic worm and let it fall; fish strike while it moves. Every rod has a line rating (6, 10 and 15 pounds) and you choose the drag: Tight lands fish faster but a big one running will snap the line unless you ease off.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-reel-meter.jpg",
+          "caption": "Keeping a spinner in the green"
+        }
+      ]
+    },
+    {
+      "id": "postcard",
+      "tag": "Art",
+      "date": "2026-11-27",
+      "time": "03:29",
+      "commit": "9f8fc8b",
+      "title": "A lake that looks real",
+      "summary": "One long night of light and land. The sky and light now change with the clock: a cool misty dawn, a clear day, a warm golden hour, a violet blue hour and a moonlit night. The water is real water, the land rolls out to the horizon with clumps of trees, the shore curves with points you can walk out on, Cedar Creek meanders between soft banks, and the home pond is round and ringed with rocks. Our look critic scored the twelve fixed views 3 out of 10 at the start of the night and 7 out of 10 at the end.",
+      "pairs": [
+        {
+          "before": "stills/2026-11-26-all-models-overview.jpg",
+          "after": "stills/2026-11-27-round-pond-overview.jpg",
+          "caption": "The same lake, before and after the night"
+        }
+      ],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-hills-dock-golden.jpg",
+          "caption": "Golden hour from the dock"
+        },
+        {
+          "src": "stills/2026-11-27-dusk-blue-hour.jpg",
+          "caption": "Blue hour"
+        },
+        {
+          "src": "stills/2026-11-27-riffle-meadow.jpg",
+          "caption": "The riffle at dawn"
+        },
+        {
+          "src": "stills/2026-11-27-buoy-night.jpg",
+          "caption": "Night, with the deep-hole buoy lit"
+        }
+      ]
+    },
+    {
+      "id": "catch-moment",
+      "tag": "Fix",
+      "date": "2026-11-27",
+      "time": "03:55",
+      "commit": "9502095",
+      "title": "A real rod, and a better catch moment",
+      "summary": "The rods in your hands are the real models now, with a cork grip, a reel and guides. When you land a fish the card pops in with the fish itself turning in a little window, and Rare or better fish get a badge and a sweep of their tier's colour.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-rod-in-hand.jpg",
+          "caption": "The real rod in hand"
+        },
+        {
+          "src": "stills/2026-11-27-rare-card.jpg",
+          "caption": "A Rare largemouth bass on the catch card"
+        }
+      ]
+    },
+    {
+      "id": "come-back",
+      "tag": "World",
+      "date": "2026-11-27",
+      "time": "04:07",
+      "commit": "1c09e83",
+      "title": "Reasons to come back tomorrow",
+      "summary": "A chalkboard by the bait shop shows today's forecast, a fish of the day and a rumour about a Legendary. The shopkeeper hands out a small tackle box once a day. When you come back, a card tells you which of your pond fish grew while you were away. And behind your pond, a trophy wall mounts your six best catches, monsters first.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-chalkboard.jpg",
+          "caption": "Today on the Lake"
+        },
+        {
+          "src": "stills/2026-11-27-away-card.jpg",
+          "caption": "While You Were Away"
+        },
+        {
+          "src": "stills/2026-11-27-trophy-wall.jpg",
+          "caption": "The trophy wall behind the home pond"
         }
       ]
     }

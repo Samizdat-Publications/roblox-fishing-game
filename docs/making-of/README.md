@@ -4,6 +4,117 @@ A Roblox fishing game where real fishing knowledge matters: the right bait, spot
 
 Newest first. The live page with before and after sliders is `docs/making-of/index.html` (published as a Claude artifact).
 
+## World: Reasons to come back tomorrow
+
+2026-11-27 04:07 · commit `1c09e83`
+
+A chalkboard by the bait shop shows today's forecast, a fish of the day and a rumour about a Legendary. The shopkeeper hands out a small tackle box once a day. When you come back, a card tells you which of your pond fish grew while you were away. And behind your pond, a trophy wall mounts your six best catches, monsters first.
+
+![Today on the Lake](stills/2026-11-27-chalkboard.jpg)
+*Today on the Lake*
+
+![While You Were Away](stills/2026-11-27-away-card.jpg)
+*While You Were Away*
+
+![The trophy wall behind the home pond](stills/2026-11-27-trophy-wall.jpg)
+*The trophy wall behind the home pond*
+
+## Fix: A real rod, and a better catch moment
+
+2026-11-27 03:55 · commit `9502095`
+
+The rods in your hands are the real models now, with a cork grip, a reel and guides. When you land a fish the card pops in with the fish itself turning in a little window, and Rare or better fish get a badge and a sweep of their tier's colour.
+
+![The real rod in hand](stills/2026-11-27-rod-in-hand.jpg)
+*The real rod in hand*
+
+![A Rare largemouth bass on the catch card](stills/2026-11-27-rare-card.jpg)
+*A Rare largemouth bass on the catch card*
+
+## Art: A lake that looks real
+
+2026-11-27 03:29 · commit `9f8fc8b`
+
+One long night of light and land. The sky and light now change with the clock: a cool misty dawn, a clear day, a warm golden hour, a violet blue hour and a moonlit night. The water is real water, the land rolls out to the horizon with clumps of trees, the shore curves with points you can walk out on, Cedar Creek meanders between soft banks, and the home pond is round and ringed with rocks. Our look critic scored the twelve fixed views 3 out of 10 at the start of the night and 7 out of 10 at the end.
+
+**The same lake, before and after the night**
+
+| Before | After |
+|---|---|
+| ![before](stills/2026-11-26-all-models-overview.jpg) | ![after](stills/2026-11-27-round-pond-overview.jpg) |
+
+![Golden hour from the dock](stills/2026-11-27-hills-dock-golden.jpg)
+*Golden hour from the dock*
+
+![Blue hour](stills/2026-11-27-dusk-blue-hour.jpg)
+*Blue hour*
+
+![The riffle at dawn](stills/2026-11-27-riffle-meadow.jpg)
+*The riffle at dawn*
+
+![Night, with the deep-hole buoy lit](stills/2026-11-27-buoy-night.jpg)
+*Night, with the deep-hole buoy lit*
+
+## Play: Work the lure, mind the line
+
+2026-11-27 02:05 · commit `b7a82ac`
+
+Lures are fished like lures now: no bobber. Reel a spinner back at a steady speed (a little meter shows too slow, just right, too fast) or hop a plastic worm and let it fall; fish strike while it moves. Every rod has a line rating (6, 10 and 15 pounds) and you choose the drag: Tight lands fish faster but a big one running will snap the line unless you ease off.
+
+![Keeping a spinner in the green](stills/2026-11-27-reel-meter.jpg)
+*Keeping a spinner in the green*
+
+## World: Weather, feeding frenzies and daily goals
+
+2026-11-27 00:12 · commit `7ababd4`
+
+Each day has weather that changes the light and the fishing: fog in the morning, storms with rain, cold fronts. Now and then a school of fish boils at a spot with gulls overhead and bites come almost at once. Three goals a day pay a few coins; missing a day costs nothing.
+
+![A foggy dawn](stills/2026-11-27-fog-dawn.jpg)
+*A foggy dawn*
+
+![A storm rolls in](stills/2026-11-27-storm.jpg)
+*A storm rolls in*
+
+![A frenzy at the dock](stills/2026-11-27-frenzy-dock.jpg)
+*A frenzy at the dock*
+
+## Play: Bait the hook yourself
+
+2026-11-26 23:29 · commit `b499f9e`
+
+Every bait has its own short rigging minigame, done the real way: thread a worm with three taps, hook a cricket behind the collar, a minnow through both lips, pack stinkbait. Spinners get a clinch knot and plastic worms a Texas rig. Okay, Good or Perfect changes how fast fish bite and how the fight starts, and the hook size has to suit the fish's mouth. Skip it any time and you get Okay, which is the old game.
+
+![The bait bench: hook, bait, three hook sizes and a timing track](stills/2026-11-27-bait-bench.jpg)
+*The bait bench: hook, bait, three hook sizes and a timing track*
+
+![Tying a spinner on](stills/2026-11-27-lure-bench.jpg)
+*Tying a spinner on*
+
+## Play: The wait, and the fight
+
+2026-11-26 22:34 · commit `52d538f`
+
+When the bobber lands the camera eases onto it, and a fish's shadow swims in, circles and noses the bait before it bites; a quick tap twitches the bait to tempt it. In the fight each kind of fish warns you before its big move: a runner screams the drag, a jumper splashes, a diver bends the rod tip down. The line turns white, orange, then red as it strains.
+
+![The bobber camera while you wait](stills/2026-11-27-bobber-camera.jpg)
+*The bobber camera while you wait*
+
+![A fight, with the line showing the strain](stills/2026-11-27-fight.jpg)
+*A fight, with the line showing the strain*
+
+## Play: Aim your cast, and a reason to aim
+
+2026-11-26 20:59 · commit `ece97a0`
+
+Hold to cast and a ring rides out across the water to show where the bobber will land, with the spot's name on it; let go when it's where you want it. The water now gives you reasons to aim: land on a fallen log or in the thick of the weeds and you snag (four wiggles to free it), a fish dimpling the surface somewhere means a quick bite if you land close, and cover-loving fish like bass and crappie are likelier near logs, the dock and the weed edge.
+
+![The cast ring, out over the water with the spot's name](stills/2026-11-27-cast-ring.jpg)
+*The cast ring, out over the water with the spot's name*
+
+![Amber over a log: a snag warning before you let go](stills/2026-11-27-ring-at-the-logs.jpg)
+*Amber over a log: a snag warning before you let go*
+
 ## Art: The whole lake in our own models
 
 2026-11-26 16:30 · commit `f883e07`
