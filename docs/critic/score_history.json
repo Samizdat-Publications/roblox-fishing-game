@@ -54,5 +54,61 @@
       "docs\\critic\\2026-11-26-baseline-l0-models-neon-2.md",
       "docs\\critic\\2026-11-26-baseline-l0-models-neon-3.md"
     ]
+  },
+  {
+    "date": "2026-11-26",
+    "step": "l5a",
+    "rubric": "look",
+    "run": "2026-11-26-2249",
+    "commit": "52d538f",
+    "shots": 12,
+    "median": 4,
+    "scores": [
+      4,
+      4,
+      4
+    ],
+    "points": {
+      "composition": 4,
+      "light": 5,
+      "water": 4,
+      "mood": 3,
+      "want_to_fish": 4,
+      "phone_readability": 4,
+      "broken_or_ugly": 3
+    },
+    "reports": [
+      "docs\\critic\\2026-11-26-l5a-neon.md",
+      "docs\\critic\\2026-11-26-l5a-neon-2.md",
+      "docs\\critic\\2026-11-26-l5a-neon-3.md"
+    ]
+  },
+  {
+    "date": "2026-11-26",
+    "step": "l5a-polish",
+    "rubric": "look",
+    "run": "2026-11-26-2257",
+    "commit": "52d538f",
+    "shots": 12,
+    "median": 4.5,
+    "scores": [
+      4.5,
+      4.5,
+      4
+    ],
+    "points": {
+      "composition": 4,
+      "light": 5.5,
+      "water": 4,
+      "mood": 3.5,
+      "want_to_fish": 4.5,
+      "phone_readability": 6,
+      "broken_or_ugly": 3
+    },
+    "reports": [
+      "docs\\critic\\2026-11-26-l5a-polish-neon.md",
+      "docs\\critic\\2026-11-26-l5a-polish-neon-2.md",
+      "docs\\critic\\2026-11-26-l5a-polish-neon-3.md"
+    ]
   }
 ]

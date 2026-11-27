@@ -27,3 +27,14 @@ Client memory 2,245 MB (Studio included), 58,122 instances (Studio included), 58
 - GPU average at most 2x the baseline (about 18 ms at the overview, 12 ms elsewhere).
 - If a step goes over, it gets cheaper before it ships (fewer shadows, fewer particles, lower part count), not the budget raised.
 - After L5, Stewart opens the game on his own phone once and says whether it feels smooth.
+
+## After L5a, 11/27/2026 (place version 61)
+
+| Shot | Render CPU avg | CPU p95 | CPU worst | GPU avg |
+|------|---------------:|--------:|----------:|--------:|
+| 01-dock-dawn | 5.06 ms | 6.57 ms | 8.31 ms | 7.95 ms |
+| 04-dockend-night | 4.99 ms | 6.07 ms | 6.67 ms | 9.14 ms |
+| 07-overview-golden | 5.03 ms | 6.26 ms | 6.97 ms | 9.16 ms |
+| 10-pool-golden | 5.17 ms | 7.17 ms | 9.05 ms | 10.37 ms |
+
+Inside the budget. Client memory 2,116 MB, 58,555 instances (Studio included).

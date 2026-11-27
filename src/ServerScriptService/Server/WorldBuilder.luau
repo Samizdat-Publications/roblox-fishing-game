@@ -57,13 +57,17 @@ local function part(parent: Instance, name: string, size: Vector3, cf: CFrame, c
 	return p
 end
 
-local function sign(parent: Instance, adornee: BasePart, text: string, color: Color3)
+-- Signs are sized in studs (they shrink with distance like a real board), sit above the
+-- roof or wall they belong to (`lift` studs over the adornee's centre), and fade out past
+-- SIGN_RANGE so they don't pile up on the far shore (L5a critic, 11/26/2026).
+local SIGN_RANGE = 140
+local function sign(parent: Instance, adornee: BasePart, text: string, color: Color3, lift: number?)
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "Sign"
-	gui.Size = UDim2.fromOffset(200, 50)
-	gui.StudsOffset = Vector3.new(0, 4, 0)
+	gui.Size = UDim2.new(9, 0, 2.2, 0)
+	gui.StudsOffset = Vector3.new(0, lift or 4, 0)
 	gui.AlwaysOnTop = false
-	gui.MaxDistance = 400
+	gui.MaxDistance = SIGN_RANGE
 	gui.Adornee = adornee
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.fromScale(1, 1)
@@ -96,7 +100,7 @@ local function stand(parent: Instance, name: string, pos: Vector3, color: Color3
 	prompt.KeyboardKeyCode = Enum.KeyCode.E
 	prompt.GamepadKeyCode = Enum.KeyCode.ButtonX
 	prompt.Parent = counter
-	sign(m, counter, title, color)
+	sign(m, counter, title, color, 10) -- above the roof, clear of the posts
 	m.PrimaryPart = counter
 	m.Parent = parent
 end
@@ -188,7 +192,7 @@ function WorldBuilder.buildCreek(lake: Model)
 	prompt.KeyboardKeyCode = Enum.KeyCode.E
 	prompt.GamepadKeyCode = Enum.KeyCode.ButtonX
 	prompt.Parent = post
-	sign(creek, gate, "Cedar Creek", Color3.fromRGB(140, 220, 160))
+	sign(creek, gate, "Cedar Creek", Color3.fromRGB(140, 220, 160), 7) -- above the fence line
 	local lampBulb = part(creek, "GateLamp", Vector3.new(1.2, 1.2, 1.2), CFrame.new(-158, 9, -5.5), Color3.fromRGB(255, 230, 170), {
 		Material = Enum.Material.Neon,
 		CanCollide = false,
@@ -395,9 +399,9 @@ function WorldBuilder.build(): Model
 		})
 		bulb.Shape = Enum.PartType.Ball
 		local light = Instance.new("PointLight")
-		light.Range = 28
-		light.Brightness = 1.6
-		light.Color = Color3.fromRGB(255, 225, 170)
+		light.Range = 18 -- was 28 at 1.6: lit the shallows into a hard cyan disc at night
+		light.Brightness = 1.1
+		light.Color = Color3.fromRGB(255, 198, 138) -- warm amber
 		light.Shadows = false
 		light.Parent = bulb
 	end

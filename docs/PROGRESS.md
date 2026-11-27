@@ -221,6 +221,16 @@ Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6
 - Still to do in L1: a Lake Sturgeon at the deep hole in its real conditions, the journal on the smallest phone (the simulated mouse wheel zoomed the camera instead of scrolling the journal; check with a real wheel), the 15 new fish models (they hang as the old shape until then), a Neon reveal clip, the StyLua reformat, and Liam's 20 minutes.
 - Look mockups for the beauty pass: five looks (Golden Afternoon, Bright Summer Day, Misty Dawn, Moonlit Night, Autumn Lake) from the all-models stills, page https://claude.ai/artifact/DjMRLNSn6t91zKmR93sGr6 (source `planner/looks.html`, images `docs/looks/`, script `tools/looks/mockup.py`). They were made in the old flat low-poly style before Stewart picked Real-ish, so treat them as light and time-of-day moods, not materials.
 
+## 2026-11-27 (night): L5a, light and water
+
+- **Four lights by the clock** (`Shared/LookPresets.luau`): misty pink dawn, clear day, golden afternoon, blue moonlit night, each blending into the next. The server's clock applies them every quarter second (`Server/DayNight.luau`), so every player sees the same sky. Atmosphere density is capped at 0.42 so the bobber stays visible at full reach.
+- **Real water:** the lake, creek and pool are now Roblox terrain water with waves and reflections, tinted per area (`Server/WaterLook.luau`, already applied to the saved place).
+- **Critic fixes:** signs are sized in studs (they shrink with distance), sit above the stall roofs and the creek fence, and fade past 140 studs, so they no longer pile up on the far shore or get cut by posts; the dock lamps are warm amber and smaller (they lit the shallows into a hard cyan disc at night); night is a little brighter; dawn's pink is softer.
+- **Scores (Gemini Neon, median of 3):** 3/10 before (baseline), 4/10 after the light and water, 4.5/10 after the fixes. Sheets: `artifacts/shots/2026-11-26-2249` and `-2257` (local), reports `docs/critic/2026-11-26-l5a*.md`.
+- **Speed:** render CPU about 5 ms, GPU 8 to 10 ms at the four probe shots, inside the 2x budget (`docs/PERF.md`).
+- 271 tests pass with Lune; WorldBuilder and LookPresets match by checksum. Place version 61.
+- Still to do for 7/10 (the critic's top fix, L5b): the lake is a square pool in a void. Curved banks and coves, a closed-off end to the creek (it hangs into the sky at the riffle), hills and tree lines round the edge, sloped lakebed instead of hard shelf seams, a lantern at the creek pool. `BobberGlow` is written but waits for L3b to land before it is wired in.
+
 ## 2026-11-27 (night): L4b, the reel and the feel
 
 - **Reading the fish:** each fight style warns 0.45 s before its big move shows on the bar: a runner screams the drag and drags the line aside with a V wake, a jumper breaks the surface with a splash, a diver dips the rod tip and steepens the line with a creak, a shaker throws spray; tuggers twitch, steady fish pull slowly.
