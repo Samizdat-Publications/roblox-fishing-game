@@ -49,7 +49,7 @@ Chunky, simple shapes with realistic materials: wood grain on the dock, real gra
 
 (That's Blender's default install folder; adjust if yours differs. Unverified on Stewart's PC.) One model: the same with `art\scripts\dock.py`; one fish: add `-- Walleye` at the end of the line for `fish.py`. In the cloud it ran as plain Python with `pip install bpy==5.1.2` (plus Pillow for the small previews and the contact sheet). `ART_SAMPLES` sets render quality (48 by default). Each run writes `models/<Name>.glb`, `models/<Name>.fbx`, `previews/<Name>.png` (1024 px) and updates `models/manifest.json` (sizes, triangles, what it replaces). `scripts/contact_sheet.py` rebuilds the sheet.
 
-## Importing (all 32 done on 2026-11-26)
+## Importing (49 done by 2026-11-27)
 
 What works, learned on the first import:
 
@@ -93,6 +93,23 @@ What works, learned on the first import:
 | RainbowTrout | 118820630960923 | On the line when one is landed |
 | SmallmouthBass | 134271966681380 | On the line when one is landed |
 | Walleye | 86662257400132 | On the line when one is landed |
+| AlbinoCatfish | 136654630727812 | On the line when one is landed |
+| Bowfin | 125211984913610 | On the line when one is landed |
+| BrookTrout | 76954549921890 | On the line when one is landed |
+| BrownTrout | 83259937969236 | On the line when one is landed |
+| Burbot | 131253215534131 | On the line when one is landed |
+| CreekChub | 102906476073120 | On the line when one is landed |
+| FreshwaterDrum | 74501326273593 | On the line when one is landed |
+| GoldenTrout | 133626399439261 | On the line when one is landed |
+| LakeSturgeon | 76879262373636 | On the line when one is landed |
+| LakeTrout | 95668351040749 | On the line when one is landed |
+| LakeWhitefish | 102046819647474 | On the line when one is landed |
+| Muskellunge | 89397610966749 | On the line when one is landed |
+| RockBass | 75104589543512 | On the line when one is landed |
+| TigerMuskie | 135170567785055 | On the line when one is landed |
+| WhiteBass | 71716066706107 | On the line when one is landed |
+| Dinghy | 131459268302795 | In ServerStorage only, for the boat plan |
+| DeepV | 136839711681390 | In ServerStorage only, for the boat plan |
 | Bluegill (first try) | 123238298956061 | Not used: uploaded before the colour fix, too dark |
 
 ## The models
