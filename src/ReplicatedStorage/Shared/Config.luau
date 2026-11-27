@@ -31,6 +31,24 @@ Config.ASSIST_ZONE = 1.4 -- zone size multiplier with assist on
 Config.ASSIST_LOSS = 0.6 -- progress loss multiplier with assist on
 Config.ASSIST_CATCHES = 3 -- reel assist turns itself off after this many catches, unless the player set it by hand (L4b)
 
+-- Line and drag (L4d, Shared/FightModel). Drag is Light, Medium (the fight as it was) or
+-- Tight. "Load" is the fish's weight over the line's rating (lb over lb, RodData.lineLb).
+-- Strain (0 to 1) builds while you reel through a big move (run, jump, dive, and its tell)
+-- at RISE x (load - FREE) per second, capped at RISE_MAX, and the line snaps at 1. It falls
+-- at FALL_EASE once you let go, FALL_REELING while you reel with no big move on.
+-- Calibrated 11/27/2026 with tools/econ/sim.py --drag and FightModel.spec.
+Config.DRAG_TIGHT_GAIN = 1.3 -- Tight fills the progress bar 30 percent faster
+Config.DRAG_LIGHT_GAIN = 0.8 -- Light fills it 20 percent slower...
+Config.DRAG_LIGHT_TAKE = 0.08 -- ...and a running fish takes this much progress a second (it takes line)
+Config.STRAIN_FREE_MEDIUM = 0.6 -- on Medium a fish under 60 percent of the line's rating never strains it
+Config.STRAIN_FREE_TIGHT = 0.25
+Config.STRAIN_RISE_MEDIUM = 1.0
+Config.STRAIN_RISE_TIGHT = 4.0
+Config.STRAIN_RISE_MAX = 1.5 -- never faster: letting go before the tell runs out (with one last tap) always saves the line
+Config.STRAIN_FALL_EASE = 2.5
+Config.STRAIN_FALL_REELING = 1.0
+Config.STRAIN_REEL_WINDOW = 0.15 -- a fresh press counts as reeling this long (so fast mashing counts like holding)
+
 -- Economy
 Config.START_COINS = 30
 Config.START_WORMS = 15

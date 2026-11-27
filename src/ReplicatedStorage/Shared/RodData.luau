@@ -8,6 +8,7 @@ export type Rod = {
 	castBonus: number, -- extra studs at any power
 	zoneMult: number, -- catch zone size multiplier
 	heavyResist: number, -- share of a heavy fish's pull the rod soaks up (0 to 1)
+	lineLb: number, -- the line's rating in pounds (L4d): fish much heavier can snap it on Tight or Medium drag
 	color: Color3,
 	length: number, -- studs, for the rod in your hand
 	blurb: string,
@@ -21,6 +22,7 @@ local list: { Rod } = {
 		castBonus = 0,
 		zoneMult = 1,
 		heavyResist = 0,
+		lineLb = 6,
 		color = Color3.fromRGB(110, 80, 50),
 		length = 6,
 		blurb = "Your first rod. Bendy, but it gets the job done.",
@@ -32,6 +34,7 @@ local list: { Rod } = {
 		castBonus = 8,
 		zoneMult = 1.15,
 		heavyResist = 0,
+		lineLb = 10,
 		color = Color3.fromRGB(230, 200, 60),
 		length = 6.6,
 		blurb = "Casts further and gives you a bigger catch zone.",
@@ -43,6 +46,7 @@ local list: { Rod } = {
 		castBonus = 16,
 		zoneMult = 1.3,
 		heavyResist = 0.5,
+		lineLb = 15,
 		color = Color3.fromRGB(40, 45, 60),
 		length = 7.2,
 		blurb = "Longest casts, biggest catch zone, and heavy fish pull half as hard.",
@@ -55,6 +59,21 @@ for _, r in list do
 end
 
 local RodData = { list = list, byId = byId }
+
+local KG_PER_LB = 0.45359237
+
+-- The fish's weight over this rod's line rating (L4d, FightModel's `load`): 1 means the fish
+-- weighs exactly what the line is rated for.
+function RodData.lineLoad(kg: number, rodId: string?): number
+	local rod = byId[rodId or ""] or byId.Willow
+	return (kg / KG_PER_LB) / rod.lineLb
+end
+
+-- "6 lb line", for the shop, the journal and beside the fight bar.
+function RodData.lineText(rodId: string?): string
+	local rod = byId[rodId or ""] or byId.Willow
+	return string.format("%d lb line", rod.lineLb)
+end
 
 -- A copy of a fish's fight profile with this rod's help applied.
 function RodData.applyFight(profile: any, rodId: string): any

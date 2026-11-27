@@ -13,7 +13,9 @@ local FightFeel = {}
 -- pull jumps to OUT_ZONE and climbs to 1 as the gap to the zone grows to GAP_FULL bar
 -- heights. A big move in progress (run, jump, dive) adds MOVE_PULL. Separately, as progress
 -- falls toward escaping (below ESCAPE_WARN) tension rises toward 1 whatever the zone does,
--- so the line glows red just before a fish gets away. The larger of the two wins.
+-- so the line glows red just before a fish gets away. Line strain (L4d, FightModel: reeling
+-- through a heavy fish's big move) also counts, so the same colour is the strain meter:
+-- white, orange, red as the line nears snapping. The largest of the three wins.
 FightFeel.IN_ZONE = 0.15
 FightFeel.OUT_ZONE = 0.45
 FightFeel.GAP_FULL = 0.3
@@ -48,6 +50,7 @@ type FightLike = {
 	zoneSize: number,
 	progress: number,
 	mode: string,
+	strain: number?, -- L4d; missing counts as 0
 }
 
 function FightFeel.tension(s: FightLike): number
@@ -62,7 +65,7 @@ function FightFeel.tension(s: FightLike): number
 		pull += FightFeel.MOVE_PULL
 	end
 	local escape = math.clamp((FightFeel.ESCAPE_WARN - s.progress) / FightFeel.ESCAPE_WARN, 0, 1)
-	return math.clamp(math.max(pull, escape), 0, 1)
+	return math.clamp(math.max(pull, escape, s.strain or 0), 0, 1)
 end
 
 function FightFeel.lineColor(tension: number): Color3

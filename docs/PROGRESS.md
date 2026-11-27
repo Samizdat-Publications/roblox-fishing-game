@@ -242,6 +242,19 @@ Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6
 - Still to do in L1: a Lake Sturgeon at the deep hole in its real conditions, the journal on the smallest phone (the simulated mouse wheel zoomed the camera instead of scrolling the journal; check with a real wheel), the 15 new fish models (they hang as the old shape until then), a Neon reveal clip, the StyLua reformat, and Liam's 20 minutes.
 - Look mockups for the beauty pass: five looks (Golden Afternoon, Bright Summer Day, Misty Dawn, Moonlit Night, Autumn Lake) from the all-models stills, page https://claude.ai/artifact/DjMRLNSn6t91zKmR93sGr6 (source `planner/looks.html`, images `docs/looks/`, script `tools/looks/mockup.py`). They were made in the old flat low-poly style before Stewart picked Real-ish, so treat them as light and time-of-day moods, not materials.
 
+## 2026-11-27 (night): L4d, line and drag
+
+- **Every rod has a line rating** (Willow 6 lb, Fiberglass 10 lb, Graphite 15 lb), shown in the shop and the journal.
+- **Drag:** Light, Medium or Tight, cycled with Q, gamepad Y, or the "Drag" button under the fight bar.
+  - **Medium** is exactly the old fight (checked step for step against a recorded trace).
+  - **Tight** lands fish 30 percent faster, but reeling through a heavy fish's run, jump or dive strains the line (the line colour goes white, orange, red, with the drag scream), and it snaps.
+  - **Light** never snaps, but a running fish takes line.
+  - Easing off (letting go) at the warning always saves it. First time: "Big fish running! Ease off."
+- Verified in Studio: a trophy channel catfish (about 17 lb on the 15 lb Graphite line) on Tight, reeled through its first dive, snapped the line after 2.3 s ("Snap! The line broke. Ease off when a big fish runs."); the same fish with easing off on its dives was landed in about 4.4 s and the server accepted the quick Tight win. 349 tests pass in Studio and with Lune; all 10 changed scripts match by checksum.
+- Economy (sim `--drag`): a smart player who uses drag well earns 3.4 percent more; the dock kid stays on Medium and is unchanged; no snaps for either in the sim.
+- Studio test hooks: player attributes `DebugSpecies`, `DebugSizeClass` (trophy, monster) and `DebugDrag`.
+- Not verified: the drag button by touch and gamepad Y by hand; Light drag in a real fight.
+
 ## 2026-11-27 (night): L4c, work the lure (switched on)
 
 - **Lures are fished like lures now:** with a spinner or a plastic worm there's no bobber. The lure splashes down and you work it back.

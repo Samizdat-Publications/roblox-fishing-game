@@ -19,6 +19,12 @@ fight breaks the line. The
 Okay spinner's shorter cast and the Perfect plastic worm's weedless rig are not modelled
 (the sim has no cast distance or snags).
 
+--drag plays line and drag (L4d, FightModel): each fish's weight against the rod's line
+rating. The smart player sets Tight drag on light fish (under STRAIN_FREE_MEDIUM of the line)
+and lets go a reaction time after each big move's tell until the move is over; the dock kid
+and the random player stay on Medium and never ease off, so a heavy enough fish can snap
+their line. Reports coins per minute and landing rates with and without.
+
 --retrieve works the lures (L4c, Config.LURE_RETRIEVE_ON): no bobber; each lure cast is
 retrieved back over a few seconds and strikes come at Retrieve.luau's hazard (worked well,
 the same average time as a bobber bite). A recast costs a cast; a missed strike or a snag
@@ -422,6 +428,32 @@ def apply_rod(profile, rod_id):
 
 
 MODE_SPEED = {"normal": 1, "run": 1.7, "rest": 0.45, "jump": 2.2, "dive": 1.5}  # FightModel
+BIG_MODES = ("run", "jump", "dive")
+KG_PER_LB = 0.45359237
+DRAG_ON = False  # --drag: fights use line and drag (L4d)
+# FightModel's drag table, from Config (L4d): progress fill multiplier, line taken per second
+# during a big move, and the strain rule (rise x (load - free) per second, capped).
+DRAG = {
+    "Light": {"gain": CFG["DRAG_LIGHT_GAIN"], "take": CFG["DRAG_LIGHT_TAKE"], "free": math.inf, "rise": 0.0},
+    "Medium": {"gain": 1.0, "take": 0.0, "free": CFG["STRAIN_FREE_MEDIUM"], "rise": CFG["STRAIN_RISE_MEDIUM"]},
+    "Tight": {"gain": CFG["DRAG_TIGHT_GAIN"], "take": 0.0, "free": CFG["STRAIN_FREE_TIGHT"], "rise": CFG["STRAIN_RISE_TIGHT"]},
+}
+
+
+def strain_rise(load, drag):
+    d = DRAG[drag]
+    if d["rise"] <= 0 or load <= d["free"]:
+        return 0.0
+    return min(CFG["STRAIN_RISE_MAX"], d["rise"] * (load - d["free"]))
+
+
+def line_load(kg, rod_id):
+    return (kg / KG_PER_LB) / ROD_BY_ID.get(rod_id, ROD_BY_ID["Willow"])["lineLb"]
+
+
+def smart_drag(load):
+    """The smart player's drag (L4d): Tight on a fish the Medium drag would never feel, else Medium."""
+    return "Tight" if load < CFG["STRAIN_FREE_MEDIUM"] else "Medium"
 MODE_TIME = {"run": 1.0, "jump": 0.9, "dive": 0.8}
 DIVE_DROP = 0.2
 SHAKE_SIZE, SHAKE_RATE = 0.045, 24
@@ -433,9 +465,17 @@ def assist_for(p):
     return ASSIST_ALWAYS or p.catches < CFG.get("ASSIST_CATCHES", math.inf)
 
 
-def fight_once(profile, assist, skill, rng, dt=1 / 30, start=None):
-    """FightModel port: zone physics, the six fight styles and their wound-up big moves (L4b)."""
+def fight_once(profile, assist, skill, rng, dt=1 / 30, start=None, load=0.0, drag="Medium", ease=False, out=None):
+    """FightModel port: zone physics, the six fight styles and their wound-up big moves (L4b).
+
+    Line and drag (L4d): `load` is the fish's weight over the line's rating, `drag` the setting
+    for the whole fight, `ease` lets go `skill.reaction` seconds after a big move's tell until
+    the move ends (only while strain could build). `out["snapped"]` is set on a snap."""
     p = profile
+    dg = DRAG[drag]
+    rise = strain_rise(load, drag)
+    strain, tap_timer, seen_move = 0.0, 0.0, 0.0
+    reel_window = CFG["STRAIN_REEL_WINDOW"]
     style = p.get("style") or "tugger"
     zone_size = p["zone"] * (CFG["ASSIST_ZONE"] if assist else 1)
     loss = p["loss"] * (CFG["ASSIST_LOSS"] if assist else 1)
@@ -467,8 +507,16 @@ def fight_once(profile, assist, skill, rng, dt=1 / 30, start=None):
             # The "Keep reeling!" cue shows once the line goes slack; a kid sees it and taps.
             if grace is not None and idle > grace + skill.reaction and skill.reads_cue and skill.deadband < 1:
                 want = True
+        # Easing off (L4d): a reaction time after a big move's tell shows, let go until it's over.
+        if pending or mode in BIG_MODES:
+            seen_move += dt
+            if ease and rise > 0 and seen_move >= skill.reaction:
+                want = False
+        else:
+            seen_move = 0.0
         if want and not holding:
             vel = max(vel, CFG["PRESS_KICK"] * climb)
+            tap_timer = reel_window
         holding = want
         idle = 0.0 if holding else idle + dt
         t += dt
@@ -525,11 +573,24 @@ def fight_once(profile, assist, skill, rng, dt=1 / 30, start=None):
             fish = min(max(fish + shake, 0.02), 0.98)
         if abs(fish - zone) <= half:
             if grace is None or idle <= grace:
-                prog += p["gain"] * dt
+                prog += p["gain"] * dg["gain"] * dt
             else:
                 prog -= loss * 0.5 * dt
         else:
             prog -= loss * dt
+        if dg["take"] > 0 and mode in BIG_MODES:
+            prog -= dg["take"] * dt
+        # Strain (FightModel.step, L4d).
+        reeling = holding or tap_timer > 0
+        tap_timer = max(0.0, tap_timer - dt)
+        if reeling and rise > 0 and (pending or mode in BIG_MODES):
+            strain += rise * dt
+        elif strain > 0:
+            strain = max(0.0, strain - (CFG["STRAIN_FALL_REELING"] if reeling else CFG["STRAIN_FALL_EASE"]) * dt)
+        if strain >= 1:
+            if out is not None:
+                out["snapped"] = True
+            return False, t
         if prog >= 1:
             return True, t
         if prog <= 0:
@@ -631,6 +692,8 @@ class Player:
         self.session_tiers = []  # per session: {tier: count}
         self.rigged = {}  # live bait on the hook, by bait (L3)
         self.spat = 0  # hook-size misses (L3)
+        self.fights = 0  # fish hooked (L4d report)
+        self.snaps = 0  # lines snapped (L4d)
 
     def has(self, bait):
         if BAIT_BY_ID[bait]["kind"] == "lure":
@@ -672,6 +735,7 @@ class Strategy:
     uses_rises = False  # casts onto rises, about one per rise interval (L2b)
     rig_grade = "Okay"  # bait bench grade every time (L3, --bait)
     retrieve_skill = "kid"  # how well lures are worked (L4c, --retrieve)
+    drag_smart = False  # line and drag (L4d, --drag): Tight on light fish, ease off at tells; else Medium, never eases
     hook_rule = None  # "right" (best hook for the spot) or a fixed size; None: no hook sizes
 
     def spots(self, p):
@@ -693,6 +757,7 @@ class Smart(Strategy):
     uses_cover = True
     uses_rises = True
     retrieve_skill = "skilled"
+    drag_smart = True
 
     def __init__(self, pond=True, skill=KID):
         self.uses_pond = pond
@@ -967,7 +1032,16 @@ def play_session(p, strat, rng, clock_start, minutes=SESSION_MIN, log=None):
         s = FISH_BY_ID[sid]
         cm, kg, cls = roll_catch(s, rng)  # rolled at the hook, as on the server
         prof = apply_rod(fight_for(s["fight"], cls), p.rod)
-        won, ft = fight_once(prof, assist_for(p), strat.skill, rng, start=RIG_FIGHT_START[grade])
+        p.fights += 1
+        if DRAG_ON:
+            load = line_load(kg, p.rod)
+            drag = smart_drag(load) if strat.drag_smart else "Medium"
+            info = {}
+            won, ft = fight_once(prof, assist_for(p), strat.skill, rng, start=RIG_FIGHT_START[grade],
+                                 load=load, drag=drag, ease=strat.drag_smart, out=info)
+            p.snaps += 1 if info.get("snapped") else 0
+        else:
+            won, ft = fight_once(prof, assist_for(p), strat.skill, rng, start=RIG_FIGHT_START[grade])
         t += ft
         if not won:
             t += AFTER_ESCAPE
@@ -1365,6 +1439,46 @@ def report_retrieve(runs, sessions=10):
     return out
 
 
+def report_drag(runs, sessions=10):
+    """L4d: coins per minute and landing rates with line and drag, against the fight before it."""
+    global DRAG_ON
+    print("\n## Line and drag (L4d)\n")
+    print(f"Each career plays {sessions} sessions of {SESSION_MIN} minutes; {runs} careers each, same seeds.")
+    print(f"Tight fills {CFG['DRAG_TIGHT_GAIN']:.2f}x; strain from load over {CFG['STRAIN_FREE_TIGHT']} (Tight) or "
+          f"{CFG['STRAIN_FREE_MEDIUM']} (Medium), rise {CFG['STRAIN_RISE_TIGHT']} / {CFG['STRAIN_RISE_MEDIUM']} per second "
+          f"per unit of load (most {CFG['STRAIN_RISE_MAX']}). Lines: "
+          + ", ".join(f"{r['id']} {r['lineLb']:.0f} lb" for r in RODS) + ".\n")
+    cases = [
+        ("smart", lambda: Smart(pond=False)),
+        ("smart, quick hands", lambda: Smart(pond=False, skill=GOOD)),
+        ("dock kid", lambda: DockWorms()),
+        ("random", lambda: RandomPlayer()),
+    ]
+    rows, out = [], {}
+    for label, make in cases:
+        vals = {}
+        for on in (False, True):
+            DRAG_ON = on
+            gross, fights, landed, snaps = [], 0, 0, 0
+            for i in range(runs):
+                p, per, _ = run_career(make(), seed=11000 + i, sessions=sessions, stop_early=False)
+                gross.append(sum(per) / len(per))
+                fights += p.fights
+                landed += p.catches
+                snaps += p.snaps
+            vals[on] = (statistics.mean(gross), landed / max(1, fights), snaps / (runs * sessions))
+        DRAG_ON = False
+        change = 100 * (vals[True][0] / vals[False][0] - 1)
+        out[label] = change
+        rows.append([label, f"{vals[False][0]:.1f}", f"{vals[False][1] * 100:.1f}%", f"{vals[True][0]:.1f}",
+                     f"{vals[True][1] * 100:.1f}%", f"{vals[True][2]:.2f}", f"{change:+.1f}%"])
+    print(table(rows, ["Player", "coins/min before", "landed before", "coins/min with drag", "landed with drag",
+                       "snaps per session", "change"]))
+    print()
+    print(f"Target: dock kid unchanged, smart within +10 percent. Smart {out['smart']:+.1f}%, dock kid {out['dock kid']:+.1f}%.")
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true", help="fewer runs")
@@ -1380,6 +1494,7 @@ def main():
     ap.add_argument("--assist-always", action="store_true", help="reel assist never turns itself off (the game before L4b)")
     ap.add_argument("--fish-of-day", help="this species bites a little more readily all day (Daily.luau, L6d)")
     ap.add_argument("--retrieve", action="store_true", help="only report working the lures against today's bobber (L4c)")
+    ap.add_argument("--drag", action="store_true", help="only report line and drag against the fight before it (L4d)")
     args = ap.parse_args()
     global SIZE_CLASSES, WEATHER_ON, GOALS, ASSIST_ALWAYS, FISH_OF_DAY
     FISH_OF_DAY = args.fish_of_day
@@ -1401,6 +1516,9 @@ def main():
         return
     if args.retrieve:
         report_retrieve(12 if args.quick else 60)
+        return
+    if args.drag:
+        report_drag(12 if args.quick else 60)
         return
     if args.grace:
         print("## Slack-line grace: chance to land, Willow Rod (mean over the fish, worst fish)\n")

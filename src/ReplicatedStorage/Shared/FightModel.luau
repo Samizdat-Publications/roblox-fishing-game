@@ -22,9 +22,20 @@
 -- water (drag scream, splash, rod dip) and the player can get ready. FightModel.tell says
 -- which move is coming and how soon; `tells` counts them and `darts` counts ordinary darts
 -- (a tugger's twitch), so the client can spot a new one. UNVERIFIED in Studio (2026-11-26).
+--
+-- Line and drag (L4d): the drag setting ("Light", "Medium", "Tight") can change any time
+-- (FightModel.setDrag). Medium is the fight exactly as it was before L4d: same steps for the
+-- same seed and inputs (FightModel.spec checks a recorded trace). Tight fills progress faster
+-- (Config.DRAG_TIGHT_GAIN); Light fills slower and a running fish takes line (DRAG_LIGHT_TAKE).
+-- `load` is the fish's weight over the line's rating (RodData.lineLoad). Reeling through a
+-- big move (from its tell until it ends) builds `strain` when the load is past the drag's
+-- free share; strain at 1 snaps the line and step returns "snapped". Light never snaps.
+-- Numbers in Config (DRAG_*, STRAIN_*). UNVERIFIED in Studio (2026-11-27).
 local Shared = script.Parent
 local Config = require(Shared.Config)
 local FishData = require(Shared.FishData)
+
+export type Drag = "Light" | "Medium" | "Tight"
 
 export type State = {
 	profile: FishData.FightProfile,
@@ -46,6 +57,11 @@ export type State = {
 	pendingTarget: number, -- where a dive is headed (runs and jumps pick their end when they start)
 	tells: number, -- big moves warned so far
 	darts: number, -- ordinary darts so far
+	drag: Drag, -- L4d
+	load: number, -- the fish's weight over the line's rating; 0 never strains the line
+	strain: number, -- 0 to 1; the line snaps at 1
+	usedTight: boolean, -- the drag was Tight at some point (the server checks a win's time against Tight's minimum)
+	tapTimer: number, -- a fresh press counts as reeling (for strain) this many seconds more
 }
 
 local MODE_SPEED = { normal = 1, run = 1.7, rest = 0.45, jump = 2.2, dive = 1.5 }
@@ -56,10 +72,47 @@ local SHAKE_RATE = 24 -- radians per second
 
 local FightModel = {}
 
+-- The drag settings in the order the drag button cycles them (L4d).
+local DRAGS: { Drag } = { "Light", "Medium", "Tight" }
+FightModel.DRAGS = DRAGS
+
+-- Each drag's progress fill multiplier, line taken per second while a big move runs, and its
+-- strain rule (strain rises at rise x (load - free) per second, see Config).
+local DRAG: { [string]: { gain: number, take: number, free: number, rise: number } } = {
+	Light = { gain = Config.DRAG_LIGHT_GAIN, take = Config.DRAG_LIGHT_TAKE, free = math.huge, rise = 0 },
+	Medium = { gain = 1, take = 0, free = Config.STRAIN_FREE_MEDIUM, rise = Config.STRAIN_RISE_MEDIUM },
+	Tight = { gain = Config.DRAG_TIGHT_GAIN, take = 0, free = Config.STRAIN_FREE_TIGHT, rise = Config.STRAIN_RISE_TIGHT },
+}
+
+-- Fight styles that make big moves (runs, jumps, dives). Only these can snap a line.
+local BIG_MOVE_STYLES: { [string]: boolean } = { runner = true, jumper = true, diver = true, shaker = true }
+FightModel.BIG_MOVE_STYLES = BIG_MOVE_STYLES
+
+function FightModel.isDrag(d: any): boolean
+	return type(d) == "string" and DRAG[d] ~= nil
+end
+
+-- The next drag setting after `d`: Light, Medium, Tight, then back to Light.
+function FightModel.nextDrag(d: Drag): Drag
+	local i = table.find(DRAGS, d) or 2
+	return DRAGS[(i % #DRAGS) + 1]
+end
+
+-- Strain per second while reeling through a big move with this load and drag (0: never).
+function FightModel.strainRise(load: number, drag: Drag): number
+	local d = DRAG[drag] or DRAG.Medium
+	if d.rise <= 0 or load <= d.free then
+		return 0
+	end
+	return math.min(Config.STRAIN_RISE_MAX, d.rise * (load - d.free))
+end
+
 -- `start` is where the progress bar begins: Config.FIGHT_START, or higher for a well-baited
--- hook (BaitRig.fightStart, L3).
-function FightModel.new(profile: FishData.FightProfile, assist: boolean, seed: number, start: number?): State
+-- hook (BaitRig.fightStart, L3). `load` (L4d): the fish's weight over the line's rating
+-- (RodData.lineLoad); nil or 0 never strains the line. `drag`: the setting to start on.
+function FightModel.new(profile: FishData.FightProfile, assist: boolean, seed: number, start: number?, load: number?, drag: Drag?): State
 	local rng = Random.new(seed)
+	local d: Drag = if drag and DRAG[drag] then drag else "Medium"
 	return {
 		profile = profile,
 		rng = rng,
@@ -80,7 +133,28 @@ function FightModel.new(profile: FishData.FightProfile, assist: boolean, seed: n
 		pendingTarget = 0.5,
 		tells = 0,
 		darts = 0,
+		drag = d,
+		load = math.max(0, load or 0),
+		strain = 0,
+		usedTight = d == "Tight",
+		tapTimer = 0,
 	}
+end
+
+-- Change the drag at any time during the fight (L4d).
+function FightModel.setDrag(s: State, drag: Drag)
+	if not DRAG[drag] then
+		return
+	end
+	s.drag = drag
+	if drag == "Tight" then
+		s.usedTight = true
+	end
+end
+
+-- True while a big move is winding up (its tell) or running: reeling now builds strain.
+function FightModel.bigMove(s: State): boolean
+	return s.pending ~= nil or s.mode == "run" or s.mode == "jump" or s.mode == "dive"
 end
 
 -- The fish starts winding up for a big move: it shows on the bar TELL_LEAD seconds from now.
@@ -99,10 +173,11 @@ end
 -- It sets a minimum speed rather than adding, so mashing can't fling the zone.
 function FightModel.press(s: State)
 	s.idle = 0
+	s.tapTimer = Config.STRAIN_REEL_WINDOW
 	s.zoneVel = math.max(s.zoneVel, Config.PRESS_KICK * climbFactor(s.profile))
 end
 
--- Advance by dt seconds. Returns "won", "lost" or nil while the fight goes on.
+-- Advance by dt seconds. Returns "won", "lost", "snapped" (L4d) or nil while the fight goes on.
 function FightModel.step(s: State, dt: number, holding: boolean): string?
 	local p = s.profile
 	s.t += dt
@@ -192,14 +267,35 @@ function FightModel.step(s: State, dt: number, holding: boolean): string?
 	-- pressed or held within FIGHT_IDLE_GRACE. Leave it longer and the line goes slack, so
 	-- the fish slowly works free even inside the zone. (A player resting the zone at the
 	-- bottom for a sinking fish just taps now and then; the client should show a cue.)
+	-- Drag (L4d): Medium's gain multiplier is exactly 1 and it takes no line, so its steps
+	-- are bit-for-bit the fight before L4d.
+	local drag = DRAG[s.drag] or DRAG.Medium
 	if math.abs(s.fishPos - s.zonePos) <= half then
 		if s.idle <= Config.FIGHT_IDLE_GRACE then
-			s.progress += s.gain * dt
+			s.progress += s.gain * drag.gain * dt
 		else
 			s.progress -= s.loss * 0.5 * dt
 		end
 	else
 		s.progress -= s.loss * dt
+	end
+	if drag.take > 0 and (s.mode == "run" or s.mode == "jump" or s.mode == "dive") then
+		s.progress -= drag.take * dt -- light drag: the running fish takes line
+	end
+
+	-- Strain (L4d): reeling (holding, or a press in the last STRAIN_REEL_WINDOW, so mashing
+	-- counts) through a big move builds it; letting go drops it fast. At 1 the line snaps.
+	local reeling = holding or s.tapTimer > 0
+	s.tapTimer = math.max(0, s.tapTimer - dt)
+	local rise = FightModel.strainRise(s.load, s.drag)
+	if reeling and rise > 0 and FightModel.bigMove(s) then
+		s.strain += rise * dt
+	elseif s.strain > 0 then
+		s.strain = math.max(0, s.strain - (if reeling then Config.STRAIN_FALL_REELING else Config.STRAIN_FALL_EASE) * dt)
+	end
+	if s.strain >= 1 then
+		s.strain = 1
+		return "snapped"
 	end
 	if s.progress >= 1 then
 		s.progress = 1
@@ -232,9 +328,63 @@ function FightModel.inside(s: State): boolean
 	return math.abs(s.fishPos - s.zonePos) <= s.zoneSize / 2
 end
 
--- The fastest a fight can possibly be won. The server rejects wins that come sooner.
-function FightModel.minSeconds(profile: FishData.FightProfile, _assist: boolean, start: number?): number
-	return (1 - (start or Config.FIGHT_START)) / profile.gain
+-- The fastest a fight can possibly be won. The server rejects wins that come sooner. With
+-- `drag` "Tight" (L4d) it is shorter: a fight that was Tight at any point is checked
+-- against it. Medium and Light (slower) use the Medium time.
+function FightModel.minSeconds(profile: FishData.FightProfile, _assist: boolean, start: number?, drag: Drag?): number
+	local mult = if drag == "Tight" then DRAG.Tight.gain else 1
+	return (1 - (start or Config.FIGHT_START)) / (profile.gain * mult)
+end
+
+-- The fastest the line can possibly snap: a big move from the first moment, reeled through.
+function FightModel.minSnapSeconds(load: number, drag: Drag): number
+	local rise = FightModel.strainRise(load, drag)
+	return if rise > 0 then 1 / rise else math.huge
+end
+
+-- Can a fight end in a snap the way the client says (L4d)? The fish must make big moves, the
+-- drag must be able to snap a fish this heavy for this line, and strain must have had time to
+-- build (with the same 10 percent slack the server gives a win's time).
+function FightModel.snapPlausible(style: string?, load: number, drag: any, elapsed: number): boolean
+	if not FightModel.BIG_MOVE_STYLES[style or "tugger"] or not FightModel.isDrag(drag) then
+		return false
+	end
+	local least = FightModel.minSnapSeconds(load, drag)
+	return least < math.huge and elapsed >= least * 0.9
+end
+
+-- What the server needs to judge a fight's end, worked out when the fish is hooked.
+export type Check = { minSecs: number, minSecsTight: number, style: string, load: number }
+
+function FightModel.checkFor(profile: FishData.FightProfile, start: number?, load: number): Check
+	return {
+		minSecs = FightModel.minSeconds(profile, false, start),
+		minSecsTight = FightModel.minSeconds(profile, false, start, "Tight"),
+		style = profile.style or "tugger",
+		load = load,
+	}
+end
+
+-- The server's verdict on how the client says the fight ended (L4d). `claim` is "won",
+-- "lost" or "snapped" (true still means won, from older clients); `report` is the client's
+-- { tight = used Tight drag at some point, drag = drag at the end }. Returns "won",
+-- "snapped" or "lost", and why a claim was refused (nil when it was taken as said).
+function FightModel.judge(check: Check, claim: any, report: any, elapsed: number): (string, string?)
+	local tight = type(report) == "table" and report.tight == true
+	local drag = if type(report) == "table" then report.drag else nil
+	if claim == true or claim == "won" then
+		local least = if tight then check.minSecsTight else check.minSecs
+		if elapsed < least * 0.9 then
+			return "lost", string.format("win too fast (%.2fs < %.2fs%s)", elapsed, least, if tight then ", tight drag" else "")
+		end
+		return "won", nil
+	elseif claim == "snapped" then
+		if FightModel.snapPlausible(check.style, check.load, drag, elapsed) then
+			return "snapped", nil
+		end
+		return "lost", string.format("snap not possible (%s, load %.2f, drag %s, %.2fs)", check.style, check.load, tostring(drag), elapsed)
+	end
+	return "lost", nil
 end
 
 return FightModel

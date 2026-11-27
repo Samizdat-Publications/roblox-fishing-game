@@ -95,7 +95,7 @@ type Session = {
 	weights: { FishLogic.Weight }?,
 	species: string?,
 	fightStart: number,
-	minSecs: number,
+	fightCheck: FightModel.Check?, -- how to judge the fight's end (L4d)
 	catch: { cm: number, kg: number, class: string }?, -- rolled when the fish's approach starts (L4)
 	coming: Coming?, -- the fish approaching the bait (L4)
 	waitGen: number, -- bumps whenever the bite timeline is re-planned (L4), so stale timers stop
@@ -134,7 +134,6 @@ local function session(player: Player): Session
 			phase = "Idle",
 			token = 0,
 			fightStart = 0,
-			minSecs = 0,
 			rigEmptyAt = os.clock(),
 			lastRigAt = 0,
 			waitGen = 0,
@@ -326,6 +325,17 @@ local function rollComing(player: Player, species: FishData.Species): (number, n
 	return cm, kg, class
 end
 
+-- The fish that bites: by the bite weights, or in Studio the DebugSpecies attribute (any
+-- species id) when something would bite at all, to test a fish on demand (L4d).
+local function pickFish(player: Player, s: Session): string?
+	local id = FishLogic.pickSpecies(s.weights or {}, rng)
+	local forced = if RunService:IsStudio() then player:GetAttribute("DebugSpecies") else nil
+	if id and type(forced) == "string" and FishData.byId[forced] then
+		return forced
+	end
+	return id
+end
+
 local function stale(s: Session, token: number, gen: number): boolean
 	return s.token ~= token or s.waitGen ~= gen or s.phase ~= "Waiting"
 end
@@ -430,7 +440,7 @@ end
 
 -- A fish starts its approach: pick it and size it now, so its shadow matches the catch.
 local function startComing(player: Player, s: Session, plan: Approach.Plan, fromRise: boolean)
-	local speciesId = FishLogic.pickSpecies(s.weights or {}, rng)
+	local speciesId = pickFish(player, s)
 	local species = speciesId and FishData.byId[speciesId]
 	if not species then
 		return
@@ -601,7 +611,7 @@ end
 -- A fish hits the worked lure: picked and sized now by the same bite weights as a bobber
 -- bite, then the normal hook window. A missed strike ends the cast (the lure is kept).
 local function lureStrike(player: Player, s: Session, r: Run)
-	local speciesId = FishLogic.pickSpecies(s.weights or {}, rng)
+	local speciesId = pickFish(player, s)
 	local species = speciesId and FishData.byId[speciesId]
 	if not species then
 		return
@@ -1058,8 +1068,11 @@ local function onHook(player: Player)
 	s.catch = { cm = cm, kg = kg, class = class }
 	print(string.format("[Fishing] %s hooked size: %s %.1f cm %s, its shadow was %.2f studs", player.Name, species.id, cm, class, Approach.shadowLength(cm)))
 	local profile = FishLogic.fightFor(species.fight, class)
-	s.minSecs = FightModel.minSeconds(profile, data.assist, start)
-	print(string.format("[Fishing] %s hooked %s, fight starts at %.2f (%s)", player.Name, species.id, start, if rig then rig.grade else "lure"))
+	-- Line and drag (L4d): the fish's weight over this rod's line rating.
+	local load = RodData.lineLoad(kg, data.rod)
+	s.fightCheck = FightModel.checkFor(profile, start, load)
+	local rod = RodData.byId[data.rod] or RodData.byId.Willow
+	print(string.format("[Fishing] %s hooked %s, fight starts at %.2f (%s), %.1f lb on %d lb line: load %.2f", player.Name, species.id, start, if rig then rig.grade else "lure", kg / 0.45359237, rod.lineLb, load))
 	setBobberY(s, -1)
 	local token = s.token
 	send(player, "Hooked", {
@@ -1067,6 +1080,8 @@ local function onHook(player: Player)
 		assist = data.assist,
 		seed = rng:NextInteger(1, 1e6),
 		start = start,
+		load = load, -- L4d: fish weight over line rating, for strain
+		lineLb = rod.lineLb,
 		note = species.fightNote,
 		sizeClass = class,
 		tier = Rarity.of(species),
@@ -1169,7 +1184,9 @@ local function showCatch(player: Player, species: FishData.Species, cm: number)
 	end)
 end
 
-local function onFightResult(player: Player, won: any)
+-- `claim`: "won", "lost" or "snapped" (true from older clients means won). `report` (L4d):
+-- { tight = the drag was Tight at some point, drag = the drag at the end }.
+local function onFightResult(player: Player, claim: any, report: any)
 	local s = session(player)
 	local data = PlayerData.get(player)
 	if s.phase ~= "Fighting" or not data or not s.species then
@@ -1177,14 +1194,24 @@ local function onFightResult(player: Player, won: any)
 	end
 	local elapsed = os.clock() - s.fightStart
 	local species = FishData.byId[s.species :: string]
-	if won ~= true or elapsed < s.minSecs * 0.9 then
-		if won == true then
-			warn(string.format("[Fishing] %s reported a win too fast (%.2fs < %.2fs); counted as escape", player.Name, elapsed, s.minSecs))
-		end
+	local check = s.fightCheck or FightModel.checkFor(species.fight, nil, 0)
+	local outcome, refused = FightModel.judge(check, claim, report, elapsed)
+	if refused then
+		warn(string.format("[Fishing] %s: %s; counted as escape", player.Name, refused))
+	end
+	if outcome ~= "won" then
 		-- The line broke: a lure (L3b) is saved but has to be tied on again.
 		local lureRig = rigFor(s, s.bait)
 		local lure = lureRig ~= nil and BaitData.byId[lureRig.bait].kind == "lure"
-		send(player, "Escaped", { text = "It got away! " .. species.fightNote .. (if lure then " Tie your lure back on." else ""), snapped = true })
+		local tie = if lure then " Tie your lure back on." else ""
+		if outcome == "snapped" then
+			-- Line and drag (L4d): reeled too hard through a big move.
+			local drag = if type(report) == "table" then tostring(report.drag) else "?"
+			print(string.format("[Fishing] %s snapped the line on %s after %.1fs (load %.2f, %s drag)", player.Name, species.id, elapsed, check.load, drag))
+			send(player, "Escaped", { text = "Snap! The line broke. Ease off when a big fish runs." .. tie, snapped = true, lineSnap = true })
+		else
+			send(player, "Escaped", { text = "It got away! " .. species.fightNote .. tie, snapped = true })
+		end
 		if lure then
 			emptyHook(player, s)
 		end

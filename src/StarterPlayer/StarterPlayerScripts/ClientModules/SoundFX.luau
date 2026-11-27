@@ -330,6 +330,24 @@ function SoundFX.fight(s: any, holding: boolean, _dt: number)
 	end
 end
 
+-- Line strain (L4d): when it climbs past STRAIN_LOUD the line creaks and the drag screams,
+-- once, until it falls back under STRAIN_QUIET. UNVERIFIED in Studio (2026-11-27).
+local STRAIN_LOUD = 0.55
+local STRAIN_QUIET = 0.3
+local strainLoud = false
+function SoundFX.strain(level: number)
+	if not started then
+		return
+	end
+	if level >= STRAIN_LOUD and not strainLoud then
+		strainLoud = true
+		play("line-strain", 0.6, 1.25, true) -- a short, tight creak
+		play("drag-zip", 0.6, 1.2, true) -- the drag screams
+	elseif level < STRAIN_QUIET then
+		strainLoud = false
+	end
+end
+
 -- A fight style's tell (Shared/FightFeel.TELL_SOUNDS): the drag screams, a splash, a creak.
 function SoundFX.tell(kind: string)
 	if not started then

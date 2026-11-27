@@ -271,6 +271,20 @@ function UI.init(cbs: { [string]: (...any) -> () })
 	refs.reelPrompt = prompt
 	refs.fight = fight
 
+	-- Drag (L4d): a small button under the fight bar cycles Light, Medium, Tight (Q or gamepad Y
+	-- do the same), with the rod's line rating under it. A tap on it is not a reel press.
+	local dragBox = frame(gui, "DragBox", UDim2.fromOffset(150, 58), UDim2.new(0.5, -260, 0.5, 184), C.panel, 1)
+	dragBox.Visible = false
+	refs.dragBtn = button(dragBox, "Drag", "Drag: Medium", UDim2.fromOffset(150, 36), UDim2.fromOffset(0, 0), C.panel2, function()
+		if callbacks.cycleDrag then
+			callbacks.cycleDrag()
+		end
+	end)
+	refs.dragBtn.TextSize = 16
+	refs.dragLine = label(dragBox, "Line", "Line 6 lb", UDim2.fromOffset(150, 20), UDim2.fromOffset(0, 37), 14, C.dim)
+	refs.dragLine.TextStrokeTransparency = 0.5
+	refs.dragBox = dragBox
+
 	-- Toasts (top center, under the bar)
 	local toasts = Instance.new("Frame")
 	toasts.Name = "Toasts"
@@ -421,10 +435,44 @@ local function reelHowTo(): string
 	return "Hold anywhere on the screen."
 end
 
+-- The drag button's text (L4d): the setting, the key for this device, and the line rating.
+function UI.showDrag(drag: string?, lineLb: number?)
+	if not drag then
+		refs.dragBox.Visible = false
+		return
+	end
+	local name = UI.inputName()
+	local key = if name == "R2" then " (Y)" elseif name == "click" then " (Q)" else ""
+	refs.dragBtn.Text = "Drag: " .. drag .. key
+	if lineLb then
+		refs.dragLine.Text = string.format("Line %d lb", lineLb)
+	end
+	refs.dragBox.Visible = true
+end
+
+-- True when a screen position is over the drag button (so the Controller doesn't count that
+-- tap as reeling).
+function UI.overDragButton(pos: Vector3 | Vector2): boolean
+	if not refs.dragBox or not refs.dragBox.Visible then
+		return false
+	end
+	local playerGui = Players.LocalPlayer:FindFirstChildOfClass("PlayerGui")
+	if not playerGui then
+		return false
+	end
+	for _, obj in playerGui:GetGuiObjectsAtPosition(pos.X, pos.Y) do
+		if obj == refs.dragBtn then
+			return true
+		end
+	end
+	return false
+end
+
 function UI.showFight(s: any?, note: string?, holding: boolean?, slack: boolean?)
 	if not s then
 		refs.fight.Visible = false
 		refs.reelPrompt.Visible = false
+		refs.dragBox.Visible = false
 		if refs.touchFish then
 			refs.touchFish.Text = "Fish"
 			refs.touchFish.BackgroundColor3 = C.blue
@@ -463,7 +511,12 @@ function UI.showFight(s: any?, note: string?, holding: boolean?, slack: boolean?
 
 	-- Feedback while holding: bright outline, prompt turns green, touch button lights up.
 	refs.zoneStroke.Thickness = if holding then 3 else 0
-	if holding then
+	local strain = if type(s.strain) == "number" then s.strain else 0
+	if strain >= 0.5 then
+		-- Line and drag (L4d): the line is close to snapping. Let go!
+		refs.reelTitle.Text = "EASE OFF!"
+		refs.reelTitle.TextColor3 = if (os.clock() % 0.3) < 0.15 then C.red else C.text
+	elseif holding then
 		refs.reelTitle.Text = "REELING!"
 		refs.reelTitle.TextColor3 = C.green
 	elseif slack then
@@ -596,7 +649,7 @@ function UI.buildShop()
 		local swatch = frame(row, "Swatch", UDim2.fromOffset(6, 50), UDim2.fromOffset(6, 10), r.color, 0)
 		corner(swatch, 3)
 		label(row, "Name", r.name, UDim2.fromOffset(220, 28), UDim2.fromOffset(18, 6), 20, C.text, Enum.Font.GothamBold).TextXAlignment = Enum.TextXAlignment.Left
-		local blurb = label(row, "Blurb", r.blurb, UDim2.fromOffset(330, 34), UDim2.fromOffset(18, 32), 14, C.dim)
+		local blurb = label(row, "Blurb", string.format("%s %d lb line.", r.blurb, r.lineLb), UDim2.fromOffset(330, 34), UDim2.fromOffset(18, 32), 14, C.dim)
 		blurb.TextXAlignment = Enum.TextXAlignment.Left
 		local btn = button(row, "Buy", "", UDim2.fromOffset(150, 50), UDim2.new(1, -162, 0, 10), C.blue, function()
 			local st = lastState
@@ -783,7 +836,16 @@ function UI.refreshJournal()
 	refs.assistBtn.Text = "Reel assist: " .. (if st.assist then "On" else "Off")
 	refs.quickBtn.Text = "Quick Bait: " .. (if st.quickBait then "On" else "Off")
 	local nextIn = Journal.nextRumourIn(st.totalCaught)
-	refs.journalSummary.Text = string.format("%d of %d species found. %d fish caught in all.%s", kinds, shown, st.totalCaught, if nextIn > 0 then string.format(" New rumour in %d.", nextIn) else "")
+	local rod = RodData.byId[st.rod or ""] or RodData.byId.Willow
+	refs.journalSummary.Text = string.format(
+		"%d of %d species found. %d fish caught in all.%s Rod: %s, %s.",
+		kinds,
+		shown,
+		st.totalCaught,
+		if nextIn > 0 then string.format(" New rumour in %d.", nextIn) else "",
+		rod.name,
+		RodData.lineText(rod.id)
+	)
 end
 
 -- From a bite until the fight ends nothing else may take the player's clicks.

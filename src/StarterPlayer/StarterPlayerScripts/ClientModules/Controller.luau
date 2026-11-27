@@ -13,6 +13,10 @@
 -- click or touch ANYWHERE on screen (even over a panel or button) hooks and reels. Panels
 -- can't open, the character stands still (so Space and gamepad A reel too), and after the
 -- fight the button has to be let go and a short pause passes before it can cast again.
+--
+-- Drag (L4d): during a fight Q, gamepad Y or the small Drag button under the fight bar
+-- cycles Light, Medium, Tight. The choice lasts the session (not saved). The first time the
+-- line strains hard, a hint says to ease off.
 local ContextActionService = game:GetService("ContextActionService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -80,6 +84,13 @@ local landedAt: Vector3? = nil -- where the server put the bobber this cast (for
 local reelHeld: { [any]: boolean } = {}
 local reelPresses: { Retrieve.Press } = {}
 local reelSent = false
+-- Line and drag (L4d): this session's drag, the hooked rod's line rating, whether the
+-- first-time "ease off" hint has shown, and pointer presses that landed on the Drag button.
+local dragChoice: FightModel.Drag = "Medium"
+local fightLineLb: number? = nil
+local strainHinted = false
+local dragPointers: { [InputObject]: boolean } = {}
+local STRAIN_HINT_AT = 0.4
 
 -- Inputs that count as "reel" during a bite or fight, on every device.
 local REEL_TYPES = {
@@ -181,6 +192,17 @@ end
 -- What a press does while waiting (L4).
 local function waitHint(): string
 	return "Tap: twitch. Hold: reel in." -- short: the status line is one line on a phone
+end
+
+-- Next drag setting (L4d). Only during a fight; the setting stays for later fights.
+local function cycleDrag()
+	if state ~= "Fighting" or not fight then
+		return
+	end
+	dragChoice = FightModel.nextDrag(dragChoice)
+	FightModel.setDrag(fight :: FightModel.State, dragChoice)
+	UI.showDrag(dragChoice, fightLineLb)
+	play("click")
 end
 
 local function endFishOn()
@@ -545,6 +567,15 @@ local function onReelInput(input: InputObject, began: boolean)
 	if not isReelInput(input) then
 		return
 	end
+	-- A tap or click on the Drag button changes the drag; it isn't a reel press (L4d).
+	if began and state == "Fighting" and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and UI.overDragButton(input.Position) then
+		dragPointers[input] = true
+		return
+	end
+	if not began and dragPointers[input] then
+		dragPointers[input] = nil
+		return
+	end
 	if state == "Baiting" then
 		local key = input.UserInputType.Name .. ":" .. input.KeyCode.Name
 		if began then
@@ -677,7 +708,13 @@ local function onFishingEvent(kind: string, payload: any)
 		UI.closePanels()
 		UI.setLocked(true)
 		freezeCharacter(true)
-		fight = FightModel.new(payload.fight, payload.assist, payload.seed, payload.start)
+		-- Studio test hook: a DebugDrag attribute ("Light", "Medium" or "Tight") sets the drag.
+		local forcedDrag = if RunService:IsStudio() then Players.LocalPlayer:GetAttribute("DebugDrag") else nil
+		if FightModel.isDrag(forcedDrag) then
+			dragChoice = forcedDrag :: FightModel.Drag
+		end
+		fightLineLb = if type(payload.lineLb) == "number" then payload.lineLb else nil
+		fight = FightModel.new(payload.fight, payload.assist, payload.seed, payload.start, payload.load, dragChoice)
 		if anyHeld() then
 			FightModel.press(fight :: FightModel.State)
 		end
@@ -685,6 +722,7 @@ local function onFishingEvent(kind: string, payload: any)
 		FightTells.begin(payload.fight and payload.fight.style, landedAt)
 		UI.status("") -- the reel prompt says what to do; keeps small screens clear
 		UI.showFight(fight, payload.note, holding())
+		UI.showDrag(dragChoice, fightLineLb)
 		if payload.sizeClass == "monster" then
 			UI.toast("Something HUGE is on the line!", Color3.fromRGB(240, 75, 125))
 		elseif payload.sizeClass == "trophy" then
@@ -785,6 +823,9 @@ function Controller.start()
 				cycleBait()
 			end
 		end,
+		cycleDrag = function()
+			cycleDrag()
+		end,
 		toggleJournal = function()
 			UI.toggleJournal()
 		end,
@@ -884,6 +925,17 @@ function Controller.start()
 		end
 		return Enum.ContextActionResult.Sink
 	end, false, Enum.KeyCode.J, Enum.KeyCode.ButtonY)
+	-- Drag during a fight (L4d): Q or gamepad Y. Bound after the journal so Y reaches it first
+	-- while a fish is on; otherwise Y passes through to the journal.
+	ContextActionService:BindAction("Drag", function(_, st)
+		if state ~= "Fighting" then
+			return Enum.ContextActionResult.Pass
+		end
+		if st == Enum.UserInputState.Begin then
+			cycleDrag()
+		end
+		return Enum.ContextActionResult.Sink
+	end, false, Enum.KeyCode.Q, Enum.KeyCode.ButtonY)
 	ContextActionService:BindAction("CycleBait", function(_, st)
 		if st == Enum.UserInputState.Begin and not UI.isPanelOpen() and not UI.isLocked() then
 			cycleBait()
@@ -962,6 +1014,9 @@ function Controller.start()
 		elseif state == "Fighting" and fight then
 			if autoFish() then
 				local want = fight.zonePos < fight.fishPos or fight.idle > Config.FIGHT_IDLE_GRACE * 0.8 -- tap before the line goes slack
+				if fight.strain > 0.25 then
+					want = false -- ease off when the line strains (L4d)
+				end
 				if want and not autoHolding then
 					FightModel.press(fight)
 				end
@@ -971,11 +1026,16 @@ function Controller.start()
 			local result = FightModel.step(fight, math.min(dt, 0.1), hold)
 			UI.showFight(fight, nil, hold, FightModel.slack(fight))
 			SoundFX.fight(fight, hold, dt)
+			SoundFX.strain(fight.strain)
 			FightTells.step(fight, math.min(dt, 0.1))
+			if fight.strain >= STRAIN_HINT_AT and not strainHinted then
+				strainHinted = true -- first time this session only
+				UI.toast("Big fish running! Ease off.", Color3.fromRGB(255, 150, 40))
+			end
 			if result then
 				setState("Resolving")
 				UI.showFight(nil)
-				Remotes.event("FightResult"):FireServer(result == "won")
+				Remotes.event("FightResult"):FireServer(result, { tight = fight.usedTight, drag = fight.drag })
 			end
 		end
 	end)

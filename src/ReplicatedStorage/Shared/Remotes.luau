@@ -6,7 +6,7 @@ local RunService = game:GetService("RunService")
 local EVENTS = {
 	"Cast", -- client: (direction: Vector3, power: number)
 	"Hook", -- client: ()
-	"FightResult", -- client: (won: boolean)
+	"FightResult", -- client: (result: "won" | "lost" | "snapped", report: { tight: boolean, drag: string })
 	"CancelCast", -- client: ()
 	"Wiggle", -- client: (), one press to work a snagged hook free (L2b)
 	"Twitch", -- client: (), a quick tap while waiting jiggles the bait (L4)
