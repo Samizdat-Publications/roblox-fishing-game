@@ -2,7 +2,7 @@
 
 ## Morning report, 11/27/2026 (read this first)
 
-Overnight, every step was built, pushed into Studio, playtested there and committed to main. Details for each are in the dated sections below.
+Overnight, every step was built, pushed into Studio, playtested there and committed to main. All of the leg plan is done except boats (L7, which waits on one decision below). 355 tests pass in Studio and with Lune, and an end-of-night run (cast, a natural bite, land, sell) showed no errors. The illustrated story of the night is on the making-of page: https://claude.ai/artifact/HNbZAtLhoHCoeMQ6pNVWQd . Details for each step are in the dated sections below.
 
 **What's new in the game**
 - **Cast:** a ring shows where the cast will land; snags on logs and weeds; rises to cast at. Spinner and plastic worm now have their own rigging benches (a clinch knot, a Texas rig).
@@ -10,7 +10,7 @@ Overnight, every step was built, pushed into Studio, playtested there and commit
 - **Bait the hook:** a short timing minigame for each bait, with Okay, Good and Perfect results, and hook sizes to match the fish's mouth.
 - **The wait and the reel:** the camera eases onto the bobber, a fish's shadow swims in before the bite, you can twitch the bait, and the fight gives warnings and a line that changes colour as it strains.
 - **Line and drag:** every rod has a line rating (6, 10, 15 lb) and you set the drag (Q): Medium is the fight you know, Tight is faster but a big fish running will snap the line unless you ease off, Light never snaps but the fish takes line. A heavier rod now matters for big fish, and **braided line** (120 coins) adds 4 lb to any rod.
-- **The lake looks real now:** light that changes from a cool misty dawn through day, a warm golden hour and a violet blue hour to night; real water; land and hills out to the horizon with clumps of trees; clouds; a curved shore with rounded corners and five points of land to fish from; a round, rock-edged home pond with your fish in it; a creek you can see from its path; a split-rail creek fence with an arch; and the bobber glows at night. **The look critic went from 3/10 to 7/10,** the plan's target.
+- **The lake looks real now:** light that changes from a cool misty dawn through day, a warm golden hour and a violet blue hour to night; real water; land and hills out to the horizon with clumps of trees; clouds; a curved shore with rounded corners and five points of land to fish from; a round, rock-edged home pond with your fish in it; a creek you can see from its path; a split-rail creek fence with an arch; and the bobber glows at night. **The look critic went from 3/10 to 7.2/10,** past the plan's target of 7. Fireflies come out on clear nights.
 - **Real rods in your hands** (Willow, Fiberglass, Graphite models), and the catch card shows the fish you caught, turning in a little window; Rare and better fish pop in on a sweep of their tier's colour. The deep-hole buoy glows at night.
 - **Weather, frenzies and daily goals are switched on.** Fog, storms with rain, cold fronts; schools that boil at a spot with gulls overhead; three goals a day.
 - **Reasons to come back:** a chalkboard by the bait shop (today's forecast, a fish of the day, a rumour about a Legendary), a free tackle box from the shopkeeper once a day, a "while you were away" pond card, and a **trophy wall** by your pond with your six best fish mounted. Every server has the same forecast for a date. Nothing is lost by missing a day.
@@ -23,7 +23,9 @@ Overnight, every step was built, pushed into Studio, playtested there and commit
 - **One decision before boats (L7, left alone on purpose):** the plan has the dinghy on the Big Lake north of the home lake; you also asked for an ocean or Great Lake dock where how far out you can go depends on the boat. Build the Big Lake first as planned, or go straight to the ocean dock?
 - **Optional:** Lighting.Technology to Future for crisper shadows (a Studio setting scripts can't change); check it on a phone first.
 
-**Not verified yet:** a Perfect by real taps; touch and gamepad on the new cast ring, bench, twitch, lure reeling and the drag button; rain density on a real device; the frenzy, goal and storm sounds (stand-ins).
+**Not verified yet:** a Perfect by real taps; touch and gamepad on the new cast ring, bench, twitch, lure reeling and the drag button; rain density and how many fireflies show on a real device (Studio thins particles); the frenzy, goal and storm sounds (stand-ins); a Lake Sturgeon caught in its real conditions without the test hook; the spinner's wake rings by eye.
+
+**Housekeeping:** your Studio test save now has 1,055 coins, the Graphite Rod and braided line from my tests (ask me to wipe it for a fresh start). The repo folder itself (`C:\Users\stewa\Documents\Claude\Roblox`) is still on the old branch `claude/overnight-duet-kpkf6f` with older uncommitted files; I worked in a separate checkout and pushed everything to `main`, so `main` on GitHub is the current game. Not done on purpose: the one-time StyLua reformat (it rewrites every script, so better with you around).
 
 ## 2026-11-25
 
