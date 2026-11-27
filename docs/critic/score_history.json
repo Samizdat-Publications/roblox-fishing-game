@@ -194,5 +194,61 @@
       "docs\\critic\\2026-11-27-l5d-neon-2.md",
       "docs\\critic\\2026-11-27-l5d-neon-3.md"
     ]
+  },
+  {
+    "date": "2026-11-27",
+    "step": "l5e",
+    "rubric": "look",
+    "run": "2026-11-27-0209",
+    "commit": "a2075e5",
+    "shots": 12,
+    "median": 6,
+    "scores": [
+      6,
+      6,
+      6.3
+    ],
+    "points": {
+      "composition": 6,
+      "light": 6.5,
+      "water": 6,
+      "mood": 6,
+      "want_to_fish": 7,
+      "phone_readability": 6,
+      "broken_or_ugly": 5
+    },
+    "reports": [
+      "docs\\critic\\2026-11-27-l5e-neon.md",
+      "docs\\critic\\2026-11-27-l5e-neon-2.md",
+      "docs\\critic\\2026-11-27-l5e-neon-3.md"
+    ]
+  },
+  {
+    "date": "2026-11-27",
+    "step": "l5e2",
+    "rubric": "look",
+    "run": "2026-11-27-0224",
+    "commit": "eb19d39",
+    "shots": 12,
+    "median": 6,
+    "scores": [
+      6,
+      6,
+      6
+    ],
+    "points": {
+      "composition": 6,
+      "light": 6,
+      "water": 5.5,
+      "mood": 6,
+      "want_to_fish": 6.5,
+      "phone_readability": 6,
+      "broken_or_ugly": 5
+    },
+    "reports": [
+      "docs\\critic\\2026-11-27-l5e2-neon.md",
+      "docs\\critic\\2026-11-27-l5e2-neon-2.md",
+      "docs\\critic\\2026-11-27-l5e2-neon-3.md"
+    ]
   }
 ]

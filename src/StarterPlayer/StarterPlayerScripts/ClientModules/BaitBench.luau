@@ -171,8 +171,9 @@ local function build()
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(rescale)
 	rescale()
 
-	-- Top centre, nudged left, so the touch Fish button (bottom right) stays clear.
-	local p = frame(g, "Panel", UDim2.fromOffset(600, 340), UDim2.new(0.5, -50, 0, 56), C.panel, 0.04)
+	-- Top centre, nudged left, so the touch Fish button (bottom right) stays clear. -100: at -50
+	-- the panel still covered half the Fish button on the smallest phone (iPhone 7, 11/27/2026).
+	local p = frame(g, "Panel", UDim2.fromOffset(600, 340), UDim2.new(0.5, -100, 0, 56), C.panel, 0.04)
 	p.AnchorPoint = Vector2.new(0.5, 0)
 	corner(p, 14)
 	refs.title = label(p, "Title", "Bait the hook", UDim2.fromOffset(400, 32), UDim2.fromOffset(16, 8), 22, C.gold, Enum.Font.GothamBlack)

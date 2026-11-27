@@ -243,6 +243,13 @@ Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6
 - Still to do in L1: a Lake Sturgeon at the deep hole in its real conditions, the journal on the smallest phone (the simulated mouse wheel zoomed the camera instead of scrolling the journal; check with a real wheel), the 15 new fish models (they hang as the old shape until then), a Neon reveal clip, the StyLua reformat, and Liam's 20 minutes.
 - Look mockups for the beauty pass: five looks (Golden Afternoon, Bright Summer Day, Misty Dawn, Moonlit Night, Autumn Lake) from the all-models stills, page https://claude.ai/artifact/DjMRLNSn6t91zKmR93sGr6 (source `planner/looks.html`, images `docs/looks/`, script `tools/looks/mockup.py`). They were made in the old flat low-poly style before Stewart picked Real-ish, so treat them as light and time-of-day moods, not materials.
 
+## 2026-11-27 (night): L5e and the smallest phone
+
+- **Cedar Creek in terrain:** the creek's straight bank parts are now terrain grass, so the riffle meanders between sloping banks and the pool has rounded corners and a bulging west bank (`Shared/Shore.luau` now shapes every water area; the joins between stretches stay open water). Paths along the creek have sand under them so grass doesn't grow through. Still: `docs/making-of/stills/2026-11-27-creek-terrain.jpg`.
+- **The lake path bends round the rounded corners** instead of boxing them in (`docs/making-of/stills/2026-11-27-overview-path-bends.jpg`). Night haze darker, so the far hills read as dark shapes against the sky.
+- Critic: median **6/10** (6.3 on one run). Its remaining asks: tall grass at a low camera at the riffle, steeper pool banks, a stronger noon sun, clustered trees, signs that don't clip behind the stall roofs, a rounder home pond.
+- **Phone check (Studio's Device Simulator, iPhone 7, the smallest phone, 667 x 375):** the HUD, toasts, bait bench and fight all fit. Fixed: the bait bench covered half the Fish button (nudged left), and the new drag button sat off the bottom of the screen (moved beside the fight bar). Not checked: portrait (the game is landscape only), a real phone's frame rate.
+
 ## 2026-11-27 (night): L4d, line and drag
 
 - **Every rod has a line rating** (Willow 6 lb, Fiberglass 10 lb, Graphite 15 lb), shown in the shop and the journal.

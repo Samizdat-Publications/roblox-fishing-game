@@ -271,9 +271,11 @@ function UI.init(cbs: { [string]: (...any) -> () })
 	refs.reelPrompt = prompt
 	refs.fight = fight
 
-	-- Drag (L4d): a small button under the fight bar cycles Light, Medium, Tight (Q or gamepad Y
-	-- do the same), with the rod's line rating under it. A tap on it is not a reel press.
-	local dragBox = frame(gui, "DragBox", UDim2.fromOffset(150, 58), UDim2.new(0.5, -260, 0.5, 184), C.panel, 1)
+	-- Drag (L4d): a small button beside the fight bar (below the coaching cue, left of the reel
+	-- prompt) cycles Light, Medium, Tight (Q or gamepad Y do the same), with the rod's line
+	-- rating under it. A tap on it is not a reel press. It sat under the bar at first, which is
+	-- off the bottom of the smallest phone (iPhone 7, 11/27/2026).
+	local dragBox = frame(gui, "DragBox", UDim2.fromOffset(150, 58), UDim2.new(0.5, -100, 0.5, 60), C.panel, 1)
 	dragBox.Visible = false
 	refs.dragBtn = button(dragBox, "Drag", "Drag: Medium", UDim2.fromOffset(150, 36), UDim2.fromOffset(0, 0), C.panel2, function()
 		if callbacks.cycleDrag then
