@@ -57,7 +57,7 @@ Config.UNITS = "imperial"
 
 Config.WEATHER_ON = true
 Config.FRENZIES_ON = true
-Config.GOALS_ON = false
+Config.GOALS_ON = true
 Config.BIG_LAKE_ON = false
 Config.BOATS_ON = false
 

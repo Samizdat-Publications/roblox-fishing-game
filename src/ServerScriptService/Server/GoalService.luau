@@ -9,10 +9,21 @@ local Goals = require(Shared.Goals)
 local Remotes = require(Shared.Remotes)
 local Config = require(Shared.Config)
 
+local RunService = game:GetService("RunService")
+
 local GoalService = {}
 
+local TURNOVER_CHECK = if RunService:IsStudio() then 5 else 60 -- seconds between new-day checks
+
+-- Now, in seconds. Studio-only test hook: Workspace attribute DebugDayOffset (whole days)
+-- moves the date forward, so "tomorrow's goals" can be checked without waiting.
+local function now(): number
+	local offset = if RunService:IsStudio() then workspace:GetAttribute("DebugDayOffset") else nil
+	return os.time() + (if type(offset) == "number" then math.floor(offset) * 86400 else 0)
+end
+
 local function current(data: any): Goals.State
-	data.goals = Goals.ensure(data.goals, Goals.dayOf(os.time()), data.creekPass == true, next(data.boats or {}) ~= nil)
+	data.goals = Goals.ensure(data.goals, Goals.dayOf(now()), data.creekPass == true, next(data.boats or {}) ~= nil)
 	return data.goals
 end
 
@@ -58,6 +69,21 @@ function GoalService.start()
 	PlayerData.onLoad(function(p, data)
 		current(data)
 		PlayerData.changed(p)
+	end)
+	-- Someone playing across midnight gets the new day's goals within a minute, not only at
+	-- their next catch or sale (found in the L6c playtest).
+	task.spawn(function()
+		while true do
+			task.wait(TURNOVER_CHECK)
+			local today = Goals.dayOf(now())
+			for _, p in game:GetService("Players"):GetPlayers() do
+				local data = PlayerData.get(p)
+				if data and (type(data.goals) ~= "table" or data.goals.day ~= today) then
+					current(data)
+					PlayerData.changed(p)
+				end
+			end
+		end
 	end)
 end
 

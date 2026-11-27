@@ -221,6 +221,14 @@ Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6
 - Still to do in L1: a Lake Sturgeon at the deep hole in its real conditions, the journal on the smallest phone (the simulated mouse wheel zoomed the camera instead of scrolling the journal; check with a real wheel), the 15 new fish models (they hang as the old shape until then), a Neon reveal clip, the StyLua reformat, and Liam's 20 minutes.
 - Look mockups for the beauty pass: five looks (Golden Afternoon, Bright Summer Day, Misty Dawn, Moonlit Night, Autumn Lake) from the all-models stills, page https://claude.ai/artifact/DjMRLNSn6t91zKmR93sGr6 (source `planner/looks.html`, images `docs/looks/`, script `tools/looks/mockup.py`). They were made in the old flat low-poly style before Stewart picked Real-ish, so treat them as light and time-of-day moods, not materials.
 
+## 2026-11-27 (night): L6c, daily goals switched on
+
+- **Three goals a day** (easy 25, medium 60, hard 120 coins), in a Goals list under the journal (`Config.GOALS_ON = true`). Missing a day loses nothing; tomorrow just brings new ones.
+- Verified in Studio: today's three showed ("Sell fish worth 60 coins", "Catch a Creek Chub at least 8 in long (try the riffle)", "Catch 2 fish during a feeding frenzy"); two frenzy catches finished the hard one and paid 120 coins once ("Goal done" toast, coins 392 to 512); after a rejoin it was still done and still paid once; moving the date a day forward gave three new goals within seconds. Still: `docs/making-of/stills/2026-11-27-goals.jpg`.
+- Fixed in the playtest: goals only turned over at a catch, a sale or a join, so someone playing across midnight kept yesterday's list. The server now checks once a minute.
+- Studio test hook: Workspace attribute `DebugDayOffset` (whole days). Note: Stewart's test save now holds the next day's goals from this test; today's list will be fresh again at his next join.
+- Economy: goals add at most 205 coins a day, about three minutes of a smart player's income.
+
 ## 2026-11-27 (night): L6b, frenzies switched on
 
 - **Feeding frenzies are on** (`Config.FRENZIES_ON = true`): now and then a school boils at a spot (more often at dawn and dusk and before a storm), everyone gets a toast, gulls circle, and for a minute bites come almost at once.
