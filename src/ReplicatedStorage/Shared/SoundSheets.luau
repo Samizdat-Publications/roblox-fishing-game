@@ -15,7 +15,7 @@ export type Resolved = { id: string, start: number?, length: number?, speed: num
 -- tools/audio/build_sheet.py packs the separate files into one sheet and prints these cues.
 SoundSheets.sheets = {
 	["sheet-ui"] = {
-		id = "",
+		id = "rbxassetid://139367306789578", -- uploaded 11/27/2026
 		cues = {
 			["sell-coins"] = { start = 0, length = 1.2 },
 			["journal-page"] = { start = 1.5, length = 0.8 },
@@ -25,7 +25,7 @@ SoundSheets.sheets = {
 		},
 	},
 	["sheet-water"] = {
-		id = "",
+		id = "rbxassetid://128316057960583", -- uploaded 11/27/2026
 		cues = {
 			["cast-whoosh"] = { start = 0, length = 0.8 },
 			["bobber-plop"] = { start = 1.1, length = 0.6 },
@@ -33,6 +33,9 @@ SoundSheets.sheets = {
 			["line-snap"] = { start = 3.5, length = 0.6 },
 			["boat-bump"] = { start = 4.4, length = 0.8 },
 			["buoy-bell"] = { start = 5.5, length = 2.5 },
+			-- Weather one-shots ride along (11/27/2026): one upload instead of two.
+			["thunder-far"] = { start = 8.4, length = 5.0 },
+			["wind-gust"] = { start = 13.8, length = 3.0 },
 		},
 	},
 	["sheet-bait"] = { -- the bait bench (leg plan L3)

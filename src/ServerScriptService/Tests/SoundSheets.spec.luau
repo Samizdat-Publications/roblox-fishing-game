@@ -3,6 +3,19 @@ return function(t, Shared)
 	local SoundSheets = require(Shared.SoundSheets)
 	local SoundIds = require(Shared.SoundIds)
 
+	-- Run body as if the water sheet weren't uploaded (it is since 11/27/2026), so the
+	-- stand-in rules underneath it are still tested.
+	local function withoutWaterSheet(body: () -> ())
+		local sheet = SoundSheets.sheets["sheet-water"]
+		local old = sheet.id
+		sheet.id = ""
+		local ok, err = pcall(body)
+		sheet.id = old
+		if not ok then
+			error(err, 0)
+		end
+	end
+
 	t.test("a sound's own upload wins", function()
 		local r = SoundSheets.resolve("splash-small", SoundIds)
 		t.ok(r ~= nil and r.via == "upload" and r.id == SoundIds["splash-small"], "splash-small")
@@ -10,6 +23,7 @@ return function(t, Shared)
 	end)
 
 	t.test("a missing sound borrows its stand-in until uploaded", function()
+		withoutWaterSheet(function()
 		local ids = table.clone(SoundIds)
 		ids["bobber-plop"] = ""
 		local r = SoundSheets.resolve("bobber-plop", ids) :: any
@@ -19,6 +33,7 @@ return function(t, Shared)
 		t.ok(r.speed > 1 and r.length > 0 and r.length < 1, "short and quick")
 		ids["bobber-plop"] = "rbxassetid://1"
 		t.eq((SoundSheets.resolve("bobber-plop", ids) :: any).via, "upload", "real upload replaces it")
+		end)
 	end)
 
 	t.test("an uploaded sheet serves its cues as regions, before any stand-in", function()
@@ -40,12 +55,21 @@ return function(t, Shared)
 		end
 	end)
 
+	t.test("the uploaded sheets serve their cues: goal chime, thunder, buoy bell", function()
+		for _, name in { "goal-complete", "thunder-far", "wind-gust", "buoy-bell", "boat-bump" } do
+			local r = SoundSheets.resolve(name, SoundIds) :: any
+			t.ok(r ~= nil and string.sub(r.via, 1, 6) == "sheet-" and r.id ~= "", name)
+		end
+	end)
+
 	t.test("nothing at all is nil, so SoundFX skips it", function()
 		t.eq(SoundSheets.resolve("no-such-sound", SoundIds), nil)
-		local ids = table.clone(SoundIds)
-		ids["splash-small"] = ""
-		ids["bobber-plop"] = ""
-		t.eq(SoundSheets.resolve("bobber-plop", ids), nil, "a stand-in of a missing sound is nothing")
+		withoutWaterSheet(function()
+			local ids = table.clone(SoundIds)
+			ids["splash-small"] = ""
+			ids["bobber-plop"] = ""
+			t.eq(SoundSheets.resolve("bobber-plop", ids), nil, "a stand-in of a missing sound is nothing")
+		end)
 	end)
 
 	t.test("every stand-in borrows an uploaded sound, and sheets never overlap", function()

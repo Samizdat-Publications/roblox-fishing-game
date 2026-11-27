@@ -1,7 +1,7 @@
 """Rank every sound's variants with the cheap critic (Gemini 4 Hydrogen), copy each winner to
 audio/final/<id>.mp3 and write one report to docs/critic/<date>-sound-variants-hydrogen.md.
 
-    python tools/audio/rank_all.py [--only id1,id2]
+    python tools/audio/rank_all.py [--only id1,id2] [--specs audio/sounds-next.json]
 """
 import argparse
 import datetime as dt
@@ -22,9 +22,10 @@ FINAL = ROOT / "audio" / "final"
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", default="")
+    ap.add_argument("--specs", default="audio/sounds.json", help="the prompt list the variants came from")
     args = ap.parse_args()
     only = set(filter(None, args.only.split(",")))
-    specs = json.loads((ROOT / "audio" / "sounds.json").read_text(encoding="utf-8"))["sounds"]
+    specs = json.loads((ROOT / args.specs).read_text(encoding="utf-8"))["sounds"]
     FINAL.mkdir(parents=True, exist_ok=True)
     rows = []
     for spec in specs:

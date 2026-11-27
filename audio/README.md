@@ -46,3 +46,20 @@ Note on step 3: Hydrogen picked the first variant in 19 of 27 groups, which may 
 ## Next sounds (prompts only, not generated yet)
 
 `audio/sounds-next.json` holds 25 more prompts written overnight on 2026-11-26: ambience for the Big Lake and the blue water, the dinghy and Deep-V motors, cast, plop and line-snap effects, coin, journal, goal and pond sounds, trophy and monster stingers with a server-wide foghorn, a feeding frenzy loop, rain, thunder and wind for weather, a huge breach splash, and three music pieces (Big Lake theme, blue-water tension, frenzy burst). Generate them with the same pipeline. Their ids are already in `Shared/SoundIds.luau` (empty), and `SoundFX` already plays each one once its id is pasted in (rules in `Shared/SoundMix.luau`, tested): Big Lake and blue-water ambience by where you stand, motors by boat speed while aboard, the buoy bell near the line, rain and thunder in storms, gusts on windy days, the frenzy boil by distance plus a burst when one starts, a foghorn when someone else lands a monster, the trophy and monster stingers, a big breach when a monster is hooked, a line snap when a fish wins the fight, coins on selling, a chime for a finished goal, and the Big Lake theme and blue-water tension layer. Not hooked yet: cast-whoosh and bobber-plop (the built-ins cover them), boat-bump, journal-page and pond-splash. All UNVERIFIED in Studio.
+
+## Sounds made 11/27/2026 (from `sounds-next.json`)
+
+Generated with ElevenLabs SFX v3 (2 variants each, the music with Eleven Music), ranked by Gemini Hydrogen (`python tools/audio/rank_all.py --specs audio/sounds-next.json`, report `docs/critic/2026-11-27-sound-variants-hydrogen.md`), winners in `final/`. The frenzy loop's end was crossfaded into its start (1 s) so it loops cleanly. Short ones were packed with `tools/audio/build_sheet.py` into two sheets. Six uploads, all through Open Cloud on 11/27/2026.
+
+| Sound | Ships in | Roblox asset id |
+|---|---|---|
+| `cast-whoosh`, `bobber-plop`, `pond-splash`, `line-snap`, `boat-bump`, `buoy-bell`, `thunder-far`, `wind-gust` | `sheets/sheet-water.mp3` (cues in `Shared/SoundSheets.luau`) | 128316057960583 |
+| `sell-coins`, `journal-page`, `goal-complete`, `ui-click`, `ui-open` | `sheets/sheet-ui.mp3` | 139367306789578 |
+| `motor-dinghy-idle` | `final/motor-dinghy-idle.mp3` (loop) | 110660038490367 |
+| `motor-dinghy-run` | `final/motor-dinghy-run.mp3` (loop) | 74507819416169 |
+| `frenzy-boil` | `final/frenzy-boil.mp3` (loop) | 98406930497590 |
+| `frenzy-burst` | `final/frenzy-burst.mp3` (music) | 134812582219869 |
+| `rain-on-water` | Roblox licensed library, Pro Sound Effects "Rain On Water 3" (60 s loop), no upload | 9112855302 |
+
+`ui-click` and `ui-open` prompts were added to `sounds-next.json` for the UI sheet. Still not made: the Big Lake and blue-water ambience and music, the Deep-V motor, the trophy and monster stingers, the foghorn and the huge breach.
+

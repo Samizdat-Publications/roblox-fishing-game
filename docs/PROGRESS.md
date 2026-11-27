@@ -529,7 +529,7 @@ A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shor
 
 ## Waiting on Stewart
 - **Leg 3 plan: approved 11/27/2026.** Still to come from you during the leg: read the frame counter on your PC and your phone after N1 and after N6, and confirm Liam's account on the weekend of 12/05/2026.
-- **ID verification: done 11/27/2026.** Stewart completed Roblox's age verification on the account Studio is signed in to (the one he and Liam have been playing on, and the one Claude uploads with). Roblox lifts the audio cap from 100 to 2,000 a month for ID-verified accounts; the next sound upload will show whether this verification counts.
+- **ID verification: done 11/27/2026.** Stewart completed Roblox's age verification on the account Studio is signed in to (the one he and Liam have been playing on, and the one Claude uploads with). It counts: that evening six audio uploads went through after the month's 100 were used up. New sounds the same evening: the dinghy motor (idle and running), the frenzy boil and its music burst, a goal chime, coins, journal and UI clicks, cast, plop, line snap, pond splash, boat bump, buoy bell, thunder and a wind gust (two sound sheets), and rain from Roblox's licensed library. All load in play, and the motor follows the boat's speed.
 - **Voice chat off:** in Studio, File, Experience Settings, Communication, turn Enable Voice Chat off.
 - **Rating:** Creator Dashboard, the Fishing Game experience, Publish settings, Content ratings: redo the questionnaire and check it comes out Minimal or Mild.
 - **Open the place on your own phone** once now and once after the beauty pass (L5), to check the frame rate on a real device.
