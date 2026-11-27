@@ -306,5 +306,33 @@
       "docs\\critic\\2026-11-27-l5f2-light-signs-neon-2.md",
       "docs\\critic\\2026-11-27-l5f2-light-signs-neon-3.md"
     ]
+  },
+  {
+    "date": "2026-11-27",
+    "step": "l5f3-final",
+    "rubric": "look",
+    "run": "2026-11-27-0416",
+    "commit": "c9cb62e",
+    "shots": 12,
+    "median": 7.2,
+    "scores": [
+      7.3,
+      7.2,
+      6.9
+    ],
+    "points": {
+      "composition": 7,
+      "light": 7,
+      "water": 7,
+      "mood": 7.2,
+      "want_to_fish": 8,
+      "phone_readability": 7,
+      "broken_or_ugly": 7.0
+    },
+    "reports": [
+      "docs\\critic\\2026-11-27-l5f3-final-neon.md",
+      "docs\\critic\\2026-11-27-l5f3-final-neon-2.md",
+      "docs\\critic\\2026-11-27-l5f3-final-neon-3.md"
+    ]
   }
 ]
