@@ -70,9 +70,11 @@ end
 
 -- The framing brings the camera close behind the head, so fade the character (only for this
 -- player) while it's on; 0 puts it back.
+-- Written every frame while on: Roblox's own camera sets the same property each frame when
+-- it's close to the head, and a write only on change lost to it (the hat stayed half there).
 local faded = 0
 local function fadeCharacter(amount: number)
-	if math.abs(amount - faded) < 0.02 then
+	if amount == 0 and faded == 0 then
 		return
 	end
 	faded = amount
@@ -132,7 +134,9 @@ local function step(dt: number)
 		return
 	end
 	local w = BobberCam.ease(weight)
-	fadeCharacter(0.7 * w)
+	-- All the way out: at 0.7, and even at 0.92, the hat still drew half there in the middle of
+	-- the view (playtest critic, 11/27/2026); the line still runs from the rod tip.
+	fadeCharacter(w)
 	local part = bobberPart()
 	local bobber = if part then part.Position else bobberAt
 	if not bobber then
