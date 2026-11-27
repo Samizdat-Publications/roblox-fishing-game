@@ -152,6 +152,34 @@ function MaterialKit.skinArt(): number
 	return n
 end
 
+-- The copies already standing in the world (N1 round 2): skinArt only reaches the sources in
+-- ServerStorage.Art, so copies placed before it ran (Lake.Art from WorldBuilder.dress, the
+-- Scenery shore's reeds, rocks and lily pads) kept the stock look. Every model under `root` named
+-- in ART_VARIANTS gets its variant on each MeshPart; the old look is kept in the KitOrig
+-- attributes, so MaterialKit.undress(root) restores it. Returns how many parts changed.
+function MaterialKit.skinPlaced(root: Instance): number
+	local n = 0
+	for _, m in root:GetDescendants() do
+		local variant = if m:IsA("Model") then MaterialKit.ART_VARIANTS[m.Name] else nil
+		local f = variant and MaterialKit.byName(variant)
+		if variant and f and MaterialService:FindFirstChild(variant) then
+			for _, d in m:GetDescendants() do
+				if d:IsA("MeshPart") and d.MaterialVariant ~= variant then
+					if d:GetAttribute("KitOrigMaterial") == nil then
+						d:SetAttribute("KitOrigMaterial", d.Material.Name)
+						d:SetAttribute("KitOrigVariant", d.MaterialVariant)
+						d:SetAttribute("KitOrigColor", d.Color)
+					end
+					d.Material = f.base
+					d.MaterialVariant = variant
+					n += 1
+				end
+			end
+		end
+	end
+	return n
+end
+
 -- The lawns (N1): inside the boxes of the old Ground* lawn parts (WaterLook.lawnsToTerrain made
 -- them terrain), meadow voxels (slot 2) become the bladeless lawn slot. Returns cells changed.
 MaterialKit.LAWN_SLOT = 26
@@ -321,6 +349,12 @@ MaterialKit.SLOTS = {
 	{ slot = 24, base = Enum.Material.Ground, variant = "FootpathGravel", tint = Color3.new(1, 1, 1) },
 	{ slot = 25, base = Enum.Material.LeafyGrass, variant = "ForestFloor", tint = Color3.new(1, 1, 1) },
 	{ slot = 26, base = Enum.Material.LeafyGrass, variant = "MeadowLawn", tint = Color3.new(1, 1, 1) },
+	-- N1 round 2: the forest floor on the hills where the far pines stand, palette 62,84,52 (the
+	-- advisor's call). The ForestFloor colour map is brown (92,72,48) and a tint can only darken
+	-- it, and forest_floor has no neutral map uploaded, so this slot uses the LeafNeedle variant
+	-- (its colour map is the neutral grey, mean 0.80) tinted 78,105,65: 0.80 of that is 62,84,52.
+	-- LeafyGrass grows no blades. BankDress.HILL_SLOT paints it.
+	{ slot = 27, base = Enum.Material.LeafyGrass, variant = "LeafNeedle", tint = Color3.fromRGB(78, 105, 65) },
 } :: { { slot: number, base: Enum.Material, variant: string, tint: Color3 } }
 
 local function asset(id: number?): string

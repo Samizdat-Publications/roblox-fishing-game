@@ -49,7 +49,7 @@ Scenery.OUTCROPS = 14
 Scenery.CLUSTERS = 44
 Scenery.POND_R = 8 -- the round home pond's radius (it was a 22 x 14 box)
 local HILL_CLEAR = 18 -- studs between the world edge and where a hill starts to rise
-local SHADOW_RANGE = 160 -- trees farther than this from the world cast no shadow (cheaper)
+local SHADOW_RANGE = 110 -- trees farther than this from the world cast no shadow (cheaper; N1 round 2: was 160)
 
 local function rectDist(r: Rect, x: number, z: number): number
 	local dx = math.max(r.x1 - x, 0, x - r.x2)
@@ -148,6 +148,36 @@ local function lampPart(parent: Instance, name: string, size: Vector3, cf: CFram
 	p.BottomSurface = Enum.SurfaceType.Smooth
 	p.Parent = parent
 	return p
+end
+
+-- The old low-poly tree models (N1 round 2). BankDress swaps their copies for the bank kit near
+-- the lake and for the far trees everywhere else, hiding (not destroying) the old ones; a rerun
+-- of Scenery.apply still places these, so run BankDress.apply after it.
+Scenery.OLD_TREES = { PineTall = "pine", PineShort = "pine", LeafyTree = "leafy" } :: { [string]: string }
+
+-- Every old tree copy this module placed (Lake.Scenery: the stands of trees, the bank planting,
+-- the point and bank bushes, the creek head), plus WorldBuilder's LeafyTree copies round the
+-- lake shore (Lake.Art). The creek's pines over its gray-box trunks (Lake.Art PineTall and
+-- PineShort) are the creek's own scene and are left out.
+function Scenery.oldTrees(lake: Instance): { Model }
+	local out: { Model } = {}
+	local folder = lake:FindFirstChild(FOLDER)
+	if folder then
+		for _, d in folder:GetDescendants() do
+			if d:IsA("Model") and Scenery.OLD_TREES[d.Name] then
+				table.insert(out, d)
+			end
+		end
+	end
+	local art = lake:FindFirstChild("Art")
+	if art then
+		for _, d in art:GetChildren() do
+			if d:IsA("Model") and d.Name == "LeafyTree" then
+				table.insert(out, d)
+			end
+		end
+	end
+	return out
 end
 
 export type Result = { hills: number, trees: number, shore: number, walls: number }

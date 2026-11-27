@@ -13,7 +13,12 @@
 --    slow density mask so it clumps and thins instead of standing in rows;
 --  * forest-floor blobs under every treeline tree;
 --  * the wandering footpaths: the lake loop and the two creek paths on their old routes, with a
---    seeded sideways wobble (2 studs at most), a width of 5 to 7 studs, and no straight run.
+--    seeded sideways wobble (2 studs at most), a width of 5 to 7 studs, and no straight run;
+--    and (N1 round 2) a gravel walk from the back lawn between the stands to the dock head;
+--  * (N1 round 2) kit reeds over the weed bed (in place of the old Reeds copies), a second row of
+--    far pines 34 to 60 studs back from the bank (no shadows), meadow-grass blobs on the south
+--    lawn and a pine, bush and fern group at each outer south lawn corner. Pines on the hills
+--    come from Scatter.hillPines, which takes the ground height as a function.
 -- Everything keeps clear of the dock and slips, the stands, the pond, the chalkboard, the trophy
 -- wall, the channel and its footbridge, the creek gate and every fishing spot's cast lane.
 local Shore = require(script.Parent.Shore)
@@ -239,6 +244,24 @@ function Scatter.polyline(pieces: { { any } }): { Pt }
 	return clean
 end
 
+-- A Catmull-Rom curve through `pts` at about 1 stud steps (it passes through every point).
+function Scatter.spline(pts: { Pt }): { Pt }
+	local out: { Pt } = {}
+	for i = 1, #pts - 1 do
+		local p0, p1, p2, p3 = pts[math.max(1, i - 1)], pts[i], pts[i + 1], pts[math.min(#pts, i + 2)]
+		local n = math.max(1, math.ceil(math.sqrt((p2.x - p1.x) ^ 2 + (p2.z - p1.z) ^ 2)))
+		for k = (if i == 1 then 0 else 1), n do
+			local t = k / n
+			local t2, t3 = t * t, t * t * t
+			local function f(a: number, b: number, c: number, d: number): number
+				return 0.5 * (2 * b + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3)
+			end
+			table.insert(out, { x = f(p0.x, p1.x, p2.x, p3.x), z = f(p0.z, p1.z, p2.z, p3.z) })
+		end
+	end
+	return out
+end
+
 -- Three slow sines with seeded wavelengths and phases, -1..1. The longest has a wavelength under
 -- 26 studs and carries most of the swing, so every 30 stud stretch bends.
 local function waveFn(r: Rng, l1: { number }, l2: { number }, l3: { number }): (number) -> number
@@ -443,6 +466,11 @@ Scatter.KIT = {
 	Fern2 = 0.2,
 	Bush1 = 0.13,
 	Bush2 = 0.17,
+	-- N1 round 2 (coming): the far pines and far leafy trees, about 1.0 deep.
+	FarPine1 = 1.0,
+	FarPine2 = 1.0,
+	FarLeafy1 = 1.0,
+	FarLeafy2 = 1.0,
 } :: { [string]: number }
 
 -- The dock's middle, for "near the dock" and "far from it".
@@ -459,6 +487,9 @@ Scatter.KEEP_BOXES = {
 	{ name = "TrophyWall", x1 = 38, x2 = 62, z1 = 112, z2 = 123 }, -- behind the pond at z 117.5
 	{ name = "Channel", x1 = -30, x2 = 30, z1 = -146, z2 = -74 }, -- the cut (x -15..15) and the footbridge's ramps (to x +-26)
 	{ name = "CreekGate", x1 = -172, x2 = -108, z1 = -12, z2 = 12 }, -- the walk to the gate (x -162)
+	-- N1 round 2: the bank between the dock head and the chalkboard stays open (cattails there
+	-- hid the chalkboard from the dock in shot 08).
+	{ name = "DockHeadChalk", x1 = -16, x2 = 46, z1 = 72, z2 = 100 },
 } :: { Box }
 Scatter.KEEP_CIRCLES = {
 	{ name = "Pond", x = 50, z = 106, r = 14 }, -- the round pond (r 8) and its stones
@@ -513,12 +544,27 @@ Scatter.TUNING = {
 	underSpacing = 2,
 	farDist = 165, -- trees past this far from the dock thin out...
 	farKeep = 0.7, -- ...to this share
-	shadowDist = 150, -- and cast no shadow past this
+	shadowDist = 110, -- and cast no shadow past this (N1 round 2: was 150)
+	-- N1 round 2.
+	weedClusters = 4, -- kit reeds over the weed bed (they replace the old Reeds copies)
+	weedPer = { 3, 5 },
+	farRow = 80, -- the second row of far pines (FarPine1/2), no shadows
+	farBand = { 34, 60 }, -- studs back from the bank (Scatter.roundBox)
+	farMinDist = 7,
+	farZMin = -134, -- clear of the Big Lake's south shore (z -140)
+	farXMin = -170, -- clear of the creek
+	hillPines = 40, -- far pines on the hills round the world
+	hillBand = { 60, 300 },
+	hillMinHeight = 4, -- ground at least this high counts as a hill (the flat land's top is 1)
+	hillMinDist = 8,
+	meadowBlobs = { 6, 8 }, -- tall meadow grass (terrain slot 2, with blades) on the south lawn
+	meadowR = { 5, 8 },
 }
 
 export type Item = {
 	model: string,
-	group: string, -- Reeds, Stones, Birches, Driftwood, Lip, Treeline, Undergrowth
+	group: string, -- Reeds, Stones, Birches, Driftwood, Lip, Treeline, Undergrowth, FarRow,
+	-- HillPines, CornerTree, CornerUnder (and BankDress's TreeSwap)
 	x: number,
 	z: number,
 	yaw: number,
@@ -531,8 +577,25 @@ export type Plan = {
 	items: { Item },
 	routes: { Route },
 	forest: { Blob },
+	meadow: { Blob }, -- tall meadow grass on the lawn (terrain slot 2)
 	counts: { [string]: number },
 }
+
+-- Which CollectionService tag the client's phone tier (ClientModules/FoliageTier) reads for a
+-- group; nil for none (driftwood).
+Scatter.TAGS = {
+	Reeds = "FoliageReed",
+	Stones = "FoliageStone",
+	Lip = "FoliageUnder",
+	Undergrowth = "FoliageUnder",
+	CornerUnder = "FoliageUnder",
+	Birches = "FoliageTree",
+	Treeline = "FoliageTree",
+	FarRow = "FoliageTree",
+	HillPines = "FoliageTree",
+	CornerTree = "FoliageTree",
+	TreeSwap = "FoliageTree",
+} :: { [string]: string }
 
 -- Signed distance to the drawn waterline (ShoreEdge): positive on land. Shore's depth is only
 -- true inside the lake's box (outside a corner it measures to the nearer edge line), so out
@@ -662,13 +725,29 @@ function Scatter.homeRoutes(seed: number): { Route }
 	})
 	local link = Scatter.polyline({ { "line", -ex, 0, -203, 0 } })
 	local bank = Scatter.polyline({ { "line", -203, -70, -203, 70 } })
-	return {
+	local routes = {
 		Scatter.wander("LakeLoop", ring, r, { amp = 2, pinEnds = true, pinFade = 9, pinWidth = 6, wMin = 5, wMax = 7 }),
 		Scatter.wander("PathToCreek", link, r, { amp = 2, pins = { { x = -162, z = 0 } }, pinFade = 9, pinWidth = 5.5, wMin = 5, wMax = 7 }),
 		-- Its left-hand normal points west, at the pool 5 studs away: lean the wobble east.
 		Scatter.wander("BankPath", bank, r, { amp = 2, bias = -0.7, wMin = 5, wMax = 6.5 }),
 	}
+	-- N1 round 2: the walk from the back lawn, between the two stands (x +-18), to the dock head,
+	-- where it meets the loop (z 85). Its own stream, so the three routes above do not move.
+	local rw = Scatter.rng(seed + 102)
+	table.insert(routes, Scatter.wander("StandsWalk", Scatter.spline(Scatter.WALK), rw, { amp = 2, pins = { { x = 0, z = 97 }, { x = 0, z = 86 } }, pinFade = 9, pinWidth = 6, wMin = 5, wMax = 7 }))
+	return routes
 end
+
+-- The walk's control points (back lawn to the dock head): it bends one way, then the other, so
+-- no 30 stud stretch runs straight.
+Scatter.WALK = {
+	{ x = -12, z = 136 },
+	{ x = -4, z = 125 },
+	{ x = 6, z = 116 },
+	{ x = 4, z = 106 },
+	{ x = 0, z = 97 },
+	{ x = 0, z = 86 },
+} :: { Pt }
 
 -- The whole plan for one seed.
 function Scatter.homeLake(seed: number, tuning: { [string]: any }?): Plan
@@ -723,6 +802,23 @@ function Scatter.homeLake(seed: number, tuning: { [string]: any }?): Plan
 	end)
 	for _, p in reeds do
 		add({ model = pick(rr, "ReedClump1", "ReedClump2"), group = "Reeds", x = p.x, z = p.z, yaw = Scatter.range(rr, 0, TAU), scale = Scatter.range(rr, 0.8, 1.2), water = true, shadow = false })
+	end
+
+	-- 1b. Kit reeds over the weed bed (N1 round 2), where the old Reeds copies stood (x -102..-54,
+	-- z 11..65), in a few clumps clear of its two cast lanes.
+	local rw = Scatter.rng(seed + 12)
+	local function weedOk(x: number, z: number): boolean
+		return Scatter.waterline(x, z) <= -3 and free(x, z, 2) and not Scatter.inLane(x, z)
+	end
+	local weedCentres = Scatter.poisson(rw, T.weedClusters, 12, 2000, function(r: Rng)
+		return Scatter.range(r, -98, -60), Scatter.range(r, 18, 58)
+	end, weedOk)
+	local weed = Scatter.cluster(rw, weedCentres, T.weedPer, { 3, 6 }, T.reedSpacing, function(x, z)
+		return weedOk(x, z) and farEnough(reeds, x, z, T.reedSpacing)
+	end)
+	for _, p in weed do
+		table.insert(reeds, p)
+		add({ model = pick(rw, "ReedClump1", "ReedClump2"), group = "Reeds", x = p.x, z = p.z, yaw = Scatter.range(rw, 0, TAU), scale = Scatter.range(rw, 0.8, 1.2), water = true, shadow = false })
 	end
 
 	-- 2. Stones in small groups at the waterline, half sunk; fewer along the near shore.
@@ -882,7 +978,117 @@ function Scatter.homeLake(seed: number, tuning: { [string]: any }?): Plan
 		end
 	end
 
-	return { items = items, routes = routes, forest = forest, counts = counts }
+	-- 8. The second row (N1 round 2): far pines 34 to 60 studs back from the bank on the treeline
+	-- sides, clumped by a slow mask like the treeline's, never casting a shadow.
+	local rf = Scatter.rng(seed + 13)
+	local fb = T.farBand
+	local far = Scatter.poisson(rf, T.farRow, T.farMinDist, 12000, function(r: Rng)
+		return Scatter.range(r, -175, 175), Scatter.range(r, -146, 76)
+	end, function(x, z)
+		local d = Scatter.roundBox(x, z)
+		if d < fb[1] or d > fb[2] or z < T.farZMin or x < T.farXMin or not treeSide(x, z) or not free(x, z, 3) then
+			return false
+		end
+		if Scatter.pathEdge(pidx, x, z) <= 2.5 or not farEnough(trees, x, z, 5) then
+			return false
+		end
+		return Scatter.next(rf) < 0.35 + 0.65 * Scatter.noise(x, z, 34, seed + 14)
+	end, birches)
+	for _, p in far do
+		add({ model = pick(rf, "FarPine1", "FarPine2"), group = "FarRow", x = p.x, z = p.z, yaw = Scatter.range(rf, 0, TAU), scale = Scatter.range(rf, 0.9, 1.3), water = false, shadow = false })
+		table.insert(forest, { x = p.x, z = p.z, r = Scatter.range(rf, 6, 9) })
+	end
+
+	-- 9. The south lawn (N1 round 2): tall meadow-grass blobs away from the walk and the keep
+	-- boxes, and a pine, bush and fern group at each outer corner.
+	local rm = Scatter.rng(seed + 15)
+	local meadow: { Blob } = {}
+	local wantMeadow = Scatter.int(rm, T.meadowBlobs[1], T.meadowBlobs[2])
+	for _ = 1, 4000 do
+		if #meadow >= wantMeadow then
+			break
+		end
+		local x, z = Scatter.range(rm, -100, 100), Scatter.range(rm, 92, 134)
+		local rad = Scatter.range(rm, T.meadowR[1], T.meadowR[2])
+		local reach = rad * 1.3 -- blobCells swells an edge to 1.3 of the radius at most
+		local ok = Scatter.roundBox(x, z) >= 12 + reach and not Scatter.kept(x, z, reach + 2) and Scatter.pathEdge(pidx, x, z) > reach + 2
+		if ok then
+			for _, b in meadow do
+				if (b.x - x) ^ 2 + (b.z - z) ^ 2 < (b.r + rad + 10) ^ 2 then
+					ok = false
+					break
+				end
+			end
+		end
+		if ok then
+			table.insert(meadow, { x = x, z = z, r = rad })
+		end
+	end
+	local rc = Scatter.rng(seed + 16)
+	local cornerPts: { Pt } = {}
+	for _, cx in { -100, 100 } do
+		local centre = { x = cx + Scatter.range(rc, -4, 4), z = 118 + Scatter.range(rc, -4, 4) }
+		local function ok(x: number, z: number, gap: number): boolean
+			return free(x, z, 2) and Scatter.pathEdge(pidx, x, z) > 1.5 and Scatter.roundBox(x, z) >= 10 and farEnough(cornerPts, x, z, gap)
+		end
+		if ok(centre.x, centre.z, 0) then
+			table.insert(cornerPts, centre)
+			add({ model = pick(rc, "ShorePine1", "ShorePine2"), group = "CornerTree", x = centre.x, z = centre.z, yaw = Scatter.range(rc, 0, TAU), scale = Scatter.range(rc, 0.85, 1.1), water = false, shadow = dockDist(centre.x, centre.z) < T.shadowDist })
+		end
+		local want = Scatter.int(rc, 5, 7)
+		local placed, k = 0, 0
+		while placed < want and k < 60 do
+			k += 1
+			local a = Scatter.range(rc, 0, TAU)
+			local d = Scatter.range(rc, 3, 8)
+			local x, z = centre.x + math.cos(a) * d, centre.z + math.sin(a) * d
+			if ok(x, z, 2.2) then
+				table.insert(cornerPts, { x = x, z = z })
+				local fern = Scatter.next(rc) < 0.5
+				add({ model = if fern then pick(rc, "Fern1", "Fern2") else pick(rc, "Bush1", "Bush2"), group = "CornerUnder", x = x, z = z, yaw = Scatter.range(rc, 0, TAU), scale = Scatter.range(rc, 0.85, 1.3), water = false, shadow = false })
+				placed += 1
+			end
+		end
+	end
+
+	return { items = items, routes = routes, forest = forest, meadow = meadow, counts = counts }
+end
+
+-- The Big Lake (BoatRules.BIG_LAKE, x -200..200, z -440..-140) and the 45 studs round it that
+-- BoatWorld dresses itself.
+function Scatter.inBigLake(x: number, z: number): boolean
+	return x >= -245 and x <= 245 and z >= -485 and z <= -95
+end
+
+-- Far pines on the hills round the world (N1 round 2). `height(x, z)` is the ground's height
+-- there (nil for water or nothing): Studio passes a terrain raycast, the specs a fake hill.
+-- Points 60 to 300 studs out from the lake (Scatter.roundBox) on ground at least hillMinHeight
+-- high, clear of the Big Lake and its banks, Poisson-spaced. Also returns a blob under each, for
+-- the hill forest floor.
+function Scatter.hillPines(seed: number, height: (number, number) -> number?, tuning: { [string]: any }?): ({ Item }, { Blob })
+	local T: { [string]: any } = table.clone(Scatter.TUNING)
+	for k, v in tuning or {} do
+		T[k] = v
+	end
+	local r = Scatter.rng(seed + 17)
+	local hb = T.hillBand
+	local items: { Item } = {}
+	local blobs: { Blob } = {}
+	local pts = Scatter.poisson(r, T.hillPines, T.hillMinDist, 6000, function(rr: Rng)
+		return Scatter.range(rr, -420, 420), Scatter.range(rr, -400, 420)
+	end, function(x, z)
+		local d = Scatter.roundBox(x, z)
+		if d < hb[1] or d > hb[2] or Scatter.inBigLake(x, z) then
+			return false
+		end
+		local h = height(x, z)
+		return h ~= nil and h >= T.hillMinHeight
+	end)
+	for _, p in pts do
+		table.insert(items, { model = if Scatter.next(r) < 0.5 then "FarPine1" else "FarPine2", group = "HillPines", x = p.x, z = p.z, yaw = Scatter.range(r, 0, TAU), scale = Scatter.range(r, 1.0, 1.5), water = false, shadow = false })
+		table.insert(blobs, { x = p.x, z = p.z, r = Scatter.range(r, 8, 12) })
+	end
+	return items, blobs
 end
 
 return Scatter

@@ -71,6 +71,7 @@ return function(t, Shared)
 		check("Driftwood", 14)
 		check("Birches", 10)
 		check("Undergrowth", T.underSpacing)
+		check("FarRow", T.farMinDist)
 	end)
 
 	t.test("props are clustered, not at even spacing", function()
@@ -242,5 +243,166 @@ return function(t, Shared)
 			local ix, iz = Scatter.unkey(k)
 			t.ok(Scatter.pathEdge(pidx, (ix + 0.5) * 4, (iz + 0.5) * 4) <= 1.5 + 1e-9, "a path cell strays")
 		end
+	end)
+
+	-- N1 round 2 (the advisor's ruling after review 1).
+
+	t.test("the walk from the back lawn to the dock head wanders and lands on the loop", function()
+		local walk
+		for _, rt in plan.routes do
+			if rt.name == "StandsWalk" then
+				walk = rt
+			end
+		end
+		t.ok(walk ~= nil, "there is a walk")
+		local w = walk.samples
+		t.ok(math.abs(w[#w].x) < 0.01 and math.abs(w[#w].z - 86) < 0.01, "it ends at the dock head, dead on")
+		t.ok(w[1].z > 125, "it starts on the back lawn")
+		local flat = Scatter.flattest(w, 30)
+		t.ok(flat >= 0.5, string.format("no straight run over 30 studs (bows %.2f)", flat))
+		for _, seed in { 1, 2, 3, 77, 9999 } do
+			for _, rt in Scatter.homeRoutes(seed) do
+				if rt.name == "StandsWalk" then
+					t.ok(Scatter.flattest(rt.samples, 30) >= 0.5, string.format("seed %d: the walk has a straight run", seed))
+				end
+			end
+		end
+		-- Between the stands (x +-18) it keeps off them: the gravel's edge stays inside x +-11.
+		for _, q in w do
+			if q.z > 90 and q.z < 102 then
+				t.ok(math.abs(q.x) + q.w / 2 <= 11, string.format("the walk brushes a stand at z %.1f", q.z))
+			end
+		end
+	end)
+
+	t.test("the dock head and the chalkboard stay clear", function()
+		local box
+		for _, b in Scatter.KEEP_BOXES do
+			if b.name == "DockHeadChalk" then
+				box = b
+			end
+		end
+		t.ok(box ~= nil, "the dock head keep-out exists")
+		-- Shot 08's line of sight, from the dock (0, 50) to the chalkboard (30, 94).
+		local sight = { name = "Sight", x1 = 0, z1 = 50, x2 = 30, z2 = 94, r = 3 }
+		for _, it in plan.items do
+			t.ok(not Scatter.inBox(box, it.x, it.z), string.format("%s at (%.1f, %.1f) is between the dock head and the chalkboard", it.model, it.x, it.z))
+			t.ok(not Scatter.inBox(Scatter.KEEP_BOXES[4], it.x, it.z), it.model .. " at the chalkboard")
+			if it.group == "Reeds" then
+				t.ok(Scatter.laneDist(sight, it.x, it.z) > 3, string.format("reeds at (%.1f, %.1f) block the chalkboard from the dock", it.x, it.z))
+			end
+		end
+		t.eq(Scatter.KEEP_BOXES[4].name, "Chalkboard", "box 4 is the chalkboard")
+	end)
+
+	t.test("kit reeds stand over the weed bed", function()
+		local n = 0
+		for _, it in group("Reeds") do
+			if it.x >= -102 and it.x <= -54 and it.z >= 11 and it.z <= 65 and Scatter.waterline(it.x, it.z) <= -3 then
+				n += 1
+			end
+		end
+		print(string.format("  [Scatter] kit reeds over the weed bed: %d", n))
+		t.ok(n >= 8, "at least 8 clumps over the weed bed")
+	end)
+
+	t.test("the far row: 34 to 60 studs back, spaced, no shadows", function()
+		local far = group("FarRow")
+		print(string.format("  [Scatter] far row: %d", #far))
+		t.ok(#far >= 75 and #far <= Scatter.TUNING.farRow, string.format("about 80 far pines (%d)", #far))
+		local fb = Scatter.TUNING.farBand
+		for _, it in far do
+			local d = Scatter.roundBox(it.x, it.z)
+			t.ok(d >= fb[1] and d <= fb[2], string.format("a far pine at (%.1f, %.1f) is %.1f back, not 34 to 60", it.x, it.z, d))
+			t.ok(it.shadow == false, "far pines cast no shadow")
+			t.ok(it.model == "FarPine1" or it.model == "FarPine2", "far pines are FarPine1 or FarPine2")
+			t.ok(it.z >= Scatter.TUNING.farZMin and it.z > -140 + 5, "clear of the Big Lake's water (z -140)")
+			t.ok(Scatter.side(it.x, it.z) ~= "south", "no far row on the near shore")
+		end
+	end)
+
+	t.test("shadows stop at 110 studs from the dock", function()
+		t.eq(Scatter.TUNING.shadowDist, 110, "shadowDist")
+		t.eq(Scatter.TUNING.treeMax, 140, "treeMax unchanged")
+		for _, it in plan.items do
+			local d = math.sqrt((it.x - Scatter.DOCK.x) ^ 2 + (it.z - Scatter.DOCK.z) ^ 2)
+			if it.group == "Treeline" or it.group == "CornerTree" then
+				t.ok(it.shadow == (d < 110), string.format("%s at %.0f studs from the dock: shadow %s", it.model, d, tostring(it.shadow)))
+			end
+		end
+	end)
+
+	t.test("the south lawn: meadow blobs off the walk and keep boxes, a group at each outer corner", function()
+		local pidx = Scatter.pathIndex(plan.routes)
+		local m = plan.meadow
+		print(string.format("  [Scatter] meadow blobs: %d", #m))
+		t.ok(#m >= 6 and #m <= 8, string.format("6 to 8 meadow blobs (%d)", #m))
+		for _, b in m do
+			t.ok(b.r >= 5 and b.r <= 8, "radius 5 to 8")
+			t.ok(not Scatter.kept(b.x, b.z, b.r * 1.3), string.format("a meadow blob at (%.1f, %.1f) reaches a keep box", b.x, b.z))
+			t.ok(Scatter.pathEdge(pidx, b.x, b.z) > b.r * 1.3, string.format("a meadow blob at (%.1f, %.1f) reaches a path", b.x, b.z))
+			t.ok(b.z > 85, "on the south lawn")
+		end
+		for _, side in { -1, 1 } do
+			local trees, under = 0, 0
+			for _, it in plan.items do
+				if it.x * side > 80 and it.z > 100 then
+					if it.group == "CornerTree" then
+						trees += 1
+					elseif it.group == "CornerUnder" then
+						under += 1
+					end
+				end
+			end
+			t.eq(trees, 1, "a pine at each outer corner")
+			t.ok(under >= 3, string.format("bushes and ferns at each outer corner (%d)", under))
+		end
+	end)
+
+	t.test("hill pines stand on hills, clear of the Big Lake, spaced", function()
+		-- A fake world: flat at y 1, one dome 20 high at (240, 40), radius 70, and one inside the
+		-- Big Lake's banks that must stay bare.
+		local function height(x: number, z: number): number?
+			local h = 1
+			for _, d in { { x = 240, z = 40, r = 70 }, { x = 0, z = -300, r = 80 } } do
+				local q = (x - d.x) ^ 2 + (z - d.z) ^ 2
+				if q < d.r * d.r then
+					h = math.max(h, 1 + 20 * (1 - q / (d.r * d.r)))
+				end
+			end
+			return h
+		end
+		local items, blobs = Scatter.hillPines(SEED, height)
+		print(string.format("  [Scatter] hill pines on the test hill: %d", #items))
+		t.ok(#items >= 20, "pines on the hill")
+		t.eq(#blobs, #items, "a forest floor patch under each")
+		for _, it in items do
+			t.ok((height(it.x, it.z) :: number) >= Scatter.TUNING.hillMinHeight, "on a hill")
+			t.ok(not Scatter.inBigLake(it.x, it.z), "not by the Big Lake")
+			t.ok(it.shadow == false, "no shadow")
+			local d = Scatter.roundBox(it.x, it.z)
+			t.ok(d >= 60 and d <= 300, "60 to 300 studs out")
+		end
+		t.ok(#items < 2 or Scatter.minSpacing(items) >= Scatter.TUNING.hillMinDist - 1e-9, "spaced")
+	end)
+
+	t.test("every placed group but driftwood carries a phone-tier tag", function()
+		local seen = {}
+		for _, it in plan.items do
+			seen[it.group] = (seen[it.group] or 0) + 1
+		end
+		local parts = {}
+		for g, n in seen do
+			table.insert(parts, g .. " " .. n)
+		end
+		table.sort(parts)
+		print("  [Scatter] groups: " .. table.concat(parts, ", "))
+		for g in seen do
+			if g ~= "Driftwood" then
+				t.ok(Scatter.TAGS[g] ~= nil, g .. " has no tag")
+			end
+		end
+		t.eq(Scatter.TAGS.TreeSwap, "FoliageTree", "swapped trees are trees")
+		t.eq(Scatter.TAGS.HillPines, "FoliageTree", "hill pines are trees")
 	end)
 end

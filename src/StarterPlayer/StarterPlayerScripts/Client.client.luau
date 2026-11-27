@@ -9,6 +9,9 @@ local Config = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared
 if Config.LOOK_DIRECTOR_ON then
 	require(modules:WaitForChild("LookDirector")).start() -- the look on this screen (N0)
 end
+if Config.FOLIAGE_TIER_ON then
+	require(modules:WaitForChild("FoliageTier")).start() -- lighter foliage on the phone tier (N1)
+end
 require(modules:WaitForChild("WeatherFX")).start() -- rain in storms (L6a)
 require(modules:WaitForChild("Fireflies")).start() -- fireflies on clear nights (L5 life)
 if Config.PAINTED_SIGNS_ON then

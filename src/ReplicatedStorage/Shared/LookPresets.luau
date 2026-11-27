@@ -356,7 +356,13 @@ end
 --   dawn, dusk: the same direction, gentler; dawn's mist (haze 2) is kept.
 --   night:  bloom only (lamps flare under Realistic); exposure and ambients untouched, so the
 --           night stays moonlit navy, never black.
-export type Grade = { [string]: { [string]: { [string]: number } } }
+-- 11/27/2026 N1 review 1 (fable-advisor): golden glare -2.2 (net 0.3), haze -0.8 (net 0.4),
+--   sun rays -0.17 (net 0.03); day haze +1.5 (net 1.5) and Ambient 96,104,112 (canopies read
+--   black at noon); night lifted to OutdoorAmbient 112,128,176, Ambient 66,76,104 and a navy
+--   haze 54,68,112 (still moonlit navy, brighter, never black).
+-- A number is an offset added to the preset's value; a Color3 is the colour that preset takes
+-- under the grade (it blends with the preset weights like everything else; see applyGrade).
+export type Grade = { [string]: { [string]: { [string]: number | Color3 } } }
 
 -- stylua: ignore
 LookPresets.REALISTIC_GRADE = {
@@ -367,15 +373,15 @@ LookPresets.REALISTIC_GRADE = {
 		SunRaysEffect = { Intensity = -0.04 },
 	},
 	day = {
-		Lighting = { ExposureCompensation = -0.35 },
-		Atmosphere = { Haze = 0.5 },
+		Lighting = { ExposureCompensation = -0.35, Ambient = rgb(96, 104, 112) },
+		Atmosphere = { Haze = 1.5 },
 		ColorCorrectionEffect = { Saturation = -0.13 },
 	},
 	golden = {
 		Lighting = { ExposureCompensation = -0.3 },
-		Atmosphere = { Glare = -1.7, Haze = -0.5 },
+		Atmosphere = { Glare = -2.2, Haze = -0.8 },
 		BloomEffect = { Intensity = -0.4, Threshold = 0.5 },
-		SunRaysEffect = { Intensity = -0.12 },
+		SunRaysEffect = { Intensity = -0.17 },
 	},
 	dusk = {
 		Lighting = { ExposureCompensation = -0.15 },
@@ -383,6 +389,8 @@ LookPresets.REALISTIC_GRADE = {
 		BloomEffect = { Intensity = -0.3, Threshold = 0.3 },
 	},
 	night = {
+		Lighting = { OutdoorAmbient = rgb(112, 128, 176), Ambient = rgb(66, 76, 104) },
+		Atmosphere = { Color = rgb(54, 68, 112) },
 		BloomEffect = { Intensity = -0.3, Threshold = 0.2 },
 	},
 } :: Grade
@@ -408,17 +416,20 @@ LookPresets.GRADE_LIMITS = {
 	["SunRaysEffect.Spread"] = { 0, 1 },
 } :: { [string]: { number } }
 
--- The grade's offsets at this clock, blended by the preset weights: { [target]: { [prop]: n } }.
+-- The grade's numeric offsets at this clock, blended by the preset weights:
+-- { [target]: { [prop]: n } }. Colour entries are left to applyGrade.
 function LookPresets.gradeAt(clock: number, grade: Grade): { [string]: { [string]: number } }
 	local out: { [string]: { [string]: number } } = {}
 	for id, w in LookPresets.weights(clock) do
 		local g = grade[id]
 		if g and w > 0 then
 			for target, values in g do
-				local t = out[target] or {}
-				out[target] = t
 				for k, v in values do
-					t[k] = (t[k] or 0) + v * w
+					if type(v) == "number" then
+						local t = out[target] or {}
+						out[target] = t
+						t[k] = (t[k] or 0) + v * w
+					end
 				end
 			end
 		end
@@ -426,8 +437,49 @@ function LookPresets.gradeAt(clock: number, grade: Grade): { [string]: { [string
 	return out
 end
 
--- Adds the grade at this clock to a look in place, each field held to GRADE_LIMITS.
+-- The grade's colour shifts at this clock: for each preset with a Color3 for a field, its
+-- weight times (that colour minus the preset's own). Added to the blended look this gives
+-- exactly the weighted blend of the graded colours. { [target]: { [prop]: {r, g, b} } }.
+local function gradeColoursAt(clock: number, grade: Grade): { [string]: { [string]: { number } } }
+	local out: { [string]: { [string]: { number } } } = {}
+	for id, w in LookPresets.weights(clock) do
+		local g, p = grade[id], LookPresets.byId[id]
+		if g and p and w > 0 then
+			for target, values in g do
+				for k, v in values do
+					local own = p.look[target] and p.look[target][k]
+					if typeof(v) == "Color3" and typeof(own) == "Color3" then
+						local c, o = v :: Color3, own :: Color3
+						local t = out[target] or {}
+						out[target] = t
+						local d = t[k] or { 0, 0, 0 }
+						t[k] = d
+						d[1] += (c.R - o.R) * w
+						d[2] += (c.G - o.G) * w
+						d[3] += (c.B - o.B) * w
+					end
+				end
+			end
+		end
+	end
+	return out
+end
+
+-- Adds the grade at this clock to a look in place, each field held to GRADE_LIMITS
+-- (colours to 0..1 per channel).
 local function applyGrade(look: Look, clock: number, grade: Grade)
+	for target, values in gradeColoursAt(clock, grade) do
+		local inst = look[target]
+		if inst then
+			for k, d in values do
+				local v = inst[k]
+				if typeof(v) == "Color3" then
+					local c = v :: Color3
+					inst[k] = Color3.new(math.clamp(c.R + d[1], 0, 1), math.clamp(c.G + d[2], 0, 1), math.clamp(c.B + d[3], 0, 1))
+				end
+			end
+		end
+	end
 	for target, values in LookPresets.gradeAt(clock, grade) do
 		local inst = look[target]
 		if inst then

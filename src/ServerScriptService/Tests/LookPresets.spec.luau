@@ -495,30 +495,38 @@ return function(t, Shared)
 			t.ok(p ~= nil, "grade for a real preset: " .. id)
 			for target, values in g do
 				for k, v in values do
-					t.ok(type(v) == "number", id .. " " .. target .. "." .. k .. " is a number")
-					t.ok(p and p.look[target] and type(p.look[target][k]) == "number", id .. " " .. target .. "." .. k .. " is a preset field")
-					t.ok(LookPresets.GRADE_LIMITS[target .. "." .. k] ~= nil, target .. "." .. k .. " has a limit")
+					local own = p and p.look[target] and p.look[target][k]
+					if typeof(v) == "Color3" then
+						-- A colour is the colour that preset takes under the grade.
+						t.ok(typeof(own) == "Color3", id .. " " .. target .. "." .. k .. " is a preset colour")
+					else
+						t.ok(type(v) == "number", id .. " " .. target .. "." .. k .. " is a number or a colour")
+						t.ok(type(own) == "number", id .. " " .. target .. "." .. k .. " is a preset field")
+						t.ok(LookPresets.GRADE_LIMITS[target .. "." .. k] ~= nil, target .. "." .. k .. " has a limit")
+					end
 				end
 			end
 		end
 	end)
 
-	t.test("grade: golden and noon hit the advisor's starting points", function()
+	t.test("grade: golden and noon hit the advisor's numbers (N1 review 1)", function()
 		local g = LookPresets.REALISTIC_GRADE
 		local function near(a, b, what)
 			t.ok(math.abs(a - b) < 1e-9, string.format("%s: %.3f want %.3f", what, a, b))
 		end
 		local gold = LookPresets.at(17.5, nil, nil, nil, g)
 		near(gold.Lighting.ExposureCompensation, -0.3, "golden exposure")
-		near(gold.Atmosphere.Glare, 0.8, "golden glare")
-		near(gold.Atmosphere.Haze, 0.7, "golden haze")
+		near(gold.Atmosphere.Glare, 0.3, "golden glare")
+		near(gold.Atmosphere.Haze, 0.4, "golden haze")
 		near(gold.BloomEffect.Intensity, 0.4, "golden bloom")
 		near(gold.BloomEffect.Threshold, 1.9, "golden bloom threshold")
-		near(gold.SunRaysEffect.Intensity, 0.08, "golden sun rays")
+		near(gold.SunRaysEffect.Intensity, 0.03, "golden sun rays")
 		local noon = LookPresets.at(12, nil, nil, nil, g)
 		near(noon.Lighting.ExposureCompensation, -0.35, "day exposure")
 		near(noon.ColorCorrectionEffect.Saturation, 0.02, "day saturation")
-		near(noon.Atmosphere.Haze, 0.5, "day haze")
+		near(noon.Atmosphere.Haze, 1.5, "day haze")
+		t.ok(noon.Lighting.Ambient == Color3.fromRGB(96, 104, 112), "day ambient lifted (canopies not black)")
+		t.ok(noon.Lighting.OutdoorAmbient == LookPresets.at(12).Lighting.OutdoorAmbient, "day outdoor ambient untouched")
 		-- Fields the grade leaves alone stay exactly the preset's.
 		t.eq(noon.Lighting.Brightness, LookPresets.at(12).Lighting.Brightness, "day brightness untouched")
 	end)
@@ -559,8 +567,20 @@ return function(t, Shared)
 		local g = LookPresets.REALISTIC_GRADE
 		local night, raw = LookPresets.at(22, nil, nil, nil, g), LookPresets.at(22)
 		t.eq(night.Lighting.ExposureCompensation, raw.Lighting.ExposureCompensation, "night exposure untouched")
-		t.ok(night.Lighting.OutdoorAmbient == raw.Lighting.OutdoorAmbient, "night ambient untouched")
-		t.ok(night.Atmosphere.Color == raw.Atmosphere.Color, "navy haze untouched")
+		-- N1 review 1: lifted under Realistic, still moonlit navy (blue strongest), never black.
+		t.ok(night.Lighting.OutdoorAmbient == Color3.fromRGB(112, 128, 176), "night outdoor ambient 112,128,176")
+		t.ok(night.Lighting.Ambient == Color3.fromRGB(66, 76, 104), "night ambient 66,76,104")
+		t.ok(night.Atmosphere.Color == Color3.fromRGB(54, 68, 112), "navy haze 54,68,112")
+		for _, k in { "OutdoorAmbient", "Ambient" } do
+			local c = night.Lighting[k]
+			t.ok(c.B > c.G and c.G > c.R, "night " .. k .. " is navy (blue over green over red)")
+			t.ok(c.R + c.G + c.B > (raw.Lighting[k].R + raw.Lighting[k].G + raw.Lighting[k].B), "night " .. k .. " no darker than the preset")
+		end
+		local nc = night.Atmosphere.Color
+		t.ok(nc.B > nc.G and nc.G > nc.R and nc.B > 0.3, "night haze navy, not black")
+		-- A graded night storm still dims from the lifted night, never below the ungraded storm.
+		local storm, rawStorm = LookPresets.at(22, "Storm", 1, "Clear", g), LookPresets.at(22, "Storm")
+		t.ok(storm.Lighting.OutdoorAmbient.B >= rawStorm.Lighting.OutdoorAmbient.B, "storm night not darker than before")
 		t.ok(night.Atmosphere.Haze >= 1, "night haze kept")
 		local dawn = LookPresets.at(6, nil, nil, nil, g)
 		t.ok(dawn.Atmosphere.Haze >= 1.5, "dawn mist kept")
@@ -588,7 +608,7 @@ return function(t, Shared)
 		local a = fake()
 		LookPresets.applyTo(a, 17.5, make, nil, nil, nil, nil, nil, LookPresets.gradeFor(LookPresets.TIERS.desktop, true))
 		t.ok(math.abs(a.ExposureCompensation - -0.3) < 1e-9, "desktop graded exposure")
-		t.ok(math.abs(made.Atmosphere.Glare - 0.8) < 1e-9, "desktop graded glare")
+		t.ok(math.abs(made.Atmosphere.Glare - 0.3) < 1e-9, "desktop graded glare")
 		local b = fake()
 		LookPresets.applyTo(b, 17.5, make, nil, nil, nil, nil, nil, LookPresets.gradeFor(LookPresets.TIERS.phone, false))
 		t.eq(b.ExposureCompensation, LookPresets.at(17.5).Lighting.ExposureCompensation, "Soft place: exposure as before")

@@ -60,12 +60,17 @@ end
 
 -- Lamp globes as lanterns (leg 3, N1; the plan's wrong-list: Neon only on lantern glass, and only
 -- lit): warm Glass by day, and a PointLight tagged "Lantern" that ClientModules/Lanterns lights at
--- night only (it turns the glass Neon while lit). Lanterns cast shadows (the plan's rule).
+-- night only (it turns the glass Neon while lit). Shadows: only the two dock lanterns cast them
+-- (dockLanterns sets the SHADOW_ATTR attribute; ClientModules/Lanterns turns every other
+-- lantern's shadows off). N1 review 1 (11/27/2026): range 14 to 24, brightness 1.1 to 3.5,
+-- because under Realistic the old pools read as small dim dots.
 WorldBuilder.LANTERN = {
 	color = Color3.fromRGB(255, 190, 120),
 	size = 0.7,
-	range = 14,
-	brightness = 1.1,
+	range = 24,
+	brightness = 3.5,
+	shadows = false, -- every lantern but the dock's two
+	SHADOW_ATTR = "LanternShadows", -- true on a lantern light that may cast shadows
 }
 
 -- Makes one globe a lantern, in place: safe to run again.
@@ -660,9 +665,11 @@ end
 
 -- The dock's two lanterns at the lake end (leg 3, N0). The hero dock (DockHero, a SurfaceAppearance
 -- set) bakes its lantern frames but not the glow, so the glass is a small Neon part with a warm
--- light that casts shadows. Tagged "Lantern" so the client lights them only at night
+-- light that casts shadows (the only lanterns that do: SHADOW_ATTR). Range and brightness come
+-- from LANTERN. Tagged "Lantern" so the client lights them only at night
 -- (ClientModules/Lanterns). Rebuilt on every dress.
 function WorldBuilder.dockLanterns(lake: Model)
+	local L = WorldBuilder.LANTERN
 	local old = lake:FindFirstChild("DockLanterns")
 	if old then
 		old:Destroy()
@@ -680,12 +687,13 @@ function WorldBuilder.dockLanterns(lake: Model)
 		glass.Size = Vector3.new(0.92, 0.98, 0.92)
 		glass.CFrame = CFrame.new(x, 9.7, 36.3)
 		glass.Material = Enum.Material.Neon
-		glass.Color = Color3.fromRGB(255, 190, 120)
+		glass.Color = L.color
 		local light = Instance.new("PointLight")
-		light.Color = Color3.fromRGB(255, 190, 120)
-		light.Range = 16
-		light.Brightness = 1.1
+		light.Color = L.color
+		light.Range = L.range
+		light.Brightness = L.brightness
 		light.Shadows = true
+		light:SetAttribute(L.SHADOW_ATTR, true)
 		light.Parent = glass
 		game:GetService("CollectionService"):AddTag(light, "Lantern")
 		glass.Parent = folder

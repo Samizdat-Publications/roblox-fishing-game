@@ -12,8 +12,14 @@ local LookPresets = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChil
 
 local Fireflies = {}
 
-local TEXTURE = "rbxasset://textures/particles/sparkles_main.dds"
-local RATE = 18 -- sparks a second at full night, round the camera
+-- N1 review 1 (11/27/2026): a soft round dot, not the 8-point sparkle. FIREFLY_TEXTURE is the
+-- uploaded art/ui/firefly_dot.png ("rbxassetid://<id>"); until it is filled in, the old sparkle.
+local FIREFLY_TEXTURE = "rbxassetid://78681520312738" -- art/ui/firefly_dot.png, uploaded 11/27/2026
+local FALLBACK_TEXTURE = "rbxasset://textures/particles/sparkles_main.dds"
+local TEXTURE = if FIREFLY_TEXTURE ~= "" then FIREFLY_TEXTURE else FALLBACK_TEXTURE
+local RATE = 10 -- sparks a second at full night, round the camera (18 until N1 review 1)
+local SIZE = 0.2 -- studs (0.35 until N1 review 1)
+local COLOR = Color3.fromRGB(226, 240, 110) -- warm yellow-green (was 214, 255, 120)
 local AREA = 48 -- studs square round the camera
 local HEIGHT = 3 -- the box is this tall...
 local LOW = 1.6 -- ...with its bottom this far over the ground's top (y = 1)
@@ -46,8 +52,8 @@ local function build(): ParticleEmitter
 	e.Acceleration = Vector3.new(0, 0.05, 0)
 	e.Drag = 0.4
 	e.RotSpeed = NumberRange.new(-30, 30)
-	e.Size = NumberSequence.new(0.35)
-	e.Color = ColorSequence.new(Color3.fromRGB(214, 255, 120))
+	e.Size = NumberSequence.new(SIZE)
+	e.Color = ColorSequence.new(COLOR)
 	-- Two slow blinks over a life: dark, glow, dark, glow, dark.
 	e.Transparency = NumberSequence.new({
 		NumberSequenceKeypoint.new(0, 1),

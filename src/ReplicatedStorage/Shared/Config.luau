@@ -107,6 +107,11 @@ Config.WATER_BY_TIME_ON = true
 -- The field guide and tackle box interface (leg 3, N2): paper, canvas, leather and brass, with
 -- every colour, font and panel image in Shared/UIStyle. Off, every screen is exactly as before.
 Config.UI_STYLE_ON = false
+-- The phone tier's foliage savings (leg 3, N1 round 2, ClientModules/FoliageTier): on a phone
+-- (player attribute LookTierActive "phone") tagged foliage casts no shadow, undergrowth past 80
+-- studs is hidden, and every second reed, stone group (past 80) and tree (past 150). It does
+-- nothing on the desktop tier, so it is on. Off, foliage is never touched on the client.
+Config.FOLIAGE_TIER_ON = true
 
 function Config.boatsOn(): boolean
 	return Config.BOATS_ON and Config.BIG_LAKE_ON
