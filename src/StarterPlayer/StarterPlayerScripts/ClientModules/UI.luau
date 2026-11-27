@@ -328,12 +328,21 @@ function UI.init(cbs: { [string]: (...any) -> () })
 	view.Visible = false
 	corner(view, 10)
 	view.Parent = card
+	-- Rare and up: a shimmer in the tier's colour sweeps across behind the fish (catchCard).
+	local shimmer = Instance.new("UIGradient")
+	shimmer.Name = "Shimmer"
+	shimmer.Enabled = false
+	shimmer.Parent = view
+	refs.cardShimmer = shimmer
 	refs.cardView = view
 	refs.card = card
 	refs.cardStroke = Instance.new("UIStroke")
 	refs.cardStroke.Thickness = 3
 	refs.cardStroke.Transparency = 0.1
 	refs.cardStroke.Parent = card
+	-- The card pops in (bigger pop for rarer fish).
+	refs.cardScale = Instance.new("UIScale")
+	refs.cardScale.Parent = card
 
 	-- Big touch Fish button, left of Roblox's jump button. Hold and release like a mouse button.
 	if UserInputService.TouchEnabled then
@@ -429,10 +438,26 @@ function UI.status(text: string)
 	refs.journalBtn.Text = if name == "R2" then "Journal (Y)" elseif name == "click" then "Journal (J)" else "Journal"
 end
 
+-- Hides the catch card (its timer ran out, or the player started the next cast) and brings
+-- back the status line it was hiding.
+local function closeCard()
+	refs.card.Visible = false
+	refs.card:SetAttribute("Token", nil)
+	refs.status.Visible = true
+	if cardSpin then
+		cardSpin:Disconnect()
+		cardSpin = nil
+	end
+end
+
 function UI.showPower(p: number?)
 	if p == nil then
 		refs.power.Visible = false
 		return
+	end
+	-- Charging the next cast puts the catch card away.
+	if refs.card.Visible then
+		closeCard()
 	end
 	refs.power.Visible = true
 	refs.powerFill.Size = UDim2.fromScale(math.clamp(p, 0, 1), 1)
@@ -601,16 +626,30 @@ function UI.catchCard(payload: any)
 	refs.cardBody.Text = string.format("%s. %s, %s. Worth %d coins.%s", (Rarity.byId[tier] or Rarity.byId.Common).name, Units.length(f.cm), Units.weight(f.kg), f.price, if payload.best then "\nPersonal best!" else "")
 	refs.cardNote.Text = if payload.first then ("Journal: " .. payload.habit) else ("Caught at " .. (FishLogic.SPOT_NAMES[f.spot] or f.spot) .. " on " .. ((BaitData.byId[f.bait] and BaitData.byId[f.bait].name) or f.bait) .. ".")
 	refs.card.Visible = true
+	-- The cast prompt waits until the card is gone (the playtest critic: "Face the water" came
+	-- back under the card at once).
+	refs.status.Visible = false
+	local rank = Rarity.rank[tier] or 1
+	refs.cardScale.Scale = if rank >= 3 then 0.6 else 0.85
+	TweenService:Create(refs.cardScale, TweenInfo.new(if rank >= 3 then 0.45 else 0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
+	-- Rare and up: the fish sits in a sweep of the tier's colour.
+	local shimmer = refs.cardShimmer :: UIGradient
+	shimmer.Enabled = rank >= 3
+	-- A gradient multiplies the frame's own colour, so the frame goes white under it.
+	refs.cardView.BackgroundColor3 = if rank >= 3 then Color3.new(1, 1, 1) else Color3.fromRGB(20, 40, 55)
+	if rank >= 3 then
+		shimmer.Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 40, 55)),
+			ColorSequenceKeypoint.new(0.5, color),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 40, 55)),
+		})
+	end
 	local token = os.clock()
 	refs.card:SetAttribute("Token", token)
 	UI.showCardFish(token)
-	task.delay(if payload.first then 6 else 4, function()
+	task.delay(if payload.first or rank >= 3 then 6 else 4, function()
 		if refs.card:GetAttribute("Token") == token then
-			refs.card.Visible = false
-			if cardSpin then
-				cardSpin:Disconnect()
-				cardSpin = nil
-			end
+			closeCard()
 		end
 	end)
 end
@@ -620,7 +659,12 @@ end
 -- doesn't turn up within a moment (no model), the card stays text only.
 function UI.showCardFish(token: number)
 	local view = refs.cardView :: ViewportFrame
-	view:ClearAllChildren()
+	-- The last fish and its camera go; the view's corner and shimmer stay.
+	for _, c in view:GetChildren() do
+		if not c:IsA("UIComponent") then
+			c:Destroy()
+		end
+	end
 	view.Visible = false
 	if cardSpin then
 		cardSpin:Disconnect()
@@ -655,9 +699,15 @@ function UI.showCardFish(token: number)
 		view.CurrentCamera = cam
 		view.Visible = true
 		local t0 = os.clock()
+		local shimmer = refs.cardShimmer :: UIGradient
 		cardSpin = RunService.RenderStepped:Connect(function()
 			local t = os.clock() - t0
 			fish.CFrame = CFrame.Angles(0, math.sin(t * 0.9) * 0.6, 0) * flat
+			if shimmer.Enabled then
+				-- The colour sweeps slowly across and back behind the fish.
+				shimmer.Offset = Vector2.new(math.sin(t * 1.6) * 0.6, 0)
+				shimmer.Rotation = 20
+			end
 		end)
 	end)
 end

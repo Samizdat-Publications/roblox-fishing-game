@@ -29,6 +29,7 @@ local LINE_COLOR = Color3.fromRGB(235, 235, 235)
 local SPIN_UNDER = 0.3 -- studs under the surface while it runs
 local SPIN_DEEPEST = 1.6 -- drawn no deeper than this (it stays visible, dimmer)
 local ENTRY_RIPPLE_EVERY = 1.6 -- seconds between the faint ripples where the worm's line goes in
+local WAKE_EVERY = 1.2 -- studs a spinner travels between its wake rings
 local METER_W = 116
 local SLOW_COLOR = Color3.fromRGB(120, 150, 200)
 local RIGHT_COLOR = Color3.fromRGB(110, 210, 120)
@@ -307,6 +308,12 @@ function RetrieveView.step(_dt: number, inFlight: boolean?)
 		end
 		if now > v.thumpUntil then
 			RodFeel.setBend(st.speed * 2.2)
+		end
+		-- A trail of small rings behind a spinner running near the top, closer together the
+		-- faster it's reeled (the playtest critic: the lure left no mark on the water).
+		if st.speed > 1 and st.depth < 0.6 and now - v.lastRipple > WAKE_EVERY / st.speed then
+			v.lastRipple = now
+			RiseRipples.show(p, 0.18, 1)
 		end
 	else
 		v.anchor.Position = Vector3.new(p.X, CastLogic.LAND_Y, p.Z)
