@@ -1,0 +1,64 @@
+{
+  "family": "fish_skin",
+  "kind": "prop",
+  "size": 512,
+  "source": "fish_skin_proc",
+  "source_page": null,
+  "licence": "ours",
+  "studs_per_tile": 1,
+  "target_rgb": [
+    150,
+    156,
+    150
+  ],
+  "mean_rgb": [
+    150.0,
+    156.0,
+    150.0
+  ],
+  "luma_rel_std_in": 0.0474,
+  "luma_rel_std_out": 0.0382,
+  "neutral_mean": 0.8,
+  "neutral_std": 0.0304,
+  "neutral_min_max": [
+    0.706,
+    0.838
+  ],
+  "rough_mean": 0.3,
+  "rough_std": 0.052,
+  "normal_mean_tilt": 0.0991,
+  "seam_in": 0.534,
+  "seam_fixed": false,
+  "seam_out": {
+    "color": 0.735,
+    "normal": 0.728,
+    "rough": 0.881
+  },
+  "settings": {
+    "ao_mix": 0.3,
+    "contrast": 1.0,
+    "despeckle_k": 2.5,
+    "flatten": 0.0,
+    "flatten_sigma": 0.12,
+    "hue_var": 0.0,
+    "kind": "prop",
+    "max_rel_std": 0.05,
+    "neutral_mean": 0.8,
+    "normal_strength": 1.0,
+    "rough_contrast": 1.0,
+    "rough_mean": 0.3,
+    "seam_blend": 0.2,
+    "seam_limit": 1.25,
+    "seamless": "auto",
+    "size": 512,
+    "soften": 0.2,
+    "soften_sigma": 1.5,
+    "source": "fish_skin_proc",
+    "studs_per_tile": 1,
+    "target_rgb": [
+      150,
+      156,
+      150
+    ]
+  }
+}

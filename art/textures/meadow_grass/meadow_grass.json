@@ -1,0 +1,64 @@
+{
+  "family": "meadow_grass",
+  "kind": "terrain",
+  "size": 1024,
+  "source": "Grass004",
+  "source_page": "https://ambientcg.com/a/Grass004",
+  "licence": "CC0",
+  "studs_per_tile": 16,
+  "target_rgb": [
+    104,
+    122,
+    62
+  ],
+  "mean_rgb": [
+    104.0,
+    122.0,
+    62.0
+  ],
+  "luma_rel_std_in": 0.1336,
+  "luma_rel_std_out": 0.0669,
+  "neutral_mean": 0.8,
+  "neutral_std": 0.0523,
+  "neutral_min_max": [
+    0.663,
+    0.912
+  ],
+  "rough_mean": 0.8599,
+  "rough_std": 0.0444,
+  "normal_mean_tilt": 0.1093,
+  "seam_in": 1.055,
+  "seam_fixed": false,
+  "seam_out": {
+    "color": 1.049,
+    "normal": 1.101,
+    "rough": 1.22
+  },
+  "settings": {
+    "ao_mix": 0.3,
+    "contrast": 1.0,
+    "despeckle_k": 2.5,
+    "flatten": 0.6,
+    "flatten_sigma": 0.12,
+    "hue_var": 0.3,
+    "kind": "terrain",
+    "max_rel_std": 0.075,
+    "neutral_mean": 0.8,
+    "normal_strength": 0.6,
+    "rough_contrast": 1.0,
+    "rough_mean": 0.86,
+    "seam_blend": 0.2,
+    "seam_limit": 1.25,
+    "seamless": "auto",
+    "size": 1024,
+    "soften": 0.6,
+    "soften_sigma": 1.5,
+    "source": "Grass004",
+    "studs_per_tile": 16,
+    "target_rgb": [
+      104,
+      122,
+      62
+    ]
+  }
+}

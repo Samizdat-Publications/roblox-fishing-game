@@ -90,7 +90,8 @@ local function isOverridden(m: Enum.Material): boolean
 		local name = try(function()
 			return MaterialService:GetBaseMaterialOverride(m)
 		end)
-		overridden[m] = type(name) == "string" and name ~= ""
+		-- With no override it returns the material's own name (e.g. "Plastic"), not "".
+		overridden[m] = type(name) == "string" and name ~= "" and name ~= m.Name
 	end
 	return overridden[m]
 end
@@ -175,20 +176,13 @@ end
 out.surfaceAppearances = sa
 out.heroSets = heroCount
 
--- Floating labels: always-on-top BillboardGuis in the workspace (and any in PlayerGui aimed at
--- the world). A label belongs to a prompt when its parent or adornee holds a ProximityPrompt.
+-- Floating labels: enabled BillboardGuis in the workspace that carry text (a sign floating in
+-- the air), always-on-top or not. Prompt UI is excepted (a BillboardGui named like a prompt or
+-- parented to a ProximityPrompt). Glows and rings without text are not labels.
+-- Fixed 11/27/2026: a sign on a stand used to count as "for a prompt" because the stand holds
+-- the shop's ProximityPrompt.
 local function forPrompt(g: BillboardGui): boolean
-	if string.find(g.Name, "Prompt") then
-		return true
-	end
-	for _, holder in { g.Parent, try(function()
-		return g.Adornee
-	end) } do
-		if holder and holder:FindFirstChildWhichIsA("ProximityPrompt", true) then
-			return true
-		end
-	end
-	return false
+	return string.find(g.Name, "Prompt") ~= nil or (g.Parent ~= nil and g.Parent:IsA("ProximityPrompt"))
 end
 local boards, boardsNoPrompt = 0, 0
 local function scanBoards(root: Instance?)
@@ -196,7 +190,7 @@ local function scanBoards(root: Instance?)
 		return
 	end
 	for _, g in root:GetDescendants() do
-		if g:IsA("BillboardGui") and g.AlwaysOnTop and g.Enabled then
+		if g:IsA("BillboardGui") and g.Enabled and g:FindFirstChildWhichIsA("TextLabel", true) then
 			boards += 1
 			if not forPrompt(g) then
 				boardsNoPrompt += 1
@@ -205,10 +199,8 @@ local function scanBoards(root: Instance?)
 	end
 end
 scanBoards(workspace)
-scanBoards(try(function()
-	return Players.LocalPlayer and Players.LocalPlayer:FindFirstChildOfClass("PlayerGui")
-end))
-out.alwaysOnTopLabels = boards
+out.floatingLabels = boards
+out.alwaysOnTopLabels = boards -- kept for old history entries
 out.alwaysOnTopLabelsNotPrompt = boardsNoPrompt
 
 -- Terrain: custom slots in use and the share of play-area ground on the stock slots.
@@ -272,7 +264,7 @@ local function v(x: any, pct: boolean?): string
 	return tostring(x)
 end
 local line = string.format(
-	"audit: plastic %s of %s parts | stock-material parts %s (ground %s) | our material variants %s | surface appearances %s in %s hero sets | always-on-top labels %s (%s not prompts) | terrain slots 23..63 in use %s | stock terrain home lake %s, Big Lake basin %s | lighting %s (%s) | wind %s | top plastic: %s",
+	"audit: plastic %s of %s parts | stock-material parts %s (ground %s) | our material variants %s | surface appearances %s in %s hero sets | floating labels %s (%s not prompts) | terrain slots 23..63 in use %s | stock terrain home lake %s, Big Lake basin %s | lighting %s (%s) | wind %s | top plastic: %s",
 	v(out.plastic), v(out.parts), v(out.stockMaterial), v(out.stockGround), v(out.materialVariants),
 	v(out.surfaceAppearances), v(out.heroSets), v(out.alwaysOnTopLabels), v(out.alwaysOnTopLabelsNotPrompt),
 	v(out.terrainCustomSlots), v(out.stockTerrain_homeLake, true), v(out.stockTerrain_bigLakeBasin, true),

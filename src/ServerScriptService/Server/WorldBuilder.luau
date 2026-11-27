@@ -632,7 +632,43 @@ function WorldBuilder.dress(lake: Model): number
 		end
 	end
 	folder.Parent = lake
+	WorldBuilder.dockLanterns(lake)
 	return placed
+end
+
+-- The dock's two lanterns at the lake end (leg 3, N0). The hero dock (DockHero, a SurfaceAppearance
+-- set) bakes its lantern frames but not the glow, so the glass is a small Neon part with a warm
+-- light that casts shadows. Tagged "Lantern" so the client lights them only at night
+-- (ClientModules/Lanterns). Rebuilt on every dress.
+function WorldBuilder.dockLanterns(lake: Model)
+	local old = lake:FindFirstChild("DockLanterns")
+	if old then
+		old:Destroy()
+	end
+	local folder = Instance.new("Folder")
+	folder.Name = "DockLanterns"
+	for i, x in { 7.5, -7.5 } do
+		local glass = Instance.new("Part")
+		glass.Name = "Glass" .. i
+		glass.Anchored = true
+		glass.CanCollide = false
+		glass.CanQuery = false
+		glass.CanTouch = false
+		glass.CastShadow = false
+		glass.Size = Vector3.new(0.92, 0.98, 0.92)
+		glass.CFrame = CFrame.new(x, 9.7, 36.3)
+		glass.Material = Enum.Material.Neon
+		glass.Color = Color3.fromRGB(255, 190, 120)
+		local light = Instance.new("PointLight")
+		light.Color = Color3.fromRGB(255, 190, 120)
+		light.Range = 16
+		light.Brightness = 1.1
+		light.Shadows = true
+		light.Parent = glass
+		game:GetService("CollectionService"):AddTag(light, "Lantern")
+		glass.Parent = folder
+	end
+	folder.Parent = lake
 end
 
 -- Painted signs (leg 3, N2): boards where a painted board would really hang, in place of the

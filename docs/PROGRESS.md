@@ -1,5 +1,28 @@
 # Progress
 
+## N0 report, 11/27/2026: steady ground and the proof corner (leg 3)
+
+N0 is done and saved in the place (version 122, "N0: proof corner, LookDirector and painted signs on"). The gate passes, 368 tests pass in Studio and with Lune, and a regression playtest (two real casts, a bluegill and a pumpkinseed landed, a sale at the Fish Buyer) logged no script errors.
+
+**What changed in the game**
+- **The light is drawn on each player's own screen now** (LookDirector). Nothing looks different yet on purpose: with it on, set A scored the same as with it off (6.0 and 6.0) and the client's clock and weather match the server's. This is what will let the creek, the blue water and the island each have their own water and light, and phones get a lighter version.
+- **The proof corner** (the dock, both stands and the bank east of the dock): a new dock with real silver-brown planks, nail heads, rope coils and two lanterns that light at night and cast shadows; both stands rebuilt with real wood and canvas; painted boards hung under their eaves in place of the floating labels ("Bait and Tackle", "Sell Fish"); our own meadow grass on every lawn and hill; a wet band where the sand meets the water.
+- **Painted signs everywhere there was a floating label:** the stands, your pond, the creek gate, the boat slips (numbered plates on the posts) and the blue-water warning, each lit by a lantern at night. The old labels are switched off, not deleted.
+
+**Proven (with evidence)**
+- Every engine fact in the plan's "Check first" table: yes, all eight (`docs/DECISIONS.md`, 11/27/2026 night). Two surprises: Studio was rendering at a low quality level whenever its window was not in front (every look check now forces level 21), and pointing a stock terrain slot at one of our materials re-skins all of that ground at once.
+- The corner passed its look gate (fable-advisor, PASS). Critic on shots 01, 02 and 08: 6.5 before, 7.0 after (up 0.5, the target). Sheet: `docs/critic/2026-11-27-n0-corner-sheet.jpg`.
+- Frames at the corner, both tiers, all inside the plan's budgets on render CPU, triangles, draw calls and memory (`docs/PERF.md`, "Leg 3 budgets"). Realistic light cost nothing measurable. Texture memory 61 to 73 MB.
+- Baselines at full quality: set A 6.0 (look) and 3 (identity), set B 6.0 and 3, set U 5.0 (ui; handmade feel 2). The audit found 797 visible Plastic parts of 979 at the start; the corner now has 21 left (reeds, lily pads and one tree, waiting for the leaf family in N1).
+- The kit: 15 image uploads for 8 material families plus 7 models (the hero dock and two stands in three meshes each), all approved within seconds. Ids in `art/textures/README.md` and `art/README.md`.
+
+**Not verified yet**
+- The fish skin is on the bluegill and the largemouth bass, and a bluegill was landed in the playtest, but no still of its catch card was taken (the test card has an empty fish window). It comes with fish skin on all 26 fish in N1.
+- GPU time is not readable in Studio when its window is not in front; the phone stand-in read 7.4 ms GPU at the stands (budget 6). Only Stewart's frame counter on a real phone settles it (asked after N1).
+- Realistic lighting is not on for players yet: the advisor ruled the light presets must be retuned for it first (N1's first job).
+
+**Next: N1, the home lake, Real-ish.** First the advisor's three fixes in the corner (a desktop light grade, the waterline and lawns as real sloped terrain, the white lamp globes as warm lanterns), then ten more material families, the bank kit (driftwood, a leaning birch, pines, ferns, better reeds, waterline stones), and the dress pass round the whole lake.
+
 ## Leg 3 plan, 11/27/2026: approved, the build starts at N0
 
 Stewart approved the plan for the next leg on 11/27/2026. Nothing has been built yet: `docs/superpowers/plans/2026-11-27-leg-3.md` (N0 to N7, the look and the boats). Readable page: https://claude.ai/artifact/VGTVnvkZnfBfGQEfaYFhwH . Its calls are in `docs/DECISIONS.md` under 11/27/2026 (evening). It is written to be built unattended on Opus 5.5, with Fable ruling on looks through the `fable-advisor` and `modeler` agents. The defaults for its seven questions stand unless he says otherwise. Next: N0 (steady ground and the proof corner).

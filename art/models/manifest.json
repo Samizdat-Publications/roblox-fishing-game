@@ -23,6 +23,190 @@
     "replaces": "Workspace.Lake.ShopStand (Counter, PostL, PostR, Roof); keep the ShopPrompt and sign on an invisible counter part",
     "notes": "Open front faces the lake. Base sits on the ground (y = 1)."
   },
+  "BaitShopStand_canvas": {
+    "name": "BaitShopStand_canvas",
+    "studs": [
+      14.32,
+      11.9,
+      6.11
+    ],
+    "triangles": 1070,
+    "parts": 1,
+    "replaces": "BaitShopStand (the one-mesh vertex-colour stand in Lake.Art): same size, pivot and orientation",
+    "notes": "Layer B, canvas family: MaterialVariant canvas with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 studs per UV unit. Upload art/models/roblox/BaitShopStand_canvas.glb. Every mesh of the stand goes at the old stand's CFrame.",
+    "family": "canvas",
+    "variant": "canvas",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "palette_seen_rgb": {
+      "canvas_white": [
+        204,
+        197,
+        178
+      ],
+      "stripe": [
+        88,
+        121,
+        146
+      ]
+    }
+  },
+  "BaitShopStand_metal": {
+    "name": "BaitShopStand_metal",
+    "studs": [
+      14.32,
+      11.9,
+      6.11
+    ],
+    "triangles": 182,
+    "parts": 5,
+    "replaces": "BaitShopStand (the one-mesh vertex-colour stand in Lake.Art): same size, pivot and orientation",
+    "notes": "Layer B, metal family: no family of ours yet: built-in Metal until tin roof or aluminium exists. Vertex colours stored 1 times the colour wanted. UVs at 1 studs per UV unit. Upload art/models/roblox/BaitShopStand_metal.glb. Every mesh of the stand goes at the old stand's CFrame.",
+    "family": "metal",
+    "variant": null,
+    "uv_studs": 1.0,
+    "lift": 1.0,
+    "palette_seen_rgb": {
+      "galv": [
+        138,
+        143,
+        145
+      ],
+      "steel": [
+        186,
+        188,
+        192
+      ],
+      "water": [
+        70,
+        112,
+        122
+      ]
+    }
+  },
+  "BaitShopStand_wood": {
+    "name": "BaitShopStand_wood",
+    "studs": [
+      14.32,
+      11.9,
+      6.11
+    ],
+    "triangles": 1210,
+    "parts": 67,
+    "replaces": "BaitShopStand (the one-mesh vertex-colour stand in Lake.Art): same size, pivot and orientation",
+    "notes": "Layer B, wood family: MaterialVariant weathered_plank with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 studs per UV unit. Upload art/models/roblox/BaitShopStand_wood.glb. Every mesh of the stand goes at the old stand's CFrame.",
+    "family": "wood",
+    "variant": "weathered_plank",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "palette_seen_rgb": {
+      "bait_cricket": [
+        92,
+        74,
+        48
+      ],
+      "bait_minnow": [
+        150,
+        180,
+        188
+      ],
+      "bait_worm": [
+        156,
+        106,
+        98
+      ],
+      "core": [
+        56,
+        49,
+        43
+      ],
+      "cork": [
+        172,
+        144,
+        108
+      ],
+      "pack_a": [
+        112,
+        86,
+        126
+      ],
+      "pack_b": [
+        88,
+        132,
+        98
+      ],
+      "pack_c": [
+        168,
+        94,
+        74
+      ],
+      "paint": [
+        78,
+        112,
+        136
+      ],
+      "paint_pale": [
+        134,
+        153,
+        160
+      ],
+      "rod_glass": [
+        192,
+        170,
+        96
+      ],
+      "rod_graphite": [
+        54,
+        57,
+        64
+      ],
+      "rod_willow": [
+        112,
+        88,
+        62
+      ],
+      "timber": [
+        122,
+        104,
+        86
+      ],
+      "timber_dark": [
+        97,
+        83,
+        69
+      ],
+      "timber_light": [
+        150,
+        132,
+        110
+      ],
+      "top": [
+        108,
+        93,
+        78
+      ],
+      "tub_a": [
+        86,
+        105,
+        126
+      ],
+      "tub_b": [
+        172,
+        146,
+        98
+      ],
+      "tub_c": [
+        80,
+        120,
+        130
+      ],
+      "whitewash": [
+        204,
+        198,
+        184
+      ]
+    }
+  },
   "BlackCrappie": {
     "name": "BlackCrappie",
     "studs": [
@@ -191,6 +375,32 @@
     "replaces": "Workspace.Lake.Dock (Deck, EndDeck, Posts) and the two dock-end lamp posts",
     "notes": "Deck top is 9 studs above the model base; place the base at y = -7.5 so the deck top sits at y = 1.5."
   },
+  "DockHero": {
+    "name": "DockHero",
+    "studs": [
+      16.7,
+      18.2,
+      46.3
+    ],
+    "triangles": 3060,
+    "parts": 1,
+    "replaces": "Dock (the vertex-colour dock in Lake.Art): same size, pivot and orientation",
+    "notes": "Hero set: one mesh, one UV set, colour, normal (OpenGL) and roughness maps embedded in the GLB; Roblox makes the SurfaceAppearance on import. Upload art/models/roblox/DockHero.glb as it is (no roblox_colors.py step). Base at y = -7.5, deck top y = 1.5, turned 180 degrees like Dock.",
+    "textures": {
+      "size": 1024,
+      "maps": [
+        "color",
+        "normal",
+        "roughness"
+      ],
+      "deck_mean_rgb": [
+        122,
+        104,
+        86
+      ]
+    },
+    "glb_bytes": 4158488
+  },
   "FiberglassRod": {
     "name": "FiberglassRod",
     "studs": [
@@ -214,6 +424,150 @@
     "parts": 49,
     "replaces": "Workspace.Lake.SellStand (Counter, PostL, PostR, Roof); keep the SellPrompt and sign on an invisible counter part",
     "notes": "Open front faces the lake. Base sits on the ground (y = 1)."
+  },
+  "FishBuyerStand_canvas": {
+    "name": "FishBuyerStand_canvas",
+    "studs": [
+      12.05,
+      12.8,
+      6.11
+    ],
+    "triangles": 1070,
+    "parts": 1,
+    "replaces": "FishBuyerStand (the one-mesh vertex-colour stand in Lake.Art): same size, pivot and orientation",
+    "notes": "Layer B, canvas family: MaterialVariant canvas with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 studs per UV unit. Upload art/models/roblox/FishBuyerStand_canvas.glb. Every mesh of the stand goes at the old stand's CFrame.",
+    "family": "canvas",
+    "variant": "canvas",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "palette_seen_rgb": {
+      "canvas_white": [
+        204,
+        197,
+        178
+      ],
+      "stripe": [
+        196,
+        162,
+        100
+      ]
+    }
+  },
+  "FishBuyerStand_metal": {
+    "name": "FishBuyerStand_metal",
+    "studs": [
+      12.05,
+      12.8,
+      6.11
+    ],
+    "triangles": 170,
+    "parts": 12,
+    "replaces": "FishBuyerStand (the one-mesh vertex-colour stand in Lake.Art): same size, pivot and orientation",
+    "notes": "Layer B, metal family: no family of ours yet: built-in Metal until tin roof or aluminium exists. Vertex colours stored 1 times the colour wanted. UVs at 1 studs per UV unit. Upload art/models/roblox/FishBuyerStand_metal.glb. Every mesh of the stand goes at the old stand's CFrame.",
+    "family": "metal",
+    "variant": null,
+    "uv_studs": 1.0,
+    "lift": 1.0,
+    "palette_seen_rgb": {
+      "enamel": [
+        214,
+        210,
+        198
+      ],
+      "fish_a": [
+        188,
+        168,
+        92
+      ],
+      "fish_b": [
+        94,
+        118,
+        74
+      ],
+      "fish_c": [
+        86,
+        112,
+        134
+      ],
+      "galv": [
+        138,
+        143,
+        145
+      ],
+      "ice": [
+        208,
+        224,
+        230
+      ],
+      "iron": [
+        70,
+        72,
+        76
+      ],
+      "needle": [
+        158,
+        54,
+        44
+      ]
+    }
+  },
+  "FishBuyerStand_wood": {
+    "name": "FishBuyerStand_wood",
+    "studs": [
+      12.05,
+      12.8,
+      6.11
+    ],
+    "triangles": 902,
+    "parts": 50,
+    "replaces": "FishBuyerStand (the one-mesh vertex-colour stand in Lake.Art): same size, pivot and orientation",
+    "notes": "Layer B, wood family: MaterialVariant weathered_plank with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 studs per UV unit. Upload art/models/roblox/FishBuyerStand_wood.glb. Every mesh of the stand goes at the old stand's CFrame.",
+    "family": "wood",
+    "variant": "weathered_plank",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "palette_seen_rgb": {
+      "core": [
+        56,
+        49,
+        43
+      ],
+      "paint": [
+        186,
+        152,
+        92
+      ],
+      "paint_deep": [
+        170,
+        128,
+        66
+      ],
+      "paint_pale": [
+        200,
+        184,
+        146
+      ],
+      "timber": [
+        122,
+        104,
+        86
+      ],
+      "timber_dark": [
+        97,
+        83,
+        69
+      ],
+      "timber_light": [
+        150,
+        132,
+        110
+      ],
+      "top": [
+        108,
+        93,
+        78
+      ]
+    }
   },
   "FreshwaterDrum": {
     "name": "FreshwaterDrum",

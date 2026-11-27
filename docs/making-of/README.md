@@ -4,6 +4,27 @@ A Roblox fishing game where real fishing knowledge matters: the right bait, spot
 
 Newest first. The live page with before and after sliders is `docs/making-of/index.html` (published as a Claude artifact).
 
+## N0: The proof corner: real wood, painted signs, light on every screen
+
+2026-11-27 21:40
+
+The start of leg 3, the look and the boats. First, eight facts about the engine were tested before anything was built on them, and all eight held: our own materials work on the ground, on the models and as baked sets, and the light can be set for each player on their own screen. Then one corner of the lake was rebuilt at full quality as the proof: a new dock with silver-brown planks, nail heads, rope coils and two lanterns that burn at night; both stands rebuilt in real wood and canvas; painted boards hung under the eaves instead of labels floating in the air; our own meadow grass on every lawn and hill. The look critic moved from 6.5 to 7.0 on the three corner shots and Fable's review passed it, with three fixes (the light, the waterline and the old lamp globes) as the first job of the next step. A surprise along the way: Studio had been drawing the game at a low quality level whenever its window was behind other windows, so every look check now forces full quality.
+
+**The stands from the dock at noon**
+
+| Before | After |
+|---|---|
+| ![before](stills/2026-11-27-n0-stands-before.jpg) | ![after](stills/2026-11-27-n0-stands-after.jpg) |
+
+**Down the dock at golden hour**
+
+| Before | After |
+|---|---|
+| ![before](stills/2026-11-27-n0-dock-golden-before.jpg) | ![after](stills/2026-11-27-n0-dock-golden-after.jpg) |
+
+![The bait stand up close: weathered boards, canvas awning and its painted sign](stills/2026-11-27-n0-bait-stand.jpg)
+*The bait stand up close: weathered boards, canvas awning and its painted sign*
+
 ## Polish: A tiny lighthouse on the island
 
 2026-11-27 10:34 · commit `b9b7a0d`

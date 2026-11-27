@@ -1,0 +1,308 @@
+{
+  "source_root": "artifacts/textures_src",
+  "defaults": {
+    "size": 512,
+    "seamless": "auto",
+    "seam_limit": 1.25,
+    "seam_blend": 0.2,
+    "ao_mix": 0.3,
+    "soften": 0.5,
+    "soften_sigma": 1.5,
+    "flatten": 0.0,
+    "flatten_sigma": 0.12,
+    "contrast": 1.0,
+    "max_rel_std": 0.12,
+    "despeckle_k": 2.5,
+    "hue_var": 0.4,
+    "neutral_mean": 0.8,
+    "normal_strength": 1.0,
+    "rough_contrast": 1.0
+  },
+  "families": {
+    "weathered_plank": {
+      "kind": "prop",
+      "size": 512,
+      "source": "wood_planks_grey",
+      "candidates": [
+        "wood_planks_grey",
+        "weathered_planks",
+        "Planks021",
+        "Planks039",
+        "Wood080",
+        "Planks012"
+      ],
+      "target_rgb": [
+        122,
+        104,
+        86
+      ],
+      "studs_per_tile": 8,
+      "despeckle_k": 1.8,
+      "hue_var": 0.25,
+      "flatten": 0.5,
+      "rough_mean": 0.8
+    },
+    "rope": {
+      "kind": "prop",
+      "size": 512,
+      "source": "Rope001",
+      "candidates": [
+        "Rope001",
+        "Rope003",
+        "Rope002"
+      ],
+      "target_rgb": [
+        176,
+        152,
+        112
+      ],
+      "studs_per_tile": 2,
+      "rough_mean": 0.82,
+      "max_rel_std": 0.1
+    },
+    "canvas": {
+      "kind": "prop",
+      "size": 512,
+      "source": "Fabric036",
+      "candidates": [
+        "Fabric036",
+        "Fabric061",
+        "Fabric030"
+      ],
+      "target_rgb": [
+        198,
+        188,
+        160
+      ],
+      "studs_per_tile": 3,
+      "rough_mean": 0.88,
+      "crop": 0.5,
+      "max_rel_std": 0.05
+    },
+    "meadow_grass": {
+      "kind": "terrain",
+      "size": 1024,
+      "source": "Grass004",
+      "candidates": [
+        "Grass004",
+        "Grass001",
+        "Grass005"
+      ],
+      "target_rgb": [
+        104,
+        122,
+        62
+      ],
+      "studs_per_tile": 16,
+      "rough_mean": 0.86,
+      "normal_strength": 0.6,
+      "max_rel_std": 0.075,
+      "flatten": 0.6,
+      "hue_var": 0.3,
+      "soften": 0.6
+    },
+    "wet_sand": {
+      "kind": "terrain",
+      "size": 1024,
+      "source": "Ground061",
+      "candidates": [
+        "Ground061",
+        "Ground094A",
+        "Ground054"
+      ],
+      "target_rgb": [
+        110,
+        96,
+        74
+      ],
+      "rough_mean": 0.35,
+      "studs_per_tile": 16,
+      "ao_mix": 0.1,
+      "normal_strength": 1.2,
+      "flatten": 0.5,
+      "contrast": 1.5
+    },
+    "shore_stone": {
+      "kind": "prop",
+      "size": 512,
+      "source": "Rock030",
+      "candidates": [
+        "Rock030",
+        "Rock020",
+        "Rock058"
+      ],
+      "target_rgb": [
+        118,
+        112,
+        102
+      ],
+      "studs_per_tile": 8,
+      "max_rel_std": 0.09,
+      "soften": 0.6,
+      "despeckle_k": 2.0,
+      "rough_mean": 0.72,
+      "normal_strength": 0.85
+    },
+    "fish_skin": {
+      "kind": "prop",
+      "size": 512,
+      "source": "fish_skin_proc",
+      "candidates": [],
+      "target_rgb": [
+        150,
+        156,
+        150
+      ],
+      "studs_per_tile": 1,
+      "soften": 0.2,
+      "rough_mean": 0.3,
+      "hue_var": 0.0,
+      "ao_mix": 0.3,
+      "max_rel_std": 0.05
+    }
+  },
+  "sources": {
+    "Planks021": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Planks021",
+      "zip": "https://ambientcg.com/get?file=Planks021_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Planks039": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Planks039",
+      "zip": "https://ambientcg.com/get?file=Planks039_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Planks012": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Planks012",
+      "zip": "https://ambientcg.com/get?file=Planks012_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Wood080": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Wood080",
+      "zip": "https://ambientcg.com/get?file=Wood080_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "weathered_planks": {
+      "provider": "Poly Haven",
+      "page": "https://polyhaven.com/a/weathered_planks",
+      "licence": "CC0",
+      "files": [
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/weathered_planks/weathered_planks_diff_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/weathered_planks/weathered_planks_nor_gl_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/weathered_planks/weathered_planks_rough_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/weathered_planks/weathered_planks_ao_1k.jpg"
+      ]
+    },
+    "wood_planks_grey": {
+      "provider": "Poly Haven",
+      "page": "https://polyhaven.com/a/wood_planks_grey",
+      "licence": "CC0",
+      "files": [
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/wood_planks_grey/wood_planks_grey_diff_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/wood_planks_grey/wood_planks_grey_nor_gl_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/wood_planks_grey/wood_planks_grey_rough_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/wood_planks_grey/wood_planks_grey_ao_1k.jpg"
+      ]
+    },
+    "Rope001": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Rope001",
+      "zip": "https://ambientcg.com/get?file=Rope001_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Rope002": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Rope002",
+      "zip": "https://ambientcg.com/get?file=Rope002_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Rope003": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Rope003",
+      "zip": "https://ambientcg.com/get?file=Rope003_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Fabric061": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Fabric061",
+      "zip": "https://ambientcg.com/get?file=Fabric061_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Fabric036": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Fabric036",
+      "zip": "https://ambientcg.com/get?file=Fabric036_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Fabric030": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Fabric030",
+      "zip": "https://ambientcg.com/get?file=Fabric030_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Grass001": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Grass001",
+      "zip": "https://ambientcg.com/get?file=Grass001_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Grass004": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Grass004",
+      "zip": "https://ambientcg.com/get?file=Grass004_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Grass005": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Grass005",
+      "zip": "https://ambientcg.com/get?file=Grass005_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Ground094A": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Ground094A",
+      "zip": "https://ambientcg.com/get?file=Ground094A_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Ground054": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Ground054",
+      "zip": "https://ambientcg.com/get?file=Ground054_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Ground061": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Ground061",
+      "zip": "https://ambientcg.com/get?file=Ground061_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Rock030": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Rock030",
+      "zip": "https://ambientcg.com/get?file=Rock030_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Rock020": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Rock020",
+      "zip": "https://ambientcg.com/get?file=Rock020_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Rock058": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Rock058",
+      "zip": "https://ambientcg.com/get?file=Rock058_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "fish_skin_proc": {
+      "provider": "procedural",
+      "generator": "fish_skin.py",
+      "dir": "artifacts/textures_src/fish_skin_proc",
+      "licence": "ours"
+    }
+  }
+}

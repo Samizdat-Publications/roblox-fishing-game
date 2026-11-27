@@ -334,5 +334,523 @@
       "docs\\critic\\2026-11-27-l5f3-final-neon-2.md",
       "docs\\critic\\2026-11-27-l5f3-final-neon-3.md"
     ]
+  },
+  {
+    "date": "2026-11-27",
+    "step": "n0-baseline-A-q21",
+    "set": "A",
+    "rubric": "look",
+    "run": "2026-11-27-1449",
+    "commit": "6bb974b",
+    "shots": 12,
+    "median": 6.0,
+    "scores": [
+      6.3,
+      6.0,
+      5.5
+    ],
+    "points": {
+      "composition": 6,
+      "light": 6.5,
+      "water": 6,
+      "mood": 6,
+      "want_to_fish": 7,
+      "phone_readability": 5,
+      "broken_or_ugly": 5
+    },
+    "reports": [
+      "docs\\critic\\2026-11-27-n0-baseline-A-q21-neon.md",
+      "docs\\critic\\2026-11-27-n0-baseline-A-q21-neon-2.md",
+      "docs\\critic\\2026-11-27-n0-baseline-A-q21-neon-3.md"
+    ],
+    "audit": {
+      "wind": 0,
+      "alwaysOnTopLabelsNotPrompt": 0,
+      "stockMaterial": 5,
+      "lightingStyle": "Soft",
+      "plastic": 0,
+      "surfaceAppearances": 0,
+      "heroSets": 0,
+      "stockTerrain_homeLake": 1,
+      "materialVariants": 0,
+      "terrainCustomSlots": 0,
+      "plasticTop": "",
+      "stockTerrain_bigLakeBasin": 1,
+      "stockGround": 0,
+      "alwaysOnTopLabels": 4,
+      "parts": 1235
+    }
+  },
+  {
+    "date": "2026-11-27",
+    "step": "n0-baseline-A-q21",
+    "set": "A",
+    "rubric": "identity",
+    "run": "2026-11-27-1449",
+    "commit": "6bb974b",
+    "shots": 12,
+    "median": 3,
+    "scores": [
+      3,
+      3,
+      3
+    ],
+    "points": {
+      "materials": 3,
+      "signature": 2,
+      "cohesion": 4,
+      "stock_free": 2,
+      "identity": 3
+    },
+    "reports": [
+      "docs\\critic\\2026-11-27-n0-baseline-A-q21-identity-neon.md",
+      "docs\\critic\\2026-11-27-n0-baseline-A-q21-identity-neon-2.md",
+      "docs\\critic\\2026-11-27-n0-baseline-A-q21-identity-neon-3.md"
+    ],
+    "stock_items": [
+      {
+        "item": "Default Roblox Skybox and clouds (01-dock-dawn.jpg, 02-dock-golden.jpg, 03-dockend-noon.jpg, 04-dockend-night.jpg, 05-weedbed-golden.jpg, 08-stands-noon.jpg, 09-riffle-dawn.jpg, 11-gate-noon.jpg, upper half of frame)",
+        "reason": "The exact default Roblox cloud cubemap pattern (notably the cloud cluster in the upper right) is unchanged across dawn, noon, golden hour, and night.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Terrain Water (03-dockend-noon.jpg, 04-dockend-night.jpg, 05-weedbed-golden.jpg, 06-logs-dawn.jpg, 08-stands-noon.jpg, 10-pool-golden.jpg, 12-pool-night.jpg, water surfaces)",
+        "reason": "Unmistakable stock Roblox swirling terrain water normal map and specular shimmer, especially prominent up close at noon and golden hour.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Terrain Grass, LeafyGrass, Sand, and Terrain Decoration grass blades (01-dock-dawn.jpg foreground, 06-logs-dawn.jpg foreground, 09-riffle-dawn.jpg foreground/hills, 10-pool-golden.jpg right bank and hills, 11-gate-noon.jpg lawn and raised sand path)",
+        "reason": "Default unmodified Roblox terrain material textures and uniform grass blade decoration immediately read as default Studio terrain.",
+        "runs": 1
+      },
+      {
+        "item": "Floating always-on-top BillboardGui labels (01-dock-dawn.jpg and 02-dock-golden.jpg edges and center, 06-logs-dawn.jpg left/center, 08-stands-noon.jpg across dock and stalls, 11-gate-noon.jpg above gate)",
+        "reason": "Stock dark translucent rounded pills with default sans-serif font ('Slip 2', 'Slip 3', 'Slip 4', 'Boat slips', 'Sell Fish', 'Bait and Tackle', 'Your Pond', 'Cedar Creek') floating in mid-air.",
+        "runs": 1
+      },
+      {
+        "item": "SmoothPlastic dock planks, posts, and yellow slip markers (01-dock-dawn.jpg center, 08-stands-noon.jpg lower and center foreground)",
+        "reason": "Flat solid-brown and bright-yellow untextured plastic bricks with zero wood grain or weathering.",
+        "runs": 1
+      },
+      {
+        "item": "SmoothPlastic shop stalls and striped awnings (01-dock-dawn.jpg and 02-dock-golden.jpg left/right edges, 08-stands-noon.jpg midground left and right)",
+        "reason": "Plain flat-colored SmoothPlastic blocks instead of textured timber walls and canvas fabric awnings.",
+        "runs": 1
+      },
+      {
+        "item": "Low-poly faceted SmoothPlastic pine and deciduous trees (03-dockend-noon.jpg shoreline, 05-weedbed-golden.jpg far left, 06-logs-dawn.jpg left, 08-stands-noon.jpg far left, 09-riffle-dawn.jpg center and right, 10-pool-golden.jpg center-left, 11-gate-noon.jpg midground)",
+        "reason": "Generic untextured stacked-cone pines and faceted polygon canopies straight out of typical low-poly Roblox simulators, clashing with realistic terrain textures.",
+        "runs": 1
+      },
+      {
+        "item": "Faceted SmoothPlastic grey rocks (09-riffle-dawn.jpg center mound, 10-pool-golden.jpg and 12-pool-night.jpg right shoreline)",
+        "reason": "Flat-shaded smooth grey geometric boulders with no stone texture sitting directly on textured terrain.",
+        "runs": 1
+      },
+      {
+        "item": "Untextured SmoothPlastic cattails and floating logs (05-weedbed-golden.jpg foreground left/center, 06-logs-dawn.jpg center water, 08-stands-noon.jpg left of dock)",
+        "reason": "Plain SmoothPlastic rectangular prisms for reeds/cattails and flat-capped smooth brown cylinders for logs, with no plant or bark texture.",
+        "runs": 1
+      },
+      {
+        "item": "Segmented flat path parts with stock Sand material (06-logs-dawn.jpg foreground across frame, 07-overview-golden.jpg around pond perimeter)",
+        "reason": "Flat polygonal Part slabs textured with default Roblox Sand cutting abruptly across the terrain grass.",
+        "runs": 1
+      },
+      {
+        "item": "Glowing white Neon sphere street lamps (06-logs-dawn.jpg left, 08-stands-noon.jpg next to stands, 11-gate-noon.jpg right of archway)",
+        "reason": "Simple default Neon white balls perched on plain poles, glowing at full brightness even at noon.",
+        "runs": 1
+      },
+      {
+        "item": "Default blocky Roblox character avatar (01-dock-dawn.jpg, 02-dock-golden.jpg, 08-stands-noon.jpg center)",
+        "reason": "Standard blocky Roblox avatar look in casual holiday clothing (Santa hat, plaid pants) rather than a game-grounded fisher silhouette.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox Skybox and clouds (01-dock-dawn.jpg, 03-dockend-noon.jpg, 04-dockend-night.jpg, 08-stands-noon.jpg, 11-gate-noon.jpg \u2014 upper sky)",
+        "reason": "Uses the unmistakable default Roblox Sky cloud texture, including the large cloud cluster in the upper-right and thin horizontal streaks across the mid-sky.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Terrain Water (03-dockend-noon.jpg, 04-dockend-night.jpg, 08-stands-noon.jpg, 10-pool-golden.jpg, 12-pool-night.jpg \u2014 lake and pool surfaces)",
+        "reason": "Shows the signature stock Roblox swirling water normal map and specular highlights, especially obvious in flat noon light and dark night reflections.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Terrain Grass and decoration blades (01-dock-dawn.jpg foreground, 06-logs-dawn.jpg foreground, 09-riffle-dawn.jpg across frame, 10-pool-golden.jpg far bank, 11-gate-noon.jpg foreground and hills)",
+        "reason": "Unmodified default Terrain Grass texture and default animated grass decoration blades.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Terrain Sand (05-weedbed-golden.jpg foreground, 06-logs-dawn.jpg walkway, 10-pool-golden.jpg right bank, 11-gate-noon.jpg path, 12-pool-night.jpg right bank)",
+        "reason": "Default rippled beach-sand Terrain material applied to freshwater creek paths and lake banks.",
+        "runs": 1
+      },
+      {
+        "item": "Floating always-on-top dark rounded BillboardGuis with default sans-serif text (01-dock-dawn.jpg, 02-dock-golden.jpg, 06-logs-dawn.jpg, 08-stands-noon.jpg, 11-gate-noon.jpg \u2014 'Sell Fish', 'Bait and Tackle', 'Boat slips', 'Slip 2/3/4', 'Cedar Creek')",
+        "reason": "Stock translucent dark rounded UI pills with default clean sans-serif typography floating over 3D objects.",
+        "runs": 1
+      },
+      {
+        "item": "SmoothPlastic untextured dock, pilings, orange slip markers, and shop booths (01-dock-dawn.jpg, 02-dock-golden.jpg, 08-stands-noon.jpg \u2014 foreground dock and left/right stalls)",
+        "reason": "Flat brown SmoothPlastic planks, octagonal posts, bright orange plastic rectangles, and untextured booth panels with zero wood grain.",
+        "runs": 1
+      },
+      {
+        "item": "Untextured SmoothPlastic cattails and sunken logs (05-weedbed-golden.jpg foreground cattails, 06-logs-dawn.jpg center water logs, 08-stands-noon.jpg center-left cattails)",
+        "reason": "Plain flat-colored rectangular bars and smooth cylinders with flat end-caps rather than textured reeds and bark.",
+        "runs": 1
+      },
+      {
+        "item": "Low-poly SmoothPlastic faceted boulders and generic cone/blob trees (09-riffle-dawn.jpg center rocks and pines, 08-stands-noon.jpg far-left tree, 03-dockend-noon.jpg and 11-gate-noon.jpg treeline)",
+        "reason": "Untextured faceted grey rock meshes and starter-kit stacked-cone pine and faceted icosphere trees.",
+        "runs": 1
+      },
+      {
+        "item": "Plain glowing Neon sphere lamp posts (08-stands-noon.jpg beside booths, 11-gate-noon.jpg right of gate)",
+        "reason": "Simple brown cylinder topped with a bare white Neon ball, a classic default Roblox prop.",
+        "runs": 1
+      },
+      {
+        "item": "Bare stock Wood material on plain rectangular gate and fence (11-gate-noon.jpg \u2014 center archway and fence line)",
+        "reason": "Simple unchamfered rectangular parts using Roblox's default orange-brown Wood material.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox daytime and nighttime skybox (03-dockend-noon.jpg, 08-stands-noon.jpg, 11-gate-noon.jpg upper half; 04-dockend-night.jpg and 12-pool-night.jpg sky)",
+        "reason": "Shows the unmistakable default blurry white cloud formations on bright cyan daytime sky and stock starry night sky.",
+        "runs": 1
+      },
+      {
+        "item": "Floating dark rounded BillboardGui labels (01-dock-dawn.jpg and 02-dock-golden.jpg edges and dock center; 06-logs-dawn.jpg left and center; 08-stands-noon.jpg across stands, pond, and dock; 11-gate-noon.jpg over the gate)",
+        "reason": "Stock semi-transparent dark charcoal rounded boxes using default bold sans-serif text ('Sell Fish', 'Bait and Tackle', 'Slip 2/3/4', 'Boat slips', 'Your Pond', 'Cedar Creek').",
+        "runs": 1
+      },
+      {
+        "item": "SmoothPlastic dock planks, octagonal pilings, and bright orange slip markers (08-stands-noon.jpg foreground center; 01-dock-dawn.jpg center)",
+        "reason": "Completely flat, glossy untextured brown and orange SmoothPlastic parts with no wood grain or weathering.",
+        "runs": 1
+      },
+      {
+        "item": "SmoothPlastic market stalls and striped awnings (01-dock-dawn.jpg and 02-dock-golden.jpg left and right foreground; 08-stands-noon.jpg midground)",
+        "reason": "Plain flat-colored brown panels and untextured yellow/white and blue/white SmoothPlastic roofs.",
+        "runs": 1
+      },
+      {
+        "item": "Faceted flat-shaded SmoothPlastic boulders (09-riffle-dawn.jpg center pile; 10-pool-golden.jpg and 12-pool-night.jpg right bank)",
+        "reason": "Untextured grey low-poly meshes with flat triangle shading that look like plastic polygons rather than stone.",
+        "runs": 1
+      },
+      {
+        "item": "Low-poly SmoothPlastic stacked-cone pines and faceted blob trees (08-stands-noon.jpg far left; 09-riffle-dawn.jpg center hill and background; 10-pool-golden.jpg background left; 11-gate-noon.jpg behind fence; 05-weedbed-golden.jpg mid-left)",
+        "reason": "Generic Roblox simulator-style flat-colored SmoothPlastic tree shapes instead of textured bark and believable foliage.",
+        "runs": 1
+      },
+      {
+        "item": "SmoothPlastic fallen logs and blocky cattails (06-logs-dawn.jpg center water; 05-weedbed-golden.jpg foreground left)",
+        "reason": "Logs are plain untextured brown cylinders with sharp flat cut ends, and cattails are rectangular untextured green and brown plastic prisms.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Terrain Grass, Grass Decoration blades, Sand, and Terrain Water (visible across all 12 shots, clearest in 03-dockend-noon.jpg, 09-riffle-dawn.jpg, 10-pool-golden.jpg, and 11-gate-noon.jpg)",
+        "reason": "Unmodified default Roblox terrain textures, uniform default blade grass, and standard swirly terrain water reflections.",
+        "runs": 1
+      },
+      {
+        "item": "Segmented Sand-material walkway parts (06-logs-dawn.jpg foreground bottom; 07-overview-golden.jpg circling the pond)",
+        "reason": "Flat rectangular parts using the stock Roblox Sand material laid over grass with visible straight-edged seams.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Wood-material fence and Cedar Creek gate arch (11-gate-noon.jpg center and left/right)",
+        "reason": "Plain rectangular blocks using the default Roblox Wood texture.",
+        "runs": 1
+      },
+      {
+        "item": "Neon white sphere lamp posts (08-stands-noon.jpg beside both stalls; 11-gate-noon.jpg right of gate; 06-logs-dawn.jpg mid-left)",
+        "reason": "Basic brown poles topped with untextured glowing stock Neon white balls.",
+        "runs": 1
+      }
+    ],
+    "audit": {
+      "wind": 0,
+      "alwaysOnTopLabelsNotPrompt": 0,
+      "stockMaterial": 5,
+      "lightingStyle": "Soft",
+      "plastic": 0,
+      "surfaceAppearances": 0,
+      "heroSets": 0,
+      "stockTerrain_homeLake": 1,
+      "materialVariants": 0,
+      "terrainCustomSlots": 0,
+      "plasticTop": "",
+      "stockTerrain_bigLakeBasin": 1,
+      "stockGround": 0,
+      "alwaysOnTopLabels": 4,
+      "parts": 1235
+    }
+  },
+  {
+    "date": "2026-11-27",
+    "step": "n0-lookdirector-A",
+    "set": "A",
+    "rubric": "look",
+    "run": "2026-11-27-1514",
+    "commit": "6e806d8",
+    "shots": 12,
+    "median": 6,
+    "scores": [
+      6,
+      6,
+      6
+    ],
+    "points": {
+      "composition": 6,
+      "light": 7,
+      "water": 7,
+      "mood": 6,
+      "want_to_fish": 7,
+      "phone_readability": 5,
+      "broken_or_ugly": 5
+    },
+    "reports": [
+      "docs\\critic\\2026-11-27-n0-lookdirector-A-neon.md",
+      "docs\\critic\\2026-11-27-n0-lookdirector-A-neon-2.md",
+      "docs\\critic\\2026-11-27-n0-lookdirector-A-neon-3.md"
+    ]
+  },
+  {
+    "date": "2026-11-27",
+    "step": "n0-baseline-B",
+    "set": "B",
+    "rubric": "look",
+    "run": "2026-11-27-1455-B",
+    "commit": "6e806d8",
+    "shots": 6,
+    "median": 6,
+    "scores": [
+      6,
+      6,
+      5.5
+    ],
+    "points": {
+      "composition": 6,
+      "light": 7,
+      "water": 6.5,
+      "mood": 6,
+      "want_to_fish": 6,
+      "phone_readability": 5,
+      "broken_or_ugly": 4.5
+    },
+    "reports": [
+      "docs\\critic\\2026-11-27-n0-baseline-B-neon.md",
+      "docs\\critic\\2026-11-27-n0-baseline-B-neon-2.md",
+      "docs\\critic\\2026-11-27-n0-baseline-B-neon-3.md"
+    ],
+    "audit": {
+      "wind": 0,
+      "alwaysOnTopLabelsNotPrompt": 0,
+      "stockMaterial": 5,
+      "lightingStyle": "Soft",
+      "plastic": 0,
+      "surfaceAppearances": 0,
+      "heroSets": 0,
+      "stockTerrain_homeLake": 1,
+      "materialVariants": 0,
+      "terrainCustomSlots": 0,
+      "plasticTop": "",
+      "stockTerrain_bigLakeBasin": 1,
+      "stockGround": 0,
+      "alwaysOnTopLabels": 4,
+      "parts": 1235
+    }
+  },
+  {
+    "date": "2026-11-27",
+    "step": "n0-baseline-B",
+    "set": "B",
+    "rubric": "identity",
+    "run": "2026-11-27-1455-B",
+    "commit": "6e806d8",
+    "shots": 6,
+    "median": 3,
+    "scores": [
+      2.5,
+      3,
+      3
+    ],
+    "points": {
+      "materials": 3,
+      "signature": 2,
+      "cohesion": 4,
+      "stock_free": 2,
+      "identity": 3
+    },
+    "reports": [
+      "docs\\critic\\2026-11-27-n0-baseline-B-identity-neon.md",
+      "docs\\critic\\2026-11-27-n0-baseline-B-identity-neon-2.md",
+      "docs\\critic\\2026-11-27-n0-baseline-B-identity-neon-3.md"
+    ],
+    "stock_items": [
+      {
+        "item": "Stock Roblox Terrain water (all files: b01 through b06, foreground and midground)",
+        "reason": "Uses the unmistakable default Terrain water normal-map ripple pattern, especially noisy and blotchy in the dark reflections of b04-buoys-dusk.jpg and b06-marina-night.jpg.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Terrain grass with default Decoration blades and stock sand (b01 left/right banks, b02 hills and center island, b03 left hill, b05 shoreline and hills, b06 shoreline)",
+        "reason": "Reads immediately as unmodified default Terrain grass, Decoration tufts, and bright beige stock sand.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox Sky and Clouds (b01, b02, b05 daytime skies; b04, b06 starry night skies)",
+        "reason": "Standard Roblox blue gradient sky, default puffy white daytime clouds, and default starry night skybox with wispy clouds.",
+        "runs": 1
+      },
+      {
+        "item": "Bare SmoothPlastic orange cylinder buoys (b05 lower-right close-up, b04 center receding line, b02 far right)",
+        "reason": "Literally untextured Roblox Cylinder primitives with flat SmoothPlastic shading, razor-sharp 90-degree edges, and zero maritime hardware or weathering.",
+        "runs": 1
+      },
+      {
+        "item": "Generic low-poly SmoothPlastic trees (b01 far left, b02 center island and hills, b03 behind reeds, b05 hills, b06 left shoreline)",
+        "reason": "Faceted icosphere blobs and stacked pine cones in flat untextured SmoothPlastic that look like a standard Roblox free-model nature pack rather than true wood and foliage materials.",
+        "runs": 1
+      },
+      {
+        "item": "Untextured SmoothPlastic cattails and lily pads (b01 right foreground, b02 center-right, b03 entire foreground and lower-right)",
+        "reason": "Flat SmoothPlastic rectangular strips, plain brown cylinder heads, flat octagonal green discs, and faceted SmoothPlastic pink flowers with no organic texture.",
+        "runs": 1
+      },
+      {
+        "item": "Stock WoodPlanks blocks on the bridge and canal walls (b01 center)",
+        "reason": "Simple unstyled Roblox rectangular parts using the default WoodPlanks material without weathering, joints, or beveled timber construction.",
+        "runs": 1
+      },
+      {
+        "item": "SmoothPlastic shoreline boulders (b05 center shoreline, b06 center shoreline below the bridge)",
+        "reason": "Plain smooth untextured grey blobs that read as SmoothPlastic rather than real stone.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox Skybox and clouds in b01-bridge-dawn.jpg (upper half), b02-basin-boat-noon.jpg (upper half), b05-bluewater-noon.jpg (upper half), b04-buoys-dusk.jpg (upper half), and b06-marina-night.jpg (upper half)",
+        "reason": "Displays the immediately recognizable default Roblox bright blue sky, blurry white cloud patch, and standard night starfield.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox Terrain Water in b01-bridge-dawn.jpg through b06-marina-night.jpg (foreground and midground water)",
+        "reason": "Shows the unmistakable stock swirling/marbled Roblox Terrain water normal pattern and reflectance.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox Terrain Grass, Grass Decoration blades, and Terrain Sand in b01-bridge-dawn.jpg (left/right banks), b02-basin-boat-noon.jpg (island and hills), b03-lighthouse-golden.jpg (background hills), b05-bluewater-noon.jpg (beach and hills), and b06-marina-night.jpg (shoreline)",
+        "reason": "Uses untuned stock Terrain grass and sand textures with default green blades.",
+        "runs": 1
+      },
+      {
+        "item": "Orange SmoothPlastic cylinder buoys in b05-bluewater-noon.jpg (lower-right foreground), b04-buoys-dusk.jpg (line down center), and b02-basin-boat-noon.jpg (far-right edge)",
+        "reason": "Raw untextured Roblox Cylinder parts with SmoothPlastic material, razor-sharp edges, and no nautical geometry or markings.",
+        "runs": 1
+      },
+      {
+        "item": "Low-poly SmoothPlastic trees in b01-bridge-dawn.jpg (left bank), b02-basin-boat-noon.jpg (island and hills), b03-lighthouse-golden.jpg (center behind reeds), b04-buoys-dusk.jpg (horizon), b05-bluewater-noon.jpg (hills), and b06-marina-night.jpg (midground)",
+        "reason": "Generic Roblox simulator-style faceted SmoothPlastic blob trees and stacked-cone pines with flat untextured surfaces.",
+        "runs": 1
+      },
+      {
+        "item": "SmoothPlastic lily pads, lotus flowers, and cattails in b03-lighthouse-golden.jpg (foreground center and lower-right), b01-bridge-dawn.jpg (lower-right and lower-left), and b02-basin-boat-noon.jpg (center-right shoreline)",
+        "reason": "Built from flat untextured SmoothPlastic octagons, faceted pink blossoms, flat strips, and plain brown cylinders.",
+        "runs": 1
+      },
+      {
+        "item": "Basic block/plank bridge in b01-bridge-dawn.jpg (center) and b06-marina-night.jpg (center midground)",
+        "reason": "Simple rectangular Roblox parts and tilted ramp blocks with uniform stock brown wood texture and detached floating rails.",
+        "runs": 1
+      },
+      {
+        "item": "Orange cylinder buoys (b05-bluewater-noon.jpg lower right, b04-buoys-dusk.jpg center line, b02-basin-boat-noon.jpg far right)",
+        "reason": "Completely bare, untextured SmoothPlastic/Plastic Cylinder primitives with sharp default edges and no markings, hardware, or painted-material grain.",
+        "runs": 1
+      },
+      {
+        "item": "Terrain water surface (b01-bridge-dawn.jpg through b06-marina-night.jpg, lower half of every frame)",
+        "reason": "Immediately recognizable default Roblox Terrain water normal map and reflection pattern, especially harsh in noon daylight (b02, b05) and noisy/marbled at night (b06).",
+        "runs": 1
+      },
+      {
+        "item": "Sky and clouds (b01-bridge-dawn.jpg, b02-basin-boat-noon.jpg, b04-buoys-dusk.jpg, b05-bluewater-noon.jpg, b06-marina-night.jpg, upper half of frames)",
+        "reason": "Default Roblox Skybox bright-blue noon gradient, standard blurry white clouds, and default dark-blue night clouds and starfield.",
+        "runs": 1
+      },
+      {
+        "item": "Terrain grass, waving grass blades, and sand shoreline (b02-basin-boat-noon.jpg center island and hills, b05-bluewater-noon.jpg entire shore and hills, b01-bridge-dawn.jpg banks)",
+        "reason": "Unmodified stock Roblox Terrain Sand and Grass materials with default Terrain.Decoration waving grass blades.",
+        "runs": 1
+      },
+      {
+        "item": "Low-poly deciduous and pine trees (b01-bridge-dawn.jpg left, b02-basin-boat-noon.jpg center and left background, b03-lighthouse-golden.jpg center, b05-bluewater-noon.jpg shoreline)",
+        "reason": "Generic Roblox low-poly kit look using faceted geometric cones and icosphere clusters in flat SmoothPlastic shading that clashes with the semi-realistic terrain.",
+        "runs": 1
+      },
+      {
+        "item": "Cattails, lily pads, and lotus flowers (b03-lighthouse-golden.jpg center and bottom right, b01-bridge-dawn.jpg bottom right and left)",
+        "reason": "Up close in b03 they clearly read as flat untextured SmoothPlastic rectangular stalks, cylinder tops, thick polygonal slabs, and faceted plastic flowers rather than real organic plant surfaces.",
+        "runs": 1
+      },
+      {
+        "item": "Canal footbridge and retaining walls (b01-bridge-dawn.jpg center)",
+        "reason": "Built from basic rectangular blocks and wedges using stock Roblox Wood/WoodPlanks material with rudimentary blocky proportions.",
+        "runs": 1
+      }
+    ],
+    "audit": {
+      "wind": 0,
+      "alwaysOnTopLabelsNotPrompt": 0,
+      "stockMaterial": 5,
+      "lightingStyle": "Soft",
+      "plastic": 0,
+      "surfaceAppearances": 0,
+      "heroSets": 0,
+      "stockTerrain_homeLake": 1,
+      "materialVariants": 0,
+      "terrainCustomSlots": 0,
+      "plasticTop": "",
+      "stockTerrain_bigLakeBasin": 1,
+      "stockGround": 0,
+      "alwaysOnTopLabels": 4,
+      "parts": 1235
+    }
+  },
+  {
+    "date": "2026-11-27",
+    "step": "n0-baseline-U",
+    "set": "U",
+    "rubric": "ui",
+    "run": "2026-11-27-1458-U",
+    "commit": "6e806d8",
+    "shots": 12,
+    "median": 5,
+    "scores": [
+      4.5,
+      5,
+      5
+    ],
+    "points": {
+      "readability": 7,
+      "hierarchy": 6,
+      "consistency": 7,
+      "handmade_feel": 2,
+      "contrast": 5,
+      "touch_targets": 6,
+      "phone_readability": 5,
+      "broken_or_ugly": 5
+    },
+    "reports": [
+      "docs\\critic\\2026-11-27-n0-baseline-U-ui-neon.md",
+      "docs\\critic\\2026-11-27-n0-baseline-U-ui-neon-2.md",
+      "docs\\critic\\2026-11-27-n0-baseline-U-ui-neon-3.md"
+    ]
   }
 ]

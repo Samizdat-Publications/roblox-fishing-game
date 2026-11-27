@@ -1,0 +1,65 @@
+{
+  "family": "canvas",
+  "kind": "prop",
+  "size": 512,
+  "source": "Fabric036",
+  "source_page": "https://ambientcg.com/a/Fabric036",
+  "licence": "CC0",
+  "studs_per_tile": 3,
+  "target_rgb": [
+    198,
+    188,
+    160
+  ],
+  "mean_rgb": [
+    198.0,
+    188.0,
+    160.0
+  ],
+  "luma_rel_std_in": 0.0562,
+  "luma_rel_std_out": 0.0444,
+  "neutral_mean": 0.8,
+  "neutral_std": 0.0351,
+  "neutral_min_max": [
+    0.71,
+    0.888
+  ],
+  "rough_mean": 0.88,
+  "rough_std": 0.0297,
+  "normal_mean_tilt": 0.2694,
+  "seam_in": 1.423,
+  "seam_fixed": true,
+  "seam_out": {
+    "color": 0.764,
+    "normal": 0.562,
+    "rough": 0.624
+  },
+  "settings": {
+    "ao_mix": 0.3,
+    "contrast": 1.0,
+    "crop": 0.5,
+    "despeckle_k": 2.5,
+    "flatten": 0.0,
+    "flatten_sigma": 0.12,
+    "hue_var": 0.4,
+    "kind": "prop",
+    "max_rel_std": 0.05,
+    "neutral_mean": 0.8,
+    "normal_strength": 1.0,
+    "rough_contrast": 1.0,
+    "rough_mean": 0.88,
+    "seam_blend": 0.2,
+    "seam_limit": 1.25,
+    "seamless": "auto",
+    "size": 512,
+    "soften": 0.5,
+    "soften_sigma": 1.5,
+    "source": "Fabric036",
+    "studs_per_tile": 3,
+    "target_rgb": [
+      198,
+      188,
+      160
+    ]
+  }
+}

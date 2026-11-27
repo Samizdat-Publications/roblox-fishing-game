@@ -112,6 +112,9 @@ What works, learned on the first import:
 | WhiteBass | 71716066706107 | On the line when one is landed |
 | Dinghy | 131459268302795 | In ServerStorage only, for the boat plan |
 | DeepV | 136839711681390 | In ServerStorage only, for the boat plan |
+| DockHero | 73953474625307 | `ServerStorage.Art.Dock` since 11/27/2026 (leg 3, N0): the hero set, baked colour, normal and roughness as a SurfaceAppearance. The old vertex-coloured dock waits as `Art.DockPlain` for the phone tier |
+| BaitShopStand_wood, _canvas, _metal | 113815152721251, 129724187320327, 122388811024576 | `ServerStorage.Art.BaitShopStand` since 11/27/2026: three meshes, WeatheredPlank on wood, Canvas on canvas, stock Metal; the old one waits as `Art.BaitShopStandPlain` |
+| FishBuyerStand_wood, _canvas, _metal | 80578305985776, 100378319005593, 120976665888017 | `ServerStorage.Art.FishBuyerStand` since 11/27/2026, as above; the old one is `Art.FishBuyerStandPlain` |
 | Bluegill (first try) | 123238298956061 | Not used: uploaded before the colour fix, too dark |
 
 ## The models
