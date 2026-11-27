@@ -87,6 +87,7 @@ type Session = {
 }
 
 local RIG_MIN_GAP = 0.5 -- seconds between Rig messages the server will look at
+local ASSIST_OFF_TEXT = "Reel assist is off now. Turn it back on in the journal any time."
 local RIG_LATENCY = 0.5 -- slack when checking a bench run against the server's clock
 
 local sessions: { [Player]: Session } = {}
@@ -970,6 +971,14 @@ local function onFightResult(player: Player, won: any)
 	GoalService.onCatch(player, data, fish, FrenzyService.at(fish.spot))
 	print(string.format("[Fishing] %s caught %s %.1f cm %.2f kg worth %d at %s (%s, %s)", player.Name, fish.name, cm, kg, fish.price, fish.spot, fish.period, fish.bait))
 	send(player, "Caught", { fish = fish, best = best, first = first, habit = species.habit, tier = Rarity.of(species), sizeClass = class })
+	-- Reel assist turns itself off after the first few catches, once (L4b). UNVERIFIED in Studio.
+	if Inventory.assistAfterCatch(data) then
+		task.delay(1.5, function()
+			if player.Parent then
+				toast(player, ASSIST_OFF_TEXT)
+			end
+		end)
+	end
 	if class == "monster" then
 		for _, p in Players:GetPlayers() do
 			toast(p, string.format("%s landed a MONSTER %s: %s, %s!", player.DisplayName, species.name, Units.length(cm, 0), Units.weight(kg)))

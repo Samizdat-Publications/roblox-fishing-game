@@ -542,7 +542,9 @@ function WaitScene.event(kind: string, payload: any)
 		waiting = true
 		bobberAt = if payload and typeof(payload.pos) == "Vector3" then payload.pos else nil
 		quietSince = now
-		if bobberAt then
+		-- The landing ripple; when the bobber is still flying (CastFlight, L4b) it shows the
+		-- ripple itself as it touches down.
+		if bobberAt and not payload.inFlight then
 			RiseRipples.show(bobberAt, 0.6, 2)
 		end
 	elseif kind == "Approach" then

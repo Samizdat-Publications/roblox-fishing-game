@@ -221,6 +221,17 @@ Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6
 - Still to do in L1: a Lake Sturgeon at the deep hole in its real conditions, the journal on the smallest phone (the simulated mouse wheel zoomed the camera instead of scrolling the journal; check with a real wheel), the 15 new fish models (they hang as the old shape until then), a Neon reveal clip, the StyLua reformat, and Liam's 20 minutes.
 - Look mockups for the beauty pass: five looks (Golden Afternoon, Bright Summer Day, Misty Dawn, Moonlit Night, Autumn Lake) from the all-models stills, page https://claude.ai/artifact/DjMRLNSn6t91zKmR93sGr6 (source `planner/looks.html`, images `docs/looks/`, script `tools/looks/mockup.py`). They were made in the old flat low-poly style before Stewart picked Real-ish, so treat them as light and time-of-day moods, not materials.
 
+## 2026-11-27 (night): L4b, the reel and the feel
+
+- **Reading the fish:** each fight style warns 0.45 s before its big move shows on the bar: a runner screams the drag and drags the line aside with a V wake, a jumper breaks the surface with a splash, a diver dips the rod tip and steepens the line with a creak, a shaker throws spray; tuggers twitch, steady fish pull slowly.
+- **Tension you can see:** the line goes white, orange, red as the fish pulls outside the zone or progress runs low, and the rod tip bends with it (more on a dive).
+- **Trophy and monster moment:** the camera swings round for about 2 s to show you holding it up with the banner.
+- **The cast's feel:** the rod swings back and whips forward, the bobber flies the ring's arc in 0.6 s and plops with a ripple.
+- **Reel assist turns itself off after 3 catches** (once, with a message), unless the player set it by hand; the journal toggle stays. Verified: it read "Off" after the next catch. The idle grace before the line goes slack is 1.2 s (was 2.5): a kid who taps on "Keep reeling!" still lands every Common and Uncommon fish; one who never reads it lands 93 percent.
+- Economy: smart 72.8 coins a minute, Graphite at 24 min (was 84.0, 22: back where it was before L2b, now from skill); smart without a pond 91.9 (19 min); dock kid 30.7 (56 min, was 53); random 26.4 (61 min, was 56). Save v8.
+- 266 tests pass in Studio and with Lune; all 19 scripts match. Fixed: one spec compared floats exactly. Place version 58. Still: `docs/making-of/stills/2026-11-27-fight.jpg`.
+- Not verified by eye: every style's tell, the hold-up moment, the cast swing in motion (stills can't show them well; worth a clip for Neon).
+
 ## 2026-11-27 (night): L4a, the wait
 
 - **The fish is chosen when the bobber lands**, so a shadow its size swims in, circles and noses the bait 2.5 to 4 s before the bite. A quarter of them look and leave (no quiet before they go, so the quiet always means a strike). Verified: shadow length matched the landed fish every time (perch about 2 studs, carp 4 to 4.5).

@@ -346,13 +346,15 @@ def mean_price(sid):
 # ---------------------------------------------------------------- fight (FightModel port)
 
 class Skill:
-    def __init__(self, name, reaction, deadband, lapse_rate, lapse_len):
+    def __init__(self, name, reaction, deadband, lapse_rate, lapse_len, reads_cue=True):
         self.name, self.reaction, self.deadband = name, reaction, deadband
         self.lapse_rate, self.lapse_len = lapse_rate, lapse_len
+        self.reads_cue = reads_cue  # taps when "Keep reeling!" shows
 
 
 KID = Skill("kid", reaction=0.30, deadband=0.03, lapse_rate=0.25, lapse_len=0.4)
 GOOD = Skill("good", reaction=0.18, deadband=0.02, lapse_rate=0.05, lapse_len=0.3)
+KID_NOCUE = Skill("kid, misses the cue", reaction=0.30, deadband=0.03, lapse_rate=0.25, lapse_len=0.4, reads_cue=False)
 IDLE = Skill("idle", reaction=0.1, deadband=99, lapse_rate=0, lapse_len=0)  # never touches the button
 
 
@@ -364,12 +366,29 @@ def apply_rod(profile, rod_id):
     return p
 
 
+MODE_SPEED = {"normal": 1, "run": 1.7, "rest": 0.45, "jump": 2.2, "dive": 1.5}  # FightModel
+MODE_TIME = {"run": 1.0, "jump": 0.9, "dive": 0.8}
+DIVE_DROP = 0.2
+SHAKE_SIZE, SHAKE_RATE = 0.045, 24
+ASSIST_ALWAYS = False  # --assist-always: the old game, reel assist never turns itself off
+
+
+def assist_for(p):
+    """Reel assist turns itself off after the first ASSIST_CATCHES catches (L4b); sim players never touch the toggle."""
+    return ASSIST_ALWAYS or p.catches < CFG.get("ASSIST_CATCHES", math.inf)
+
+
 def fight_once(profile, assist, skill, rng, dt=1 / 30, start=None):
+    """FightModel port: zone physics, the six fight styles and their wound-up big moves (L4b)."""
     p = profile
+    style = p.get("style") or "tugger"
     zone_size = p["zone"] * (CFG["ASSIST_ZONE"] if assist else 1)
     loss = p["loss"] * (CFG["ASSIST_LOSS"] if assist else 1)
     climb = 1 - p["heavy"] * 0.2
     fish = target = 0.5
+    mode, mode_timer = "normal", 0.0
+    pending, pending_timer, pending_target = None, 0.0, 0.5
+    lead = CFG.get("TELL_LEAD", 0)
     zone, vel = 0.4, 0.0
     prog = CFG["FIGHT_START"] if start is None else start
     t = 0.0
@@ -390,8 +409,9 @@ def fight_once(profile, assist, skill, rng, dt=1 / 30, start=None):
             if rng.random() < skill.lapse_rate * dt:
                 lapse = skill.lapse_len
             want = seen > zone + skill.deadband if not holding else seen > zone - skill.deadband
-            if grace is not None and idle > grace - 0.5 and skill.deadband < 1:
-                want = True  # the "Keep reeling!" cue: a real player taps
+            # The "Keep reeling!" cue shows once the line goes slack; a kid sees it and taps.
+            if grace is not None and idle > grace + skill.reaction and skill.reads_cue and skill.deadband < 1:
+                want = True
         if want and not holding:
             vel = max(vel, CFG["PRESS_KICK"] * climb)
         holding = want
@@ -406,12 +426,48 @@ def fight_once(profile, assist, skill, rng, dt=1 / 30, start=None):
             zone, vel = half, max(vel, 0)
         elif zone > 1 - half:
             zone, vel = 1 - half, min(vel, 0)
-        if rng.random() < p["dart"] * dt:
+        # The fish (FightModel.step).
+        if mode != "normal":
+            mode_timer -= dt
+            if mode_timer <= 0:
+                if mode == "run":
+                    mode, mode_timer = "rest", 1.0
+                elif mode == "jump":
+                    mode = "normal"
+                    target = min(max(fish - 0.3, 0.05), 0.95)
+                else:
+                    mode = "normal"
+        if pending:
+            pending_timer -= dt
+            if pending_timer <= 0:
+                if pending == "run":
+                    target = 0.08 if fish > 0.5 else 0.92
+                elif pending == "jump":
+                    target = 0.95
+                else:
+                    target = pending_target
+                mode, mode_timer, pending = pending, MODE_TIME[pending], None
+        if mode == "normal" and not pending and rng.random() < p["dart"] * dt:
             off = (rng.random() * 2 - 1) * p["range"] - p["sink"] * p["range"] * 0.5
-            target = min(max(fish + off, 0.05), 0.95)
+            if style == "steady":
+                off *= 0.6
+            elif style == "diver":
+                off = p["range"] if rng.random() < 0.15 else off - p["range"] * 0.35
+            tg = min(max(fish + off, 0.05), 0.95)
+            if style in ("runner", "shaker") and rng.random() < 0.35:
+                pending, pending_timer = "run", lead
+            elif style == "diver" and tg < fish - DIVE_DROP:
+                pending, pending_timer, pending_target = "dive", lead, tg
+            else:
+                target = tg
+        if style == "jumper" and mode == "normal" and not pending and rng.random() < 0.2 * dt:
+            pending, pending_timer = "jump", lead
         d = target - fish
-        mv = p["speed"] * dt
+        mv = p["speed"] * MODE_SPEED[mode] * dt
         fish = target if abs(d) <= mv else fish + math.copysign(mv, d)
+        if style == "shaker":
+            shake = SHAKE_SIZE * (math.sin(t * SHAKE_RATE) - math.sin((t - dt) * SHAKE_RATE))
+            fish = min(max(fish + shake, 0.02), 0.98)
         if abs(fish - zone) <= half:
             if grace is None or idle <= grace:
                 prog += p["gain"] * dt
@@ -543,7 +599,7 @@ def expected_rate(spot, period, bait, player, skill, hook_p, cover=False):
     coins, t = 0.0, CAST_OVERHEAD + wait
     for sid, x in w:
         share = x / tot
-        pw, tw, tl = fight_stats(sid, player.rod, skill)
+        pw, tw, tl = fight_stats(sid, player.rod, skill, assist_for(player))
         coins += share * pw * mean_price(sid)
         t += share * (pw * (tw + AFTER_CATCH) + (1 - pw) * (tl + AFTER_ESCAPE))
     b = BAIT_BY_ID[bait]
@@ -836,7 +892,7 @@ def play_session(p, strat, rng, clock_start, minutes=SESSION_MIN, log=None):
         s = FISH_BY_ID[sid]
         cm, kg, cls = roll_catch(s, rng)  # rolled at the hook, as on the server
         prof = apply_rod(fight_for(s["fight"], cls), p.rod)
-        won, ft = fight_once(prof, True, strat.skill, rng, start=RIG_FIGHT_START[grade])
+        won, ft = fight_once(prof, assist_for(p), strat.skill, rng, start=RIG_FIGHT_START[grade])
         t += ft
         if not won:
             t += AFTER_ESCAPE
@@ -1004,13 +1060,36 @@ def report_fights(trials):
         for rod in ("Willow", "Fiberglass", "Graphite"):
             pw, tw, _ = fight_stats(s["id"], rod, KID, trials=trials)
             cells.append(f"{pw * 100:.0f}% / {tw:.0f}s")
+        pw, tw, _ = fight_stats(s["id"], "Willow", KID, assist=False, trials=trials)
+        cells.append(f"{pw * 100:.0f}% / {tw:.0f}s")
         pw, tw, _ = fight_stats(s["id"], "Willow", GOOD, trials=trials)
         cells.append(f"{pw * 100:.0f}% / {tw:.0f}s")
         pw, tw, _ = fight_stats(s["id"], "Willow", IDLE, trials=trials)
         cells.append(f"{pw * 100:.0f}% / {tw:.0f}s")
         cells.append(f"{mean_price(s['id']):.1f}")
         rows.append(cells)
-    return table(rows, ["Fish", "Willow (kid)", "Fiberglass (kid)", "Graphite (kid)", "Willow (quick hands)", "Willow (no input at all)", "Avg price"])
+    return table(rows, ["Fish", "Willow (kid)", "Fiberglass (kid)", "Graphite (kid)", "Willow (kid, assist off)", "Willow (quick hands)", "Willow (no input at all)", "Avg price"])
+
+
+def report_grace(trials):
+    """L4b: the slack-line grace against kid reflexes, assist on and off, Common and Uncommon fish."""
+    easy = [f for f in FISH if (f.get("tier") or "Common") in ("Common", "Uncommon")]
+    rows = []
+    saved = CFG["FIGHT_IDLE_GRACE"]
+    for g in (0.6, 0.8, 1.0, 1.2, 1.5, 2.0, 2.5):
+        CFG["FIGHT_IDLE_GRACE"] = g
+        _fight_cache.clear()
+        cells = [f"{g:.1f} s"]
+        for skill, assist in ((KID, False), (KID_NOCUE, False), (KID, True), (IDLE, True)):
+            rates = [fight_stats(f["id"], "Willow", skill, assist=assist, trials=trials)[0] for f in easy]
+            cells.append(f"{statistics.mean(rates) * 100:.1f}% (worst {min(rates) * 100:.0f}%)")
+        rows.append(cells)
+    CFG["FIGHT_IDLE_GRACE"] = saved
+    _fight_cache.clear()
+    names = ", ".join(f["name"] for f in easy)
+    return f"Common and Uncommon: {names}\n\n" + table(
+        rows, ["Grace", "kid, assist off", "kid who misses the cue, assist off", "kid, assist on", "no input at all, assist on"]
+    )
 
 
 def report_careers(runs):
@@ -1069,7 +1148,7 @@ def section(title, runs, trials):
     if len(GOALS) > 3:
         print("\n## Big Lake (expected coins per real minute, Graphite Rod, both lures, kid reflexes)\n")
         print(report_big_lake())
-    print("\n## Fights: chance to land / seconds to land (reel assist on)\n")
+    print("\n## Fights: chance to land / seconds to land (reel assist on unless it says off)\n")
     print(report_fights(trials))
     print("\n## Careers: play minutes until each purchase (bought in order, median)\n")
     print(report_careers(runs)[0])
@@ -1177,8 +1256,14 @@ def main():
     ap.add_argument("--boats", action="store_true", help="add the Dinghy and Deep-V to the purchases, and the Big Lake")
     ap.add_argument("--tiers", action="store_true", help="only report catches by rarity tier")
     ap.add_argument("--bait", action="store_true", help="only report the bait bench and hook sizes (L3)")
+    ap.add_argument("--grace", action="store_true", help="only report kid landing rates against FIGHT_IDLE_GRACE (L4b)")
+    ap.add_argument("--grace-value", type=float, help="play with this FIGHT_IDLE_GRACE instead of Config's, to compare")
+    ap.add_argument("--assist-always", action="store_true", help="reel assist never turns itself off (the game before L4b)")
     args = ap.parse_args()
-    global SIZE_CLASSES, WEATHER_ON, GOALS
+    global SIZE_CLASSES, WEATHER_ON, GOALS, ASSIST_ALWAYS
+    ASSIST_ALWAYS = args.assist_always
+    if args.grace_value is not None:
+        CFG["FIGHT_IDLE_GRACE"] = args.grace_value
     if args.boats:
         GOALS = GOALS + BOAT_GOALS
     SIZE_CLASSES = not args.no_size_classes
@@ -1191,6 +1276,10 @@ def main():
         return
     if args.bait:
         report_bait(12 if args.quick else 60)
+        return
+    if args.grace:
+        print("## Slack-line grace: chance to land, Willow Rod (mean over the fish, worst fish)\n")
+        print(report_grace(150 if args.quick else 600))
         return
     print("Fishing game economy simulation")
     print(f"Day {CFG['DAY_LENGTH'] / 60:.0f} real minutes; sessions of {SESSION_MIN} minutes, one a day; {runs} runs per player type.")

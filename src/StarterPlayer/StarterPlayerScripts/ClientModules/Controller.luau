@@ -29,6 +29,7 @@ local Cover = require(Shared.Cover)
 local BaitRig = require(Shared.BaitRig)
 local BaitData = require(Shared.BaitData)
 local Approach = require(Shared.Approach)
+local FightFeel = require(Shared.FightFeel)
 
 local UI = require(script.Parent.UI)
 local PondView = require(script.Parent.PondView)
@@ -39,6 +40,10 @@ local BaitBench = require(script.Parent.BaitBench)
 local BaitView = require(script.Parent.BaitView)
 local WaitScene = require(script.Parent.WaitScene)
 local BobberCamView = require(script.Parent.BobberCamView)
+local RodFeel = require(script.Parent.RodFeel)
+local CastFlight = require(script.Parent.CastFlight)
+local FightTells = require(script.Parent.FightTells)
+local CatchMoment = require(script.Parent.CatchMoment)
 
 -- The same water and spot boxes the server casts against (Shared/WaterMap).
 local castZones = WaterMap.castZones()
@@ -64,6 +69,7 @@ local benchHeld: { [string]: boolean } = {} -- move inputs held down on the bait
 -- reeled in. Released quickly it's a twitch; held long enough it reels in.
 local waitPressAt: number? = nil
 local waitPressReeled = false
+local landedAt: Vector3? = nil -- where the server put the bobber this cast (for the fight's tells, L4b)
 
 -- Inputs that count as "reel" during a bite or fight, on every device.
 local REEL_TYPES = {
@@ -177,6 +183,8 @@ local function goIdle()
 	BaitBench.cancel()
 	waitPressAt = nil
 	WaitScene.clear()
+	CastFlight.cancel()
+	FightTells.stop()
 	setState("Idle")
 	fight = nil
 	endFishOn()
@@ -379,6 +387,7 @@ local function onFish(_name: string, inputState: Enum.UserInputState, _input: In
 			openBench()
 			return Enum.ContextActionResult.Sink
 		end
+		CatchMoment.cancel()
 		setState("Charging")
 		chargeStart = os.clock()
 		UI.showPower(0)
@@ -393,6 +402,12 @@ local function onFish(_name: string, inputState: Enum.UserInputState, _input: In
 		castTimeout = os.clock() + 3
 		local cam = workspace.CurrentCamera
 		Remotes.event("Cast"):FireServer(cam.CFrame.LookVector, power, predicted)
+		-- The cast's feel (L4b): the rod swings back and whips forward, then the bobber flies
+		-- the landing ring's arc and plops in (CastFlight).
+		RodFeel.swing()
+		if predicted then
+			CastFlight.start(predicted, FightFeel.releaseTime())
+		end
 		playId("cast-whoosh", "cast")
 		UI.status("Casting...")
 	elseif state == "Waiting" and began and os.clock() - stateSince > 0.6 then
@@ -451,6 +466,18 @@ local function onReelInput(input: InputObject, began: boolean)
 end
 
 local function onFishingEvent(kind: string, payload: any)
+	-- The flying bobber (L4b): the server's landing point corrects its target; a bite or a
+	-- fish lands it at once; a refused cast drops it. While it flies, the landing's plop and
+	-- ripple wait for its touchdown.
+	if kind == "Landed" and typeof(payload.pos) == "Vector3" then
+		landedAt = payload.pos
+		CastFlight.land(payload.pos)
+		payload.inFlight = CastFlight.flying()
+	elseif kind == "Bite" or kind == "Hooked" or kind == "Snag" then
+		CastFlight.finish()
+	elseif kind == "Hint" or kind == "Reset" then
+		CastFlight.cancel()
+	end
 	SoundFX.event(kind, payload)
 	WaitScene.event(kind, payload)
 	if kind == "Landed" then
@@ -507,6 +534,8 @@ local function onFishingEvent(kind: string, payload: any)
 		if anyHeld() then
 			FightModel.press(fight :: FightModel.State)
 		end
+		CatchMoment.cancel()
+		FightTells.begin(payload.fight and payload.fight.style, landedAt)
 		UI.status("") -- the reel prompt says what to do; keeps small screens clear
 		UI.showFight(fight, payload.note, holding())
 		if payload.sizeClass == "monster" then
@@ -517,6 +546,7 @@ local function onFishingEvent(kind: string, payload: any)
 	elseif kind == "Caught" then
 		UI.catchCard(payload)
 		goIdleAfterFight()
+		CatchMoment.play(payload) -- a trophy or monster: hold it up for the camera (L4b)
 	elseif kind == "Escaped" then
 		UI.toast(payload.text)
 		goIdleAfterFight()
@@ -577,6 +607,7 @@ end
 
 function Controller.start()
 	SoundFX.start()
+	RodFeel.start()
 	BobberCamView.start(function()
 		return state
 	end)
@@ -771,7 +802,7 @@ function Controller.start()
 			goIdle() -- the server never said how the snag ended
 		elseif state == "Fighting" and fight then
 			if autoFish() then
-				local want = fight.zonePos < fight.fishPos or fight.idle > 2 -- tap before the line goes slack
+				local want = fight.zonePos < fight.fishPos or fight.idle > Config.FIGHT_IDLE_GRACE * 0.8 -- tap before the line goes slack
 				if want and not autoHolding then
 					FightModel.press(fight)
 				end
@@ -781,6 +812,7 @@ function Controller.start()
 			local result = FightModel.step(fight, math.min(dt, 0.1), hold)
 			UI.showFight(fight, nil, hold, FightModel.slack(fight))
 			SoundFX.fight(fight, hold, dt)
+			FightTells.step(fight, math.min(dt, 0.1))
 			if result then
 				setState("Resolving")
 				UI.showFight(nil)

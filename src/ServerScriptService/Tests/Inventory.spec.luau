@@ -87,6 +87,44 @@ return function(t, Shared)
 		t.eq(again.assist, false, "a v2 save keeps the player's choice")
 	end)
 
+	t.test("reel assist turns itself off after the first catches, once, unless set by hand (L4b)", function()
+		local Config = require(Shared.Config)
+		local function catchOne(d)
+			Inventory.recordCatch(d, { id = "Bluegill", name = "Bluegill", cm = 15, kg = 0.1, price = 5, bait = "Worm", spot = "Dock", period = "Day", at = 0 })
+			return Inventory.assistAfterCatch(d)
+		end
+		t.eq(Config.ASSIST_CATCHES, 3, "three catches")
+		local d = Inventory.new()
+		t.eq(d.assist, true, "on for a new player")
+		t.eq(d.assistSet, false, "not set by hand")
+		t.eq(catchOne(d), false, "1st")
+		t.eq(catchOne(d), false, "2nd")
+		t.eq(d.assist, true, "still on after 2")
+		t.eq(catchOne(d), true, "3rd turns it off")
+		t.eq(d.assist, false, "off after 3")
+		t.eq(catchOne(d), false, "only once")
+		-- Turned back on by hand: it stays on.
+		Inventory.setAssist(d, true)
+		t.eq(d.assistSet, true)
+		for _ = 1, 5 do
+			t.eq(catchOne(d), false, "a hand-set choice is kept")
+		end
+		t.eq(d.assist, true, "still on")
+		-- Turned on (or off) by hand before the third catch: kept too.
+		local e = Inventory.new()
+		Inventory.setAssist(e, true)
+		for _ = 1, 4 do
+			catchOne(e)
+		end
+		t.eq(e.assist, true, "kept on by choice")
+		local f = Inventory.new()
+		Inventory.setAssist(f, false)
+		for _ = 1, 4 do
+			t.eq(catchOne(f), false, "no message for a player who turned it off")
+		end
+		t.eq(f.assist, false, "kept off by choice")
+	end)
+
 	t.test("rods: start with the Willow Rod, buy, equip, refuse what you can't", function()
 		local RodData = require(Shared.RodData)
 		local d = Inventory.new()

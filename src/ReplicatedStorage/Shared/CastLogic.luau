@@ -79,6 +79,22 @@ function CastLogic.assist(landing: Vector3, origin: Vector3, waters: any, isOnWa
 	return nil
 end
 
+-- The cast's flight (L4b): the bobber flies from the rod tip to the landing along the same
+-- parabola the landing ring's dotted arc shows (higher for longer casts), over FLIGHT_TIME.
+CastLogic.FLIGHT_TIME = 0.6
+
+-- How high the arc rises above the straight line from `tip` to `landing` at its middle.
+function CastLogic.arcLift(tip: Vector3, landing: Vector3): number
+	local span = Vector3.new(landing.X - tip.X, 0, landing.Z - tip.Z).Magnitude
+	return 1 + span * 0.08
+end
+
+-- The point `k` (0 at the tip, 1 at the landing) along the arc.
+function CastLogic.arcPoint(tip: Vector3, landing: Vector3, k: number): Vector3
+	local t = math.clamp(k, 0, 1)
+	return tip:Lerp(landing, t) + Vector3.new(0, CastLogic.arcLift(tip, landing) * 4 * t * (1 - t), 0)
+end
+
 -- Flat (x, z) distance between two points.
 function CastLogic.flatDistance(a: Vector3, b: Vector3): number
 	return Vector3.new(a.X - b.X, 0, a.Z - b.Z).Magnitude

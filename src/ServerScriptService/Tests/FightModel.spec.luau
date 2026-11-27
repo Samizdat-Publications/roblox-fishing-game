@@ -22,10 +22,10 @@ return function(t, Shared)
 		return "timeout", s.t
 	end
 
-	-- Holds while the fish is above the zone; taps if the line has been slack a while
-	-- (a real player sees the "Keep reeling!" cue).
+	-- Holds while the fish is above the zone; taps just before the line goes slack.
+	local Cfg = require(Shared.Config)
 	local function tracker(s)
-		return s.zonePos < s.fishPos or s.idle > 2
+		return s.zonePos < s.fishPos or s.idle > Cfg.FIGHT_IDLE_GRACE * 0.8
 	end
 
 	-- Move the zone only (progress frozen) to measure how input feels.
@@ -225,6 +225,161 @@ return function(t, Shared)
 			end
 		end
 		t.eq(FishLogic.bitePattern({ bite = nil } :: any).style, "slam", "old data falls back")
+	end)
+
+	-- L4b: tells and the shorter idle grace.
+	local FightFeel = require(Shared.FightFeel)
+
+	-- Watch a fish (progress frozen) and note each warned move: when the warning started and
+	-- when the move showed on the bar.
+	local function tellTimes(profile, seed, secs)
+		local s = FightModel.new(profile, false, seed)
+		local out = {}
+		local open: { move: string, at: number }? = nil
+		local lastTells = 0
+		for _ = 1, math.floor(secs / DT) do
+			FightModel.step(s, DT, false)
+			s.progress = 0.5
+			if s.tells > lastTells then
+				lastTells = s.tells
+				local move, left = FightModel.tell(s)
+				t.ok(move ~= nil, "a new tell names its move")
+				t.ok(math.abs(left - Cfg.TELL_LEAD) < 1e-6, "a fresh tell has the full lead, got " .. left)
+				open = { move = move :: string, at = s.t }
+			end
+			local o = open
+			if o and s.mode == o.move then
+				table.insert(out, { move = o.move, lead = s.t - o.at })
+				open = nil
+			end
+		end
+		return out
+	end
+
+	t.test("every big move is warned 0.3 to 0.6 s before it shows on the bar", function()
+		t.ok(Cfg.TELL_LEAD >= 0.3 and Cfg.TELL_LEAD <= 0.6, "TELL_LEAD " .. Cfg.TELL_LEAD)
+		local cases = {
+			{ id = "LargemouthBass", style = "runner", move = "run" },
+			{ id = "RainbowTrout", style = "jumper", move = "jump" },
+			{ id = "ChannelCatfish", style = "diver", move = "dive" },
+			{ id = "NorthernPike", style = "shaker", move = "run" },
+		}
+		for _, c in cases do
+			local sp = FishData.byId[c.id]
+			t.eq(sp.fight.style, c.style, c.id .. " style")
+			local n = 0
+			for seed = 1, 4 do
+				for _, e in tellTimes(sp.fight, seed, 40) do
+					n += 1
+					t.eq(e.move, c.move, c.id .. " move")
+					t.ok(e.lead >= 0.3 - 1e-6 and e.lead <= 0.6 + 1e-6, string.format("%s warned %.2f s ahead", c.id, e.lead))
+				end
+			end
+			t.ok(n >= 4, c.id .. " big moves seen " .. n)
+			t.ok(FightFeel.tellFor(c.style, c.move) ~= nil, c.style .. " has a tell")
+		end
+	end)
+
+	t.test("the tells: runner drag, jumper breach, diver dive, shaker thrash, tugger twitch, steady pull", function()
+		t.eq(FightFeel.tellFor("runner", "run"), "drag")
+		t.eq(FightFeel.tellFor("jumper", "jump"), "breach")
+		t.eq(FightFeel.tellFor("diver", "dive"), "dive")
+		t.eq(FightFeel.tellFor("shaker", "run"), "thrash")
+		t.eq(FightFeel.tellFor("tugger", nil), "twitch")
+		t.eq(FightFeel.tellFor("steady", nil), "pull")
+		t.eq(FightFeel.TELL_SOUNDS.drag.name, "drag-zip")
+		t.eq(FightFeel.TELL_SOUNDS.breach.name, "thrash-splash")
+		t.eq(FightFeel.TELL_SOUNDS.thrash.name, "thrash-splash")
+		t.eq(FightFeel.TELL_SOUNDS.dive.name, "line-creak")
+		-- Tuggers and steady fish make no big moves, but their darts are counted for the line's twitch.
+		for _, id in { "Bluegill", "YellowPerch" } do
+			local s = FightModel.new(FishData.byId[id].fight, false, 2)
+			for _ = 1, math.floor(10 / DT) do
+				FightModel.step(s, DT, false)
+				s.progress = 0.5
+			end
+			t.eq(s.tells, 0, id .. " no big moves")
+			t.ok(s.darts >= 5, id .. " darts " .. s.darts)
+		end
+	end)
+
+	-- A kid: sees the fish a third of a second late, a little dead zone, and now and then looks
+	-- away for 0.4 s. `cue`: taps when "Keep reeling!" shows (it shows after the idle grace).
+	local function kid(profile, assist, seed, cue)
+		local s = FightModel.new(profile, assist, seed)
+		local rng = Random.new(seed * 7 + 3)
+		local reaction = 0.3
+		local lag = math.floor(reaction / DT + 0.5)
+		local seenPos = {}
+		local holding, lapse = false, 0
+		for _ = 1, math.floor(90 / DT) do
+			table.insert(seenPos, s.fishPos)
+			local seen = if #seenPos >= lag then seenPos[#seenPos - lag + 1] else 0.5
+			local want
+			if lapse > 0 then
+				lapse -= DT
+				want = false
+			else
+				if rng:NextNumber() < 0.25 * DT then
+					lapse = 0.4
+				end
+				want = if holding then seen > s.zonePos - 0.03 else seen > s.zonePos + 0.03
+				if cue and FightModel.slack(s) and s.idle > Cfg.FIGHT_IDLE_GRACE + reaction then
+					want = true
+				end
+			end
+			if want and not holding then
+				FightModel.press(s)
+			end
+			holding = want
+			local r = FightModel.step(s, DT, holding)
+			if r then
+				return r == "won"
+			end
+		end
+		return false
+	end
+
+	t.test("idle grace: a kid with assist off lands at least 85 percent of Common and Uncommon fish", function()
+		t.eq(Cfg.FIGHT_IDLE_GRACE, 1.2, "chosen 2026-11-26 from tools/econ/sim.py --grace")
+		local easy = {}
+		for _, sp in FishData.list do
+			if sp.tier == "Common" or sp.tier == "Uncommon" then
+				table.insert(easy, sp)
+			end
+		end
+		t.ok(#easy >= 5, "easy fish " .. #easy)
+		local won, missedCue, n = 0, 0, 0
+		for _, sp in easy do
+			for seed = 1, 40 do
+				n += 1
+				if kid(sp.fight, false, seed, true) then
+					won += 1
+				end
+				if kid(sp.fight, false, seed, false) then
+					missedCue += 1
+				end
+			end
+		end
+		t.ok(won / n >= 0.85, string.format("kid lands %.0f%%", won / n * 100))
+		t.ok(missedCue / n >= 0.85, string.format("kid who never reads the cue lands %.0f%%", missedCue / n * 100))
+	end)
+
+	t.test("idle grace: resting longer than the grace drains progress even inside the zone", function()
+		local s = FightModel.new(FishData.byId.Bluegill.fight, false, 1)
+		s.zoneSize = 1 -- the fish is always inside
+		FightModel.press(s)
+		FightModel.step(s, DT, true)
+		local p0 = s.progress
+		for _ = 1, math.floor((Cfg.FIGHT_IDLE_GRACE - 0.1) / DT) do
+			FightModel.step(s, DT, false)
+		end
+		t.ok(s.progress > p0, "still filling within the grace")
+		local p1 = s.progress
+		for _ = 1, math.floor(0.6 / DT) do
+			FightModel.step(s, DT, false)
+		end
+		t.ok(s.progress < p1, "draining after the grace")
 	end)
 
 	t.test("the slack cue waits for the first press, then shows after the idle grace", function()

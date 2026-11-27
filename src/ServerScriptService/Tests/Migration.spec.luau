@@ -1,4 +1,4 @@
--- Save migration (L2b): a save from every older version the code knows (v1 to v7) loads
+-- Save migration (L2b): a save from every older version the code knows (v1 to v8) loads
 -- through the real Inventory.reconcile with its coins, journal, pond and bag intact, and no
 -- feature switch changes what a migrated save keeps. Written 2026-11-26.
 return function(t, Shared)
@@ -58,6 +58,9 @@ return function(t, Shared)
 			save.quickBait = true
 			save.tackle = { best = { Worm = "Perfect", Minnow = "Good" }, perfects = 9 }
 		end
+		if v >= 8 then
+			save.assistSet = true
+		end
 		return save
 	end
 
@@ -81,8 +84,8 @@ return function(t, Shared)
 		return true
 	end
 
-	t.test("the code's current save version is 7", function()
-		t.eq(CURRENT, 7, "bump this test (and add the new version below) when the save changes")
+	t.test("the code's current save version is 8", function()
+		t.eq(CURRENT, 8, "bump this test (and add the new version below) when the save changes")
 	end)
 
 	for v = 1, CURRENT do
@@ -151,6 +154,8 @@ return function(t, Shared)
 			-- on" step never fires for it. Only early test saves were v1; logged 2026-11-26.)
 			if v >= 2 then
 				t.eq(d.assist, false, "assist")
+				-- v8: assist off in an older save was the player's own choice, so it stays set by hand.
+				t.eq(d.assistSet, true, "assist set by hand")
 			end
 			-- Every field a new save has is filled in.
 			for k in Inventory.new() :: any do
@@ -203,6 +208,22 @@ return function(t, Shared)
 		if not ok then
 			error(err, 0)
 		end
+	end)
+
+	t.test("v8: an older save with reel assist on still gets the auto-off; one with it off keeps it off", function()
+		for v = 2, 7 do
+			local on = oldSave(v)
+			on.assist = true
+			local d = Inventory.reconcile(on)
+			t.eq(d.assistSet, false, "v" .. v .. " on: not set by hand")
+			t.eq(d.assist, true, "v" .. v .. " on: still on until the next catch")
+			t.eq(Inventory.assistAfterCatch(d), true, "v" .. v .. " (17 catches already) turns off at the next catch")
+			t.eq(d.assist, false, "v" .. v .. " now off")
+			local off = Inventory.reconcile(oldSave(v))
+			t.eq(Inventory.assistAfterCatch(off), false, "v" .. v .. " off stays as it was")
+		end
+		local bad = Inventory.reconcile({ v = 8, assistSet = "yes" })
+		t.eq(bad.assistSet, false, "a damaged flag is repaired")
 	end)
 
 	t.test("a damaged v7 tackle box or hook is repaired", function()

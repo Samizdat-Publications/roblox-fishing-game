@@ -6,6 +6,7 @@
 -- did not render in the 11/26 playtest). White over fishable water, red over dry ground, amber over a snag
 -- (setSnag, from Shared/Cover via the Controller).
 local Players = game:GetService("Players")
+local CastLogic = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("CastLogic"))
 
 local CastRing = {}
 
@@ -188,12 +189,10 @@ function CastRing.update(tip: Vector3, landing: Vector3, onWater: boolean, text:
 		label.TextColor3 = color
 	end
 
-	-- A parabola from the tip to the ring: higher for longer casts.
-	local span = Vector3.new(at.X - tip.X, 0, at.Z - tip.Z).Magnitude
-	local lift = 1 + span * 0.08
+	-- A parabola from the tip to the ring: higher for longer casts. The bobber flies the same
+	-- arc when the cast is let go (CastLogic.arcPoint, L4b).
 	for i, b in beads do
-		local t = i / (BEADS + 1)
-		local p = tip:Lerp(at, t) + Vector3.new(0, lift * 4 * t * (1 - t), 0)
+		local p = CastLogic.arcPoint(tip, at, i / (BEADS + 1))
 		b.CFrame = CFrame.new(p)
 		b.Color = color
 	end

@@ -95,7 +95,7 @@ function EconomyService.start()
 	Remotes.event("SetAssist").OnServerEvent:Connect(function(player: Player, on: any)
 		local data = PlayerData.get(player)
 		if data and type(on) == "boolean" then
-			data.assist = on
+			Inventory.setAssist(data, on) -- set by hand: it never turns itself off after this (L4b)
 			PlayerData.changed(player)
 		end
 	end)

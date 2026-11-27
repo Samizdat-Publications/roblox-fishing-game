@@ -23,11 +23,13 @@ Config.ZONE_UP_SPEED = 1.25 -- bar heights per second while holding
 Config.ZONE_DOWN_SPEED = 0.85 -- bar heights per second while not holding
 Config.ZONE_RESPONSE = 9 -- how quickly the zone reaches those speeds (per second)
 Config.PRESS_KICK = 0.7 -- instant upward speed from each fresh click or tap
-Config.FIGHT_IDLE_GRACE = 2.5 -- seconds without a press or hold before the line goes slack and progress stops filling
+Config.FIGHT_IDLE_GRACE = 1.2 -- seconds without a press or hold before the line goes slack and progress stops filling (2.5 before L4b; tools/econ/sim.py --grace)
+Config.TELL_LEAD = 0.45 -- seconds a fish's big move (run, jump, dive) is warned on the water before it shows on the bar (L4b)
 Config.FIGHT_GRACE = 0.8 -- seconds after a fight ends before the button can cast again
 Config.FIGHT_MAX_SECONDS = 90 -- server gives up after this
 Config.ASSIST_ZONE = 1.4 -- zone size multiplier with assist on
 Config.ASSIST_LOSS = 0.6 -- progress loss multiplier with assist on
+Config.ASSIST_CATCHES = 3 -- reel assist turns itself off after this many catches, unless the player set it by hand (L4b)
 
 -- Economy
 Config.START_COINS = 30

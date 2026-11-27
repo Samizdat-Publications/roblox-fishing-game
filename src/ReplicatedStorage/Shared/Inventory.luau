@@ -44,13 +44,14 @@ export type Data = {
 	hook: string, -- v7: the hook size tied on for live bait (BaitRig.HOOKS)
 	quickBait: boolean, -- v7: skip the bait bench (always Okay)
 	tackle: { best: { [string]: string }, perfects: number }, -- v7: Tackle Box, best grade per bait
+	assistSet: boolean, -- v8: the player turned reel assist on or off by hand (it then never changes by itself)
 }
 
 local Inventory = {}
 
 function Inventory.new(): Data
 	return {
-		v = 7,
+		v = 8,
 		coins = Config.START_COINS,
 		bait = { Worm = Config.START_WORMS },
 		lures = {},
@@ -69,6 +70,7 @@ function Inventory.new(): Data
 		hook = BaitRig.DEFAULT_HOOK,
 		quickBait = false,
 		tackle = { best = {}, perfects = 0 },
+		assistSet = false,
 	}
 end
 
@@ -125,7 +127,34 @@ function Inventory.reconcile(saved: any): Data
 	if saved.v < 7 then
 		saved.v = 7
 	end
+	-- v8: reel assist turns itself off after the first catches (L4b), unless set by hand. A
+	-- save with assist off got there by hand (v2 put it back on for everyone), so it counts as
+	-- set; a save with it on may be the default, so the auto-off still applies to it.
+	if saved.v < 8 then
+		saved.assistSet = saved.assist == false
+		saved.v = 8
+	end
+	if type(saved.assistSet) ~= "boolean" then
+		saved.assistSet = false
+	end
 	return saved
+end
+
+-- The player flipped the reel assist toggle: their choice sticks from now on.
+function Inventory.setAssist(data: Data, on: boolean)
+	data.assist = on
+	data.assistSet = true
+end
+
+-- After a catch is recorded: reel assist turns itself off once the player has landed
+-- Config.ASSIST_CATCHES fish, if they never set it by hand. Returns true the one time it
+-- turns off (the server tells the player then).
+function Inventory.assistAfterCatch(data: Data): boolean
+	if data.assist and not data.assistSet and data.totalCaught >= Config.ASSIST_CATCHES then
+		data.assist = false
+		return true
+	end
+	return false
 end
 
 function Inventory.hasBait(data: Data, id: string): boolean

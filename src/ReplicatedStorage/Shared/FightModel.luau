@@ -16,6 +16,12 @@
 --   shaker  fast head shakes on top of wild runs (pike, muskie)
 -- Verified in a Studio playtest 2026-11-26 (bass, pike, catfish and trout traces); the tests
 -- check each style's shape and that a tracking player still lands every species.
+--
+-- Tells (L4b): a big move (a runner's or shaker's run, a jumper's leap, a diver's dive) winds
+-- up for Config.TELL_LEAD seconds before it shows on the bar, so the client can warn on the
+-- water (drag scream, splash, rod dip) and the player can get ready. FightModel.tell says
+-- which move is coming and how soon; `tells` counts them and `darts` counts ordinary darts
+-- (a tugger's twitch), so the client can spot a new one. UNVERIFIED in Studio (2026-11-26).
 local Shared = script.Parent
 local Config = require(Shared.Config)
 local FishData = require(Shared.FishData)
@@ -33,11 +39,18 @@ export type State = {
 	progress: number,
 	t: number,
 	idle: number, -- seconds since the player last pressed or held
-	mode: string, -- "normal", or a style move in progress: "run", "rest", "jump"
+	mode: string, -- "normal", or a style move in progress: "run", "rest", "jump", "dive"
 	modeTimer: number,
+	pending: string?, -- a big move winding up ("run", "jump", "dive"); it starts when pendingTimer runs out
+	pendingTimer: number,
+	pendingTarget: number, -- where a dive is headed (runs and jumps pick their end when they start)
+	tells: number, -- big moves warned so far
+	darts: number, -- ordinary darts so far
 }
 
-local MODE_SPEED = { normal = 1, run = 1.7, rest = 0.45, jump = 2.2 }
+local MODE_SPEED = { normal = 1, run = 1.7, rest = 0.45, jump = 2.2, dive = 1.5 }
+local MODE_TIME = { run = 1.0, jump = 0.9, dive = 0.8 } -- seconds each big move lasts
+local DIVE_DROP = 0.2 -- a diver's dart this far down (bar heights) is a dive, warned like a run
 local SHAKE_SIZE = 0.045 -- how far a shaker's head shakes move it on the bar
 local SHAKE_RATE = 24 -- radians per second
 
@@ -62,7 +75,20 @@ function FightModel.new(profile: FishData.FightProfile, assist: boolean, seed: n
 		idle = math.huge, -- nothing counts until the player first presses or holds
 		mode = "normal",
 		modeTimer = 0,
+		pending = nil,
+		pendingTimer = 0,
+		pendingTarget = 0.5,
+		tells = 0,
+		darts = 0,
 	}
+end
+
+-- The fish starts winding up for a big move: it shows on the bar TELL_LEAD seconds from now.
+local function windUp(s: State, move: string, target: number)
+	s.pending = move
+	s.pendingTimer = Config.TELL_LEAD
+	s.pendingTarget = target
+	s.tells += 1
 end
 
 local function climbFactor(p: FishData.FightProfile): number
@@ -114,22 +140,41 @@ function FightModel.step(s: State, dt: number, holding: boolean): string?
 			end
 		end
 	end
-	if s.mode == "normal" and s.rng:NextNumber() < p.dart * dt then
+	-- A wound-up move starts once its warning has run.
+	local move = s.pending
+	if move then
+		s.pendingTimer -= dt
+		if s.pendingTimer <= 0 then
+			s.pending = nil
+			if move == "run" then
+				s.fishTarget = if s.fishPos > 0.5 then 0.08 else 0.92 -- a long run to the far end
+			elseif move == "jump" then
+				s.fishTarget = 0.95
+			else
+				s.fishTarget = s.pendingTarget
+			end
+			s.mode, s.modeTimer = move, MODE_TIME[move]
+		end
+	end
+	if s.mode == "normal" and not s.pending and s.rng:NextNumber() < p.dart * dt then
 		local offset = (s.rng:NextNumber() * 2 - 1) * p.range - p.sink * p.range * 0.5
 		if style == "steady" then
 			offset *= 0.6
 		elseif style == "diver" then
 			offset = if s.rng:NextNumber() < 0.15 then p.range else offset - p.range * 0.35 -- a surge, or more down
 		end
-		s.fishTarget = math.clamp(s.fishPos + offset, 0.05, 0.95)
+		local target = math.clamp(s.fishPos + offset, 0.05, 0.95)
 		if (style == "runner" or style == "shaker") and s.rng:NextNumber() < 0.35 then
-			s.fishTarget = if s.fishPos > 0.5 then 0.08 else 0.92 -- a long run to the far end
-			s.mode, s.modeTimer = "run", 1.0
+			windUp(s, "run", target)
+		elseif style == "diver" and target < s.fishPos - DIVE_DROP then
+			windUp(s, "dive", target)
+		else
+			s.fishTarget = target
+			s.darts += 1
 		end
 	end
-	if style == "jumper" and s.mode == "normal" and s.rng:NextNumber() < 0.2 * dt then
-		s.fishTarget = 0.95
-		s.mode, s.modeTimer = "jump", 0.9
+	if style == "jumper" and s.mode == "normal" and not s.pending and s.rng:NextNumber() < 0.2 * dt then
+		windUp(s, "jump", 0.95)
 	end
 	local d = s.fishTarget - s.fishPos
 	local maxMove = p.speed * MODE_SPEED[s.mode] * dt
@@ -171,6 +216,15 @@ end
 -- press the hook prompt already says what to do, so the cue stays quiet.
 function FightModel.slack(s: State): boolean
 	return s.idle ~= math.huge and s.idle > Config.FIGHT_IDLE_GRACE
+end
+
+-- The big move the fish is winding up for ("run", "jump", "dive") and the seconds until it
+-- shows on the bar, or nil and 0 when none is coming.
+function FightModel.tell(s: State): (string?, number)
+	if s.pending then
+		return s.pending, math.max(s.pendingTimer, 0)
+	end
+	return nil, 0
 end
 
 -- True while the fish sits inside the catch zone (the UI turns the zone green).

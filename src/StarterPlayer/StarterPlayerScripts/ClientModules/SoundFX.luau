@@ -16,6 +16,7 @@ local SoundSheets = require(Shared.SoundSheets)
 local SoundMix = require(Shared.SoundMix)
 local FishData = require(Shared.FishData)
 local BoatData = require(Shared.BoatData)
+local FightFeel = require(Shared.FightFeel)
 
 local SoundFX = {}
 
@@ -306,7 +307,7 @@ function SoundFX.frenzyPoints(spot: string): { Vector3 }
 end
 
 -- Called by the Controller every frame of a fight.
-function SoundFX.fight(s: any, holding: boolean, dt: number)
+function SoundFX.fight(s: any, holding: boolean, _dt: number)
 	if not started or not s then
 		return
 	end
@@ -320,17 +321,23 @@ function SoundFX.fight(s: any, holding: boolean, dt: number)
 			reel:Stop()
 		end
 	end
-	local speed = if dt > 0 then math.abs(s.fishPos - lastFishPos) / dt else 0
+	-- The drag's scream and the splashes now come from each style's tell, a moment before the
+	-- fish moves (SoundFX.tell, L4b), instead of from how fast it is moving.
 	lastFishPos = s.fishPos
-	if speed > 0.9 then
-		play("drag-zip", 1.4, nil, true) -- the fish runs and pulls line off the reel
-	end
-	if speed > 1.6 then
-		play("thrash-splash", 2.5, nil, true)
-	end
 	local inside = math.abs(s.fishPos - s.zonePos) <= s.zoneSize / 2
 	if s.progress < 0.18 and not inside then
 		play("line-strain", 2.8)
+	end
+end
+
+-- A fight style's tell (Shared/FightFeel.TELL_SOUNDS): the drag screams, a splash, a creak.
+function SoundFX.tell(kind: string)
+	if not started then
+		return
+	end
+	local spec = FightFeel.TELL_SOUNDS[kind]
+	if spec then
+		play(spec.name, 0.6, spec.speed, true)
 	end
 end
 
@@ -339,7 +346,7 @@ function SoundFX.setPhase(newPhase: string)
 	phase = newPhase
 	if not fighting() then
 		-- The fight is over: its sounds stop with it.
-		for _, name in { "reel-click", "drag-zip", "thrash-splash", "line-strain" } do
+		for _, name in { "reel-click", "drag-zip", "thrash-splash", "line-strain", "line-creak" } do
 			setLoop(name, false)
 		end
 	end
@@ -378,8 +385,12 @@ function SoundFX.event(kind: string, payload: any)
 			play("rise", 1, 2, true)
 		end
 	end
-	if kind == "Landed" then
-		play("plop", nil, 1.3, true) -- a light bobber plop, not a big splash
+	if kind == "Landed" or kind == "Touchdown" then
+		-- A light bobber plop, not a big splash: when the flying bobber touches down (L4b,
+		-- CastFlight sends "Touchdown"), or right away when there was no flight to watch.
+		if not (kind == "Landed" and payload and payload.inFlight) then
+			play("plop", nil, 1.3, true)
+		end
 		local tick = sounds["wait-bobber-tick"]
 		if tick then
 			tick.PlaybackSpeed = rng:NextNumber(0.9, 1.05) -- each wait sounds a little different
@@ -472,6 +483,7 @@ function SoundFX.start()
 	end
 	make("drag-zip", fx, false, 0.35)
 	make("line-strain", fx, false, 0.6)
+	make("line-strain", fx, false, 0.22, "line-creak") -- the diver's tell: a quiet, low creak (L4b)
 	make("thrash-splash", fx, false, 0.55)
 	make("splash-small", fx, false, 0.7)
 	make("splash-small", fx, false, 0.3, "plop")
