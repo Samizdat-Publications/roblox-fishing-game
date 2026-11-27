@@ -120,4 +120,16 @@ function BobberGlow.watch(bobber: BasePart, offsetY: number?)
 	end)
 end
 
+-- The deep hole's buoy gets the same night glow (11/27/2026): a marker light you can find the
+-- hole by after dark (the critic: the red buoy vanished into the night water).
+function BobberGlow.markers()
+	local lake = workspace:FindFirstChild("Lake")
+	local art = lake and lake:FindFirstChild("Art")
+	local buoy = art and art:FindFirstChild("Buoy")
+	local body = if buoy and buoy:IsA("BasePart") then buoy else buoy and buoy:FindFirstChildWhichIsA("BasePart", true)
+	if body then
+		BobberGlow.watch(body, body.Size.Y / 2 + 0.2)
+	end
+end
+
 return BobberGlow

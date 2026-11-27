@@ -257,7 +257,9 @@ Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6
 - **The real rods are in your hands:** Willow, Fiberglass and Graphite models (cork handle, reel, guides) replace the gray stick. The gray stick stays as the invisible logical rod that the line hangs from; the model hides while the rod is drawn bending. Still: `docs/making-of/stills/2026-11-27-rod-in-hand.jpg`.
 - **The catch card shows the fish,** turning slowly in a little window, and the Goals list hides during a fight. Still: `docs/making-of/stills/2026-11-27-catch-card-fish.jpg`.
 - **Blue hour:** a fifth light between golden hour and night (sun down, violet sky). Still: `docs/making-of/stills/2026-11-27-dusk-blue-hour.jpg`.
-- Critic's next asks (not done): night water and the bobber at night still read dark; signs should hide sooner than 140 studs so they don't float over far trees; the creek pool's straight sand bank and the even width of the lake path; light blue text on Bait and Tackle's dark sign is low contrast. Reports: `docs/critic/2026-11-27-l5f2-light-signs-neon*.md`.
+- Critic's next asks: night water and the bobber at night still read dark; signs should hide sooner than 140 studs so they don't float over far trees; the creek pool's straight sand bank and the even width of the lake path; light blue text on Bait and Tackle's dark sign is low contrast. Reports: `docs/critic/2026-11-27-l5f2-light-signs-neon*.md`.
+- Done after that score (not re-scored): **the deep-hole buoy glows at night** (the bobber's night glow, reused), so you can find the hole after dark (`docs/making-of/stills/2026-11-27-buoy-night.jpg`); signs fade at 90 studs and their text is lighter; the dock lamps light a smaller pool (range 11, was 18), which shrinks the green wash on the water in front of the dock.
+- Kept a Roblox account name and a child's age out of the docs again (an earlier scrub had been undone by tonight's L2a notes).
 - All checks pass with Lune; every changed script matches Studio by checksum. Place version 93.
 
 ## 2026-11-27 (night): L5e and the smallest phone
@@ -434,7 +436,7 @@ Stewart: keep working all night, make your own calls, stop only for real blocker
 2. L2b: rises, cover and snags; economy re-run.
 3. L3: the bait bench as a real rigging minigame (bait choice, hook size, hooking it right).
 4. L4: the wait and the reel, full-sim feel (bobber camera, fish shadow, twitch, drag and line tension).
-5. L1 leftover: the 15 new fish models.
+5. L1 leftover: the 15 new fish models (done: all 26 species have models in ServerStorage.Art and hang as themselves).
 6. Morning report at the top of this file by 11am.
 
 ## Paused here (2026-11-26 evening, L1 and the looks)
@@ -459,7 +461,7 @@ A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shor
 - The test save on Stewart's account has 21 coins and 14 fish from Claude's playtests. Ask Claude to wipe it if you want a fresh start.
 
 ## Waiting on Stewart
-- **ID verification (planned 11/27):** verify the Roblox account Studio uploads with (playtests spawn as ProBabyTurtle) to lift the audio cap from 100 to 2,000 uploads per 30 days. Figure out which account owns the Fishing Game first; Roblox moves games only into a group, and uploaded sounds and models stay with the account that uploaded them.
+- **ID verification (planned 11/27):** verify the Roblox account Studio uploads with (the account Studio is signed in to) to lift the audio cap from 100 to 2,000 uploads per 30 days. Figure out which account owns the Fishing Game first; Roblox moves games only into a group, and uploaded sounds and models stay with the account that uploaded them.
 - **Voice chat off:** in Studio, File, Experience Settings, Communication, turn Enable Voice Chat off.
 - **Rating:** Creator Dashboard, the Fishing Game experience, Publish settings, Content ratings: redo the questionnaire and check it comes out Minimal or Mild.
 - **Open the place on your own phone** once now and once after the beauty pass (L5), to check the frame rate on a real device.

@@ -60,7 +60,7 @@ end
 -- Signs are sized in studs (they shrink with distance like a real board), sit above the
 -- roof or wall they belong to (`lift` studs over the adornee's centre), and fade out past
 -- SIGN_RANGE so they don't pile up on the far shore (L5a critic, 11/26/2026).
-local SIGN_RANGE = 140
+local SIGN_RANGE = 90 -- 140 until 11/27/2026; on top, far signs floated over the far trees (90 still reaches the stands and the pond from the dock end)
 local function sign(parent: Instance, adornee: BasePart, text: string, color: Color3, lift: number?)
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "Sign"
@@ -75,7 +75,7 @@ local function sign(parent: Instance, adornee: BasePart, text: string, color: Co
 	label.Size = UDim2.fromScale(1, 1)
 	label.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 	label.BackgroundTransparency = 0.3
-	label.TextColor3 = color
+	label.TextColor3 = color:Lerp(Color3.new(1, 1, 1), 0.35) -- lighter, so darker colours read on the dark pill
 	label.TextScaled = true
 	label.Font = Enum.Font.GothamBold
 	label.Text = text
@@ -401,8 +401,10 @@ function WorldBuilder.build(): Model
 		})
 		bulb.Shape = Enum.PartType.Ball
 		local light = Instance.new("PointLight")
-		light.Range = 18 -- was 28 at 1.6: lit the shallows into a hard cyan disc at night
-		light.Brightness = 1.1
+		-- was 28 at 1.6 (a hard cyan disc at night), then 18 at 1.1 (a green wash over the water in
+		-- front of the dock, 11/27/2026); 11 keeps the glow on the dock end
+		light.Range = 11
+		light.Brightness = 1
 		light.Color = Color3.fromRGB(255, 198, 138) -- warm amber
 		light.Shadows = false
 		light.Parent = bulb

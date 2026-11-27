@@ -19,6 +19,7 @@ if Config.BIG_LAKE_ON and not workspace:FindFirstChild("BigLake") then
 end
 
 require(Server.DayNight).start()
+require(Server.BobberGlow).markers() -- the deep hole's buoy glows at night
 if Config.WEATHER_ON then
 	require(Server.WeatherService).start() -- weather (UNVERIFIED in Studio, 2026-11-26)
 end

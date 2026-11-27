@@ -33,7 +33,7 @@ Three issues currently hold the live experience back:
    - New players default to `assist = true` (`1.4x` catch zone, `0.6x` loss), on top of `FIGHT_START = 0.4` and `FIGHT_IDLE_GRACE = 2.5s`. Your `docs/ECONOMY.md` simulation already proved doing nothing landed 40-69% of fish.
    - **Fix:** Auto-disable Assist after the first 3 tutorial catches (keeping it as an explicit accessibility toggle in settings), drop `FIGHT_START` to `0.25` on Uncommon+ fish, and tighten `FIGHT_IDLE_GRACE` to `1.2s`. Differentiate the 6 fight styles (`tugger`, `steady`, `runner`, `jumper`, `diver`, `shaker`) with distinct visual/audio tells (drag scream on `runner`, surface breach splash on `jumper`).
 2. **Turn `"nothing wants this here"` into an actionable hint (`FishLogic.luau`, `UI.luau`):**
-   - Waiting 10 seconds (`NOTHING_WAIT = 10`) to see `"nothing wants this here"` enforces real fishing rules, but without a clue it feels like a broken timer to an 11-year-old.
+   - Waiting 10 seconds (`NOTHING_WAIT = 10`) to see `"nothing wants this here"` enforces real fishing rules, but without a clue it feels like a broken timer to a young player.
    - **Fix:** Attach a 1-line contextual nudge ("Too bright in Open Water at midday: try Weed Bed or Logs") and flip `GOALS_ON = true` first so goals guide Liam through Dawn/Dusk periods and new baits.
 3. **Close the 10-minute progression cliff (`RodData.luau`, `Config.luau`, `docs/ECONOMY.md`):**
    - Smart anglers earn 161 coins/min (vs. 59/min random and 28/min dock-and-worms). Even after raising rods in `RodData.luau` from 120/350 to 150/900 coins, the entire active cap (Fiberglass 150c + Creek Pass 500c + Graphite 900c = 1,550c) clears in ~10 minutes.
