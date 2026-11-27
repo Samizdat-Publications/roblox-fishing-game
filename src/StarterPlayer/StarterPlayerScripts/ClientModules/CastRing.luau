@@ -4,7 +4,7 @@
 -- spot. Client only: the parts are made by this client in a workspace folder and the label sits
 -- in the player's own PlayerGui, so nobody else sees them (handle adornments under the camera
 -- did not render in the 11/26 playtest). White over fishable water, red over dry ground, amber over a snag
--- (setSnag, for later).
+-- (setSnag, from Shared/Cover via the Controller).
 local Players = game:GetService("Players")
 
 local CastRing = {}
@@ -208,7 +208,7 @@ function CastRing.hide()
 	end
 end
 
--- Amber over a snag (logs, deep weeds). Not used yet: the snag rules come later in L2.
+-- Amber over a snag (logs, deep weeds). The Controller sets it from Cover.snagAt each frame.
 function CastRing.setSnag(on: boolean)
 	snag = on
 end

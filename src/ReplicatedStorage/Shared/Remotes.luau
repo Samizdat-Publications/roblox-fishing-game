@@ -8,6 +8,7 @@ local EVENTS = {
 	"Hook", -- client: ()
 	"FightResult", -- client: (won: boolean)
 	"CancelCast", -- client: ()
+	"Wiggle", -- client: (), one press to work a snagged hook free (L2b)
 	"Equip", -- client: (baitId: string)
 	"SetAssist", -- client: (on: boolean)
 	"EquipRod", -- client: (rodId: string)

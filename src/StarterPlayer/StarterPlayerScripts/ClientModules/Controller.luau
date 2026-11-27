@@ -22,11 +22,13 @@ local Remotes = require(Shared.Remotes)
 local CastLogic = require(Shared.CastLogic)
 local FishLogic = require(Shared.FishLogic)
 local WaterMap = require(Shared.WaterMap)
+local Cover = require(Shared.Cover)
 
 local UI = require(script.Parent.UI)
 local PondView = require(script.Parent.PondView)
 local SoundFX = require(script.Parent.SoundFX)
 local CastRing = require(script.Parent.CastRing)
+local RiseRipples = require(script.Parent.RiseRipples)
 
 -- The same water and spot boxes the server casts against (Shared/WaterMap).
 local castZones = WaterMap.castZones()
@@ -34,7 +36,7 @@ local castWaters = WaterMap.castWaters()
 
 local Controller = {}
 
-local state = "Idle" -- Idle, Charging, Casting, Waiting, Bite, Hooking, Fighting, Resolving
+local state = "Idle" -- Idle, Charging, Casting, Waiting, Snagged, Bite, Hooking, Fighting, Resolving
 local stateSince = 0
 local chargeStart = 0
 local fight: FightModel.State? = nil
@@ -219,8 +221,13 @@ local function drawRing(power: number)
 		return
 	end
 	if assisted then
-		CastRing.update(tip, assisted, true, spotLabel(assisted))
+		-- Amber over a snag: right on a log, or deep in the weeds without a weedless lure.
+		local _, bait = castGear()
+		local snag = Cover.snagAt(assisted, bait)
+		CastRing.setSnag(snag)
+		CastRing.update(tip, assisted, true, spotLabel(assisted) .. (if snag then " (snag)" else ""))
 	else
+		CastRing.setSnag(false)
 		CastRing.update(tip, raw, false, "Dry ground")
 	end
 end
@@ -269,6 +276,8 @@ local function onFish(_name: string, inputState: Enum.UserInputState, _input: In
 	elseif state == "Waiting" and began and os.clock() - stateSince > 0.6 then
 		Remotes.event("CancelCast"):FireServer()
 		UI.status("Reeling in...")
+	elseif state == "Snagged" and began then
+		Remotes.event("Wiggle"):FireServer() -- the server ignores presses too close together
 	end
 	return Enum.ContextActionResult.Sink
 end
@@ -303,7 +312,23 @@ local function onFishingEvent(kind: string, payload: any)
 	SoundFX.event(kind, payload)
 	if kind == "Landed" then
 		setState("Waiting")
-		UI.status("Waiting for a bite at " .. tostring(payload.spotName) .. "...")
+		UI.status("Waiting for a bite at " .. tostring(payload.spotName) .. "..." .. (if payload.tight then " Tight to cover." else ""))
+		if payload.rise then
+			UI.toast("Right on the rise!", Color3.fromRGB(120, 200, 255))
+		end
+	elseif kind == "Rise" then
+		if typeof(payload.pos) == "Vector3" then
+			RiseRipples.show(payload.pos)
+		end
+	elseif kind == "Snag" then
+		setState("Snagged")
+		UI.toast("Snagged! Tap to wiggle it free", Color3.fromRGB(255, 180, 40))
+		UI.status(string.format("Snagged! Press %s again and again to wiggle it free.", UI.inputName()))
+	elseif kind == "Wiggled" then
+		UI.status(string.format("Wiggling... %d of %d. Keep going!", payload.count or 0, payload.need or Cover.SNAG_WIGGLES))
+	elseif kind == "Freed" or kind == "Snapped" then
+		UI.toast(payload.text)
+		goIdle()
 	elseif kind == "Bite" then
 		setState("Bite")
 		UI.closePanels()
@@ -541,6 +566,8 @@ function Controller.start()
 			hook()
 		elseif (state == "Hooking" or state == "Resolving") and os.clock() - stateSince > 4 then
 			goIdle() -- the server never answered; don't leave the player stuck
+		elseif state == "Snagged" and os.clock() - stateSince > Cover.SNAG_TIME + 3 then
+			goIdle() -- the server never said how the snag ended
 		elseif state == "Fighting" and fight then
 			if autoFish() then
 				local want = fight.zonePos < fight.fishPos or fight.idle > 2 -- tap before the line goes slack

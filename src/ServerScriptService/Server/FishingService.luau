@@ -20,6 +20,9 @@ local Rarity = require(Shared.Rarity)
 local Remotes = require(Shared.Remotes)
 local CastLogic = require(Shared.CastLogic)
 local WaterMap = require(Shared.WaterMap)
+local Cover = require(Shared.Cover)
+local Advice = require(Shared.Advice)
+local Rises = require(Shared.Rises)
 
 local Server = script.Parent
 local PlayerData = require(Server.PlayerData)
@@ -31,11 +34,12 @@ local Frenzy = require(Shared.Frenzy)
 local FrenzyService = require(Server.FrenzyService)
 local Teamwork = require(Shared.Teamwork)
 local BoatService = require(Server.BoatService)
+local RiseService = require(Server.RiseService)
 
 local FishingService = {}
 
 type Session = {
-	phase: string, -- Idle, Waiting, Bite, Fighting
+	phase: string, -- Idle, Waiting, Snagged, Bite, Fighting
 	token: number,
 	nibbling: boolean?, -- a fish is testing the bait (small dips before the real bite)
 	bobber: BasePart?,
@@ -48,6 +52,9 @@ type Session = {
 	fightStart: number,
 	minSecs: number,
 	catch: { cm: number, kg: number, class: string }?, -- rolled at the hook (rarity plan Task 2)
+	tight: boolean?, -- this cast landed tight to cover (L2b)
+	fastBite: number?, -- a claimed rise: the next bite comes this many seconds after the cast (L2b)
+	snag: Cover.Snag?, -- a snagged cast being wiggled free (L2b)
 }
 
 local sessions: { [Player]: Session } = {}
@@ -86,6 +93,9 @@ local function cleanup(s: Session)
 	s.phase = "Idle"
 	s.species = nil
 	s.weights = nil
+	s.tight = nil
+	s.fastBite = nil
+	s.snag = nil
 end
 
 local function reset(player: Player, s: Session)
@@ -179,26 +189,37 @@ end
 
 local scheduleBite: (Player, Session) -> ()
 
-local function nothingHint(s: Session): string
-	local bait = BaitData.byId[s.bait or ""]
-	local where = FishLogic.SPOT_NAMES[s.spot or "OpenWater"] or "here"
-	local because = Weather.hint(WeatherService.now())
+-- Names a better choice: the best bait you own for this spot now, or the best spot you can
+-- reach for this bait now (Shared/Advice.luau).
+local function nothingHint(player: Player, s: Session): string
+	local now = WeatherService.now()
+	local because = Weather.hint(now)
 	if because then
 		return because
 	end
-	return string.format("Nothing wants %s at %s right now. Try another bait, another spot, or another time of day.", bait and bait.name:lower() or "that", where)
+	local data = PlayerData.get(player)
+	local owned = if data then Inventory.usable(data) else {}
+	local spots = Advice.reachableSpots(data ~= nil and data.creekPass, if data then data.boats else nil)
+	return Advice.nothingText(s.spot or "OpenWater", s.period or "Day", s.bait or "", owned, spots, now)
 end
 
 function scheduleBite(player: Player, s: Session)
 	local token = s.token
 	local delay = FishLogic.biteDelay(s.weights or {}, rng)
+	if delay then
+		delay = Cover.adjustDelay(delay, s.tight == true) -- fish hold tight to cover
+	end
 	if delay and FrenzyService.at(s.spot) then
 		delay *= Frenzy.BITE_SPEED -- the school is boiling: bites come back to back
 	end
+	if delay and s.fastBite then
+		delay = s.fastBite -- cast onto a rise: that fish takes it right away (first bite only)
+	end
+	s.fastBite = nil
 	if not delay then
 		task.delay(Config.NOTHING_WAIT, function()
 			if s.token == token and s.phase == "Waiting" then
-				send(player, "Hint", { text = nothingHint(s) })
+				send(player, "Hint", { text = nothingHint(player, s) })
 				reset(player, s)
 			end
 		end)
@@ -328,23 +349,81 @@ local function onCast(player: Player, dir: any, power: any, clientLanding: any)
 	end
 
 	cleanup(s)
-	s.phase = "Waiting"
 	s.land = landing
 	s.spot = FishLogic.spotAt(landing, zones)
 	s.period = FishLogic.periodFromClock(Lighting.ClockTime)
 	s.bait = baitId
+	s.bobber = makeBobber(player, landing)
+
+	-- Right on a log, or deep in the weed bed with bait that isn't weedless: snagged (L2b).
+	-- Each press of the cast button sends a Wiggle; SNAG_WIGGLES of them in SNAG_TIME free it.
+	if Cover.snagAt(landing, baitId) then
+		s.phase = "Snagged"
+		s.snag = Cover.newSnag(os.clock())
+		send(player, "Snag", { pos = landing })
+		local token = s.token
+		task.delay(Cover.SNAG_TIME, function()
+			if s.token == token and s.phase == "Snagged" then
+				local bait = BaitData.byId[s.bait or ""]
+				local now = PlayerData.get(player)
+				if now and Cover.losesBait(bait and bait.kind, false, 1) then
+					Inventory.consumeBait(now, s.bait or "")
+					PlayerData.changed(player)
+				end
+				cleanup(s)
+				send(player, "Snapped", { text = "The line snapped on the snag." })
+			end
+		end)
+		return
+	end
+
+	s.phase = "Waiting"
+	s.tight = Cover.tightAt(landing, baitId)
 	s.weights = FishLogic.biteWeights(s.spot :: string, s.period :: string, baitId, WeatherService.now())
+	s.weights = Cover.applyCover(s.weights :: { FishLogic.Weight }, s.tight == true)
 	if FrenzyService.at(s.spot) then
 		s.weights = Frenzy.weights(s.weights :: { FishLogic.Weight }, s.spot :: string)
 	end
-	s.bobber = makeBobber(player, landing)
+	-- A cast onto an open rise claims it: a quick bite, if anything here wants this bait.
+	if #(s.weights :: { FishLogic.Weight }) > 0 and RiseService.claim(player, landing) then
+		s.fastBite = Rises.biteDelay(rng)
+	end
 	send(player, "Landed", {
 		pos = landing,
 		spot = s.spot,
 		spotName = FishLogic.SPOT_NAMES[s.spot :: string],
 		bait = baitId,
+		tight = s.tight,
+		rise = s.fastBite ~= nil,
 	})
 	scheduleBite(player, s)
+end
+
+-- One press of the cast button while snagged.
+local function onWiggle(player: Player)
+	local s = session(player)
+	local data = PlayerData.get(player)
+	if s.phase ~= "Snagged" or not s.snag or not data then
+		return
+	end
+	local snag = s.snag :: Cover.Snag
+	local result = Cover.wiggle(snag, os.clock())
+	if result == "counted" then
+		send(player, "Wiggled", { count = snag.count, need = Cover.SNAG_WIGGLES })
+	elseif result == "freed" then
+		local bait = BaitData.byId[s.bait or ""]
+		local lost = Cover.losesBait(bait and bait.kind, true, rng:NextNumber())
+		if lost then
+			Inventory.consumeBait(data, s.bait or "")
+			PlayerData.changed(player)
+		end
+		cleanup(s)
+		send(player, "Freed", {
+			text = if lost then "Wiggled free, but the bait came off on the snag." else "Wiggled free!",
+			lost = lost,
+		})
+	end
+	-- "ignored" (too fast) and "expired" (the snap timer handles it) do nothing.
 end
 
 local function onHook(player: Player)
@@ -558,6 +637,9 @@ end
 
 local function onCancel(player: Player)
 	local s = session(player)
+	if s.phase == "Snagged" then
+		return -- wiggle it free, or wait for the line to snap
+	end
 	if s.phase == "Waiting" and s.nibbling then
 		-- Striking at a nibble: too early, but the fish is still there.
 		send(player, "Hint", { text = "Too early, that was just a nibble. Wait for the bobber to go under." })
@@ -574,7 +656,7 @@ end
 -- For tests: force the next bite to come right away.
 function FishingService.debugState(player: Player): any
 	local s = session(player)
-	return { phase = s.phase, spot = s.spot, period = s.period, bait = s.bait, species = s.species }
+	return { phase = s.phase, spot = s.spot, period = s.period, bait = s.bait, species = s.species, tight = s.tight }
 end
 
 function FishingService.start()
@@ -584,6 +666,7 @@ function FishingService.start()
 	Remotes.event("Hook").OnServerEvent:Connect(onHook)
 	Remotes.event("FightResult").OnServerEvent:Connect(onFightResult)
 	Remotes.event("CancelCast").OnServerEvent:Connect(onCancel)
+	Remotes.event("Wiggle").OnServerEvent:Connect(onWiggle)
 	Players.PlayerRemoving:Connect(function(player)
 		local s = sessions[player]
 		if s then
@@ -597,7 +680,7 @@ function FishingService.start()
 		while true do
 			task.wait(0.5)
 			for player, s in sessions do
-				if s.land and (s.phase == "Waiting" or s.phase == "Bite" or s.phase == "Fighting") then
+				if s.land and (s.phase == "Waiting" or s.phase == "Snagged" or s.phase == "Bite" or s.phase == "Fighting") then
 					local ok, msg = BoatService.lineCheck(player, s.land)
 					if not ok then
 						local fighting = s.phase == "Fighting"

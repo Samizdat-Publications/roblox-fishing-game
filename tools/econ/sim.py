@@ -8,6 +8,9 @@ player through 25 minute sessions:
   dock    stands on the dock with worms all day (what a new kid probably does)
   random  wanders to random spots with random bait
 
+The smart players also fish tight to cover where a spot has it and cast onto rises (L2b);
+the dock kid and the random player don't.
+
 Run:  python3 tools/econ/sim.py            (full report, about a minute)
       python3 tools/econ/sim.py --quick    (fewer runs, for a fast check)
 
@@ -157,7 +160,25 @@ def weather_mult(sid, spot):
     return m
 
 
-def bite_weights(spot, period, bait):
+# Cover and rises (L2b), read from Shared/Cover.luau and Shared/Rises.luau.
+_shared = Path(__file__).resolve().parent.parent.parent / "src/ReplicatedStorage/Shared"
+_cover_src = (_shared / "Cover.luau").read_text(encoding="utf-8")
+_rises_src = (_shared / "Rises.luau").read_text(encoding="utf-8")
+
+
+def _const(src, name):
+    return float(_re.search(r"\." + name + r"\s*=\s*([0-9.]+)", src).group(1))
+
+
+COVER_DELAY = _const(_cover_src, "COVER_DELAY")
+COVER_WEIGHT = _const(_cover_src, "COVER_WEIGHT")
+COVER_SPECIES = set(_re.findall(r"^\t(\w+) = true,", _re.search(r"COVER_SPECIES = \{(.*?)\}", _cover_src, _re.S).group(0), _re.M))
+COVER_SPOTS = {"Logs", "WeedBed", "Dock", "Rocks"}  # spots with cover to fish tight to
+RISE_MIN, RISE_MAX = _const(_rises_src, "REACH_MIN"), _const(_rises_src, "REACH_MAX")  # rises one player can reach
+RISE_BITE_MIN, RISE_BITE_MAX = _const(_rises_src, "RISE_BITE_MIN"), _const(_rises_src, "RISE_BITE_MAX")
+
+
+def bite_weights(spot, period, bait, cover=False):
     out = []
     k = WEATHER.get(WEATHER_NOW or "Clear", {})
     for s in FISH:
@@ -171,6 +192,9 @@ def bite_weights(spot, period, bait):
     out.sort(key=lambda x: -x[1])
     if BITE_RULE == "proposed" and sum(w for _, w in out) < CFG["BITE_MIN"] / BITE_SLOWEST:
         return []
+    if cover and spot in COVER_SPOTS:  # Cover.applyCover, after the "nothing here" check
+        out = [(sid, w * COVER_WEIGHT if sid in COVER_SPECIES else w) for sid, w in out]
+        out.sort(key=lambda x: -x[1])
     return out
 
 
@@ -467,13 +491,13 @@ class Player:
         return GOALS[self.goal_i] if self.goal_i < len(GOALS) else None
 
 
-def expected_rate(spot, period, bait, player, skill, hook_p):
+def expected_rate(spot, period, bait, player, skill, hook_p, cover=False):
     """Expected coins per real second for fishing one spot with one bait now."""
-    w = bite_weights(spot, period, bait)
+    w = bite_weights(spot, period, bait, cover)
     if not w:
         return 0.0, None
     tot = sum(x for _, x in w)
-    wait = bite_delay_base(w) / hook_p + HOOK_REACTION
+    wait = bite_delay_base(w) * (COVER_DELAY if cover and spot in COVER_SPOTS else 1) / hook_p + HOOK_REACTION
     coins, t = 0.0, CAST_OVERHEAD + wait
     for sid, x in w:
         share = x / tot
@@ -491,6 +515,8 @@ class Strategy:
     skill = KID
     hook_p = 0.88
     uses_pond = False
+    uses_cover = False  # fishes tight to cover where the spot has it (L2b)
+    uses_rises = False  # casts onto rises, about one per rise interval (L2b)
 
     def spots(self, p):
         out = LAKE_SPOTS + (CREEK_SPOTS if p.creek else [])
@@ -508,6 +534,8 @@ class Strategy:
 class Smart(Strategy):
     name = "smart"
     hook_p = 0.92
+    uses_cover = True
+    uses_rises = True
 
     def __init__(self, pond=True, skill=KID):
         self.uses_pond = pond
@@ -523,7 +551,7 @@ class Smart(Strategy):
             for b in BAIT:
                 if b["kind"] == "lure" and b["id"] not in p.lures:
                     continue
-                r, _ = expected_rate(spot, period, b["id"], p, self.skill, self.hook_p)
+                r, _ = expected_rate(spot, period, b["id"], p, self.skill, self.hook_p, self.uses_cover)
                 if r > 0:
                     out.append((r, spot, b["id"]))
         out.sort(reverse=True)
@@ -546,7 +574,7 @@ class Smart(Strategy):
             if b["kind"] != "lure" or b["id"] in p.lures or p.coins < b["price"]:
                 continue
             best = max(
-                (expected_rate(s, period, b["id"], p, self.skill, self.hook_p)[0] for s in self.spots(p)),
+                (expected_rate(s, period, b["id"], p, self.skill, self.hook_p, self.uses_cover)[0] for s in self.spots(p)),
                 default=0,
             )
             if best > base and b["price"] / (best - base) < 360:
@@ -668,6 +696,7 @@ def play_session(p, strat, rng, clock_start, minutes=SESSION_MIN, log=None):
     global WEATHER_NOW, WIND_NOW, BOAT_SPEED
     BOAT_SPEED = BOATS[p.boat]["speed"] if p.boat else 12
     day_kind, day_wind, day_index = "Clear", None, None
+    next_rise = rng.uniform(RISE_MIN, RISE_MAX)  # when the next rise this player can reach is up
     while t < end:
         period = period_from_clock(clock())
         if WEATHER_ON:
@@ -716,7 +745,8 @@ def play_session(p, strat, rng, clock_start, minutes=SESSION_MIN, log=None):
         t += walk_time(here, spot)
         here = spot
         # One cast.
-        w = bite_weights(spot, period, bait)
+        cover = strat.uses_cover and spot in COVER_SPOTS
+        w = bite_weights(spot, period, bait, cover)
         t += CAST_OVERHEAD
         if not w:
             t += CFG["NOTHING_WAIT"]
@@ -724,8 +754,15 @@ def play_session(p, strat, rng, clock_start, minutes=SESSION_MIN, log=None):
                 plan = (rng.choice(strat.spots(p)), plan[1])
             continue
         hooked = False
+        first = True
         while not hooked and t < end:
-            t += bite_delay(w, rng)
+            d = bite_delay(w, rng) * (COVER_DELAY if cover else 1)
+            # An attentive player casts onto a rise about once per rise interval (lake and creek).
+            if first and strat.uses_rises and spot in LAKE_SPOTS + CREEK_SPOTS and t >= next_rise:
+                d = rng.uniform(RISE_BITE_MIN, RISE_BITE_MAX)
+                next_rise = t + rng.uniform(RISE_MIN, RISE_MAX)
+            first = False
+            t += d
             if rng.random() < strat.hook_p:
                 hooked = True
                 t += HOOK_REACTION

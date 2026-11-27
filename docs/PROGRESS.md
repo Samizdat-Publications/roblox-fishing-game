@@ -221,6 +221,16 @@ Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6
 - Still to do in L1: a Lake Sturgeon at the deep hole in its real conditions, the journal on the smallest phone (the simulated mouse wheel zoomed the camera instead of scrolling the journal; check with a real wheel), the 15 new fish models (they hang as the old shape until then), a Neon reveal clip, the StyLua reformat, and Liam's 20 minutes.
 - Look mockups for the beauty pass: five looks (Golden Afternoon, Bright Summer Day, Misty Dawn, Moonlit Night, Autumn Lake) from the all-models stills, page https://claude.ai/artifact/DjMRLNSn6t91zKmR93sGr6 (source `planner/looks.html`, images `docs/looks/`, script `tools/looks/mockup.py`). They were made in the old flat low-poly style before Stewart picked Real-ish, so treat them as light and time-of-day moods, not materials.
 
+## 2026-11-27 (night): L2b, reasons to aim
+
+- **Snags:** land on a fallen log, or in the thick of the weed bed with anything but a plastic worm, and you're stuck. The ring warns first: amber and "(snag)" over a log. Four taps wiggle it free (a live bait is lost about a third of the time); wait 8 s and the line snaps (live bait lost, a lure never). Verified: a cast onto Log1 snagged, four wiggles gave "Wiggled free!", and another left alone gave "The line snapped on the snag."
+- **Rises:** a fish dimples the surface somewhere every 14 to 26 s (ripples everyone sees). Land within 5 studs inside 8 s and the fish comes in 1.5 to 3.5 s. Verified on three real rises: the fish showed 2.8 to 3.0 s after landing (a bluegill nibbles twice first, so the bite itself came at about 4 s).
+- **Cover:** within 4 studs of a log, the dock, the weed edge or a creek boulder, cover-loving fish (bass, crappie, pike, bowfin, rock bass, catfish) are 1.25 times as likely. Bites aren't faster there (my retune: the builder's x0.75 delay on top of x1.5 weight gave a smart player +60 to 72 percent).
+- **Hint:** when nothing wants your bait it names a better choice, for example "Try minnows here, or stinkbait at the deep hole." (`Shared/Advice.luau`).
+- **Save migration test:** every save version from v2 up loads with coins, journal, pond and bag intact, whatever the feature switches say (`Tests/Migration.spec`). Found: a save with no version number skips the "reel assist back on" step; only early test saves had none.
+- Economy (sim, rises one player can reach every 90 to 150 s): smart 84.0 coins a minute (was 70.0), Graphite at 22 min (was 24); smart without a pond 98.9 (86.2), 18 min (20); dock kid 31.2 (31.4), 53 min; random 30.2 (31.0). Aiming well pays 15 to 20 percent.
+- 189 tests pass in Studio and with Lune; all 15 changed or new scripts match by checksum. Place version 52. Still: `docs/making-of/stills/2026-11-27-ring-at-the-logs.jpg`.
+
 ## 2026-11-27 (night): L2a, the cast ring
 
 - While you hold, a ring travels out and back on the water at 16 studs a second with a dotted arc from the rod tip and a label naming the spot (red "Dry ground" over land). Let go when it sits where you want. The power bar still moves with it. Still: `docs/making-of/stills/2026-11-27-cast-ring.jpg`.

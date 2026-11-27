@@ -372,6 +372,15 @@ function SoundFX.event(kind: string, payload: any)
 		play("sell-coins", 0.5, nil, true)
 	elseif kind == "FrenzyStart" then
 		play("frenzy-burst", 10)
+	-- L2b (UNVERIFIED in Studio): a quiet splash for a rise, the snag's ending.
+	elseif kind == "Rise" then
+		play("rise", 1, 1.5, true)
+	elseif kind == "Snag" or kind == "Wiggled" then
+		play("plop", 0.1, 0.8, true)
+	elseif kind == "Snapped" then
+		play(if sounds["line-snap"] then "line-snap" else "splash-small", nil, nil, true)
+	elseif kind == "Freed" then
+		play("plop", nil, 1.1, true)
 	end
 	if kind == "Hooked" and payload and payload.sizeClass == "monster" then
 		play("breach-huge", 2) -- something huge breaks the surface
@@ -416,6 +425,7 @@ function SoundFX.start()
 	make("thrash-splash", fx, false, 0.55)
 	make("splash-small", fx, false, 0.7)
 	make("splash-small", fx, false, 0.3, "plop")
+	make("splash-small", fx, false, 0.12, "rise") -- a far-off fish rising: quiet
 	make("splash-small", fx, false, 0.45, "snap")
 	make("splash-big", fx, false, 0.85)
 	for _, name in { "sting-common", "sting-uncommon", "sting-rare", "sting-epic", "sting-legendary", "sting-mythic", "sting-godlike", "sting-new-species", "sting-trophy", "sting-monster" } do
