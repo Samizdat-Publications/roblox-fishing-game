@@ -84,6 +84,19 @@ Config.BOATS_ON = true
 -- false puts lures back under a bobber.
 Config.LURE_RETRIEVE_ON = true
 
+-- The look on each player's screen (leg 3, N0): with LOOK_DIRECTOR_ON the server stops writing
+-- Lighting and each client works out the look itself (ClientModules/LookDirector) and writes it
+-- locally. LOOK_AREAS_ON adds the area presets (creek, basin, blue water, island) and per-area
+-- water; off, the client draws exactly what the server drew. REALISTIC_DESKTOP lets the desktop
+-- tier set Lighting.LightingStyle to Realistic; off, the place's own style is kept.
+Config.LOOK_DIRECTOR_ON = false
+Config.LOOK_AREAS_ON = false
+Config.REALISTIC_DESKTOP = false
+-- Painted world signs (leg 3, N2): wooden boards with painted words (Server/Signs) in place of
+-- the floating name labels, and sign lanterns lit at night (ClientModules/Lanterns). Off, the
+-- world builders make the old floating signs only.
+Config.PAINTED_SIGNS_ON = false
+
 function Config.boatsOn(): boolean
 	return Config.BOATS_ON and Config.BIG_LAKE_ON
 end

@@ -10,6 +10,8 @@
 -- them to Lighting and its effects (Atmosphere, Bloom, ColorCorrection, SunRays), creating
 -- each effect once under a fixed name. The server calls apply as the clock runs (DayNight);
 -- Lighting replicates, so every player sees the same look. Lighting.Technology is never set.
+-- N0: with Config.LOOK_DIRECTOR_ON the server stops and each client writes the look locally
+-- instead (ClientModules/LookDirector), adding AREAS (blended by camera position) and TIERS.
 --
 -- Fog: Atmosphere density stays at or under MAX_DENSITY (0.42) with small haze, so the
 -- bobber stays readable at the longest cast (about 68 studs). Lighting.Fog* is ignored by
@@ -393,9 +395,14 @@ end
 
 -- Writes the look for this clock (and weather, see at) to `lighting` (tests pass fakes for
 -- lighting and make). With a weather given, `clouds` (Terrain's Clouds, if any) is set too;
--- it is never created here (Scenery owns it).
-function LookPresets.applyTo(lighting: any, clock: number, make: (string) -> any, weather: string?, amount: number?, from: string?, clouds: any?)
-	for target, values in LookPresets.at(clock, weather, amount, from) do
+-- it is never created here (Scenery owns it). `areas` (N0, LookDirector) are area weights
+-- from areaWeights; nil, or home = 1, leaves the look exactly as it was.
+function LookPresets.applyTo(lighting: any, clock: number, make: (string) -> any, weather: string?, amount: number?, from: string?, clouds: any?, areas: { [string]: number }?)
+	local look = LookPresets.at(clock, weather, amount, from)
+	if areas ~= nil then
+		look = LookPresets.blendAreas(look, areas)
+	end
+	for target, values in look do
 		local inst = if target == "Lighting" then lighting else effect(lighting, target, make)
 		for k, v in values do
 			inst[k] = v
@@ -420,5 +427,318 @@ end
 function LookPresets.night(clock: number): number
 	return LookPresets.weights(clock).night or 0
 end
+
+-- The weather blend (L6a), shared by the server (DayNight) and the client (LookDirector, N0)
+-- so both ease one kind into the next the same way: `from` into `to`, `amount` (0..1, linear)
+-- of the way, over BLEND_SECONDS real seconds; at() takes smooth(amount).
+export type Blend = { from: string, to: string, amount: number }
+
+LookPresets.BLEND_SECONDS = 20
+LookPresets.smooth = smooth
+
+-- Moves the blend on by dt seconds toward kind `want` (mutates and returns b).
+function LookPresets.stepBlend(b: Blend, want: string, dt: number): Blend
+	if want ~= b.to then
+		-- Start from whichever kind shows most right now (changes are game hours apart, so a
+		-- change in the middle of a blend is rare; the small jump then is accepted).
+		b.from = if b.amount >= 0.5 then b.to else b.from
+		b.to = want
+		b.amount = 0
+	end
+	b.amount = math.min(1, b.amount + dt / LookPresets.BLEND_SECONDS)
+	return b
+end
+
+-- Areas (N0, docs/superpowers/plans/2026-11-27-leg-3.md "Area by area") -------------------
+-- Each area changes the time-of-day-and-weather look a little: exposure and the fog's density
+-- and haze are added, the ambients, Atmosphere colours and the colour-correction tint are
+-- multiplied channel by channel, saturation is added. `home` is the identity, so at home the
+-- look is exactly what the server used to write. Areas are kept modest; they get tuned later.
+-- Each area also has its terrain water (Terrain's water settings are global, so the client
+-- sets them from the area round the camera).
+export type Water = {
+	WaterColor: Color3,
+	WaterTransparency: number,
+	WaterReflectance: number,
+	WaterWaveSize: number,
+	WaterWaveSpeed: number,
+}
+export type Area = {
+	exposure: number,
+	ambient: Color3,
+	density: number,
+	haze: number,
+	atmosphere: Color3,
+	decay: Color3,
+	tint: Color3,
+	saturation: number,
+	water: Water,
+}
+
+local WHITE = rgb(255, 255, 255)
+
+LookPresets.AREAS = {
+	home = {
+		exposure = 0,
+		ambient = WHITE,
+		density = 0,
+		haze = 0,
+		atmosphere = WHITE,
+		decay = WHITE,
+		tint = WHITE,
+		saturation = 0,
+		-- The place's water today: WaterLook.TERRAIN (L5d), written once in Edit and saved.
+		water = { WaterColor = rgb(26, 66, 62), WaterTransparency = 0.55, WaterReflectance = 0.35, WaterWaveSize = 0.12, WaterWaveSpeed = 8 },
+	},
+	creek = {
+		-- The cold stream in the woods: a touch darker and greener, very clear water.
+		exposure = -0.1,
+		ambient = rgb(242, 255, 242),
+		density = 0.02,
+		haze = 0.2,
+		atmosphere = rgb(236, 250, 236),
+		decay = rgb(236, 250, 236),
+		tint = rgb(246, 255, 246),
+		saturation = 0.03,
+		water = { WaterColor = rgb(64, 84, 58), WaterTransparency = 0.8, WaterReflectance = 0.3, WaterWaveSize = 0.08, WaterWaveSpeed = 10 },
+	},
+	basin = {
+		-- The Big Lake's near half: a little cooler and airier than home.
+		exposure = 0,
+		ambient = rgb(246, 250, 255),
+		density = 0.02,
+		haze = 0.2,
+		atmosphere = rgb(240, 248, 255),
+		decay = rgb(240, 248, 255),
+		tint = rgb(250, 252, 255),
+		saturation = 0,
+		water = { WaterColor = rgb(40, 70, 74), WaterTransparency = 0.5, WaterReflectance = 0.35, WaterWaveSize = 0.15, WaterWaveSpeed = 8 },
+	},
+	bluewater = {
+		-- Big water: hazier and bluer, so the far end seems to go on; twice home's swell.
+		exposure = 0.05,
+		ambient = rgb(236, 245, 255),
+		density = 0.04,
+		haze = 0.4,
+		atmosphere = rgb(226, 238, 255),
+		decay = rgb(220, 232, 255),
+		tint = rgb(245, 250, 255),
+		saturation = -0.03,
+		water = { WaterColor = rgb(16, 38, 66), WaterTransparency = 0.4, WaterReflectance = 0.4, WaterWaveSize = 0.24, WaterWaveSpeed = 10 },
+	},
+	island = {
+		-- The far rock: clean, cold, clearer air.
+		exposure = 0.05,
+		ambient = rgb(240, 245, 255),
+		density = -0.03,
+		haze = -0.2,
+		atmosphere = rgb(236, 245, 255),
+		decay = rgb(236, 240, 255),
+		tint = rgb(248, 250, 255),
+		saturation = 0.05,
+		water = { WaterColor = rgb(22, 60, 84), WaterTransparency = 0.6, WaterReflectance = 0.35, WaterWaveSize = 0.15, WaterWaveSpeed = 9 },
+	},
+} :: { [string]: Area }
+
+-- Where each area is, in world studs (x, z), checked against the code on 11/27/2026: the home
+-- lake is Shore.LAKE (x -110..110, z -80..80) plus its shore; Cedar Creek's stretches are
+-- x -252..-208, z -70..75 (Shore.AREAS); the basin is BoatRules' Basin zone (z -290..-140,
+-- south of the buoy line); blue water starts at BoatRules.BUOY_Z (-290) and today ends at
+-- z -440, but reaches -1150 for when the lake grows north. The island is the planned first
+-- island (N6), not the basin's small lighthouse island (that one is basin).
+-- `over` lists the areas this one sits on top of: inside it, theirs fade out.
+export type Zone = {
+	id: string,
+	x1: number?,
+	x2: number?,
+	z1: number?,
+	z2: number?,
+	x: number?,
+	z: number?,
+	r: number?,
+	over: { string }?,
+}
+
+LookPresets.AREA_BAND = 40 -- studs over which one area blends into the next, centred on the edge
+
+LookPresets.ZONES = {
+	{ id = "home", x1 = -150, x2 = 150, z1 = -110, z2 = 140, over = { "creek", "basin" } },
+	{ id = "creek", x1 = -260, x2 = -160, z1 = -120, z2 = 120 },
+	{ id = "basin", x1 = -200, x2 = 200, z1 = -290, z2 = -140 },
+	{ id = "bluewater", x1 = -450, x2 = 450, z1 = -1150, z2 = -290 },
+	{ id = "island", x = 100, z = -950, r = 120, over = { "bluewater" } },
+} :: { Zone }
+
+-- Signed distance into a zone (studs): positive inside, negative outside.
+local function inside(zn: Zone, x: number, z: number): number
+	if zn.r then
+		local dx, dz = x - (zn.x :: number), z - (zn.z :: number)
+		return zn.r - math.sqrt(dx * dx + dz * dz)
+	end
+	local x1, x2, z1, z2 = zn.x1 :: number, zn.x2 :: number, zn.z1 :: number, zn.z2 :: number
+	local dx = math.max(x1 - x, 0, x - x2)
+	local dz = math.max(z1 - z, 0, z - z2)
+	if dx > 0 or dz > 0 then
+		return -math.sqrt(dx * dx + dz * dz)
+	end
+	return math.min(x - x1, x2 - x, z - z1, z2 - z)
+end
+
+-- How much of each area shows at this position (0..1 each, summing to 1). Each zone counts
+-- smoothly across a band AREA_BAND wide centred on its edge; a zone fades out the zones it
+-- sits `over`; where zones overlap past 1 they share; whatever is left is home.
+function LookPresets.areaWeights(pos: Vector3): { [string]: number }
+	local half = LookPresets.AREA_BAND / 2
+	local raw: { [string]: number } = {}
+	for _, zn in LookPresets.ZONES do
+		raw[zn.id] = smooth((inside(zn, pos.X, pos.Z) + half) / LookPresets.AREA_BAND)
+	end
+	local own = table.clone(raw)
+	for _, zn in LookPresets.ZONES do
+		if zn.over then
+			for _, o in zn.over do
+				raw[o] *= 1 - own[zn.id]
+			end
+		end
+	end
+	local others = 0
+	for id, w in raw do
+		if id ~= "home" then
+			others += w
+		end
+	end
+	local out: { [string]: number } = {}
+	local total = others + raw.home
+	if total > 1 then
+		for id, w in raw do
+			out[id] = w / total
+		end
+	else
+		for id, w in raw do
+			out[id] = w
+		end
+		out.home = 1 - others
+	end
+	return out
+end
+
+-- The strongest area in a set of weights (home on a tie).
+function LookPresets.topArea(weights: { [string]: number }): string
+	local best, bestW = "home", weights.home or 0
+	for id, w in weights do
+		if w > bestW then
+			best, bestW = id, w
+		end
+	end
+	return best
+end
+
+local function mixColor(acc: Color3?, c: Color3, w: number): Color3
+	local a = acc or Color3.new(0, 0, 0)
+	return Color3.new(a.R + c.R * w, a.G + c.G * w, a.B + c.B * w)
+end
+
+-- The area settings for these weights, each field the weighted mean of the areas'.
+function LookPresets.areaMix(weights: { [string]: number }): Area
+	local out = {
+		exposure = 0,
+		density = 0,
+		haze = 0,
+		saturation = 0,
+		water = { WaterTransparency = 0, WaterReflectance = 0, WaterWaveSize = 0, WaterWaveSpeed = 0 },
+	} :: any
+	for id, w in weights do
+		local a = LookPresets.AREAS[id]
+		if a and w > 0 then
+			out.exposure += a.exposure * w
+			out.density += a.density * w
+			out.haze += a.haze * w
+			out.saturation += a.saturation * w
+			out.ambient = mixColor(out.ambient, a.ambient, w)
+			out.atmosphere = mixColor(out.atmosphere, a.atmosphere, w)
+			out.decay = mixColor(out.decay, a.decay, w)
+			out.tint = mixColor(out.tint, a.tint, w)
+			local water = out.water
+			water.WaterColor = mixColor(water.WaterColor, a.water.WaterColor, w)
+			for _, k in { "WaterTransparency", "WaterReflectance", "WaterWaveSize", "WaterWaveSpeed" } do
+				water[k] += (a.water :: any)[k] * w
+			end
+		end
+	end
+	if out.ambient == nil then
+		return LookPresets.AREAS.home -- no known area weighted: home
+	end
+	return out :: Area
+end
+
+-- Terrain water for these area weights.
+function LookPresets.areaWater(weights: { [string]: number }): Water
+	return LookPresets.areaMix(weights).water
+end
+
+local function isHome(a: Area): boolean
+	return a.exposure == 0
+		and a.density == 0
+		and a.haze == 0
+		and a.saturation == 0
+		and a.ambient == WHITE
+		and a.atmosphere == WHITE
+		and a.decay == WHITE
+		and a.tint == WHITE
+end
+
+local function tinted(c: Color3, t: Color3): Color3
+	return Color3.new(math.clamp(c.R * t.R, 0, 1), math.clamp(c.G * t.G, 0, 1), math.clamp(c.B * t.B, 0, 1))
+end
+
+-- The look with the areas laid on top (a fresh table; at home, the same values exactly).
+function LookPresets.blendAreas(look: Look, weights: { [string]: number }): Look
+	local a = LookPresets.areaMix(weights)
+	if isHome(a) then
+		return look
+	end
+	local out: Look = {}
+	for target, values in look do
+		out[target] = table.clone(values)
+	end
+	local light, atmo, cc = out.Lighting, out.Atmosphere, out.ColorCorrectionEffect
+	if light then
+		light.ExposureCompensation = math.clamp((light.ExposureCompensation :: number) + a.exposure, -3, 3)
+		light.Ambient = tinted(light.Ambient :: Color3, a.ambient)
+		light.OutdoorAmbient = tinted(light.OutdoorAmbient :: Color3, a.ambient)
+	end
+	if atmo then
+		atmo.Density = math.clamp((atmo.Density :: number) + a.density, 0, LookPresets.MAX_DENSITY)
+		atmo.Haze = math.clamp((atmo.Haze :: number) + a.haze, 0, LookPresets.MAX_HAZE)
+		atmo.Color = tinted(atmo.Color :: Color3, a.atmosphere)
+		atmo.Decay = tinted(atmo.Decay :: Color3, a.decay)
+	end
+	if cc then
+		cc.TintColor = tinted(cc.TintColor :: Color3, a.tint)
+		cc.Saturation = math.clamp((cc.Saturation :: number) + a.saturation, -1, 1)
+	end
+	return out
+end
+
+-- Device tiers (N0, plan "Two tiers"). Data only; LookDirector applies it on each client.
+-- lightingStyle: Lighting.LightingStyle to set (the desktop's Realistic only when
+-- Config.REALISTIC_DESKTOP; otherwise the place's own is kept). shadows: "all" or "sun"
+-- (lantern shadows go with "sun" once lanterns cast them). sunRays, bloom, depthOfField:
+-- whether those effects may run. cloudDetail: kept for when Clouds has a detail setting
+-- (today it has only Cover, Density and Color, so nothing reads it).
+export type Tier = {
+	id: string,
+	lightingStyle: string,
+	shadows: string,
+	sunRays: boolean,
+	bloom: boolean,
+	depthOfField: boolean,
+	cloudDetail: number,
+}
+
+LookPresets.TIERS = {
+	desktop = { id = "desktop", lightingStyle = "Realistic", shadows = "all", sunRays = true, bloom = true, depthOfField = true, cloudDetail = 1 },
+	phone = { id = "phone", lightingStyle = "Soft", shadows = "sun", sunRays = false, bloom = true, depthOfField = false, cloudDetail = 0.5 },
+} :: { [string]: Tier }
 
 return LookPresets

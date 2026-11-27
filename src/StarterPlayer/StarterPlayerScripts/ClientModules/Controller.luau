@@ -1053,6 +1053,43 @@ function Controller.start()
 	end)
 
 	goIdle()
+
+	-- Studio-only hook for the look harness (tools/shots/shots.py, set U): the player attribute
+	-- DebugScreen poses one UI screen so it can be captured. Never runs in a live server.
+	if RunService:IsStudio() then
+		local lp = Players.LocalPlayer
+		lp:SetAttribute("DebugScreenHook", true)
+		lp:GetAttributeChangedSignal("DebugScreen"):Connect(function()
+			local which = lp:GetAttribute("DebugScreen")
+			if type(which) ~= "string" then
+				return
+			end
+			goIdle()
+			UI.closePanels()
+			if which == "shop" then
+				UI.openShop()
+			elseif which == "journal" then
+				UI.toggleJournal()
+			elseif which == "card" then
+				UI.catchCard({
+					fish = { id = "LargemouthBass", name = "Largemouth Bass", cm = 46, kg = 1.5, price = 38, spot = "WeedBed", bait = "PlasticWorm" },
+					tier = "Rare",
+					best = true,
+				})
+				local pg = lp:FindFirstChildOfClass("PlayerGui")
+				local card = pg and pg:FindFirstChild("CatchCard", true)
+				if card then
+					card:SetAttribute("Token", -1)
+				end
+			elseif which == "fight" then
+				UI.setLocked(true)
+				UI.showFight({ zoneSize = 0.3, zonePos = 0.55, fishPos = 0.6, progress = 0.45, strain = 0.1 }, "Big runs, then rests.", true)
+				UI.showDrag("Medium", 8)
+			elseif which == "bench" then
+				openBench()
+			end
+		end)
+	end
 end
 
 return Controller

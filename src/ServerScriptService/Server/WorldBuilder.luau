@@ -11,6 +11,7 @@ local Config = require(Shared:WaitForChild("Config"))
 -- The water and zone boxes live in Shared/WaterMap so the client's landing ring uses the
 -- same map as the server (L2, 2026-11-26).
 local WaterMap = require(Shared:WaitForChild("WaterMap"))
+local Signs = require(script.Parent.Signs) -- painted boards (leg 3, N2)
 
 local WorldBuilder = {}
 
@@ -412,6 +413,9 @@ function WorldBuilder.build(): Model
 	lamps.Parent = lake
 
 	WorldBuilder.dress(lake)
+	if Config.PAINTED_SIGNS_ON then
+		WorldBuilder.paintSigns(lake)
+	end
 	lake.Parent = workspace
 	return lake
 end
@@ -629,6 +633,186 @@ function WorldBuilder.dress(lake: Model): number
 	end
 	folder.Parent = lake
 	return placed
+end
+
+-- Painted signs (leg 3, N2): boards where a painted board would really hang, in place of the
+-- floating BillboardGuis (switched off, not destroyed; unpaintSigns brings them back). All
+-- positions come from the parts the old signs belong to, so this works on the saved world.
+-- Run in Edit (safe to run again: it rebuilds Lake.PaintedSigns):
+--   require(game.ServerScriptService.Server.WorldBuilder).paintSigns(workspace.Lake)
+local STANDS = {
+	{ model = "SellStand", art = "FishBuyerStand", text = "Sell Fish", paint = Signs.PAINT.sell },
+	{ model = "ShopStand", art = "BaitShopStand", text = "Bait and Tackle", paint = Signs.PAINT.shop },
+}
+local STAND_BOARD = Vector2.new(9, 2) -- width, height (studs): reads from the dock end
+-- The art stands (art/scripts/stands.py): the awning's front edge is the model's front (-z,
+-- toward the lake); its slats end about 8.45 studs over the base and the scallops hang to 7.75.
+local ART_EAVE_ABOVE_BASE = 8.45
+local ART_BOARD_TOP_ABOVE_BASE = 7.6 -- under the scallops, so the striped edge still shows
+local ART_BOARD_BEHIND_FRONT = 0.35 -- just behind the scallops, under the slats
+
+-- The art copy of a stand nearest its counter, or nil.
+local function standArt(lake: Model, name: string, near: Vector3): Model?
+	local folder = lake:FindFirstChild("Art")
+	if not folder then
+		return nil
+	end
+	local best: Model? = nil
+	local bestDist = 12
+	for _, m in folder:GetChildren() do
+		if m.Name == name and m:IsA("Model") then
+			local p = m:GetPivot().Position
+			local d = Vector2.new(p.X - near.X, p.Z - near.Z).Magnitude
+			if d < bestDist then
+				best, bestDist = m, d
+			end
+		end
+	end
+	return best
+end
+
+-- The first BasePart named `name` anywhere under root within `range` studs of `near`.
+local function nearPart(root: Instance, name: string, near: Vector3, range: number): BasePart?
+	for _, d in root:GetDescendants() do
+		if d.Name == name and d:IsA("BasePart") and (d.Position - near).Magnitude < range then
+			return d
+		end
+	end
+	return nil
+end
+
+local LAKEWARD = Vector3.new(0, 0, -1) -- the stands' open fronts face the lake (north, -z)
+
+function WorldBuilder.paintSigns(lake: Model): number
+	local folder = Signs.folder(lake)
+	local made = 0
+
+	-- The two stands: a board hung by chains under the front of the awning, with a lantern.
+	for _, s in STANDS do
+		local m = lake:FindFirstChild(s.model)
+		local gui = Signs.find(m)
+		local counter = m and (if gui and gui.Adornee and gui.Adornee:IsA("BasePart") then gui.Adornee else m:FindFirstChild("Counter"))
+		local roof = m and m:FindFirstChild("Roof")
+		if m and gui and counter and counter:IsA("BasePart") then
+			local x = counter.Position.X
+			local frontZ, eave, boardTop
+			local art = standArt(lake, s.art, counter.Position)
+			if art then
+				local cf, size = art:GetBoundingBox()
+				local base = cf.Position.Y - size.Y / 2
+				frontZ = cf.Position.Z - size.Z / 2 + ART_BOARD_BEHIND_FRONT
+				eave = base + ART_EAVE_ABOVE_BASE
+				boardTop = base + ART_BOARD_TOP_ABOVE_BASE
+			elseif roof and roof:IsA("BasePart") then
+				frontZ = roof.Position.Z - roof.Size.Z / 2 + 0.2
+				eave = roof.Position.Y - roof.Size.Y / 2
+				boardTop = eave - 0.6
+			else
+				frontZ = counter.Position.Z - counter.Size.Z / 2 - 0.5
+				eave = counter.Position.Y + 8.2
+				boardTop = eave - 0.6
+			end
+			local centre = Vector3.new(x, boardTop - STAND_BOARD.Y / 2, frontZ)
+			local board = Signs.board({
+				name = s.model .. "Sign",
+				text = s.text,
+				width = STAND_BOARD.X,
+				height = STAND_BOARD.Y,
+				cframe = CFrame.lookAt(centre, centre + LAKEWARD),
+				paint = s.paint,
+				hang = "eave",
+				eave = eave,
+				lantern = true,
+			})
+			board.Parent = folder
+			Signs.cover(gui)
+			made += 1
+		end
+	end
+
+	-- The home pond: a small board on two posts in front of the old sign post, facing away from
+	-- the water (the side the path comes from).
+	local pond = lake:FindFirstChild("HomePond")
+	local pondGui = Signs.find(pond)
+	if pond and pondGui then
+		local post = if pondGui.Adornee and pondGui.Adornee:IsA("BasePart") then pondGui.Adornee else pond:FindFirstChild("SignPost")
+		local water = pond:FindFirstChild("Water")
+		if post and post:IsA("BasePart") then
+			local out = LAKEWARD
+			if water and water:IsA("BasePart") then
+				local d = post.Position - water.Position
+				d = Vector3.new(d.X, 0, d.Z)
+				if d.Magnitude > 0.5 then
+					out = d.Unit
+				end
+			end
+			local width, height, thick = 4.5, 1.4, 0.3
+			local ground = post.Position.Y - post.Size.Y / 2
+			local top = post.Position.Y + post.Size.Y / 2 + 0.3
+			local half = math.max(post.Size.X, post.Size.Z) / 2
+			local flat = Vector3.new(post.Position.X, top - height / 2, post.Position.Z) + out * (half + thick / 2 + 0.02)
+			local board = Signs.board({
+				name = "PondSign",
+				text = "Your Pond",
+				width = width,
+				height = height,
+				thickness = thick,
+				cframe = CFrame.lookAt(flat, flat + out),
+				paint = Signs.PAINT.pond,
+				hang = "posts",
+				ground = ground,
+			})
+			board.Parent = folder
+			Signs.cover(pondGui)
+			made += 1
+		end
+	end
+
+	-- Cedar Creek: a two-sided board hung under the gate arch's beam (Scenery's ArchBeam; before
+	-- Scenery runs, where that beam goes: 1.75 over the gate's top).
+	local creek = lake:FindFirstChild("CedarCreek")
+	local creekGui = Signs.find(creek)
+	if creek and creekGui then
+		local gate = if creekGui.Adornee and creekGui.Adornee:IsA("BasePart") then creekGui.Adornee else creek:FindFirstChild("CreekGate")
+		if gate and gate:IsA("BasePart") then
+			local beam = nearPart(lake, "ArchBeam", gate.Position, 12)
+			local x, z, eave
+			if beam then
+				x, z, eave = beam.Position.X, beam.Position.Z, beam.Position.Y - beam.Size.Y / 2
+			else
+				x, z, eave = gate.Position.X, gate.Position.Z, gate.Position.Y + gate.Size.Y / 2 + 1.75
+			end
+			local width, height = 6, 1.3
+			local centre = Vector3.new(x, eave - 0.35 - height / 2, z)
+			local board = Signs.board({
+				name = "CreekSign",
+				text = "Cedar Creek",
+				width = width,
+				height = height,
+				cframe = CFrame.lookAt(centre, centre + Vector3.new(1, 0, 0)), -- front to the lake (east)
+				paint = Signs.PAINT.creek,
+				twoSided = true,
+				hang = "eave",
+				eave = eave,
+			})
+			board.Parent = folder
+			Signs.cover(creekGui)
+			made += 1
+		end
+	end
+	return made
+end
+
+-- Takes the painted boards away and switches the old floating signs back on.
+--   require(game.ServerScriptService.Server.WorldBuilder).unpaintSigns(workspace.Lake)
+function WorldBuilder.unpaintSigns(lake: Model)
+	local folder = lake:FindFirstChild("PaintedSigns")
+	if folder then
+		folder:Destroy()
+	end
+	for _, name in { "SellStand", "ShopStand", "HomePond", "CedarCreek" } do
+		Signs.uncover(lake:FindFirstChild(name))
+	end
 end
 
 return WorldBuilder

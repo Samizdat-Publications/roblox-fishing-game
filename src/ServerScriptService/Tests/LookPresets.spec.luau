@@ -315,4 +315,159 @@ return function(t, Shared)
 		t.eq(lighting.Brightness, LookPresets.at(12, "Storm").Lighting.Brightness, "storm light written")
 		LookPresets.applyTo(lighting, 12, make, "Storm", 1, nil, nil) -- no Clouds object: no error
 	end)
+
+	-- LookDirector (N0): blend sharing, areas, tiers ----------------------------------------
+
+	t.test("stepBlend eases one kind into the next over 20 s, as DayNight did", function()
+		local b = { from = "Clear", to = "Clear", amount = 1 }
+		LookPresets.stepBlend(b, "Storm", 0.25)
+		t.eq(b.from, "Clear", "from")
+		t.eq(b.to, "Storm", "to")
+		t.ok(math.abs(b.amount - 0.25 / 20) < 1e-12, "first step")
+		for _ = 1, 100 do
+			LookPresets.stepBlend(b, "Storm", 0.25)
+		end
+		t.eq(b.amount, 1, "done after 20 s")
+		LookPresets.stepBlend(b, "Fog", 1)
+		t.eq(b.from, "Storm", "a finished blend starts from what it shows")
+		LookPresets.stepBlend(b, "Clear", 1)
+		t.eq(b.from, "Storm", "a change early in a blend starts from the old kind")
+		t.eq(LookPresets.smooth(0.5), 0.5, "smoothstep middle")
+	end)
+
+	local function sum(w)
+		local s = 0
+		for _, v in w do
+			t.ok(v >= -1e-12 and v <= 1 + 1e-12, "weight in range")
+			s += v
+		end
+		return s
+	end
+
+	t.test("area weights sum to one everywhere, home is the fallback", function()
+		for x = -600, 600, 10 do
+			for z = -1250, 300, 10 do
+				local w = LookPresets.areaWeights(Vector3.new(x, 0, z))
+				t.ok(math.abs(sum(w) - 1) < 1e-9, string.format("sum at %d, %d", x, z))
+			end
+		end
+		for _, p in { Vector3.new(0, 0, 0), Vector3.new(0, 5, 600), Vector3.new(900, 0, 0), Vector3.new(0, 0, -2000) } do
+			local w = LookPresets.areaWeights(p)
+			t.eq(w.home, 1, "home at " .. tostring(p))
+			t.eq(LookPresets.topArea(w), "home", "top home at " .. tostring(p))
+		end
+		local centres = { creek = Vector3.new(-230, 0, 0), basin = Vector3.new(0, 0, -220), bluewater = Vector3.new(0, 0, -600), island = Vector3.new(100, 0, -950) }
+		for id, p in centres do
+			local w = LookPresets.areaWeights(p)
+			t.ok(math.abs(w[id] - 1) < 1e-9, id .. " is pure in its middle")
+			t.eq(LookPresets.topArea(w), id, "top " .. id)
+		end
+		-- The basin and blue water meet at the buoy line with no home showing between them.
+		local seam = LookPresets.areaWeights(Vector3.new(0, 0, -290))
+		t.ok(seam.home < 1e-9, "no home at the buoy line")
+		t.ok(math.abs(seam.basin - 0.5) < 1e-9 and math.abs(seam.bluewater - 0.5) < 1e-9, "half and half at the buoy line")
+	end)
+
+	t.test("the zones agree with the boat map", function()
+		local BoatRules = require(Shared.BoatRules)
+		local byId = {}
+		for _, zn in LookPresets.ZONES do
+			byId[zn.id] = zn
+			t.ok(LookPresets.AREAS[zn.id] ~= nil, "area for zone " .. zn.id)
+		end
+		t.eq(byId.basin.z1, BoatRules.BUOY_Z, "basin ends at the buoy line")
+		t.eq(byId.bluewater.z2, BoatRules.BUOY_Z, "blue water starts at the buoy line")
+		local lake = BoatRules.BIG_LAKE
+		t.eq(byId.basin.z2, lake.cframe.Position.Z + lake.size.Z / 2, "basin starts at the Big Lake's south shore")
+		t.ok(byId.bluewater.z1 <= lake.cframe.Position.Z - lake.size.Z / 2, "blue water covers the Big Lake's north end")
+	end)
+
+	t.test("the 40 stud band blends smoothly", function()
+		-- Blue water's east edge (x = 450), far from every other zone.
+		local prev = 1
+		local maxStep = 0
+		for x = 420, 480, 1 do
+			local w = LookPresets.areaWeights(Vector3.new(x, 0, -700)).bluewater
+			t.ok(w <= prev + 1e-12, "falls steadily at x " .. x)
+			maxStep = math.max(maxStep, prev - w)
+			prev = w
+		end
+		t.ok(math.abs(LookPresets.areaWeights(Vector3.new(429, 0, -700)).bluewater - 1) < 1e-9, "full 21 studs inside")
+		t.ok(math.abs(LookPresets.areaWeights(Vector3.new(450, 0, -700)).bluewater - 0.5) < 1e-9, "half on the edge")
+		t.eq(LookPresets.areaWeights(Vector3.new(471, 0, -700)).home, 1, "gone 21 studs outside")
+		t.ok(maxStep <= 1.5 / LookPresets.AREA_BAND + 1e-9, "no stud moves it more than smoothstep's steepest slope")
+		-- The island fades the blue water out under it, with no home in between.
+		local edge = LookPresets.areaWeights(Vector3.new(220, 0, -950))
+		t.ok(math.abs(edge.island - 0.5) < 1e-9 and math.abs(edge.bluewater - 0.5) < 1e-9 and edge.home < 1e-9, "island edge")
+	end)
+
+	t.test("home areas leave the look exactly as it was", function()
+		for _, c in CLOCKS do
+			for _, w in { "Clear", "Storm", "Fog" } do
+				local look = LookPresets.at(c, w, 0.6, "Overcast")
+				same(look, LookPresets.blendAreas(look, { home = 1 }), "home at " .. c .. " " .. w)
+				same(look, LookPresets.blendAreas(look, LookPresets.areaWeights(Vector3.new(0, 0, 0))), "lake at " .. c .. " " .. w)
+			end
+		end
+		local h = LookPresets.areaWater({ home = 1 })
+		t.ok(h.WaterColor == Color3.fromRGB(26, 66, 62), "home water colour (WaterLook.TERRAIN)")
+		t.eq(h.WaterTransparency, 0.55, "home water transparency")
+		t.eq(h.WaterWaveSize, 0.12, "home waves")
+		-- applyTo with home areas writes what it wrote before.
+		local function fake()
+			local l = {}
+			function l:FindFirstChild()
+				return nil
+			end
+			function l:FindFirstChildOfClass()
+				return nil
+			end
+			return l
+		end
+		local made = {}
+		local function make(className)
+			local i = { ClassName = className }
+			made[className] = i
+			return i
+		end
+		local a = fake()
+		LookPresets.applyTo(a, 17.5, make, "Overcast", 0.4, "Clear", nil, { home = 1 })
+		t.eq(a.Brightness, LookPresets.at(17.5, "Overcast", 0.4, "Clear").Lighting.Brightness, "home write")
+	end)
+
+	t.test("other areas change the look but keep it in range", function()
+		for id in LookPresets.AREAS do
+			for _, c in CLOCKS do
+				local look = LookPresets.blendAreas(LookPresets.at(c, "Storm"), { [id] = 1 })
+				local a = look.Atmosphere
+				t.ok(a.Density >= 0 and a.Density <= LookPresets.MAX_DENSITY, id .. " density at " .. c)
+				t.ok(a.Haze >= 0 and a.Haze <= LookPresets.MAX_HAZE, id .. " haze at " .. c)
+				for k, v in flat(look) do
+					if k:sub(-2, -2) == "." then
+						t.ok(v >= 0 and v <= 1, id .. " " .. k .. " at " .. c)
+					end
+				end
+			end
+			local wtr = LookPresets.AREAS[id].water
+			t.ok(wtr.WaterTransparency >= 0 and wtr.WaterTransparency <= 1, id .. " water transparency")
+			t.ok(wtr.WaterReflectance >= 0 and wtr.WaterReflectance <= 1, id .. " water reflectance")
+		end
+		t.ok(LookPresets.blendAreas(LookPresets.at(12), { bluewater = 1 }).Atmosphere.Haze > LookPresets.at(12).Atmosphere.Haze, "blue water is hazier")
+		t.eq(LookPresets.AREAS.bluewater.water.WaterWaveSize, 2 * LookPresets.AREAS.home.water.WaterWaveSize, "blue water swell is doubled")
+		-- A half-and-half blend sits between the two.
+		local half = LookPresets.areaWater({ home = 0.5, creek = 0.5 })
+		t.ok(math.abs(half.WaterTransparency - (0.55 + 0.8) / 2) < 1e-9, "water blends")
+	end)
+
+	t.test("tiers: desktop and phone, and phone has no sun rays", function()
+		local d, p = LookPresets.TIERS.desktop, LookPresets.TIERS.phone
+		t.ok(d ~= nil and p ~= nil, "both tiers")
+		t.eq(d.lightingStyle, "Realistic", "desktop style")
+		t.eq(p.lightingStyle, "Soft", "phone style")
+		t.eq(p.sunRays, false, "no sun rays on phone")
+		t.eq(p.depthOfField, false, "no depth of field on phone")
+		t.eq(p.bloom, true, "phone keeps bloom")
+		t.eq(p.shadows, "sun", "phone: sun shadows only")
+		t.ok(d.sunRays and d.bloom and d.depthOfField, "desktop extras on")
+	end)
 end

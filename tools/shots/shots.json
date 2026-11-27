@@ -1,9 +1,11 @@
 {
-  "about": "The fixed views every look step is judged on. Camera at eye, aimed at look, field of view fov, game clock in hours. Same shots, same order, every time. World coordinates as WorldBuilder builds them: lake water spans x -110..110 and z -80..80 at y 0, ground top is y 1, the dock runs from the south shore north at x 0 (z 80 to 34), the stands and home pond sit south of the dock (z 96 to 106). Cedar Creek runs north to south along x -230 (riffle z 30..75, deep pool z -70..-10), entered through the gate at x -158. (The first baseline on 11/26/2026 was shot while the whole Lake model sat 6 west, 10 up and 55 north of these; the shots were moved by the same amount on 11/26/2026 so they frame the same places.) Golden-hour shots are at 17.4 since 11/27/2026: in Roblox the sun sets at 18.0, so 18.4 showed dusk.",
+  "about": "The fixed views every look step is judged on. Camera at eye, aimed at look, field of view fov, game clock in hours. Same shots, same order, every time. World coordinates as WorldBuilder builds them: lake water spans x -110..110 and z -80..80 at y 0, ground top is y 1, the dock runs from the south shore north at x 0 (z 80 to 34), the stands and home pond sit south of the dock (z 96 to 106). Cedar Creek runs north to south along x -230 (riffle z 30..75, deep pool z -70..-10), entered through the gate at x -158. (The first baseline on 11/26/2026 was shot while the whole Lake model sat 6 west, 10 up and 55 north of these; the shots were moved by the same amount on 11/26/2026 so they frame the same places.) Golden-hour shots are at 17.4 since 11/27/2026: in Roblox the sun sets at 18.0, so 18.4 showed dusk. Sets (11/27/2026, leg 3 N0): A is the home lake and the creek (group lake or creek), B the Big Lake (x -200..200, z -440..-140; the channel x -15..15 from z -78 to -142 with its footbridge at z -85; the island round (-90, -240) with the lighthouse at (-72, -239); the buoy line at z -290, blue water north of it), C the boats (N4) and D the island (N6). Set U is six UI screens (kind screen), each captured at every size in screen_sizes over the dock-end noon view; their luau runs after a shared prelude in shots.py and asks the Studio-only DebugScreen hook in the Controller first.",
   "fov": 70,
   "shots": [
     {
       "id": "01-dock-dawn",
+      "set": "A",
+      "group": "lake",
       "place": "lake",
       "clock": 6.6,
       "eye": [
@@ -20,6 +22,8 @@
     },
     {
       "id": "02-dock-golden",
+      "set": "A",
+      "group": "lake",
       "place": "lake",
       "clock": 17.4,
       "eye": [
@@ -36,6 +40,8 @@
     },
     {
       "id": "03-dockend-noon",
+      "set": "A",
+      "group": "lake",
       "place": "lake",
       "clock": 12.0,
       "eye": [
@@ -52,6 +58,8 @@
     },
     {
       "id": "04-dockend-night",
+      "set": "A",
+      "group": "lake",
       "place": "lake",
       "clock": 22.0,
       "eye": [
@@ -68,6 +76,8 @@
     },
     {
       "id": "05-weedbed-golden",
+      "set": "A",
+      "group": "lake",
       "place": "lake",
       "clock": 17.4,
       "eye": [
@@ -84,6 +94,8 @@
     },
     {
       "id": "06-logs-dawn",
+      "set": "A",
+      "group": "lake",
       "place": "lake",
       "clock": 6.6,
       "eye": [
@@ -100,6 +112,8 @@
     },
     {
       "id": "07-overview-golden",
+      "set": "A",
+      "group": "lake",
       "place": "lake",
       "clock": 17.4,
       "eye": [
@@ -116,6 +130,8 @@
     },
     {
       "id": "08-stands-noon",
+      "set": "A",
+      "group": "lake",
       "place": "lake",
       "clock": 12.0,
       "eye": [
@@ -132,6 +148,8 @@
     },
     {
       "id": "09-riffle-dawn",
+      "set": "A",
+      "group": "creek",
       "place": "creek",
       "clock": 6.6,
       "eye": [
@@ -148,6 +166,8 @@
     },
     {
       "id": "10-pool-golden",
+      "set": "A",
+      "group": "creek",
       "place": "creek",
       "clock": 17.4,
       "eye": [
@@ -164,6 +184,8 @@
     },
     {
       "id": "11-gate-noon",
+      "set": "A",
+      "group": "creek",
       "place": "creek",
       "clock": 12.0,
       "eye": [
@@ -180,6 +202,8 @@
     },
     {
       "id": "12-pool-night",
+      "set": "A",
+      "group": "creek",
       "place": "creek",
       "clock": 22.0,
       "eye": [
@@ -193,6 +217,322 @@
         -45
       ],
       "what": "The deep pool at night"
+    },
+    {
+      "id": "b01-bridge-dawn",
+      "set": "B",
+      "group": "biglake",
+      "place": "biglake",
+      "clock": 6.6,
+      "eye": [
+        12,
+        5,
+        -48
+      ],
+      "look": [
+        0,
+        5,
+        -95
+      ],
+      "what": "From the home lake up the channel to the footbridge at dawn, the Big Lake beyond it"
+    },
+    {
+      "id": "b02-basin-boat-noon",
+      "set": "B",
+      "group": "biglake",
+      "place": "biglake",
+      "clock": 12.0,
+      "eye": [
+        -20,
+        4,
+        -180
+      ],
+      "look": [
+        -90,
+        3,
+        -245
+      ],
+      "what": "Across the open basin to the island from a boat (eye 4 above the water) at noon"
+    },
+    {
+      "id": "b03-lighthouse-golden",
+      "set": "B",
+      "group": "biglake",
+      "place": "biglake",
+      "clock": 17.4,
+      "eye": [
+        -32,
+        5,
+        -224
+      ],
+      "look": [
+        -72,
+        2,
+        -239
+      ],
+      "what": "Over the weedy point to the lighthouse on the island at golden hour"
+    },
+    {
+      "id": "b04-buoys-dusk",
+      "set": "B",
+      "group": "biglake",
+      "place": "biglake",
+      "clock": 18.3,
+      "eye": [
+        52,
+        4,
+        -282
+      ],
+      "look": [
+        -80,
+        0,
+        -292
+      ],
+      "what": "Along the line of orange buoys toward the west headland at dusk"
+    },
+    {
+      "id": "b05-bluewater-noon",
+      "set": "B",
+      "group": "biglake",
+      "place": "biglake",
+      "clock": 12.0,
+      "eye": [
+        24,
+        5,
+        -280
+      ],
+      "look": [
+        50,
+        0,
+        -420
+      ],
+      "what": "Past a buoy into the open blue water toward the north headland at noon (set C adds a boat on plane later)"
+    },
+    {
+      "id": "b06-marina-night",
+      "set": "B",
+      "group": "biglake",
+      "place": "biglake",
+      "clock": 22.0,
+      "eye": [
+        80,
+        7,
+        -205
+      ],
+      "look": [
+        40,
+        2,
+        -140
+      ],
+      "what": "The south shore of the Big Lake east of the channel, where the marina will go, at night"
+    },
+    {
+      "id": "u01-hud",
+      "set": "U",
+      "kind": "screen",
+      "group": "screens",
+      "place": "lake",
+      "clock": 12.0,
+      "eye": [
+        0,
+        6,
+        37
+      ],
+      "look": [
+        0,
+        0,
+        -55
+      ],
+      "what": "The plain HUD while idle on the dock",
+      "luau": [
+        "viaHook(\"hud\")",
+        "return \"screen u01-hud set\""
+      ]
+    },
+    {
+      "id": "u02-shop",
+      "set": "U",
+      "kind": "screen",
+      "group": "screens",
+      "place": "lake",
+      "clock": 12.0,
+      "eye": [
+        0,
+        6,
+        37
+      ],
+      "look": [
+        0,
+        0,
+        -55
+      ],
+      "what": "The bait and tackle shop",
+      "luau": [
+        "if not viaHook(\"shop\") or not ui.Shop.Visible then",
+        "\tui.Shop.Visible = true -- fallback: rows as built, without a refresh from the player state",
+        "\treturn \"screen u02-shop set (fallback: shown without a refresh; the DebugScreen hook is missing)\"",
+        "end",
+        "return \"screen u02-shop set\""
+      ]
+    },
+    {
+      "id": "u03-journal",
+      "set": "U",
+      "kind": "screen",
+      "group": "screens",
+      "place": "lake",
+      "clock": 12.0,
+      "eye": [
+        0,
+        6,
+        37
+      ],
+      "look": [
+        0,
+        0,
+        -55
+      ],
+      "what": "The fish journal",
+      "luau": [
+        "if not viaHook(\"journal\") or not ui.Journal.Visible then",
+        "\treturn \"screen u03-journal: no DebugScreen hook. Press J now (user_keyboard_input) so the journal opens filled in, then capture\"",
+        "end",
+        "return \"screen u03-journal set\""
+      ]
+    },
+    {
+      "id": "u04-card-rare",
+      "set": "U",
+      "kind": "screen",
+      "group": "screens",
+      "place": "lake",
+      "clock": 12.0,
+      "eye": [
+        0,
+        6,
+        37
+      ],
+      "look": [
+        0,
+        0,
+        -55
+      ],
+      "what": "A Rare catch card (Largemouth Bass, personal best)",
+      "luau": [
+        "if not viaHook(\"card\") or not ui.CatchCard.Visible then",
+        "\t-- fallback: fill the card by hand the way UI.catchCard does for a Rare fish (no fish model in the window)",
+        "\tlocal Shared = game:GetService(\"ReplicatedStorage\"):WaitForChild(\"Shared\")",
+        "\tlocal col = Color3.fromRGB(80, 150, 240)",
+        "\tpcall(function() col = require(Shared.Rarity).byId.Rare.color end)",
+        "\tlocal len, wt = \"46 cm\", \"1.5 kg\"",
+        "\tpcall(function() local U = require(Shared.Units); len, wt = U.length(46), U.weight(1.5) end)",
+        "\tlocal card = ui.CatchCard",
+        "\tcard.Title.Text = \"Largemouth Bass\"",
+        "\tcard.Title.TextColor3 = col",
+        "\tcard.Body.Text = string.format(\"Rare. %s, %s. Worth 38 coins.\\nPersonal best!\", len, wt)",
+        "\tcard.Note.Text = \"Caught at the weed bed on Plastic Worm.\"",
+        "\tcard.Badge.Text = \"RARE\"",
+        "\tcard.Badge.BackgroundColor3 = col",
+        "\tcard.Badge.TextColor3 = Color3.new(1, 1, 1)",
+        "\tlocal stroke = card:FindFirstChildOfClass(\"UIStroke\")",
+        "\tif stroke then stroke.Color = col end",
+        "\tlocal sc = card:FindFirstChildOfClass(\"UIScale\")",
+        "\tif sc then sc.Scale = 1 end",
+        "\tcard:SetAttribute(\"Token\", -1) -- so no pending auto-close matches",
+        "\tcard.Visible = true",
+        "\treturn \"screen u04-card-rare set (fallback: filled by hand, no fish in the window; the DebugScreen hook is missing)\"",
+        "end",
+        "return \"screen u04-card-rare set\""
+      ]
+    },
+    {
+      "id": "u05-fight",
+      "set": "U",
+      "kind": "screen",
+      "group": "screens",
+      "place": "lake",
+      "clock": 12.0,
+      "eye": [
+        0,
+        6,
+        37
+      ],
+      "look": [
+        0,
+        0,
+        -55
+      ],
+      "what": "A fight in progress (fish inside the zone, reeling)",
+      "luau": [
+        "if not viaHook(\"fight\") or not ui.Fight.Visible then",
+        "\t-- fallback: pose the fight bar, reel prompt and drag box by hand, as UI.showFight draws them",
+        "\tlocal f, tr = ui.Fight, ui.Fight.Track",
+        "\ttr.Zone.Size = UDim2.new(1, 0, 0.3, 0)",
+        "\ttr.Zone.Position = UDim2.new(0, 0, 1 - 0.55 - 0.15, 0)",
+        "\ttr.Zone.BackgroundColor3 = Color3.fromRGB(90, 200, 110)",
+        "\ttr.FishMark.Position = UDim2.new(0, -4, 1 - 0.6, -7)",
+        "\tf.Progress.Fill.Size = UDim2.fromScale(1, 0.45)",
+        "\tf.Progress.Fill.Position = UDim2.fromScale(0, 0.55)",
+        "\tf.Note.Text = \"Big runs, then rests.\"",
+        "\tf.Cue.Text = \"Nice!\"",
+        "\tf.Cue.TextColor3 = Color3.fromRGB(90, 200, 110)",
+        "\tf.Cue.Position = UDim2.new(1, 10, 0, 46 + (1 - 0.55) * 236 - 20)",
+        "\tui.ReelPrompt.Title.Text = \"REELING!\"",
+        "\tui.ReelPrompt.Title.TextColor3 = Color3.fromRGB(90, 200, 110)",
+        "\tui.ReelPrompt.Sub.Text = \"Hold the mouse button to reel. Let go when it runs.\"",
+        "\tui.DragBox.Drag.Text = \"Drag: Medium (Q)\"",
+        "\tui.DragBox.Line.Text = \"Line 8 lb\"",
+        "\tfor _, n in { \"BaitButton\", \"JournalButton\", \"GoalsButton\" } do",
+        "\t\tlocal b = ui:FindFirstChild(n)",
+        "\t\tif b then b.Visible = false end -- side buttons hide in a fight (UI.setLocked)",
+        "\tend",
+        "\tf.Visible, ui.ReelPrompt.Visible, ui.DragBox.Visible = true, true, true",
+        "\treturn \"screen u05-fight set (fallback: posed by hand; the DebugScreen hook is missing)\"",
+        "end",
+        "return \"screen u05-fight set\""
+      ]
+    },
+    {
+      "id": "u06-bench",
+      "set": "U",
+      "kind": "screen",
+      "group": "screens",
+      "place": "lake",
+      "clock": 12.0,
+      "eye": [
+        0,
+        6,
+        37
+      ],
+      "look": [
+        0,
+        0,
+        -55
+      ],
+      "what": "The bait bench, baiting a worm on a small hook",
+      "luau": [
+        "if not viaHook(\"bench\") then",
+        "\t-- fallback: open a bait bench straight from its module and step it each frame. If this context",
+        "\t-- gets its own copy of the module, that copy builds its own bench gui; either way it shows the bench.",
+        "\tlocal ok, BB = pcall(require, P:WaitForChild(\"PlayerScripts\"):WaitForChild(\"ClientModules\"):WaitForChild(\"BaitBench\"))",
+        "\tif not ok then return \"screen u06-bench: could not load BaitBench (\" .. tostring(BB) .. \")\" end",
+        "\tBB.open({ bait = \"Worm\", hook = \"Small\", firstTime = false, auto = false, onDone = function() end })",
+        "\t_G.__benchStep = game:GetService(\"RunService\").RenderStepped:Connect(function() BB.step() end)",
+        "\ttask.wait(1)",
+        "\treturn \"screen u06-bench set (fallback: module opened directly; it times out after 20 s, so capture now)\"",
+        "end",
+        "return \"screen u06-bench set (the bench times out after 20 s: capture now)\""
+      ]
     }
+  ],
+  "screen_sizes": [
+    [
+      1280,
+      720
+    ],
+    [
+      667,
+      375
+    ]
   ]
 }

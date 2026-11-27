@@ -28,8 +28,9 @@ OUT = ROOT / "docs" / "critic"
 CONTEXT = (
     "You are reviewing a Roblox fishing game in development, made by a father and his son. "
     "It aims for a beautiful, calm-but-tense fishing game where real fishing knowledge (spot, time of day, bait) "
-    "decides what bites. The art style is deliberately chunky low-poly with flat vertex colours; judge it on "
-    "light, mood and readability, not polygon counts. It is played mainly on desktop and must still read on a small phone. Be specific and "
+    "decides what bites. The art style is Real-ish: chunky simple shapes with true materials, real light and water "
+    "(wood that reads as wood, stone as stone, believable water and sky), not flat vertex colours; judge it on "
+    "materials, light, mood and readability, not polygon counts. It is played mainly on desktop and must still read on a small phone. Be specific and "
     "honest; name exact things you see or hear, with timestamps for clips."
 )
 
@@ -50,6 +51,15 @@ REVIEW_SCHEMA = {
         "strengths": {"type": "array", "items": {"type": "string"}},
         "top_fixes": {"type": "array", "items": {"type": "string"}, "description": "the 3 changes that would help most, most important first"},
         "broken": {"type": "array", "items": {"type": "string"}},
+        "stock_items": {
+            "type": "array",
+            "description": "only when the rubric asks for it (identity): each thing that reads as stock Roblox, with a short reason",
+            "items": {
+                "type": "object",
+                "properties": {"item": {"type": "string"}, "reason": {"type": "string"}},
+                "required": ["item", "reason"],
+            },
+        },
     },
     "required": ["score", "summary", "strengths", "top_fixes", "broken"],
 }
@@ -126,6 +136,8 @@ def write_report(step: str, model: str, mode: str, files: list[Path], prompt_not
         lines += ["Strengths:", *[f"- {x}" for x in verdict["strengths"]], ""]
         if verdict.get("broken"):
             lines += ["Broken or ugly:", *[f"- {x}" for x in verdict["broken"]], ""]
+        if verdict.get("stock_items"):
+            lines += ["Reads as stock Roblox:", *[f"- {x.get('item', '')}: {x.get('reason', '')}" for x in verdict["stock_items"]], ""]
     elif mode == "rank":
         lines += [verdict["summary"], "", "| Rank | File | Score | Note |", "|---|---|---|---|"]
         lines += [f"| {i} | `{r['file']}` | {r['score']} | {r['note']} |" for i, r in enumerate(verdict["ranking"], 1)]

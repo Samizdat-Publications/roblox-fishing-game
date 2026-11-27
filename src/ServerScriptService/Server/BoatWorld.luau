@@ -18,6 +18,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local BoatRules = require(Shared.BoatRules)
 local Shore = require(Shared.Shore)
+local Config = require(Shared.Config)
+local Signs = require(script.Parent.Signs) -- painted boards (leg 3, N2)
 
 local BoatWorld = {}
 
@@ -602,7 +604,118 @@ function BoatWorld.build(): { [string]: number }
 		warn("[BoatWorld] Workspace.Lake missing; build it first")
 	end
 	model.Parent = workspace
+	if Config.PAINTED_SIGNS_ON then
+		BoatWorld.paintSigns(model, lake)
+	end
 	return { removedScenery = removed, trees = trees, shore = shore }
+end
+
+-- Painted signs (leg 3, N2): the slips' board on posts, a number plate on each slip's post, and
+-- the blue-water warning on a post stood on its buoy. The old floating signs are switched off,
+-- not destroyed (unpaintSigns brings them back). Positions come from the parts the old signs
+-- belong to. Safe to run again. The slips live in Workspace.Lake (lake defaults to it):
+--   require(game.ServerScriptService.Server.BoatWorld).paintSigns(workspace.BigLake)
+function BoatWorld.paintSigns(bigLake: Instance, lake: Instance?): number
+	local made = 0
+	local home = lake or workspace:FindFirstChild("Lake")
+	local slips = home and home:FindFirstChild("BoatSlips")
+	if slips then
+		local folder = Signs.folder(slips)
+		-- "Boat slips": a board on two posts, just round the old gray board so it hides it.
+		local old = slips:FindFirstChild("BoatSlipsSign")
+		local gui = Signs.find(old)
+		if old and old:IsA("BasePart") and gui then
+			local centre = old.Position
+			local out = Vector3.new(1, 0, 0) -- front to the water and the boats; painted both sides
+			local board = Signs.board({
+				name = "BoatSlipsBoard",
+				text = "Boat slips",
+				width = old.Size.Z + 0.3,
+				height = old.Size.Y + 0.2,
+				thickness = old.Size.X + 0.1,
+				cframe = CFrame.lookAt(centre, centre + out),
+				paint = Signs.PAINT.slips,
+				twoSided = true,
+				hang = "posts",
+				ground = centre.Y - old.Size.Y / 2 - 0.2,
+				lantern = true,
+			})
+			board.Parent = folder
+			Signs.cover(gui)
+			made += 1
+		end
+		-- Number plates: on the post at each slip's low-z edge (Post i), on its deck side, nudged
+		-- toward its own slip, top half a stud over the post.
+		for i = 1, #BoatRules.SLIP_ZS do
+			local marker = slips:FindFirstChild("Slip" .. i)
+			local post = slips:FindFirstChild("Post" .. i)
+			local markerGui = Signs.find(marker)
+			if markerGui and post and post:IsA("BasePart") then
+				local w, h, thick = 1.3, 0.9, 0.12
+				local top = Signs.topOf(post) + 0.5
+				local centre = post.Position + Vector3.new(-(post.Size.X / 2 + thick / 2 + 0.01), 0, 0.3)
+				centre = Vector3.new(centre.X, top - h / 2, centre.Z)
+				local plate = Signs.board({
+					name = "SlipPlate" .. i,
+					text = tostring(i),
+					width = w,
+					height = h,
+					thickness = thick,
+					cframe = CFrame.lookAt(centre, centre - Vector3.new(1, 0, 0)), -- front to the deck
+					paint = Signs.PAINT.pale,
+					twoSided = true,
+				})
+				plate.Parent = folder
+				Signs.cover(markerGui)
+				made += 1
+			end
+		end
+	end
+
+	-- The blue-water warning: a single post stood on its buoy, the board facing the near water
+	-- (south, +z) where the small boats come from; painted both sides.
+	local buoys = bigLake:FindFirstChild("BuoyLine")
+	if buoys then
+		local folder = Signs.folder(bigLake)
+		for _, b in buoys:GetChildren() do
+			local gui = Signs.find(b)
+			if gui and b:IsA("BasePart") then
+				local w, h = 8, 2.4
+				local ground = Signs.topOf(b)
+				local centre = Vector3.new(b.Position.X, ground + 1.2 + h / 2, b.Position.Z)
+				local board = Signs.board({
+					name = "BlueWaterSign",
+					text = "Blue water ahead: big boats only",
+					width = w,
+					height = h,
+					cframe = CFrame.lookAt(centre, centre + Vector3.new(0, 0, 1)),
+					paint = Signs.PAINT.pale,
+					twoSided = true,
+					hang = "post",
+					ground = ground,
+				})
+				board.Parent = folder
+				Signs.cover(gui)
+				made += 1
+			end
+		end
+	end
+	return made
+end
+
+-- Takes the painted boards away and switches the old floating signs back on.
+--   require(game.ServerScriptService.Server.BoatWorld).unpaintSigns(workspace.BigLake)
+function BoatWorld.unpaintSigns(bigLake: Instance, lake: Instance?)
+	local home = lake or workspace:FindFirstChild("Lake")
+	local slips = home and home:FindFirstChild("BoatSlips")
+	for _, root in { slips, bigLake } do
+		local folder = root and root:FindFirstChild("PaintedSigns")
+		if folder then
+			folder:Destroy()
+		end
+	end
+	Signs.uncover(slips)
+	Signs.uncover(bigLake:FindFirstChild("BuoyLine"))
 end
 
 return BoatWorld

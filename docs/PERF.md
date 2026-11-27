@@ -49,3 +49,7 @@ Inside the budget. Client memory 2,116 MB, 58,555 instances (Studio included).
 | 10-pool-golden | 4.18 ms | 6.68 ms | 7.69 ms | 7.35 ms |
 
 Averages inside the budget. One 28 ms frame on the first view (the first seconds after the camera jumps, likely terrain and clouds loading in); watch for it on the phone check. Client memory 2,371 MB, 60,052 instances (Studio included).
+
+## Probe fields from leg 3 (N0, 11/27/2026)
+
+`tools/shots/probe.luau` now pins graphics quality before it samples (Level21 on the desktop tier; Studio's Automatic drops low when its window is not in front) and also reports triangles and draw calls in view (`Stats.SceneTriangleCount`, `Stats.SceneDrawcallCount`) and texture, terrain, mesh-part and part graphics memory. Set `PHONE = true` at the top for the phone-tier stand-in: it sets the `LookTier` attribute to `phone` and graphics quality to Level 3, samples, then puts both back. Budgets for these are in the leg 3 plan, "Measurable checks" 3.
