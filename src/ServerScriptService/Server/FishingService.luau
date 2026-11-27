@@ -24,6 +24,8 @@ local Cover = require(Shared.Cover)
 local Advice = require(Shared.Advice)
 local Rises = require(Shared.Rises)
 local BaitRig = require(Shared.BaitRig)
+local Approach = require(Shared.Approach)
+local BobberCam = require(Shared.BobberCam)
 
 local Server = script.Parent
 local PlayerData = require(Server.PlayerData)
@@ -44,6 +46,20 @@ local FishingService = {}
 -- strips it, or the player re-baits.
 type Rig = { bait: string, hook: string, grade: BaitRig.Grade }
 
+-- The fish coming for the bait (L4): picked and sized when its approach starts, so the
+-- client's shadow matches what lands. `biteAt` is os.clock() of the strike (or, for a
+-- looker, of the moment it leaves).
+type Coming = {
+	species: string,
+	cm: number,
+	kg: number,
+	class: string,
+	leaves: boolean,
+	biteAt: number,
+	hushed: boolean, -- the held breath has started (twitches no longer change anything)
+	striking: boolean, -- the nibbles and bite are running
+}
+
 type Session = {
 	phase: string, -- Idle, Waiting, Snagged, Bite, Fighting
 	token: number,
@@ -57,7 +73,11 @@ type Session = {
 	species: string?,
 	fightStart: number,
 	minSecs: number,
-	catch: { cm: number, kg: number, class: string }?, -- rolled at the hook (rarity plan Task 2)
+	catch: { cm: number, kg: number, class: string }?, -- rolled when the fish's approach starts (L4)
+	coming: Coming?, -- the fish approaching the bait (L4)
+	waitGen: number, -- bumps whenever the bite timeline is re-planned (L4), so stale timers stop
+	twitches: Approach.Twitches, -- recent twitches, for spooks (L4)
+	extraDelay: number, -- added to the next approach after a spook (L4)
 	tight: boolean?, -- this cast landed tight to cover (L2b)
 	fastBite: number?, -- a claimed rise: the next bite comes this many seconds after the cast (L2b)
 	snag: Cover.Snag?, -- a snagged cast being wiggled free (L2b)
@@ -82,7 +102,17 @@ local toastEvent: RemoteEvent
 local function session(player: Player): Session
 	local s = sessions[player]
 	if not s then
-		s = { phase = "Idle", token = 0, fightStart = 0, minSecs = 0, rigEmptyAt = os.clock(), lastRigAt = 0 }
+		s = {
+			phase = "Idle",
+			token = 0,
+			fightStart = 0,
+			minSecs = 0,
+			rigEmptyAt = os.clock(),
+			lastRigAt = 0,
+			waitGen = 0,
+			twitches = Approach.newTwitches(),
+			extraDelay = 0,
+		}
 		sessions[player] = s
 	end
 	return s
@@ -108,6 +138,10 @@ local function cleanup(s: Session)
 	s.tight = nil
 	s.fastBite = nil
 	s.snag = nil
+	s.coming = nil
+	s.waitGen += 1
+	s.twitches = Approach.newTwitches()
+	s.extraDelay = 0
 end
 
 -- The bait on the hook for a cast with `baitId`, or nil for a lure (or a stale rig).
@@ -145,6 +179,8 @@ local function reset(player: Player, s: Session)
 	send(player, "Reset")
 end
 
+local TOP_RISE = 0.4 * BobberCam.BOBBER_SCALE -- the gray-box bobber's white top sits this far up
+
 local function makeBobber(player: Player, pos: Vector3): BasePart
 	local b: BasePart
 	local glowOn: BasePart
@@ -157,6 +193,7 @@ local function makeBobber(player: Player, pos: Vector3): BasePart
 		b = mesh:Clone()
 		b:ClearAllChildren()
 		b.Name = "Bobber_" .. player.Name
+		b.Size = mesh.Size * BobberCam.BOBBER_SCALE -- bigger, so it reads while you wait (L4)
 		b.Anchored = true
 		b.CanCollide = false
 		b.CanQuery = false
@@ -168,7 +205,7 @@ local function makeBobber(player: Player, pos: Vector3): BasePart
 		b = Instance.new("Part")
 		b.Name = "Bobber_" .. player.Name
 		b.Shape = Enum.PartType.Ball
-		b.Size = Vector3.new(0.8, 0.8, 0.8)
+		b.Size = Vector3.one * 0.8 * BobberCam.BOBBER_SCALE
 		b.Color = Color3.fromRGB(230, 60, 50)
 		b.Material = Enum.Material.SmoothPlastic
 		b.Anchored = true
@@ -179,13 +216,13 @@ local function makeBobber(player: Player, pos: Vector3): BasePart
 		local top = Instance.new("Part")
 		top.Name = "Top"
 		top.Shape = Enum.PartType.Ball
-		top.Size = Vector3.new(0.5, 0.5, 0.5)
+		top.Size = Vector3.one * 0.5 * BobberCam.BOBBER_SCALE
 		top.Color = Color3.new(1, 1, 1)
 		top.Anchored = true
 		top.CanCollide = false
 		top.CanQuery = false
 		top.CanTouch = false
-		top.Position = pos + Vector3.new(0, 0.4, 0)
+		top.Position = pos + Vector3.new(0, TOP_RISE, 0)
 		top.Parent = b
 		glowOn = top
 	end
@@ -224,7 +261,7 @@ local function setBobberY(s: Session, dy: number)
 		b.Position = base
 		local top = b:FindFirstChild("Top") :: BasePart?
 		if top then
-			top.Position = base + Vector3.new(0, 0.4, 0)
+			top.Position = base + Vector3.new(0, TOP_RISE, 0)
 		end
 	end
 end
@@ -245,8 +282,169 @@ local function nothingHint(player: Player, s: Session): string
 	return Advice.nothingText(s.spot or "OpenWater", s.period or "Day", s.bait or "", owned, spots, now)
 end
 
+-- The size of the fish coming in (server random only): trophies and monsters fight harder
+-- and their shadows are bigger. In Studio a DebugSizeClass attribute forces one.
+local function rollComing(player: Player, species: FishData.Species): (number, number, string)
+	local cm, kg, class = FishLogic.rollCatch(species, rng)
+	local forced = if RunService:IsStudio() then player:GetAttribute("DebugSizeClass") else nil
+	if forced == "trophy" or forced == "monster" then
+		class = forced
+		cm = species.maxCm * (if forced == "monster" then 1.35 else 1.0)
+		kg = math.floor(species.weightCoef * cm ^ 3 * 100 + 0.5) / 100
+	end
+	return cm, kg, class
+end
+
+local function stale(s: Session, token: number, gen: number): boolean
+	return s.token ~= token or s.waitGen ~= gen or s.phase ~= "Waiting"
+end
+
+-- The fish takes the bait: nibblers dip the bobber a couple of times first (those dips aren't
+-- the bite), slams yank it deep, pulls drag it under slowly and give a little longer to react.
+local function strike(player: Player, s: Session, token: number)
+	local c = s.coming
+	if not c then
+		return
+	end
+	local species = FishData.byId[c.species]
+	if not species then
+		return
+	end
+	c.striking = true
+	local pattern = FishLogic.bitePattern(species)
+	s.nibbling = pattern.predips > 0
+	for _ = 1, pattern.predips do
+		setBobberY(s, -0.25)
+		send(player, "Dip") -- the client plays the nibble sound
+		task.wait(0.18)
+		if s.token ~= token or s.phase ~= "Waiting" then
+			return
+		end
+		setBobberY(s, 0)
+		task.wait(pattern.dipGap)
+		if s.token ~= token or s.phase ~= "Waiting" then
+			return
+		end
+	end
+	s.nibbling = false
+	s.coming = nil
+	s.species = c.species
+	s.catch = { cm = c.cm, kg = c.kg, class = c.class }
+	s.phase = "Bite"
+	setBobberY(s, -pattern.depth)
+	send(player, "Bite", { style = pattern.style })
+	task.delay(pattern.hookWindow, function()
+		if s.token == token and s.phase == "Bite" then
+			s.phase = "Waiting"
+			s.species = nil
+			s.catch = nil
+			setBobberY(s, 0)
+			send(player, "Missed", { text = "Too slow! It spat the hook. Wait for another bite." })
+			scheduleBite(player, s)
+		end
+	end)
+end
+
+-- A fish swims off without biting: it looked and left, or a twitch spooked it. A fresh
+-- approach (a new fish, a new roll) is planned after the normal delay.
+local function leave(player: Player, s: Session, spooked: boolean)
+	local c = s.coming
+	s.coming = nil
+	if spooked then
+		s.extraDelay = Approach.SPOOK_DELAY
+	end
+	print(string.format("[Fishing] %s: the %s %s", player.Name, if c then c.species else "fish", if spooked then "was spooked and swam off" else "looked and left"))
+	send(player, "Leave", { spooked = spooked })
+	scheduleBite(player, s)
+end
+
+-- Runs the coming fish's timeline: the held breath HUSH_TIME before the strike, then the
+-- strike (or, for a looker, leaving at the moment it would have bitten). A twitch that moves
+-- the strike bumps waitGen and starts this again, so the old timer just stops.
+local function runComing(player: Player, s: Session)
+	local token, gen = s.token, s.waitGen
+	task.spawn(function()
+		while true do
+			if stale(s, token, gen) then
+				return
+			end
+			local c = s.coming
+			if not c then
+				return
+			end
+			local now = os.clock()
+			if c.leaves then
+				if now >= c.biteAt then
+					leave(player, s, false)
+					return
+				end
+				task.wait(c.biteAt - now)
+			elseif not c.hushed then
+				local hushAt = c.biteAt - Approach.HUSH_TIME
+				if now >= hushAt then
+					c.hushed = true
+					send(player, "Hush") -- the held breath: everything goes quiet
+				else
+					task.wait(hushAt - now)
+				end
+			elseif now >= c.biteAt then
+				strike(player, s, token)
+				return
+			else
+				task.wait(c.biteAt - now)
+			end
+		end
+	end)
+end
+
+-- A fish starts its approach: pick it and size it now, so its shadow matches the catch.
+local function startComing(player: Player, s: Session, plan: Approach.Plan, fromRise: boolean)
+	local speciesId = FishLogic.pickSpecies(s.weights or {}, rng)
+	local species = speciesId and FishData.byId[speciesId]
+	if not species then
+		return
+	end
+	local cm, kg, class = rollComing(player, species)
+	s.coming = {
+		species = species.id,
+		cm = cm,
+		kg = kg,
+		class = class,
+		leaves = plan.leaves,
+		biteAt = os.clock() + plan.biteIn,
+		hushed = false,
+		striking = false,
+	}
+	Approach.onApproach(s.twitches)
+	local len = Approach.shadowLength(cm)
+	local size = Approach.sizeClass(cm)
+	print(string.format(
+		"[Fishing] %s: %s approaching, %.1f cm %s (shadow %s, %.2f studs), %s in %.1fs",
+		player.Name,
+		species.id,
+		cm,
+		class,
+		size,
+		len,
+		if plan.leaves then "leaves" else "bites",
+		plan.biteIn
+	))
+	send(player, "Approach", {
+		size = size,
+		length = len,
+		pos = s.land,
+		biteIn = plan.biteIn,
+		swell = Approach.announces(Rarity.of(species), species.mouth),
+		rise = fromRise,
+	})
+	runComing(player, s)
+end
+
 function scheduleBite(player: Player, s: Session)
 	local token = s.token
+	s.waitGen += 1
+	local gen = s.waitGen
+	s.coming = nil
 	local delay = FishLogic.biteDelay(s.weights or {}, rng)
 	if delay then
 		delay = Cover.adjustDelay(delay, s.tight == true) -- fish hold tight to cover
@@ -258,11 +456,10 @@ function scheduleBite(player: Player, s: Session)
 	if delay and rig then
 		delay *= BaitRig.biteMult(rig.grade) -- well-baited hooks get bit sooner (L3); Okay is x1
 	end
+	local fromRise = false
 	if delay and s.fastBite then
 		delay = s.fastBite -- cast onto a rise: that fish takes it right away (first bite only)
-	end
-	if delay then
-		print(string.format("[Fishing] %s bite in %.1fs (%s, %s)", player.Name, delay, s.bait or "?", if rig then rig.grade else "lure"))
+		fromRise = true
 	end
 	s.fastBite = nil
 	if not delay then
@@ -274,47 +471,59 @@ function scheduleBite(player: Player, s: Session)
 		end)
 		return
 	end
-	task.delay(delay, function()
-		if s.token ~= token or s.phase ~= "Waiting" then
-			return
+	-- Each attempt waits a scaled delay and a quarter of fish look and leave, so the average
+	-- wait is the old one (Shared/Approach.luau). After a spook the next one waits longer.
+	local attempt = Approach.attemptDelay(delay, fromRise) + s.extraDelay
+	s.extraDelay = 0
+	local plan = Approach.plan(attempt, rng, fromRise)
+	print(string.format(
+		"[Fishing] %s bite in %.1fs (%s, %s), approach in %.1fs%s",
+		player.Name,
+		attempt,
+		s.bait or "?",
+		if rig then rig.grade else "lure",
+		plan.approachIn,
+		if plan.leaves then ", a looker" else ""
+	))
+	task.delay(plan.approachIn, function()
+		if not stale(s, token, gen) then
+			startComing(player, s, plan, fromRise)
 		end
-		local speciesId = FishLogic.pickSpecies(s.weights or {}, rng)
-		local species = speciesId and FishData.byId[speciesId]
-		if not species then
-			return
-		end
-		-- Each kind of fish takes the bait its own way: nibblers dip the bobber a couple of
-		-- times first (those dips aren't the bite), slams yank it deep, pulls drag it under
-		-- slowly and give a little longer to react.
-		local pattern = FishLogic.bitePattern(species)
-		s.nibbling = pattern.predips > 0
-		for _ = 1, pattern.predips do
-			setBobberY(s, -0.25)
-			send(player, "Dip") -- the client plays the nibble sound
-			task.wait(0.18)
-			if s.token ~= token or s.phase ~= "Waiting" then
-				return
-			end
-			setBobberY(s, 0)
-			task.wait(pattern.dipGap)
-			if s.token ~= token or s.phase ~= "Waiting" then
-				return
-			end
-		end
-		s.nibbling = false
-		s.species = speciesId
-		s.phase = "Bite"
-		setBobberY(s, -pattern.depth)
-		send(player, "Bite", { style = pattern.style })
-		task.delay(pattern.hookWindow, function()
-			if s.token == token and s.phase == "Bite" then
-				s.phase = "Waiting"
-				setBobberY(s, 0)
-				send(player, "Missed", { text = "Too slow! It spat the hook. Wait for another bite." })
-				scheduleBite(player, s)
-			end
-		end)
 	end)
+end
+
+-- A quick tap while waiting (L4): the client jiggles the bait at once; here the fish reacts.
+local function onTwitch(player: Player)
+	local s = session(player)
+	if s.phase ~= "Waiting" or s.nibbling then
+		return
+	end
+	local now = os.clock()
+	local c = s.coming
+	local open = c ~= nil and not c.hushed and not c.striking and now < c.biteAt - Approach.HUSH_TIME
+	local kind, sooner = Approach.twitch(s.twitches, now, open, rng)
+	if kind == "spook" then
+		leave(player, s, true)
+	elseif kind == "sooner" and c then
+		local wasLooker = c.leaves
+		if wasLooker and rng:NextNumber() >= Approach.TWITCH_KEEP then
+			print(string.format("[Fishing] %s twitched: %s wasn't fooled and is still leaving", player.Name, c.species))
+			return
+		end
+		c.leaves = false
+		local before = c.biteAt
+		c.biteAt = Approach.soonerBiteAt(c.biteAt, now, sooner)
+		print(string.format(
+			"[Fishing] %s twitched: %s%s, bite %.1fs sooner (in %.1fs)",
+			player.Name,
+			c.species,
+			if wasLooker then " stays (was leaving)" else " likes it",
+			before - c.biteAt,
+			c.biteAt - now
+		))
+		s.waitGen += 1
+		runComing(player, s)
+	end
 end
 
 local function onCast(player: Player, dir: any, power: any, clientLanding: any)
@@ -550,6 +759,7 @@ local function onHook(player: Player)
 		s.token += 1 -- the bite's hook-window timer belongs to the fish that just left
 		s.phase = "Waiting"
 		s.species = nil
+		s.catch = nil
 		setBobberY(s, 0)
 		print(string.format("[Fishing] %s: %s spat a %s hook", player.Name, species.id, rig.hook))
 		send(player, "Missed", { text = BaitRig.spitText(rig.hook, species.mouth, species.name), hookSize = true })
@@ -573,16 +783,16 @@ local function onHook(player: Player)
 	end
 	s.phase = "Fighting"
 	s.fightStart = os.clock()
-	-- Size class first (server random only), so trophies and monsters fight harder.
-	-- UNVERIFIED in Studio (rarity plan Task 2, 2026-11-26).
-	local cm, kg, class = FishLogic.rollCatch(species, rng)
-	local forced = if RunService:IsStudio() then player:GetAttribute("DebugSizeClass") else nil
-	if forced == "trophy" or forced == "monster" then
-		class = forced
-		cm = species.maxCm * (if forced == "monster" then 1.35 else 1.0)
-		kg = math.floor(species.weightCoef * cm ^ 3 * 100 + 0.5) / 100
+	-- The fish was picked and sized when its approach started (L4), so the shadow matched it.
+	local rolled = s.catch
+	local cm, kg, class
+	if rolled then
+		cm, kg, class = rolled.cm, rolled.kg, rolled.class
+	else
+		cm, kg, class = rollComing(player, species)
 	end
 	s.catch = { cm = cm, kg = kg, class = class }
+	print(string.format("[Fishing] %s hooked size: %s %.1f cm %s, its shadow was %.2f studs", player.Name, species.id, cm, class, Approach.shadowLength(cm)))
 	local profile = FishLogic.fightFor(species.fight, class)
 	s.minSecs = FightModel.minSeconds(profile, data.assist, start)
 	print(string.format("[Fishing] %s hooked %s, fight starts at %.2f (%s)", player.Name, species.id, start, if rig then rig.grade else "lure"))
@@ -631,7 +841,7 @@ local function showCatch(player: Player, species: FishData.Species, cm: number)
 	if not tip then
 		return
 	end
-	local len = math.clamp(cm / 12, 1, 8) -- studs; a bit bigger than life so it reads on screen
+	local len = Approach.shadowLength(cm) -- studs; the same length as its shadow was (L4)
 	local m = Instance.new("Model")
 	m.Name = "CaughtFish_" .. player.Name
 	local top = tip.WorldPosition - Vector3.new(0, 1, 0)
@@ -802,6 +1012,7 @@ function FishingService.debugState(player: Player): any
 		bait = s.bait,
 		species = s.species,
 		tight = s.tight,
+		coming = if s.coming then { species = s.coming.species, cm = s.coming.cm, leaves = s.coming.leaves } else nil,
 		rig = if r then { bait = r.bait, hook = r.hook, grade = r.grade } else nil,
 	}
 end
@@ -814,6 +1025,7 @@ function FishingService.start()
 	Remotes.event("FightResult").OnServerEvent:Connect(onFightResult)
 	Remotes.event("CancelCast").OnServerEvent:Connect(onCancel)
 	Remotes.event("Wiggle").OnServerEvent:Connect(onWiggle)
+	Remotes.event("Twitch").OnServerEvent:Connect(onTwitch)
 	Remotes.event("Rig").OnServerEvent:Connect(onRig)
 	Players.PlayerRemoving:Connect(function(player)
 		local s = sessions[player]

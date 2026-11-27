@@ -1,8 +1,10 @@
 --!strict
 -- Client fishing flow and input. One "Fish" action on every device:
---   hold and release to cast, press on a bite to hook, hold to reel during the fight,
---   press while waiting to reel back in. With live bait and an empty hook, the press that
---   would cast opens the bait bench first (L3, BaitBench); the same button works it.
+--   hold and release to cast, press on a bite to hook, hold to reel during the fight.
+--   While waiting (L4): a quick tap (under Approach.TWITCH_TAP) twitches the bait, a hold
+--   (Approach.REEL_HOLD or longer) reels the line back in; a tap never reels in. With live
+--   bait and an empty hook, the press that would cast opens the bait bench first (L3,
+--   BaitBench); the same button works it.
 --
 -- From the bite until the fight ends, input is read straight from UserInputService, so a
 -- click or touch ANYWHERE on screen (even over a panel or button) hooks and reels. Panels
@@ -26,6 +28,7 @@ local WaterMap = require(Shared.WaterMap)
 local Cover = require(Shared.Cover)
 local BaitRig = require(Shared.BaitRig)
 local BaitData = require(Shared.BaitData)
+local Approach = require(Shared.Approach)
 
 local UI = require(script.Parent.UI)
 local PondView = require(script.Parent.PondView)
@@ -34,6 +37,8 @@ local CastRing = require(script.Parent.CastRing)
 local RiseRipples = require(script.Parent.RiseRipples)
 local BaitBench = require(script.Parent.BaitBench)
 local BaitView = require(script.Parent.BaitView)
+local WaitScene = require(script.Parent.WaitScene)
+local BobberCamView = require(script.Parent.BobberCamView)
 
 -- The same water and spot boxes the server casts against (Shared/WaterMap).
 local castZones = WaterMap.castZones()
@@ -55,6 +60,10 @@ local savedMove: { walk: number, jumpPower: number, jumpHeight: number }? = nil
 -- The live bait on the hook, as the server last said (L3). nil means an empty hook.
 local rig: { bait: string, hook: string, grade: string }? = nil
 local benchHeld: { [string]: boolean } = {} -- move inputs held down on the bait bench
+-- A press of the Fish button while waiting (L4): when it went down, and whether it already
+-- reeled in. Released quickly it's a twitch; held long enough it reels in.
+local waitPressAt: number? = nil
+local waitPressReeled = false
 
 -- Inputs that count as "reel" during a bite or fight, on every device.
 local REEL_TYPES = {
@@ -153,6 +162,11 @@ local function idleStatus()
 	UI.status("Face the water. Hold " .. UI.inputName() .. " and let go to cast.")
 end
 
+-- What a press does while waiting (L4).
+local function waitHint(): string
+	return "Tap: twitch. Hold: reel in." -- short: the status line is one line on a phone
+end
+
 local function endFishOn()
 	UI.setLocked(false)
 	freezeCharacter(false)
@@ -161,6 +175,8 @@ end
 
 local function goIdle()
 	BaitBench.cancel()
+	waitPressAt = nil
+	WaitScene.clear()
 	setState("Idle")
 	fight = nil
 	endFishOn()
@@ -380,8 +396,17 @@ local function onFish(_name: string, inputState: Enum.UserInputState, _input: In
 		playId("cast-whoosh", "cast")
 		UI.status("Casting...")
 	elseif state == "Waiting" and began and os.clock() - stateSince > 0.6 then
-		Remotes.event("CancelCast"):FireServer()
-		UI.status("Reeling in...")
+		-- Tap or hold? Decided on release (a tap) or in the frame loop (a hold).
+		waitPressAt = os.clock()
+		waitPressReeled = false
+	elseif state == "Waiting" and ended and waitPressAt then
+		local held = os.clock() - (waitPressAt :: number)
+		local reeled = waitPressReeled
+		waitPressAt = nil
+		if not reeled and Approach.pressKind(held, true) == "twitch" then
+			WaitScene.twitch()
+			Remotes.event("Twitch"):FireServer()
+		end
 	elseif state == "Snagged" and began then
 		Remotes.event("Wiggle"):FireServer() -- the server ignores presses too close together
 	end
@@ -427,9 +452,21 @@ end
 
 local function onFishingEvent(kind: string, payload: any)
 	SoundFX.event(kind, payload)
+	WaitScene.event(kind, payload)
 	if kind == "Landed" then
 		setState("Waiting")
-		UI.status("Waiting for a bite at " .. tostring(payload.spotName) .. "..." .. (if payload.tight then " Tight to cover." else ""))
+		waitPressAt = nil
+		if typeof(payload.pos) == "Vector3" then
+			BobberCamView.engage(payload.pos)
+		end
+		UI.status(
+			"At "
+				.. tostring(payload.spotName)
+				.. "."
+				.. (if payload.tight then " Near cover." else "")
+				.. " "
+				.. waitHint()
+		)
 		if payload.rise then
 			UI.toast("Right on the rise!", Color3.fromRGB(120, 200, 255))
 		end
@@ -447,6 +484,7 @@ local function onFishingEvent(kind: string, payload: any)
 		UI.toast(payload.text)
 		goIdle()
 	elseif kind == "Bite" then
+		waitPressAt = nil
 		setState("Bite")
 		UI.closePanels()
 		UI.setLocked(true)
@@ -459,7 +497,7 @@ local function onFishingEvent(kind: string, payload: any)
 		endFishOn()
 		UI.bite(false)
 		UI.toast(payload.text)
-		UI.status("Waiting for another bite...")
+		UI.status("Waiting for another bite... " .. waitHint())
 	elseif kind == "Hooked" then
 		setState("Fighting")
 		UI.closePanels()
@@ -539,6 +577,9 @@ end
 
 function Controller.start()
 	SoundFX.start()
+	BobberCamView.start(function()
+		return state
+	end)
 	for name, id in SOUND_IDS do
 		local s = Instance.new("Sound")
 		s.Name = "Fish_" .. name
@@ -706,6 +747,15 @@ function Controller.start()
 		BaitView.update(onHookNow(), state)
 		if state == "Baiting" and not BaitBench.isOpen() then
 			goIdle() -- the bench closed without finishing (should not happen)
+		end
+		WaitScene.step(state, dt)
+		-- Holding the Fish button while waiting reels the line in (a tap twitches instead).
+		if state == "Waiting" and waitPressAt and not waitPressReeled then
+			if Approach.pressKind(os.clock() - (waitPressAt :: number), false) == "reel" then
+				waitPressReeled = true
+				Remotes.event("CancelCast"):FireServer()
+				UI.status("Reeling in...")
+			end
 		end
 		if state == "Charging" then
 			local power = chargePower()

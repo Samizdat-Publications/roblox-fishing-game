@@ -28,7 +28,7 @@ local function getFolder(): Folder
 	return f
 end
 
-local function ring(at: Vector3, delay: number)
+local function ring(at: Vector3, delay: number, scale: number)
 	local a = Instance.new("Part")
 	a.Name = "Ripple"
 	a.Size = Vector3.new(0.2, 0.2, 0.2)
@@ -63,19 +63,21 @@ local function ring(at: Vector3, delay: number)
 				return
 			end
 			local ease = 1 - (1 - k) * (1 - k) -- fast out, slowing as it spreads
-			local radius = START_RADIUS + (END_RADIUS - START_RADIUS) * ease
+			local radius = (START_RADIUS + (END_RADIUS - START_RADIUS) * ease) * scale
 			r.Radius = radius
-			r.InnerRadius = math.max(radius - RIM, 0)
+			r.InnerRadius = math.max(radius - RIM * math.max(scale, 0.5), 0)
 			r.Transparency = 0.25 + 0.75 * k
 		end)
 	end)
 end
 
--- A rise at `pos` (on the water).
-function RiseRipples.show(pos: Vector3)
+-- A rise at `pos` (on the water). `scale` (default 1) sizes the rings: the wait (L4) reuses
+-- them small for a twitch, a bobber landing, a turtle or a far-off jump; `rings` (default 3)
+-- how many.
+function RiseRipples.show(pos: Vector3, scale: number?, rings: number?)
 	local at = Vector3.new(pos.X, 0.22, pos.Z)
-	for i = 1, RINGS do
-		ring(at, (i - 1) * STAGGER)
+	for i = 1, rings or RINGS do
+		ring(at, (i - 1) * STAGGER, scale or 1)
 	end
 end
 

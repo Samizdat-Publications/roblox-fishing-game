@@ -9,6 +9,7 @@ local EVENTS = {
 	"FightResult", -- client: (won: boolean)
 	"CancelCast", -- client: ()
 	"Wiggle", -- client: (), one press to work a snagged hook free (L2b)
+	"Twitch", -- client: (), a quick tap while waiting jiggles the bait (L4)
 	"Equip", -- client: (baitId: string)
 	"SetAssist", -- client: (on: boolean)
 	"SetQuickBait", -- client: (on: boolean), skip the bait bench (L3)

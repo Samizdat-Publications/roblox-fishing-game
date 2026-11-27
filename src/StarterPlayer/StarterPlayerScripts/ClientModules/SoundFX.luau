@@ -40,6 +40,25 @@ local rng = Random.new()
 local nextThunder = 0
 local nextGust = 0
 local frenzyZones: { [string]: { Vector3 } } = {}
+-- The wait (L4): a fish's shadow is coming in, and the held breath before its strike.
+local approaching = false
+local heldUntil = 0
+local HELD_MAX = 1.5 -- the held breath ends by itself after this long (a lost message)
+local ENDS_APPROACH = {
+	Landed = true,
+	Dip = true,
+	Bite = true,
+	Leave = true,
+	Missed = true,
+	Reset = true,
+	Hooked = true,
+	Caught = true,
+	Escaped = true,
+	Snag = true,
+	Freed = true,
+	Snapped = true,
+	Hint = true,
+}
 
 local function group(name: string, volume: number): SoundGroup
 	local g = Instance.new("SoundGroup")
@@ -142,17 +161,20 @@ end
 local function update(dt: number)
 	local pos = playerPosition()
 	local creek = if pos then SoundMix.creekLevel(SoundMix.creekDistance(pos.X, pos.Z)) else 0
-	-- While the line is in, everything else steps back a little: the held breath before a bite.
-	local hush = if lineIn() then 0.6 elseif fighting() then 0.75 else 1
+	-- While the line is in, everything else steps back a little, more as a fish comes in, and
+	-- nearly all the way just before it strikes (SoundMix.waitMix, L4).
+	local mix = SoundMix.waitMix(phase, approaching, os.clock() < heldUntil)
+	local hush = mix.ambience
+	local r = mix.rate
 	local big = if pos then SoundMix.bigLakeLevel(pos.X, pos.Z) else 0
 	local blue = if pos then SoundMix.blueLevel(pos.X, pos.Z) else 0
 	local lake = SoundMix.lakeLevel(creek) * SoundMix.homeLakeLevel(big) * hush
-	fadeTo("amb-biglake", big * (1 - blue) * hush, 0.4, dt)
-	fadeTo("amb-bluewater", blue * hush, 0.4, dt)
+	fadeTo("amb-biglake", big * (1 - blue) * hush, 0.4 * r, dt)
+	fadeTo("amb-bluewater", blue * hush, 0.4 * r, dt)
 	for id, w in SoundMix.lakeWeights(Lighting.ClockTime) do
-		fadeTo(id, w * lake, 0.5, dt)
+		fadeTo(id, w * lake, 0.5 * r, dt)
 	end
-	fadeTo("amb-creek", creek * hush, 0.6, dt)
+	fadeTo("amb-creek", creek * hush, 0.6 * r, dt)
 
 	-- Music: one calm theme now and then, never while a line is in or a fish is on.
 	local now = os.clock()
@@ -183,7 +205,7 @@ local function update(dt: number)
 	end
 
 	-- Bobber ticking in the ripples while waiting.
-	fadeTo("wait-bobber-tick", if phase == "Waiting" then 0.2 else 0, 1.5, dt)
+	fadeTo("wait-bobber-tick", mix.tick, 1.5 * r, dt)
 	-- The tension layer comes in during fights with heavy fish.
 	-- Out in blue water the deep-water layer takes over, once it's uploaded.
 	local deep = blue > 0.5 and sounds["tension-bluewater"] ~= nil
@@ -192,7 +214,7 @@ local function update(dt: number)
 
 	-- Weather: rain on the water in a storm, thunder now and then, gusts on windy days.
 	local weather = SoundMix.weather(workspace:GetAttribute("Weather"))
-	fadeTo("rain-on-water", weather.rain, 0.3, dt)
+	fadeTo("rain-on-water", weather.rain * math.min(1, hush / SoundMix.WAIT_HUSH), 0.3 * r, dt)
 	if weather.thunder then
 		if now >= nextThunder then
 			if nextThunder > 0 then
@@ -328,6 +350,34 @@ function SoundFX.event(kind: string, payload: any)
 	if not started then
 		return
 	end
+	-- The wait (L4): the approach dips the world, the held breath silences it, and anything
+	-- that ends the approach lets it back in.
+	if kind == "Approach" then
+		approaching = true
+		heldUntil = 0
+		if payload and payload.swell then
+			play("approach-swell", 2, 0.7) -- a big or rare fish: a low swell under it
+		end
+	elseif kind == "Hush" then
+		heldUntil = os.clock() + HELD_MAX
+	elseif ENDS_APPROACH[kind] then
+		approaching = false
+		heldUntil = 0
+	end
+	if kind == "Twitch" then
+		play("twitch-tick", 0.1, 1.6, true) -- the bait jiggles: a quiet tick
+	elseif kind == "Leave" then
+		play("rise", 1, if payload and payload.spooked then 1.6 else 1.25, true) -- a tail flick as it goes
+	elseif kind == "WaitEvent" then
+		local what = payload and payload.kind
+		if what == "rise" then
+			play("rise", 1, 1.7, true)
+		elseif what == "jump" then
+			play("far-splash", 1, 1.1, true)
+		elseif what == "turtle" then
+			play("rise", 1, 2, true)
+		end
+	end
 	if kind == "Landed" then
 		play("plop", nil, 1.3, true) -- a light bobber plop, not a big splash
 		local tick = sounds["wait-bobber-tick"]
@@ -427,6 +477,10 @@ function SoundFX.start()
 	make("splash-small", fx, false, 0.3, "plop")
 	make("splash-small", fx, false, 0.12, "rise") -- a far-off fish rising: quiet
 	make("splash-small", fx, false, 0.45, "snap")
+	-- The wait (L4): existing sounds only (uploads are capped, audio/UPLOAD-PLAN.md).
+	make("splash-small", fx, false, 0.1, "twitch-tick")
+	make("splash-small", fx, false, 0.16, "far-splash")
+	make("bite-deep-pull", fx, false, 0.45, "approach-swell")
 	make("splash-big", fx, false, 0.85)
 	for _, name in { "sting-common", "sting-uncommon", "sting-rare", "sting-epic", "sting-legendary", "sting-mythic", "sting-godlike", "sting-new-species", "sting-trophy", "sting-monster" } do
 		make(name, fx, false, 1)

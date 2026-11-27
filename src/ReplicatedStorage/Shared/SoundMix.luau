@@ -183,6 +183,31 @@ function SoundMix.frenzyLevel(distance: number): number
 	return smooth((120 - distance) / 95)
 end
 
+-- The wait (L4): how loud the world is while the line is in. `phase` is the Controller's
+-- state; `approaching` is true while a fish's shadow is coming in; `held` is the held breath
+-- just before a strike. Returns the ambience multiplier, the bobber tick's volume, and how
+-- much faster than usual the fades run (the held breath drops out quickly).
+export type WaitMix = { ambience: number, tick: number, rate: number }
+SoundMix.WAIT_HUSH = 0.6 -- line in, nothing coming
+SoundMix.APPROACH_HUSH = 0.4 -- a fish is coming
+SoundMix.HELD_HUSH = 0.05 -- the held breath
+SoundMix.FIGHT_HUSH = 0.75
+SoundMix.TICK = 0.2
+SoundMix.APPROACH_TICK = 0.08
+function SoundMix.waitMix(phase: string, approaching: boolean, held: boolean): WaitMix
+	local lineIn = phase == "Waiting" or phase == "Bite" or phase == "Hooking"
+	if lineIn and held then
+		return { ambience = SoundMix.HELD_HUSH, tick = 0, rate = 6 }
+	elseif lineIn and approaching then
+		return { ambience = SoundMix.APPROACH_HUSH, tick = if phase == "Waiting" then SoundMix.APPROACH_TICK else 0, rate = 2 }
+	elseif lineIn then
+		return { ambience = SoundMix.WAIT_HUSH, tick = if phase == "Waiting" then SoundMix.TICK else 0, rate = 1 }
+	elseif phase == "Fighting" or phase == "Resolving" then
+		return { ambience = SoundMix.FIGHT_HUSH, tick = 0, rate = 1 }
+	end
+	return { ambience = 1, tick = 0, rate = 1 }
+end
+
 -- The catch stinger, with trophy and monster ones when uploaded (`has` says which are).
 function SoundMix.catchStinger(tier: string?, sizeClass: string?, has: (string) -> boolean): string
 	if (sizeClass == "monster" or sizeClass == "trophy") and has("sting-" .. sizeClass) then
