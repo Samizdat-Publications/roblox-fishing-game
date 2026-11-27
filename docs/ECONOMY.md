@@ -190,3 +190,26 @@ Minutes of play until each purchase (bought in order, median of runs):
 | Random | 4 | 20 | 45 | 84 | 215 |
 
 The boat plan aimed for the first boat to take 1 to 2 sessions after the Graphite Rod for a smart player and 3 to 4 at the dock. At 1,200 the dinghy takes about half a session for a smart player and under 2 sessions at the dock, so it comes sooner than planned. Stewart chose to keep 1,200 and 4,000 until playtests (see `docs/DECISIONS.md`), so nothing was changed; if it feels too quick, 1,800 for the dinghy would land it on the plan. The Deep-V lands about right: under 2 sessions after the dinghy for a smart player, around 6 at the dock, and anyone can ride as navigator in a friend's Deep-V before owning one.
+
+## 2026-11-26 (L1): rarity retune to RARITY-DIRECTION.md
+
+Before: tiers and bite odds didn't match. A smart player landed 0% Common, 60% Rare, 36% Epic and about 2 Legendaries a session; the creek's everyday trout and smallmouth were marked Rare and the Walleye (Epic) bit like a Rare. Made with `tools/econ/rarity_tune.py` (rerun with `--write` to rewrite the numbers):
+
+- **Odds follow the tier.** Each fish's `rarity` weight is a tier weight (Common 1, Uncommon 0.45, Rare 0.2, Epic 0.12, Legendary 0.02) times a small within-tier factor. Then Epic and Legendary are capped where a hunter would target them: at its best spot, hour and bait, an Epic is at most 12% of the bites against the commoner fish there and a Legendary 2.5%.
+- **Value follows rarity.** Each tier's mean price is the Common price times 1, 2, 4.5, 14, 32 and 60 (Common to Mythic), about the inverse of how often each tier lands, so a rare catch pays for its rarity. The Common price is set so the dock kid keeps today's income, then a premium on Rare and up so the smart player does too.
+- **Small fish take lures now and then** (bluegill, pumpkinseed, perch, crappie, chub and rock bass on spinners or plastic worms, as real panfish do), so a lure doesn't mean only predators.
+- **Rock bass and carp feed at night too,** so the creek pool and the deep hole have a commoner fish beside the night hunters instead of going dead.
+
+| Player | Common | Uncommon | Rare | Epic | Legendary | Legendary per session | coins/min, 1st session | Graphite Rod at |
+|---|---|---|---|---|---|---|---|---|
+| target | ~55% | ~25% | ~12% | ~5% | 2 to 3% | 0.5 to 1 | today's | today's |
+| smart, no pond | 16.9% | 28.1% | 53.5% | 1.0% | 0.6% | 0.51 | 86.2 (was 101) | 20 min (was 17) |
+| dock and worms | 83.8% | 15.5% | 0.7% | 0 | 0 | 0 | 31.4 (was 31.4) | 53 min (was 54) |
+| random | 22.4% | 50.8% | 25.4% | 1.3% | 0.1% | 0.06 | 31.0 (was 36.2) | 55 min (was 45) |
+| smart with pond | | | | | | | 70.0 (was 90.1) | 24 min (was 20) |
+
+- The direction's two columns disagree at this catch rate (about 90 fish a session): 2 to 3% Legendary would be 2 or 3 a session, not "once every session or two". The feel column wins for Legendary (0.5 a session), the share column for the lower tiers.
+- A smart lure fisher lands mostly Rare predators. That is the reward for buying a lure, and it keeps Epic at about one a session.
+- Waits got longer where only big fish feed: the deep hole at night about 12 s, the creek pool at night about 17 s (the dock by day stays about 3 s). L4 (the wait) should make those waits fun.
+- The smart player with a pond slows most (keeps pricier fish to grow). All shop goals stay within a few minutes of before.
+- Still open: the Big Lake drop-off at night has no common fish now (burbot alone is too rare to bite); fix with the boats in L7.

@@ -24,10 +24,21 @@ return function(t, Shared)
 		return best
 	end
 
-	t.test("each Big Lake fish tops its own spot", function()
+	-- Since the rarity retune (RARITY-DIRECTION.md) the commonest fish tops every spot and the
+	-- rare ones bite beside it, so this checks each one bites where it should, and who leads.
+	t.test("each Big Lake fish bites at its own spot, with a commoner fish leading", function()
+		local function bites(id, spot, period, bait)
+			for _, s in BigLake.list do
+				if s.id == id then
+					return weight(s, spot, period, bait) > 0
+				end
+			end
+			return false
+		end
 		t.eq(top("Basin", "Dusk", "Spinner"), "WhiteBass", "basin at dusk")
-		t.eq(top("DropOff", "Dawn", "Minnow"), "LakeTrout", "drop-off at dawn")
-		t.eq(top("IslandPoint", "Dusk", "Spinner"), "Muskellunge", "island point at dusk")
+		t.ok(bites("LakeTrout", "DropOff", "Dawn", "Minnow"), "lake trout at the drop-off at dawn")
+		t.ok(bites("Muskellunge", "IslandPoint", "Dusk", "Spinner"), "muskie off the island point at dusk")
+		t.eq(top("IslandPoint", "Dusk", "Spinner"), "WhiteBass", "white bass lead at the point")
 	end)
 
 	t.test("Big Lake fish never bite in the lake or the creek", function()

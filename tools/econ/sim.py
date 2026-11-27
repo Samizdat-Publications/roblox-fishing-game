@@ -452,6 +452,8 @@ class Player:
         self.catches = 0
         self.gross = 0.0  # value of every fish caught and sold, before spending
         self.played = 0.0  # real seconds of play
+        self.tiers = defaultdict(int)  # landed fish by rarity tier
+        self.session_tiers = []  # per session: {tier: count}
 
     def has(self, bait):
         if BAIT_BY_ID[bait]["kind"] == "lure":
@@ -745,6 +747,9 @@ def play_session(p, strat, rng, clock_start, minutes=SESSION_MIN, log=None):
         t += AFTER_CATCH
         price = price_for(s, kg)
         p.catches += 1
+        p.tiers[s.get("tier") or "Common"] += 1
+        if p.session_tiers:
+            p.session_tiers[-1][s.get("tier") or "Common"] += 1
         kept = False
         if strat.uses_pond:
             cand = {"id": sid, "cm": cm, "price": price, "born": False}
@@ -799,6 +804,7 @@ def run_career(strat, seed, sessions=None, log=None, stop_early=True):
             pond_tick(p.pond, OFFLINE_HOURS * 3600, p.pond_state, rng)
             pond_per_day.append(visit_pond(p, rng))
         before = p.gross
+        p.session_tiers.append(defaultdict(int))
         play_session(p, strat, rng, clock_start=rng.random() * 24, log=log)
         per_session.append((p.gross - before) / SESSION_MIN)
         if stop_early and p.goal_i >= len(GOALS) and day >= 3:
@@ -828,6 +834,8 @@ def use_proposal(prop=PROPOSAL):
     BITE_RULE = prop.get("bite_rule", BITE_RULE)
     for sid, price in prop.get("fish_price", {}).items():
         FISH_BY_ID[sid]["basePrice"] = price
+    for sid, w in prop.get("fish_rarity", {}).items():
+        FISH_BY_ID[sid]["rarity"] = w
     for bid, price in prop.get("bait_price", {}).items():
         BAIT_BY_ID[bid]["price"] = price
     GOALS = [(g, prop.get("goals", {}).get(g, c)) for g, c in GOALS]
@@ -973,6 +981,50 @@ def section(title, runs, trials):
     print(pond_table)
 
 
+TIER_ORDER = ["Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic", "Godlike"]
+TIER_TARGET = {"Common": "about 55%", "Uncommon": "about 25%", "Rare": "about 12%", "Epic": "about 5%",
+               "Legendary": "2 to 3%", "Mythic": "well under 1%", "Godlike": "event only"}
+
+
+def report_tiers(runs, sessions=20):
+    """Share of landed fish by tier, and Legendaries per session (docs/RARITY-DIRECTION.md)."""
+    print()
+    print("## Catches by rarity tier")
+    print()
+    print(f"Each career plays {sessions} sessions of {SESSION_MIN} minutes, no early stop. Target shares from RARITY-DIRECTION.md.")
+    print()
+    rows = []
+    strats = [Smart(pond=False), DockWorms(), RandomPlayer()]
+    totals = {}
+    for strat in strats:
+        tot, leg_sessions = defaultdict(int), []
+        for seed in range(runs):
+            p, _, _ = run_career(strat, seed=seed + 500, sessions=sessions, stop_early=False)
+            for k, v in p.tiers.items():
+                tot[k] += v
+            leg_sessions += [st["Legendary"] for st in p.session_tiers]
+        totals[strat.name] = (tot, leg_sessions)
+    header = ["Tier", "Target"] + [s.name for s in strats]
+    for t in TIER_ORDER:
+        row = [t, TIER_TARGET[t]]
+        for s in strats:
+            tot = totals[s.name][0]
+            n = sum(tot.values()) or 1
+            row.append(f"{100 * tot[t] / n:.1f}%")
+        rows.append(row)
+    leg = ["Legendary per session", "about 0.5 to 1"]
+    for s in strats:
+        ls = totals[s.name][1]
+        leg.append(f"{statistics.mean(ls):.2f}" if ls else "-")
+    rows.append(leg)
+    fish = ["Fish landed per session", ""]
+    for s in strats:
+        tot = totals[s.name][0]
+        fish.append(f"{sum(tot.values()) / (runs * sessions):.0f}")
+    rows.append(fish)
+    print(table(rows, header))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true", help="fewer runs")
@@ -981,6 +1033,7 @@ def main():
     ap.add_argument("--log", action="store_true", help="print one smart career's purchases")
     ap.add_argument("--only", choices=["current", "proposal"], help="run just one of the two")
     ap.add_argument("--boats", action="store_true", help="add the Dinghy and Deep-V to the purchases, and the Big Lake")
+    ap.add_argument("--tiers", action="store_true", help="only report catches by rarity tier")
     args = ap.parse_args()
     global SIZE_CLASSES, WEATHER_ON, GOALS
     if args.boats:
@@ -990,6 +1043,9 @@ def main():
     runs = 12 if args.quick else 60
     trials = 150 if args.quick else 400
 
+    if args.tiers:
+        report_tiers(8 if args.quick else 30)
+        return
     print("Fishing game economy simulation")
     print(f"Day {CFG['DAY_LENGTH'] / 60:.0f} real minutes; sessions of {SESSION_MIN} minutes, one a day; {runs} runs per player type.")
     if args.only != "proposal":

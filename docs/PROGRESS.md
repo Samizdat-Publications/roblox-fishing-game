@@ -227,6 +227,12 @@ Nothing below has been seen in Studio. It is all on `claude/overnight-duet-kpkf6
 - In progress: the Real-ish remake of the looks. Golden Afternoon is done (`docs/looks/realish/golden/`); the rest were rendering when the laptop slept.
 - Next step, exactly: `python tools/looks/mockup.py gen --style realish` (it skips finished images; six looks including Frozen Winter), then `python tools/looks/mockup.py critic --style realish`, then rebuild `planner/looks.json` with a `sets` object (`realish` and `lowpoly`, each with `pick` and `looks`, each look with a `dir`), republish `planner/looks.html` to https://claude.ai/artifact/DjMRLNSn6t91zKmR93sGr6 and commit. After that: the L1 rarity retune against `docs/RARITY-DIRECTION.md` and an economy re-run.
 
+## 2026-11-26 (night): L1 rarity retune and Real-ish looks
+
+- Rarity retune to `docs/RARITY-DIRECTION.md`: odds follow the tier, value follows rarity. A smart player now lands about one Legendary every two sessions (was two a session) and one Epic a session; the dock kid's catch is 84% Common and their income unchanged. Table and calls in `docs/ECONOMY.md` and `DECISIONS.md`. Pushed to Studio (57 data lines, two specs), checksums match, 143 tests pass in Studio and with Lune; a real catch read "Uncommon. 23.7 in, 7 lb 3 oz. Worth 19 coins". Place saved as version 46.
+- The sim gained `--tiers` (catches by tier and Legendaries per session).
+- Six Real-ish looks (day cycle plus autumn and frozen winter), approved by Stewart as a set: https://claude.ai/artifact/DjMRLNSn6t91zKmR93sGr6.
+
 ## What works now
 A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shore, wait for a bite, hook it, fight it on the bar (hold or click anywhere), land it, sell at the Fish Buyer, buy bait at Bait and Tackle, fill the journal, raise fish in your home pond, buy better rods, and unlock Cedar Creek. Eleven species follow real habits (spot, time of day, bait), fish shadows show where they're active, the day runs 16 minutes, and progress saves to Roblox.
 

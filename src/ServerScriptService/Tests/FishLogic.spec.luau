@@ -73,9 +73,18 @@ return function(t, Shared)
 		t.eq(FishLogic.spotAt(Vector3.new(60, 0, -60), zones), "OpenWater")
 	end)
 	t.test("creek fish live in the creek and only there", function()
-		t.eq(FishLogic.biteWeights("Riffle", "Dawn", "Cricket")[1].id, "RainbowTrout")
-		t.eq(FishLogic.biteWeights("Pool", "Night", "Minnow")[1].id, "Walleye")
-		t.eq(FishLogic.biteWeights("Rocks", "Day", "Spinner")[1].id, "SmallmouthBass")
+		local function has(list, id)
+			for _, w in list do
+				if w.id == id then
+					return true
+				end
+			end
+			return false
+		end
+		t.ok(has(FishLogic.biteWeights("Riffle", "Dawn", "Cricket"), "RainbowTrout"), "trout in the riffle at dawn")
+		t.ok(has(FishLogic.biteWeights("Pool", "Night", "Minnow"), "Walleye"), "walleye in the pool at night")
+		t.ok(has(FishLogic.biteWeights("Rocks", "Day", "Spinner"), "SmallmouthBass"), "smallmouth on the rocks by day")
+		t.eq(FishLogic.biteWeights("Riffle", "Dawn", "Cricket")[1].id, "CreekChub", "the common chub leads")
 		local creekIds = { RainbowTrout = true, SmallmouthBass = true, Walleye = true }
 		for _, spot in { "Dock", "WeedBed", "Logs", "DeepHole", "OpenWater" } do
 			for _, period in { "Dawn", "Day", "Dusk", "Night" } do
@@ -98,19 +107,20 @@ return function(t, Shared)
 		t.ok(FishLogic.isOnWaterAny(Vector3.new(10, 0, 10), boxes), "lake")
 	end)
 
-	t.test("a rare fish that is the only taker bites slowly", function()
-		-- Only the pike wants a spinner in open water; by day it is rare, at night barely there.
-		local day = FishLogic.biteWeights("OpenWater", "Day", "Spinner")
-		t.eq(#day, 1, "only the pike")
-		local delay = FishLogic.biteDelay(day, Random.new(2)) :: number
-		t.ok(delay > 20, "pike delay " .. delay)
-		t.eq(#FishLogic.biteWeights("OpenWater", "Night", "Spinner"), 0, "no pike at night")
+	t.test("rarer water bites slower than the dock", function()
+		-- Bite time follows how much is biting: panfish at the dock come fast, the creek pool at
+		-- night (rock bass with a walleye or brown trout hunt) takes its time.
+		local dock = FishLogic.biteDelay(FishLogic.biteWeights("Dock", "Day", "Worm"), Random.new(2)) :: number
+		local pool = FishLogic.biteDelay(FishLogic.biteWeights("Pool", "Night", "Minnow"), Random.new(2)) :: number
+		t.ok(dock < 6, "dock " .. dock)
+		t.ok(pool > dock * 2 and pool > 8, "pool " .. pool)
+		t.eq(#FishLogic.biteWeights("OpenWater", "Night", "Spinner"), 0, "nothing on a spinner in open water at night")
 	end)
 
 	t.test("catfish bite at night, not at noon", function()
 		t.eq(#FishLogic.biteWeights("Logs", "Day", "Stinkbait"), 0, "noon")
 		local night = FishLogic.biteDelay(FishLogic.biteWeights("DeepHole", "Night", "Stinkbait"), Random.new(3)) :: number
-		t.ok(night < 10, "night " .. night)
+		t.ok(night < 16, "night " .. night) -- catfish are Rare since the retune, so the deep hole is a slower, bigger-fish wait
 	end)
 
 	t.test("bite delays stay between the fastest and slowest", function()
