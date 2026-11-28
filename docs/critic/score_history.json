@@ -2330,5 +2330,132 @@
       "terrainCustomSlots": 5,
       "plasticTop": "Reeds_Node 101, PineShort_Node 53, LeafyTree_Node 51, PineTall_Node 50, LilyPads_Node 27, FishShadows 24, BigLake 20, MyPondFish 12, RockMedium_Node 10, RockSmall_Node 7"
     }
+  },
+  {
+    "date": "2026-11-27",
+    "step": "n2-ui-1",
+    "set": "U",
+    "rubric": "ui",
+    "run": "2026-11-27-2038-U",
+    "commit": "4567397",
+    "shots": 12,
+    "median": 5.5,
+    "scores": [
+      5.5,
+      5.5,
+      5.5
+    ],
+    "points": {
+      "readability": 6,
+      "hierarchy": 6,
+      "consistency": 7,
+      "handmade_feel": 8,
+      "contrast": 6,
+      "touch_targets": 6,
+      "phone_readability": 4,
+      "broken_or_ugly": 3
+    },
+    "reports": [
+      "docs\\critic\\2026-11-27-n2-ui-1-ui-neon.md",
+      "docs\\critic\\2026-11-27-n2-ui-1-ui-neon-2.md",
+      "docs\\critic\\2026-11-27-n2-ui-1-ui-neon-3.md"
+    ],
+    "weather": {
+      "u01-hud": "Clear",
+      "u02-shop": "Clear",
+      "u03-journal": "Clear",
+      "u04-card-rare": "Clear",
+      "u05-fight": "Clear",
+      "u06-bench": "Clear"
+    }
+  },
+  {
+    "date": "2026-11-27",
+    "step": "n2-ui-2",
+    "set": "U",
+    "rubric": "ui",
+    "run": "2026-11-27-2117-U",
+    "commit": "baacaa0",
+    "shots": 12,
+    "median": 7,
+    "scores": [
+      7.5,
+      7,
+      6.5
+    ],
+    "points": {
+      "readability": 8,
+      "hierarchy": 7,
+      "consistency": 7,
+      "handmade_feel": 8,
+      "contrast": 7,
+      "touch_targets": 7,
+      "phone_readability": 6,
+      "broken_or_ugly": 5
+    },
+    "reports": [
+      "docs\\critic\\2026-11-27-n2-ui-2-ui-neon.md",
+      "docs\\critic\\2026-11-27-n2-ui-2-ui-neon-2.md",
+      "docs\\critic\\2026-11-27-n2-ui-2-ui-neon-3.md"
+    ],
+    "weather": {
+      "u01-hud": "Clear",
+      "u02-shop": "Clear",
+      "u03-journal": "Clear",
+      "u04-card-rare": "Clear",
+      "u05-fight": "Clear",
+      "u06-bench": "Clear"
+    },
+    "viewport": {
+      "u01-hud-1280": [
+        1519,
+        787
+      ],
+      "u01-hud-667": [
+        667,
+        375
+      ],
+      "u02-shop-1280": [
+        1519,
+        787
+      ],
+      "u02-shop-667": [
+        667,
+        375
+      ],
+      "u03-journal-1280": [
+        1519,
+        787
+      ],
+      "u03-journal-667": [
+        667,
+        375
+      ],
+      "u04-card-rare-1280": [
+        1519,
+        787
+      ],
+      "u04-card-rare-667": [
+        667,
+        375
+      ],
+      "u05-fight-1280": [
+        1519,
+        787
+      ],
+      "u05-fight-667": [
+        667,
+        375
+      ],
+      "u06-bench-1280": [
+        1519,
+        787
+      ],
+      "u06-bench-667": [
+        667,
+        375
+      ]
+    },
+    "left_out": []
   }
 ]
