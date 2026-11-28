@@ -4,6 +4,39 @@ A Roblox fishing game where real fishing knowledge matters: the right bait, spot
 
 Newest first. The live page with before and after sliders is `docs/making-of/index.html` (published as a Claude artifact).
 
+## N1: The home lake, Real-ish: real light, real ground, a dressed shore
+
+2026-11-27 23:30
+
+The whole home lake got the proof corner's treatment. The place now runs Roblox's realistic lighting with a grade of our own: a softer golden hour, a blue noon and a moonlit night with stars, while the wind moves the grass and clouds and the water turns glassy at dawn. The flat green lawn slabs became real ground that slopes into the water along a wandering edge, with a mown lawn by the stands, meadow beyond, a dark wet band at the waterline and gravel paths that wander. About a thousand pieces of a new shore kit went round the lake: reeds standing in the water, stones, driftwood, birches leaning out from the points, a pine treeline with ferns and bushes, and far pines along the hill crests so the sky never meets a bare hill. Fable's advisor sent it back twice. The third time it found why the scores had stalled: the test photos had been taken under overcast skies, because the game's date rolls over at midnight UTC and that replaced the forced clear weather. With the weather held clear, the noon sky came out blue, golden hour stopped blowing out and the night showed stars, and N1 passed.
+
+**From the south lawn down the dock at golden hour**
+
+| Before | After |
+|---|---|
+| ![before](stills/2026-11-27-n1-02-dock-golden-before.jpg) | ![after](stills/2026-11-27-n1-02-dock-golden-after.jpg) |
+
+**The whole lake from above at golden hour**
+
+| Before | After |
+|---|---|
+| ![before](stills/2026-11-27-n1-07-overview-golden-before.jpg) | ![after](stills/2026-11-27-n1-07-overview-golden-after.jpg) |
+
+**From the dock end at noon**
+
+| Before | After |
+|---|---|
+| ![before](stills/2026-11-27-n1-03-dockend-noon-before.jpg) | ![after](stills/2026-11-27-n1-03-dockend-noon-after.jpg) |
+
+**The weed bed at golden hour**
+
+| Before | After |
+|---|---|
+| ![before](stills/2026-11-27-n1-05-weedbed-golden-before.jpg) | ![after](stills/2026-11-27-n1-05-weedbed-golden-after.jpg) |
+
+![Night from the dock end: stars, a moonlit treeline and no glare on the water](stills/2026-11-27-n1-night.jpg)
+*Night from the dock end: stars, a moonlit treeline and no glare on the water*
+
 ## N0: The proof corner: real wood, painted signs, light on every screen
 
 2026-11-27 21:40

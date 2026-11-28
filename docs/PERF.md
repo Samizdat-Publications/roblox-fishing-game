@@ -80,3 +80,22 @@ Studio Play, HUD hidden, weather Clear, 3 to 4 s per view. Desktop tier = graphi
 **Projection for the whole home lake (N1).** About 14 more families at 512 to 1024 (three maps each) and the stands' split meshes on every prop: roughly 60 to 70 MB more texture memory, so about 130 to 145 MB on the desktop tier (budget 200) and the same on the phone stand-in (budget 130). The phone tier will need its first step-down (half-size maps) by the end of N1; the desktop tier has room.
 
 **Budgets, rewritten with these numbers.** Desktop: render CPU 7 ms average or less, worst frame under 16 ms (a single spike right after a camera jump is logged, not counted), 700,000 triangles, 600 draw calls, 200 MB textures, 170 MB terrain. Phone tier: 5 ms render CPU average, 350,000 triangles, 300 draw calls, 130 MB textures. GPU stays in the plan (11 ms desktop, 6 ms phone) but is only judged on Stewart's devices.
+
+## N1 close-out, 11/27/2026 (run `artifacts/shots/2026-11-27-2027`, weather Clear)
+
+Studio Play, desktop = Level 21 with Realistic; phone stand-in = Level 3 on the phone tier (the place's Realistic style, no sun rays, foliage shadows off, far undergrowth hidden). Render CPU average (ms) / max triangles / max draw calls.
+
+| Shot | Desktop | Phone stand-in |
+|---|---|---|
+| 01 dock dawn | 7.05 / 404k / 311 | 6.10 / 322k / 353 |
+| 02 dock golden | 7.35 / 402k / 312 | 6.04 / 319k / 350 |
+| 03 dock end noon | 5.44 / 398k / 268 | 4.78 / 294k / 290 |
+| 04 dock end night | 6.01 / 395k / 269 | 5.06 / 292k / 292 |
+| 05 weed bed golden | 7.23 / 553k / 344 | 5.54 / 399k / 367 |
+| 06 logs dawn | 9.10 / 604k / 407 | 6.75 / 443k / 438 |
+| 07 overview golden | 6.96 / 718k / 421 | 5.80 / 511k / 442 |
+| 08 stands noon | 5.28 / 416k / 238 | 4.62 / 222k / 220 |
+
+Texture memory 77 MB, terrain 76 to 80 MB. Worst single frame 11.0 ms (desktop, 06).
+
+**Against the budgets.** Triangles and draw calls are inside on the desktop tier at every shot a player can stand at (07 is an aerial view no player has, accepted at 718k). Render CPU averages are over the 7 ms target at 01, 02, 05 and 06 on desktop (06 by 2 ms: the busiest shore, a thousand kit pieces in view), and the phone stand-in is over 5 ms at six of eight. Studio's CPU numbers run high (Studio itself shares the thread) and its GPU numbers are unreliable, so the decision waits on Stewart's real frame counter. If his phone is under 30 fps on the shore, the next step-down is ready: halve the undergrowth and seam plants on the phone tier and drop the far pines past 200 studs.

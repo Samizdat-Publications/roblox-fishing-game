@@ -1,5 +1,31 @@
 # Progress
 
+## N1 report, 11/27/2026 (night): the home lake, Real-ish (leg 3)
+
+N1 is done. Fable's advisor ruled it would close on one clear-sky re-shoot that met four measured targets, and that re-shoot met all four. Gate passes, 433 tests pass in Studio and with Lune, no script errors. Saved in the place as version 145 ("N1: the home lake, Real-ish (done)").
+
+**What changed in the game**
+- **The light:** the whole place runs Roblox's Realistic lighting now (it turns out only Studio, not a game script, can switch that, so it is set in the place), with a grade made for it: a softer golden hour, a bluer noon, a moonlit night with stars. Grass, clouds and particles move with the wind. The home lake's water changes through the day: a mirror at dawn, a light chop by day, calm at night.
+- **The ground:** the flat lawn slabs are real ground now that slopes into the water with a waterline that wanders; a mown lawn by the stands, meadow with grass blades beyond, a dark wet band at the waterline, our own sand, lake mud and forest floor, and wandering gravel paths in place of the straight sand strips.
+- **The shore:** about a thousand pieces of our own bank kit placed by a seeded scatter: reeds in the water, shore stones, driftwood, leaning birches on the points, a pine treeline with ferns and bushes under it, far pines on the hill crests so the sky never meets a bare hill, and small plants along the edges where two kinds of ground meet. The old cone pines, faceted trees and stick reeds round the lake are swapped out.
+- **Things made by hand:** the fallen logs have torn, water-soaked ends; the buoy is painted wood; the shore lamps are warm lanterns that only burn at night; the creek's two ball-lamps are lanterns too, and its cone pines are our pines (the creek's real dressing is N3).
+- **Phones:** a phone tier hides far undergrowth and turns foliage shadows off.
+
+**Proven (with evidence)**
+- Advisor (Fable), three reviews: not yet, not yet, then done on a clear-sky re-shoot. That re-shoot (run `artifacts/shots/2026-11-27-2027`, weather recorded Clear on all eight shots) met every target: the noon sky is blue (blue over red by 177 and 147 against a target of 60), the golden overview is not blown out (mean brightness 85, target 135 or less), the night shows 172 stars and no band across the water. Sheet: `docs/critic/2026-11-27-n1-final-sheet.jpg`.
+- Critic (Gemini Neon, lake shots): look 7.3, 7.0, 7.0, 7.0, 7.0 over five rounds and identity 4.5 rising to 5.5. The advisor found that rounds 4 and 5 were shot under overcast and pre-storm skies (the game's date rolls over at midnight UTC and that replaced the forced clear weather in the test harness), so those scores judged the wrong weather; the harness now holds the weather and refuses a score that was not shot under a clear sky. No critic round was run on the final re-shoot (the advisor's call: the stall rule was spent).
+- Audit: our own material variants 20; stock terrain at 0 percent at the home lake and in the Big Lake basin; 0 floating labels; visible Plastic 371 of 2,481 parts, none of them at the home lake (they are the Big Lake's and the creek pool's old props, for N3 and N5).
+- Frames: `docs/PERF.md`, "N1 close-out".
+
+**Not verified, or carried on**
+- The critic's identity score is 5.5, not 8. The advisor ruled the engine's own water surface, the avatar and the grass blades are givens, and set 8 as the leg-end target; the sky (one custom skybox, our sun and moon) is an A/B step straight after N1.
+- Render CPU on the desktop tier is over the 7 ms average at four of eight shots (worst 9.1 ms at the logs view) and the phone stand-in is over 5 ms at most. Only Stewart's frame counter on his PC and phone settles it (below).
+- The bobber's readability at full reach in dawn fog and at night on the smallest phone was not measured with the bobber camera.
+- Carried: stall backs, a bench and a bucket, the chalkboard card, the Sell Fish fish ornament (N2); the bridge (N5); the creek (N3).
+
+**What needs you**
+- **Your frame counter on your PC and your phone** (the plan asks for it after N1): open the game, press Shift+F5 for the counter, and tell me the number at the dock, on the path and looking across the lake.
+
 ## N0 report, 11/27/2026: steady ground and the proof corner (leg 3)
 
 N0 is done and saved in the place (version 122, "N0: proof corner, LookDirector and painted signs on"). The gate passes, 368 tests pass in Studio and with Lune, and a regression playtest (two real casts, a bluegill and a pumpkinseed landed, a sale at the Fish Buyer) logged no script errors.
