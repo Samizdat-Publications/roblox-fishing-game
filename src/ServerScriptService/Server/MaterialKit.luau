@@ -55,6 +55,14 @@ MaterialKit.FAMILIES = {
 	{ name = "TinRoofRust", base = Enum.Material.CorrodedMetal, color = 123504692013472, normal = 114659436037341, rough = 96342230031415, studs = 4 },
 	{ name = "PaintedWood", base = Enum.Material.WoodPlanks, color = 125197895604357, normal = 138548088880298, rough = 114031226403634, studs = 5 },
 	{ name = "Aluminium", base = Enum.Material.Metal, color = 116945538976167, normal = 140540589693552, rough = 130928792762580, studs = 4 },
+	-- N3, Cedar Creek (not uploaded yet: apply skips them, and CreekDress gives slots 28 to 31 the
+	-- plain base material with a palette tint until they are). Ground families: palette colour maps.
+	{ name = "CreekPebble", base = Enum.Material.Pebble, color = 115838492914633, normal = 90324050686422, rough = 92628018119192, studs = 16, pattern = Enum.MaterialPattern.Organic },
+	{ name = "WetSlate", base = Enum.Material.Slate, color = 97920981489099, normal = 131130650754049, rough = 136570282484131, studs = 12, pattern = Enum.MaterialPattern.Organic },
+	{ name = "Moss", base = Enum.Material.LeafyGrass, color = 95460022034606, normal = 71904788721067, rough = 79579793871789, studs = 8, pattern = Enum.MaterialPattern.Organic },
+	-- Props: moss on boulders and logs (neutral map) and cedar bark for the creek cedars (N3).
+	{ name = "MossProp", base = Enum.Material.Grass, color = 89093689228043, normal = 71904788721067, rough = 79579793871789, studs = 5 },
+	{ name = "CedarBark", base = Enum.Material.WoodPlanks, color = 71939342860443, normal = 136380260146967, rough = 115271845618414, studs = 4 },
 } :: { Family }
 
 -- The wet band: the slot the waterline sand is repainted with (MaterialKit.paintWetBand).
@@ -359,6 +367,13 @@ MaterialKit.SLOTS = {
 	-- (its colour map is the neutral grey, mean 0.80) tinted 78,105,65: 0.80 of that is 62,84,52.
 	-- LeafyGrass grows no blades. BankDress.HILL_SLOT paints it.
 	{ slot = 27, base = Enum.Material.LeafyGrass, variant = "LeafNeedle", tint = Color3.fromRGB(78, 105, 65) },
+	-- N3, Cedar Creek (CreekPlan.SLOT; CreekDress paints them by slot index): the gravel bars and
+	-- the riffle's cobbles, the bed seen through the clear water (the same pebble map, darker),
+	-- wet slate on the rocky run's banks, moss on the bank tops (LeafyGrass: no blades).
+	{ slot = 28, base = Enum.Material.Pebble, variant = "CreekPebble", tint = Color3.new(1, 1, 1) },
+	{ slot = 29, base = Enum.Material.Pebble, variant = "CreekPebble", tint = Color3.fromRGB(170, 160, 140) },
+	{ slot = 30, base = Enum.Material.Slate, variant = "WetSlate", tint = Color3.new(1, 1, 1) },
+	{ slot = 31, base = Enum.Material.LeafyGrass, variant = "Moss", tint = Color3.new(1, 1, 1) },
 } :: { { slot: number, base: Enum.Material, variant: string, tint: Color3 } }
 
 local function asset(id: number?): string

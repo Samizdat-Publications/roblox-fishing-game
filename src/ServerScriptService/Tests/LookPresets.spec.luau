@@ -732,4 +732,82 @@ return function(t, Shared)
 		local after = Weather.stepWind(mid, Weather.windFor("Fog"), 0)
 		t.ok((after - shown).Magnitude < 1e-9, "a mid-blend change does not jump")
 	end)
+
+	-- N3: the creek's exposure floor and dawn mist (blendAreas, and applyTo passes the clock).
+	t.test("the creek's exposure never drops below its floor, eased across the band", function()
+		local floor = LookPresets.AREAS.creek.exposureFloor :: number
+		for _, c in CLOCKS do
+			for _, w in { "Clear", "Storm", "Fog" } do
+				local raw = LookPresets.at(c, w)
+				local inside = LookPresets.blendAreas(raw, { creek = 1 }, c)
+				t.ok(inside.Lighting.ExposureCompensation >= floor - 1e-9, "floor at " .. c .. " " .. w)
+				local plain = raw.Lighting.ExposureCompensation + LookPresets.AREAS.creek.exposure
+				if plain >= floor then
+					t.ok(math.abs(inside.Lighting.ExposureCompensation - plain) < 1e-9, "no change above the floor at " .. c)
+				end
+				-- Half in the band: never below the home-only value, never above the full floor's.
+				local half = LookPresets.blendAreas(raw, { home = 0.5, creek = 0.5 }, c)
+				t.ok(half.Lighting.ExposureCompensation >= raw.Lighting.ExposureCompensation + LookPresets.AREAS.creek.exposure * 0.5 - 1e-9, "half floor at " .. c)
+			end
+		end
+		-- A look darker than the floor is lifted to it inside the creek, halfway at half weight.
+		local dark = LookPresets.at(12)
+		dark.Lighting.ExposureCompensation = -2
+		local full = LookPresets.blendAreas(dark, { creek = 1 })
+		t.ok(math.abs(full.Lighting.ExposureCompensation - floor) < 1e-9, "lifted to the floor")
+		local half = LookPresets.blendAreas(dark, { home = 0.5, creek = 0.5 })
+		local e = -2 + 0.5 * LookPresets.AREAS.creek.exposure
+		t.ok(math.abs(half.Lighting.ExposureCompensation - (e + 0.5 * (floor - e))) < 1e-9, "half lifted at half weight")
+		t.eq(LookPresets.blendAreas(dark, { home = 1 }).Lighting.ExposureCompensation, -2, "home has no floor")
+	end)
+
+	t.test("a little mist in the creek at dawn only", function()
+		local mist = LookPresets.AREAS.creek.dawnMist :: any
+		local function atmo(c: number, weights: { [string]: number }, withClock: boolean): any
+			return LookPresets.blendAreas(LookPresets.at(c), weights, if withClock then c else nil).Atmosphere
+		end
+		for _, c in CLOCKS do
+			local dawn = LookPresets.weights(c).dawn or 0
+			local with, without = atmo(c, { creek = 1 }, true), atmo(c, { creek = 1 }, false)
+			local wantD = math.min(without.Density + mist.density * dawn, LookPresets.MAX_DENSITY)
+			t.ok(math.abs(with.Density - wantD) < 1e-9, "mist density at " .. c)
+			t.ok(with.Haze >= without.Haze - 1e-9 and with.Haze <= LookPresets.MAX_HAZE, "mist haze at " .. c)
+			if dawn == 0 then
+				t.eq(with.Density, without.Density, "no mist away from dawn at " .. c)
+			end
+			local home = atmo(c, { home = 1 }, true)
+			t.eq(home.Density, LookPresets.at(c).Atmosphere.Density, "no mist at home at " .. c)
+		end
+		local dawnClock
+		for _, c in CLOCKS do
+			if (LookPresets.weights(c).dawn or 0) > 0.9 then
+				dawnClock = c
+			end
+		end
+		t.ok(dawnClock ~= nil, "a clock that is dawn")
+		-- Dawn's density already sits near MAX_DENSITY (the bobber's fog cap wins), so the mist shows
+		-- in the haze.
+		t.ok(atmo(dawnClock, { creek = 1 }, true).Haze > atmo(dawnClock, { creek = 1 }, false).Haze + 0.5, "mist at dawn")
+		-- applyTo passes its clock, so LookDirector's area path gets the mist.
+		local made = {}
+		local lighting = {
+			FindFirstChild = function(_, name: string): any
+				for _, o in made do
+					if o.Name == name then
+						return o
+					end
+				end
+				return nil
+			end,
+			FindFirstChildOfClass = function(_, className: string): any
+				return made[className]
+			end,
+		}
+		LookPresets.applyTo(lighting, dawnClock, function(className: string): any
+			local o = {}
+			made[className] = o
+			return o
+		end, nil, nil, nil, nil, { creek = 1 })
+		t.ok(math.abs(made.Atmosphere.Density - atmo(dawnClock, { creek = 1 }, true).Density) < 1e-9, "applyTo adds the mist")
+	end)
 end

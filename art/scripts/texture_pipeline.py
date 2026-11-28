@@ -66,6 +66,9 @@ none of them goes through exactly the steps above):
            toward `rgb` in the colour map, rougher in the roughness map (tin_roof).
   dents    {depth, scale, seed}             a few shallow dents pressed into the normal
            map (aluminium).
+  fibres   {amount, width, length, depth, seed}  long stringy strips down V with dark gaps
+           between them and fine fibres along them, shaded into the colour and pressed
+           into the normal map (cedar_bark).
   metal_mean (and metal_var)                also write a metalness map: the scan's own if
            it has one, else flat; a touch less metal where the surface is rough.
 
@@ -365,8 +368,22 @@ def family_extras(cfg: dict, size: int, luma: np.ndarray) -> dict:
         height += (pits + wave) * float(dn.get("depth", 4.0)) * px
         rough += 0.06 * np.clip(-pits, 0.0, 1.0)
 
+    fb = cfg.get("fibres")
+    if fb:
+        seed = int(fb.get("seed", 9))
+        length = float(fb.get("length", 30.0))
+        strips = tile_noise(size, float(fb.get("width", 7.0)) * px, seed, stretch=(length, 1.0))
+        gaps = np.clip(1.0 - np.abs(strips) / 0.3, 0.0, 1.0) ** 2            # thin lines where strips part
+        fine = tile_noise(size, 1.3 * px, seed + 1, stretch=(length * 1.5, 1.0))   # fibres on the strips
+        lift = np.clip(tile_noise(size, 9.0 * px, seed + 2, stretch=(length * 0.4, 1.0)), -1.5, 1.5)
+        amount = float(fb.get("amount", 0.3))
+        shade *= 1.0 - amount * (0.8 * gaps + 0.25 * np.clip(-fine, 0.0, 2.0)) + 0.12 * amount * lift
+        depth = float(fb.get("depth", 2.0)) * px
+        height += depth * (-1.3 * gaps + 0.3 * fine + 0.55 * lift)
+        rough += 0.1 * gaps
+
     return {"shade": shade, "tint": tint, "tint_rgb": tint_rgb, "height": height, "rough": rough,
-            "used": bool(b or s or dn)}
+            "used": bool(b or s or dn or fb)}
 
 
 # ----------------------------------------------------------------------------

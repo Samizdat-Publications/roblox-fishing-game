@@ -1,0 +1,72 @@
+{
+  "family": "wet_slate",
+  "kind": "terrain",
+  "size": 1024,
+  "source": "Rock022",
+  "source_page": "https://ambientcg.com/a/Rock022",
+  "licence": "CC0",
+  "studs_per_tile": 12,
+  "target_rgb": [
+    70,
+    78,
+    84
+  ],
+  "saturation": 1.0,
+  "target_rgb_used": [
+    70.0,
+    78.0,
+    84.0
+  ],
+  "mean_rgb": [
+    70.0,
+    78.0,
+    84.0
+  ],
+  "luma_rel_std_in": 0.1599,
+  "luma_rel_std_out": 0.0581,
+  "neutral_mean": 0.8,
+  "neutral_std": 0.0455,
+  "neutral_min_max": [
+    0.693,
+    0.901
+  ],
+  "rough_mean": 0.36,
+  "rough_std": 0.0277,
+  "metal_mean": null,
+  "normal_mean_tilt": 0.2055,
+  "seam_in": 1.136,
+  "seam_fixed": false,
+  "seam_out": {
+    "color": 1.106,
+    "normal": 0.741,
+    "rough": 1.097
+  },
+  "settings": {
+    "ao_mix": 0.3,
+    "contrast": 1.0,
+    "despeckle_k": 2.0,
+    "flatten": 0.7,
+    "flatten_sigma": 0.12,
+    "hue_var": 0.2,
+    "kind": "terrain",
+    "max_rel_std": 0.07,
+    "neutral_mean": 0.8,
+    "normal_strength": 0.65,
+    "rough_contrast": 0.5,
+    "rough_mean": 0.36,
+    "seam_blend": 0.2,
+    "seam_limit": 1.25,
+    "seamless": "auto",
+    "sheet": "n3",
+    "size": 1024,
+    "soften": 0.6,
+    "soften_sigma": 1.5,
+    "source": "Rock022",
+    "studs_per_tile": 12,
+    "target_rgb": [
+      70,
+      78,
+      84
+    ]
+  }
+}

@@ -118,6 +118,11 @@ Config.FOLIAGE_TIER_ON = true
 -- UI_STYLE_ON too; with either off, the board and the screens are exactly as before.
 Config.BOARD_CARD_ON = true -- on 11/27/2026 with the UI restyle
 
+-- White water on Cedar Creek's riffle (leg 3, N3, ClientModules/WhiteWater): scrolling foam strips
+-- down the riffle and below the boulders, a little spray at the riffle's head and its drop. Never
+-- on the phone tier (player attribute LookTierActive "phone": fill rate). Off, nothing is made.
+Config.WHITE_WATER_ON = false
+
 function Config.boatsOn(): boolean
 	return Config.BOATS_ON and Config.BIG_LAKE_ON
 end

@@ -1,0 +1,43 @@
+{
+  "effect": "white_water",
+  "source": "procedural: art/scripts/white_water.py",
+  "licence": "ours",
+  "settings": {
+    "foam_size": 512,
+    "spray_size": 128,
+    "seed": 7,
+    "cover": 0.68,
+    "streak": 16.0,
+    "wander": 7.0,
+    "edge": 0.045,
+    "edge_ragged": 0.07,
+    "peak": 0.92,
+    "spray_drops": 34
+  },
+  "foam": {
+    "file": "white_water_foam.png",
+    "size": [
+      512,
+      512
+    ],
+    "mode": "RGBA",
+    "flow_axis": "U (image X)",
+    "alpha_mean": 0.1763,
+    "alpha_max": 0.9202,
+    "cover_over_0.1": 0.3821,
+    "wrap_step_u": 0.00991,
+    "inner_step_u": 0.00709,
+    "edge_rows_alpha_max": 0.0
+  },
+  "spray": {
+    "file": "white_water_spray.png",
+    "size": [
+      128,
+      128
+    ],
+    "mode": "RGBA",
+    "alpha_mean": 0.0846,
+    "alpha_max": 1.0,
+    "border_alpha_max": 0.0
+  }
+}

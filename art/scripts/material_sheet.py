@@ -2,6 +2,7 @@
 
     python art/scripts/material_sheet.py                       # writes art/textures/sheet-n0.png
     python art/scripts/material_sheet.py --sheet n1            # the N1 families, art/textures/sheet-n1.png
+    python art/scripts/material_sheet.py --sheet n3            # Cedar Creek, art/textures/sheet-n3.png
     python art/scripts/material_sheet.py --out artifacts/n0/sheet-test.png --samples 32
     python art/scripts/material_sheet.py --only meadow_grass wet_sand
     python art/scripts/material_sheet.py --dir rope=artifacts/textures_candidates/rope__Rope003
@@ -17,6 +18,10 @@ into one labelled sheet with Pillow. Inside Blender (the `bpy` half) it builds e
   row 3  the same thing 30 studs away, with a bobber for scale (a crop of the screen)
   row 4  sphere, NEUTRAL map times sample colour A (how Layer B and tinted terrain slots look)
   row 5  the thing, NEUTRAL map times sample colour B (a second hue, to show the map carries any colour)
+
+An effect (`effects` in the table: white_water) gets a column of its own after the families:
+the foam laid over creek water, a riffle built from the sheet's own families with foam strips
+and spray on it, the same riffle at 30 studs, the spray sprite, and the foam's alpha tiled.
 
 Units: 1 Blender unit = 1 stud. Maps repeat every `studs_per_tile` studs, as a Roblox
 MaterialVariant would. A family belongs to the sheet named in its `sheet` field in the
@@ -58,9 +63,20 @@ SAMPLES = {
     "tin_roof": ([150, 152, 150], [128, 58, 48]),        # galvanised, barn red
     "painted_wood": ([196, 190, 176], [62, 98, 104]),    # off-white, boathouse teal
     "aluminium": ([200, 204, 208], [96, 112, 92]),       # bare, olive paint worn thin
+    "creek_pebble": ([126, 116, 100], [112, 114, 112]),  # warm bar gravel, cold grey shingle
+    "wet_slate": ([70, 78, 84], [104, 98, 88]),          # wet slate, the same rock dry and warm
+    "moss": ([78, 104, 52], [112, 118, 50]),             # shade moss, sunlit yellow moss
+    "cedar_bark": ([110, 70, 50], [136, 124, 112]),      # red cedar, old silvered cedar
 }
 # lake water over the beds that are only ever seen through it: (tint, how far the bed lies under)
-UNDER_WATER = {"lake_mud": ([26, 66, 62], 0.8), "deep_bed": ([26, 66, 62], 0.45)}
+UNDER_WATER = {"lake_mud": ([26, 66, 62], 0.8), "deep_bed": ([26, 66, 62], 0.45),
+               "creek_pebble": ([64, 84, 58], 0.92)}      # the creek is very clear
+CREEK_WATER = ([64, 84, 58], 0.92)
+WATER_LOOK = {"creek_pebble": {"body_mix": 0.07, "tint": 0.4}}   # clear creek: little body, weak tint
+# what the effect column shows, row by row (the row labels on the left are for the families)
+EFFECT_ROWS = ["foam over creek water, 2 x 2 tiles", "riffle: foam strips and spray",
+               "the riffle 30 studs away", "spray sprite, and thrown by an emitter",
+               "foam alpha, 3 x 3 tiles (seam check)"]
 ROWS = [
     ("sphere", "color", "sphere, colour map"),
     ("object", "color", "in use, colour map"),
@@ -208,9 +224,11 @@ def blender_main(job_path: str) -> None:
         bsdf.inputs["Roughness"].default_value = rough
         return mat
 
-    def water_material(rgb, clear):
+    def water_material(rgb, clear, body_mix=0.18, tint=0.65):
         """A stand-in for lake water seen from above: what is under it shows through, tinted
-        and dimmed, with a little sky on top. `clear` is how much of the bed's light gets out."""
+        and dimmed, with a little sky on top. `clear` is how much of the bed's light gets out,
+        `tint` how strongly the water's own hue colours it, `body_mix` how much of the water's
+        own colour lies over it (the clear creek asks for less of both)."""
         mat = bpy.data.materials.new("LakeWater")
         mat.use_nodes = True
         nt = mat.node_tree
@@ -219,13 +237,13 @@ def blender_main(job_path: str) -> None:
         through = nt.nodes.new("ShaderNodeBsdfTransparent")
         lin = [srgb_to_linear(c) for c in rgb]
         peak = max(lin)
-        through.inputs["Color"].default_value = tuple(min(1.0, clear * (0.35 + 0.65 * c / peak)) for c in lin) + (1.0,)
+        through.inputs["Color"].default_value = tuple(min(1.0, clear * (1.0 - tint + tint * c / peak)) for c in lin) + (1.0,)
         body = nt.nodes.new("ShaderNodeBsdfDiffuse")
         body.inputs["Color"].default_value = tuple(lin) + (1.0,)
         gloss = nt.nodes.new("ShaderNodeBsdfGlossy")
         gloss.inputs["Roughness"].default_value = 0.08
         mix1 = nt.nodes.new("ShaderNodeMixShader")
-        mix1.inputs[0].default_value = 0.18
+        mix1.inputs[0].default_value = body_mix
         nt.links.new(through.outputs[0], mix1.inputs[1])
         nt.links.new(body.outputs[0], mix1.inputs[2])
         mix2 = nt.nodes.new("ShaderNodeMixShader")
@@ -359,14 +377,27 @@ def blender_main(job_path: str) -> None:
             ground("Patch", mat, size, spt, 0.35)
             if slug in UNDER_WATER:
                 rgb, clear = UNDER_WATER[slug]
-                water = water_material(rgb, clear)
+                water = water_material(rgb, clear, **WATER_LOOK.get(slug, {}))
                 if far:                                  # all of it under water, the bobber floats
                     param_surface("Water", water, lambda u, v: (((u - 0.5) * size, (v - 0.5) * size, 0.9), (u, v)), 2, 2)
                 else:                                    # right half under water, left half dry
                     param_surface("Water", water, lambda u, v: ((u * size * 0.5, (v - 0.5) * size, 0.9), (u, v)), 2, 2)
+            if slug == "moss":                           # also a prop map: boulders and a log
+                boulder("MossRockA", mat, 2.1, (-4.2, 3.0, 0.9), spt, 1.0)
+                boulder("MossRockB", mat, 1.2, (4.4, 1.2, 0.5), spt, 2.3)
+                def mlog(u, v):
+                    a = u * 2 * math.pi
+                    x = -1.5 + v * 7.0
+                    return ((x, -3.4 + 0.2 * v + 0.6 * math.cos(a), 0.75 + 0.6 * math.sin(a)),
+                            (a * 0.6 / spt, v * 7.0 / spt))
+                param_surface("MossLog", mat, mlog, 14, 4, smooth=True)
+            if slug == "wet_slate":                      # rock shelves and a boulder
+                box("ShelfA", mat, (11.0, 7.0, 1.0), (-4.0, 3.5, 0.55), spt)
+                box("ShelfB", mat, (7.0, 5.0, 0.8), (-2.5, 2.8, 1.45), spt)
+                boulder("SlateRock", mat, 1.6, (4.6, -1.5, 0.7), spt, 3.1)
             return
         stage()
-        if slug == "bark":
+        if slug in ("bark", "cedar_bark"):
             def trunk(u, v):                             # grain (map V) runs up the trunk
                 a = u * 2 * math.pi
                 r = 0.95 - 0.15 * v
@@ -516,7 +547,7 @@ def blender_main(job_path: str) -> None:
                 look((5.5, -11.0, 6.5), (0.0, 0.0, 2.8), 42)
             elif slug == "shore_stone":
                 look((3.0, -9.0, 3.6), (0.4, -0.4, 0.9), 45)
-            elif slug == "bark":
+            elif slug in ("bark", "cedar_bark"):
                 look((5.5, -9.5, 4.2), (0.2, -0.4, 2.2), 40)
             elif slug == "leaf_needle":
                 look((3.0, -16.0, 6.0), (-0.2, 0.0, 3.4), 40)
@@ -529,9 +560,123 @@ def blender_main(job_path: str) -> None:
             else:
                 look((1.2, -6.0, 2.4), (0.0, 0.0, 1.6), 55)
         else:  # far: 30 studs, a crop of the screen
-            tall = {"bark": 3.0, "leaf_needle": 3.4, "tin_roof": 2.6, "painted_wood": 2.3}
+            tall = {"bark": 3.0, "cedar_bark": 3.0, "leaf_needle": 3.4, "tin_roof": 2.6, "painted_wood": 2.3}
             target = (0.0, 0.0, 0.4 if fam["kind"] == "terrain" else tall.get(slug, 1.4))
             look((8.0, -28.0, 7.0), target, 85)
+
+    # ---------------- the riffle, for the white water column ----------------
+    def alpha_material(name, path, emit=0.0, fade=None):
+        """White, with the picture's alpha: a stand-in for a Beam, Texture or particle.
+        fade = (head, tail): the strip fades in over `head` and out over `tail` of its length
+        (the object's Y extent), as a Beam's Transparency sequence would."""
+        mat = bpy.data.materials.new(name)
+        mat.use_nodes = True
+        nt = mat.node_tree
+        bsdf = nt.nodes["Principled BSDF"]
+        bsdf.inputs["Base Color"].default_value = (0.9, 0.9, 0.9, 1.0)
+        bsdf.inputs["Roughness"].default_value = 0.8
+        uv = nt.nodes.new("ShaderNodeUVMap")
+        uv.uv_map = "UVMap"
+        node = nt.nodes.new("ShaderNodeTexImage")
+        node.image = image(path, False)
+        nt.links.new(uv.outputs[0], node.inputs[0])
+        alpha_out = node.outputs["Alpha"]
+        if fade:
+            coord = nt.nodes.new("ShaderNodeTexCoord")
+            sep = nt.nodes.new("ShaderNodeSeparateXYZ")
+            nt.links.new(coord.outputs["Generated"], sep.inputs[0])
+            for lo_v, hi_v in ((0.0, fade[1]), (1.0, 1.0 - fade[0])):   # tail (low Y), then head
+                ramp = nt.nodes.new("ShaderNodeMapRange")
+                ramp.interpolation_type = "SMOOTHSTEP"
+                ramp.inputs["From Min"].default_value = lo_v
+                ramp.inputs["From Max"].default_value = hi_v
+                nt.links.new(sep.outputs["Y"], ramp.inputs["Value"])
+                mul = nt.nodes.new("ShaderNodeMath")
+                mul.operation = "MULTIPLY"
+                nt.links.new(alpha_out, mul.inputs[0])
+                nt.links.new(ramp.outputs["Result"], mul.inputs[1])
+                alpha_out = mul.outputs[0]
+        nt.links.new(alpha_out, bsdf.inputs["Alpha"])
+        if emit > 0:
+            bsdf.inputs["Emission Color"].default_value = (1.0, 1.0, 1.0, 1.0)
+            bsdf.inputs["Emission Strength"].default_value = emit
+        return mat
+
+    def build_riffle(eff, cast, far):
+        """A creek riffle seen looking upstream: pebble bed under clear water, a gravel bar on
+        the left, a mossy cut bank and cedar trunks on the right, slate rocks with moss caps
+        across the drop, foam strips running through the gaps and spray at their feet."""
+        mats = {k: family_material(f, "color") for k, f in cast.items()}
+        spt = {k: f["studs_per_tile"] for k, f in cast.items()}
+        foam = alpha_material("Foam", eff["foam"], emit=0.15, fade=(0.08, 0.45))
+        spray = alpha_material("Spray", eff["spray"], emit=0.15)
+        half = 24.0
+        lip, foot, hi, lo = 0.0, -2.6, 1.0, 0.42          # the drop: y of lip and foot, water heights
+
+        def step(t):
+            t = min(max(t, 0.0), 1.0)
+            return t * t * (3.0 - 2.0 * t)
+
+        def surf(y):
+            return hi - (hi - lo) * step((lip - y) / (lip - foot))
+
+        def bed(u, v):
+            x, y = (u - 0.5) * 2 * half, (v - 0.5) * 2 * half
+            z = surf(y) - 0.75 + 0.08 * math.sin(x * 0.9 + y * 0.4) + 1.9 * step((-x - 6.5) / 6.0)
+            return (x, y, z), (x / spt["creek_pebble"], y / spt["creek_pebble"])
+        param_surface("Bed", mats["creek_pebble"], bed, 64, 64)
+
+        def water(u, v):
+            x, y = -half + u * (half + 9.5), (v - 0.5) * 2 * half
+            return (x, y, surf(y)), (u, v)
+        rgb, clearness = CREEK_WATER
+        param_surface("Water", water_material(rgb, clearness, **WATER_LOOK["creek_pebble"]), water, 2, 96)
+
+        def bank(u, v):                                   # the cut bank, moss over the top
+            x, y = 8.5 + u * (half - 8.5), (v - 0.5) * 2 * half
+            z = -0.4 + 3.0 * step(u * 5.0) + 0.25 * math.sin(y * 0.3 + 1.0) * step(u * 5.0)
+            return (x, y, z), (x / spt["moss"], y / spt["moss"])
+        param_surface("Bank", mats["moss"], bank, 24, 32)
+
+        for k, (tx, ty, tr) in enumerate(((12.5, 3.5, 1.0), (15.5, -5.0, 1.25), (11.5, 13.0, 0.85))):
+            def trunk(u, v, tx=tx, ty=ty, tr=tr):
+                a = u * 2 * math.pi
+                r = tr * (1.0 - 0.12 * v) * (1.0 + 0.5 * max(0.0, 0.12 - v) / 0.12)   # a flare at the root
+                return ((tx + r * math.cos(a), ty + r * math.sin(a), 2.2 + v * 14.0),
+                        (a * tr / spt["cedar_bark"], v * 14.0 / spt["cedar_bark"]))
+            param_surface(f"Cedar{k}", mats["cedar_bark"], trunk, 16, 8, smooth=True)
+
+        rocks = ((-5.6, 0.2, 1.5), (-1.7, -0.4, 1.25), (2.1, 0.1, 1.6), (5.9, -0.5, 1.35), (8.2, 0.6, 1.5))
+        for k, (rx, ry, rr) in enumerate(rocks):
+            boulder(f"Rock{k}", mats["wet_slate"], rr, (rx, ry, 0.55), spt["wet_slate"], 1.0 + 1.7 * k)
+            if k != 1:
+                boulder(f"Cap{k}", mats["moss"], rr * 0.74, (rx + 0.1, ry + 0.25, 0.55 + rr * 0.42),
+                        spt["moss"], 5.0 + 1.3 * k)
+        boulder("PoolRock", mats["wet_slate"], 1.1, (-2.5, -9.5, 0.2), spt["wet_slate"], 9.0)
+
+        tex_len = 6.0                                     # studs of water one foam tile covers
+        for k, (gx, gw) in enumerate(((-3.7, 1.9), (0.2, 1.7), (4.0, 1.8), (-8.3, 1.5))):
+            def strip(u, v, gx=gx, gw=gw, k=k):           # U of the picture runs with the flow
+                y = 1.2 - v * 9.5
+                w = gw * (1.0 + 0.9 * v)
+                x = gx + (u - 0.5) * w + 0.5 * math.sin(v * 3.0 + k)
+                return (x, y, surf(y) + 0.05), (v * 9.5 / tex_len + 0.37 * k, u)
+            param_surface(f"Foam{k}", foam, strip, 2, 48, smooth=True)
+
+            def strip2(u, v, gx=gx, gw=gw, k=k):          # a shorter second layer over the drop
+                y = 0.6 - v * 5.0
+                w = gw * (0.8 + 0.5 * v)
+                x = gx + (u - 0.5) * w + 0.5 * math.sin((0.6 - y + 1.2) / 9.5 * 3.0 + k)
+                return (x, y, surf(y) + 0.09), (v * 5.0 / tex_len + 0.61 * k + 0.5, u)
+            param_surface(f"FoamTop{k}", foam, strip2, 2, 32, smooth=True)
+            for j in range(3):                            # spray where the strip lands
+                sx, sy, sz = gx + (j - 1) * 0.55, foot + 0.5 - 0.3 * j, lo + 0.5 + 0.22 * ((j + k) % 3)
+                size = 1.5 + 0.35 * ((j + 2 * k) % 3)
+                def puff(u, v, sx=sx, sy=sy, sz=sz, size=size):
+                    return (sx + (u - 0.5) * size, sy - (v - 0.5) * size * 0.35, sz + (v - 0.5) * size), (u, v)
+                param_surface(f"Spray{k}{j}", spray, puff, 1, 1, smooth=False)
+        if far:
+            bobber((1.5, -8.0, lo))
 
     def clear():
         for ob in made:
@@ -564,6 +709,16 @@ def blender_main(job_path: str) -> None:
             scene.render.filepath = str(out_dir / f"{fam['slug']}__{kind}__{mode}.png")
             bpy.ops.render.render(write_still=True)
             clear()
+    for eff in job.get("effects", []):
+        for kind in ("object", "far"):
+            build_riffle(eff, job["cast"], kind == "far")
+            if kind == "object":
+                look((2.0, -16.5, 3.4), (2.0, -1.0, 1.3), 31)
+            else:
+                look((8.0, -29.0, 8.0), (0.5, -2.0, 0.6), 85)
+            scene.render.filepath = str(out_dir / f"{eff['slug']}__{kind}__color.png")
+            bpy.ops.render.render(write_still=True)
+            clear()
 
 
 # ============================================================================
@@ -587,6 +742,8 @@ def driver_main() -> None:
     ap.add_argument("--only", nargs="*", help="only these families")
     ap.add_argument("--dir", action="append", default=[], metavar="FAMILY=FOLDER",
                     help="take a family's maps from another folder (a candidate run)")
+    ap.add_argument("--spt", action="append", default=[], metavar="FAMILY=STUDS",
+                    help="try another studs per tile for a family (this run only)")
     ap.add_argument("--cell", type=int, default=384)
     ap.add_argument("--samples", type=int, default=64)
     ap.add_argument("--title", help="default: Material families, <SHEET>")
@@ -596,17 +753,12 @@ def driver_main() -> None:
     with open(TABLE, "r", encoding="utf-8") as f:
         table = json.load(f)
     overrides = dict(d.split("=", 1) for d in args.dir)
+    overrides_spt = {k: float(v) for k, v in (d.split("=", 1) for d in args.spt)}
     if not args.out:
         args.out = str(REPO / "art" / "textures" / f"sheet-{args.sheet}.png")
     if not args.title:
         args.title = f"Material families, {args.sheet.upper()}"
-    fams = []
-    for slug, cfg in table["families"].items():
-        if args.only:
-            if slug not in args.only:
-                continue
-        elif cfg.get("sheet", "n0") != args.sheet:
-            continue
+    def entry(slug, cfg):
         folder = Path(overrides.get(slug, REPO / "art" / "textures" / slug))
         if not folder.is_absolute():
             folder = REPO / folder
@@ -615,19 +767,42 @@ def driver_main() -> None:
         if meta_path.exists():
             meta = json.loads(meta_path.read_text(encoding="utf-8"))
         a, b = SAMPLES.get(slug, (cfg["target_rgb"], cfg["target_rgb"]))
-        fams.append({
+        return {
             "slug": slug, "kind": cfg.get("kind", "prop"),
-            "studs_per_tile": float(cfg.get("studs_per_tile", 4)),
+            "studs_per_tile": float(overrides_spt.get(slug, cfg.get("studs_per_tile", 4))),
             "source": meta.get("source", cfg["source"]), "target": cfg["target_rgb"],
             "sample_a": a, "sample_b": b,
             "color": str(folder / f"{slug}_color.png"), "neutral": str(folder / f"{slug}_neutral.png"),
             "normal": str(folder / f"{slug}_normal.png"), "rough": str(folder / f"{slug}_rough.png"),
             "metal": str(folder / f"{slug}_metal.png") if (folder / f"{slug}_metal.png").exists() else None,
-        })
+        }
+
+    fams = []
+    for slug, cfg in table["families"].items():
+        if args.only:
+            if slug not in args.only:
+                continue
+        elif cfg.get("sheet", "n0") != args.sheet:
+            continue
+        fams.append(entry(slug, cfg))
+    # effects (white water): plain alpha images, shown on a scene built from other families
+    effects, cast = [], {}
+    for slug, cfg in table.get("effects", {}).items():
+        if args.only:
+            if slug not in args.only:
+                continue
+        elif cfg.get("sheet", "n0") != args.sheet:
+            continue
+        folder = REPO / "art" / "textures" / slug
+        effects.append({"slug": slug, "foam": str(folder / f"{slug}_foam.png"),
+                        "spray": str(folder / f"{slug}_spray.png"), "source": cfg.get("source", "ours")})
+        for need in cfg.get("shown_with", []):
+            cast[need] = entry(need, table["families"][need])
 
     out = Path(args.out).resolve()
     cells_dir = REPO / "artifacts" / "sheet_cells" / out.stem
-    job = {"families": fams, "cell": args.cell, "samples": args.samples, "cells_dir": str(cells_dir)}
+    job = {"families": fams, "cell": args.cell, "samples": args.samples, "cells_dir": str(cells_dir),
+           "effects": effects, "cast": cast}
     cells_dir.mkdir(parents=True, exist_ok=True)
     job_path = cells_dir / "job.json"
     job_path.write_text(json.dumps(job, indent=1), encoding="utf-8")
@@ -644,15 +819,62 @@ def driver_main() -> None:
         return ImageFont.load_default()
 
     cell, gap, left, top = args.cell, 6, 150, 112
-    width = left + len(fams) * (cell + gap) + gap
+
+    # the effect cells Blender does not render: flat pictures of the images themselves
+    def effect_flats(eff):
+        import random
+        water = tuple(int(c * 0.7) for c in CREEK_WATER[0])
+        foam_img = Image.open(eff["foam"]).convert("RGBA")
+        spray_img = Image.open(eff["spray"]).convert("RGBA")
+
+        def tiled(img, n, bg):
+            small = img.resize((cell // n, cell // n), Image.LANCZOS)
+            out_img = Image.new("RGBA", (cell, cell), bg + (255,))
+            for iy in range(n + 1):
+                for ix in range(n + 1):
+                    out_img.alpha_composite(small, (ix * (cell // n), iy * (cell // n)))
+            return out_img.convert("RGB")
+        tiled(foam_img, 2, water).save(cells_dir / f"{eff['slug']}__sphere__color.png")
+        puffs = Image.new("RGBA", (cell, cell), water + (255,))
+        puffs.alpha_composite(spray_img.resize((cell // 2, cell // 2), Image.LANCZOS), (4, 4))
+        puffs.alpha_composite(spray_img, (cell // 2 + 30, 30))        # 1 : 1
+        rnd = random.Random(5)
+        for _ in range(26):
+            sz = rnd.randint(cell // 9, cell // 4)
+            puff = spray_img.resize((sz, sz), Image.LANCZOS)
+            puff.putalpha(puff.getchannel("A").point(lambda v, k=rnd.uniform(0.35, 0.9): int(v * k)))
+            puffs.alpha_composite(puff, (rnd.randint(0, cell - sz), rnd.randint(cell // 2, cell - sz - 24)))
+        puffs.convert("RGB").save(cells_dir / f"{eff['slug']}__sphere__neutral_a.png")
+        alpha = Image.merge("RGBA", [foam_img.getchannel("A")] * 3 + [Image.new("L", foam_img.size, 255)])
+        tiled(alpha, 3, (0, 0, 0)).save(cells_dir / f"{eff['slug']}__object__neutral_b.png")
+
+    for eff in effects:
+        effect_flats(eff)
+    columns = fams + effects
+    width = left + len(columns) * (cell + gap) + gap
     height = top + len(ROWS) * (cell + gap) + gap
     sheet = Image.new("RGB", (width, height), (24, 24, 26))
     draw = ImageDraw.Draw(sheet)
     f_big, f_mid, f_small = font(26), font(17), font(13)
     draw.text((12, 10), args.title, font=f_big, fill=(240, 240, 240))
-    for c, fam in enumerate(fams):
+    for c, fam in enumerate(columns):
         x = left + c * (cell + gap)
         draw.text((x + 2, 46), fam["slug"], font=f_mid, fill=(240, 240, 240))
+        if fam in effects:
+            foam_size = Image.open(fam["foam"]).size
+            spray_size = Image.open(fam["spray"]).size
+            draw.text((x + 2, 68), f"{fam['source']}  |  foam {foam_size[0]} x {foam_size[1]}, spray "
+                      f"{spray_size[0]} x {spray_size[1]}, RGBA", font=f_small, fill=(180, 180, 180))
+            draw.rectangle((x + 2, 88, x + 24, 104), fill=tuple(CREEK_WATER[0]), outline=(90, 90, 90))
+            draw.text((x + 29, 88), "creek water", font=f_small, fill=(180, 180, 180))
+            for r, (kind, mode, _) in enumerate(ROWS):
+                cell_path = cells_dir / f"{fam['slug']}__{kind}__{mode}.png"
+                y = top + r * (cell + gap)
+                if cell_path.exists():
+                    sheet.paste(Image.open(cell_path).convert("RGB").resize((cell, cell), Image.LANCZOS), (x, y))
+                draw.rectangle((x, y + cell - 22, x + cell, y + cell), fill=(24, 24, 26))
+                draw.text((x + 6, y + cell - 20), EFFECT_ROWS[r], font=f_small, fill=(210, 210, 210))
+            continue
         draw.text((x + 2, 68), f"{fam['source']}  |  {fam['studs_per_tile']:g} studs per tile", font=f_small,
                   fill=(180, 180, 180))
         # swatches: target, sample A, sample B

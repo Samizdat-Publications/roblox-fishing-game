@@ -5,13 +5,13 @@ Every map in this folder comes from a public domain (CC0) photo scan or from our
 - ambientCG licence: CC0 1.0, https://docs.ambientcg.com/license/
 - Poly Haven licence: CC0 1.0, https://polyhaven.com/license
 - Raw downloads are not in the repo. They live in `artifacts/textures_src/` (git-ignored). `python art/scripts/texture_pipeline.py --all --fetch` downloads any that are missing, from the URLs in `art/scripts/texture_families.json`.
-- Downloaded 11/27/2026, the 1K JPG sets.
+- Downloaded 11/27/2026, the 1K JPG sets (the N0, N1 and N3 families alike).
 
 ## What the pipeline does to every source
 
 `art/scripts/texture_pipeline.py`, same steps for every family: checks that the scan tiles (and fixes it with an offset-and-blend if it does not, or if it was cropped), sizes it (1024 terrain, 512 props), multiplies a little of the scan's AO into the colour, softens the fine noise and flattens large blotches, pulls the mean colour exactly onto the palette target while capping brightness and hue variation, writes a grey "neutral" copy with a mean of 0.80, softens and re-normalizes the normal map (OpenGL), and moves the roughness to the family's target. The exact numbers for each family are in its `<family>.json`.
 
-Four N1 families also get a layer made by our own code inside the same script (all of it tiles): painted_wood is cut into boards with grooves and worn paint beside them, tin_roof gets rust runs, aluminium gets a few shallow dents and a metalness map, and leaf_needle has no scan at all.
+Four N1 families also get a layer made by our own code inside the same script (all of it tiles): painted_wood is cut into boards with grooves and worn paint beside them, tin_roof gets rust runs, aluminium gets a few shallow dents and a metalness map, and leaf_needle has no scan at all. One N3 family does too: cedar_bark gets long stringy strips and fibres. The white water images are made by code alone, in `art/scripts/white_water.py`.
 
 ## Families
 
@@ -34,6 +34,11 @@ Four N1 families also get a layer made by our own code inside the same script (a
 | tin_roof | Poly Haven "Corrugated Iron" (`corrugated_iron`) plus our rust runs | https://polyhaven.com/a/corrugated_iron | CC0, rust ours | Sized to 512. Pulled to galvanised grey 150,152,150. Half of the scan's AO baked in so the ribs still read when the normal map is far away. Blotches flattened 70 percent. Rust runs added by code down V: brown 124,78,48 in the colour map, darker in the neutral map, rougher in the roughness map. Roughness mean 0.50. |
 | painted_wood | ambientCG "Painted Wood 008A" plus our boards and wear | https://ambientcg.com/a/PaintedWood008A | CC0, boards ours | Turned a quarter so the grain runs along V, sized to 512. Pulled to off-white paint 196,190,176. Cut into four boards by code: each board gets its own stretch of the scan and a small tone step, a dark groove sits between boards, and the paint wears thin beside the grooves (darker, rougher, grain showing; toward bare wood 158,146,128 in the colour map). Roughness mean 0.60. |
 | aluminium | ambientCG "Metal 009" plus our dents | https://ambientcg.com/a/Metal009 | CC0, dents ours | Sized to 512. Pulled to pale aluminium 176,180,184. Very calm colour (2 percent). A few shallow dents and a faint wave pressed into the normal map by code. Roughness mean 0.42, the brushed lines kept. Metalness map from the scan, mean 0.90, a touch lower where the surface is rougher. |
+| creek_pebble | ambientCG "Rocks 022" | https://ambientcg.com/a/Rocks022 | CC0 | Sized to 1024. Pulled to grey-brown 126,116,100 (our pick, the creek has no palette colour for pebbles). 40 percent of the scan's AO baked in so the stones stay apart. Fine noise softened 50 percent, blotches flattened 60 percent, pale stones soft-clipped (despeckle 2.0), brightness variation capped at 11 percent (9.3 after), hue variation kept at 70 percent so the greys and warm browns stay mixed. Normal 0.8. Roughness mean 0.60. |
+| wet_slate | ambientCG "Rock 022" | https://ambientcg.com/a/Rock022 | CC0 | Sized to 1024. Pulled to wet slate 70,78,84. Fine noise softened 60 percent, blotches flattened 70 percent, brightness variation capped at 7 percent (5.8 after), dark cracks soft-clipped (despeckle 2.0), hue variation cut to 20 percent. Normal 0.65. Roughness mean 0.36 with half the scan's contrast, for the wet shine. Bedding lines run along U. |
+| moss | ambientCG "Moss 002" | https://ambientcg.com/a/Moss002 | CC0 | Sized to 1024. Pulled to moss 78,104,52. Fine noise softened 60 percent, blotches flattened 60 percent, brightness variation capped at 10 percent (8.8 after), hue variation cut to 35 percent. Normal at full strength (the cushions). Roughness mean 0.92 with 40 percent of the scan's contrast. |
+| cedar_bark | Poly Haven "Metasequoia Bark" (`metasequoia_bark`) plus our strips and fibres | https://polyhaven.com/a/metasequoia_bark | CC0, strips ours | Sized to 512. Pulled to red cedar 110,70,50. Half of the scan's AO baked in. Blotches flattened by half, pale lichen flecks soft-clipped (despeckle 1.6), brightness variation capped at 13 percent (11.4 after), hue variation cut to a quarter. Long stringy strips added by code down V: dark gaps where strips part, fine fibres along them, pressed into the normal map (normal 1.3). Roughness mean 0.90. |
+| white_water (foam and spray images) | Ours, procedural: `art/scripts/white_water.py` | (none) | Ours | Foam, 512 x 512 RGBA: stretched noise in three sizes (streaks, threads, clots) gathered by a larger field, made to wander a little, cut to a soft alpha with small burst-bubble holes, and faded out behind a ragged line at the top and bottom edge. Wraps in U. Spray, 128 x 128 RGBA: a soft misty core and 34 small droplets, clear at the border. Both are pure white in the colour channels. |
 
 ## Candidates tried and set aside
 
@@ -60,6 +65,13 @@ Four N1 families also get a layer made by our own code inside the same script (a
 | painted_wood | ambientCG Planks010, PaintedWood008B | Planks010: fifteen narrow lap boards per tile and one butt joint that repeats. 008B: paint mostly gone, reads as bare stained wood. |
 | painted_wood | Poly Haven `distressed_painted_planks`, `white_planks_clean` | `distressed`: one large peeled patch that repeats. `white_planks_clean`: no wear at all. |
 | aluminium | ambientCG Metal011, Metal051B | 011: smudges that repeat as a row of marks. 051B: hammered facets, not a boat skin. |
+| creek_pebble | Poly Haven `ganges_river_pebbles` (https://polyhaven.com/a/ganges_river_pebbles) | The best single stones (some 1.5 studs across at 12 studs per tile) and the second choice, but a few pale stones make a zigzag that shows when it repeats. |
+| creek_pebble | ambientCG Gravel022, Gravel041 | 022: mixed colours but small angular chips, turns to noise. 041: even and round but all one size and all one colour, no larger stones. |
+| wet_slate | ambientCG Rock041 (https://ambientcg.com/a/Rock041) | Smooth and very calm: reads as a wet river boulder, not as slate. The second choice, and the one to take for rounded boulders if the bedding lines of Rock022 look wrong on them. |
+| wet_slate | Poly Haven `dark_rock_02`, ambientCG Rock035, Rock037 | `dark_rock_02`: big broken slabs, the breaks repeat as a fish-scale pattern. 035 and 037: strong blue, purple and green mineral stains that survive the palette pull as blotches. |
+| moss | ambientCG Moss004, Moss003 | 004: bigger cushions that repeat as rows. 003: paler specks all over, busier at distance. |
+| moss | Poly Haven `concrete_moss`, ambientCG Rock057 | `concrete_moss`: a thin film on concrete, stains and pits show through. 057: bare rock shows through as pale flakes. |
+| cedar_bark | Poly Haven `japanese_cedar_bark`, `chinese_cedar_bark` | `japanese_cedar_bark`: fine fibres and the second choice, but two horizontal bands repeat. `chinese_cedar_bark`: one big knot per tile (as found for bark in N1). |
 
 ## Hero sets (maps baked for one model)
 

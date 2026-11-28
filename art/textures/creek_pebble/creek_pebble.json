@@ -1,0 +1,72 @@
+{
+  "family": "creek_pebble",
+  "kind": "terrain",
+  "size": 1024,
+  "source": "Rocks022",
+  "source_page": "https://ambientcg.com/a/Rocks022",
+  "licence": "CC0",
+  "studs_per_tile": 16,
+  "target_rgb": [
+    126,
+    116,
+    100
+  ],
+  "saturation": 1.0,
+  "target_rgb_used": [
+    126.0,
+    116.0,
+    100.0
+  ],
+  "mean_rgb": [
+    126.0,
+    116.0,
+    100.0
+  ],
+  "luma_rel_std_in": 0.221,
+  "luma_rel_std_out": 0.0929,
+  "neutral_mean": 0.8,
+  "neutral_std": 0.0703,
+  "neutral_min_max": [
+    0.646,
+    0.934
+  ],
+  "rough_mean": 0.6,
+  "rough_std": 0.0679,
+  "metal_mean": null,
+  "normal_mean_tilt": 0.2517,
+  "seam_in": 0.844,
+  "seam_fixed": false,
+  "seam_out": {
+    "color": 0.828,
+    "normal": 0.81,
+    "rough": 1.049
+  },
+  "settings": {
+    "ao_mix": 0.4,
+    "contrast": 1.0,
+    "despeckle_k": 2.0,
+    "flatten": 0.6,
+    "flatten_sigma": 0.12,
+    "hue_var": 0.7,
+    "kind": "terrain",
+    "max_rel_std": 0.11,
+    "neutral_mean": 0.8,
+    "normal_strength": 0.8,
+    "rough_contrast": 1.0,
+    "rough_mean": 0.6,
+    "seam_blend": 0.2,
+    "seam_limit": 1.25,
+    "seamless": "auto",
+    "sheet": "n3",
+    "size": 1024,
+    "soften": 0.5,
+    "soften_sigma": 1.5,
+    "source": "Rocks022",
+    "studs_per_tile": 16,
+    "target_rgb": [
+      126,
+      116,
+      100
+    ]
+  }
+}

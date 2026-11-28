@@ -565,7 +565,7 @@ end
 function LookPresets.applyTo(lighting: any, clock: number, make: (string) -> any, weather: string?, amount: number?, from: string?, clouds: any?, areas: { [string]: number }?, grade: Grade?)
 	local look = LookPresets.at(clock, weather, amount, from, grade)
 	if areas ~= nil then
-		look = LookPresets.blendAreas(look, areas)
+		look = LookPresets.blendAreas(look, areas, clock)
 	end
 	for target, values in look do
 		local inst = if target == "Lighting" then lighting else effect(lighting, target, make)
@@ -638,6 +638,11 @@ export type Area = {
 	tint: Color3,
 	saturation: number,
 	water: Water,
+	-- (N3) Optional. exposureFloor: inside this area (weighted by its share of the blend) the
+	-- ExposureCompensation is lifted to at least this. dawnMist: Atmosphere Density and Haze added
+	-- at the dawn preset's weight (and the area's share).
+	exposureFloor: number?,
+	dawnMist: { density: number, haze: number }?,
 }
 
 local WHITE = rgb(255, 255, 255)
@@ -657,16 +662,23 @@ LookPresets.AREAS = {
 		water = { WaterColor = rgb(26, 66, 62), WaterTransparency = 0.42, WaterReflectance = 0.35, WaterWaveSize = 0.12, WaterWaveSpeed = 8 },
 	},
 	creek = {
-		-- The cold stream in the woods: a touch darker and greener, very clear water.
-		exposure = -0.1,
-		ambient = rgb(242, 255, 242),
-		density = 0.02,
-		haze = 0.2,
-		atmosphere = rgb(236, 250, 236),
-		decay = rgb(236, 250, 236),
-		tint = rgb(246, 255, 246),
-		saturation = 0.03,
-		water = { WaterColor = rgb(64, 84, 58), WaterTransparency = 0.8, WaterReflectance = 0.3, WaterWaveSize = 0.08, WaterWaveSpeed = 10 },
+		-- The cold stream in the woods (N3): cooler shade under a closed canopy, clear tea water
+		-- you see the pebbles through, low reflectance so the bed shows, a quick small chop.
+		-- Exposure is lifted, not lowered: the cedars' shade already darkens it, and the bobber
+		-- must stay readable (plan N3 risks).
+		exposure = 0.15,
+		ambient = rgb(236, 246, 255),
+		density = 0.03,
+		haze = 0.3,
+		atmosphere = rgb(228, 240, 240),
+		decay = rgb(226, 238, 236),
+		tint = rgb(244, 250, 255),
+		saturation = 0.02,
+		water = { WaterColor = rgb(64, 84, 58), WaterTransparency = 0.8, WaterReflectance = 0.12, WaterWaveSize = 0.06, WaterWaveSpeed = 12 },
+		-- N3 (blendAreas): the exposure never drops below -0.25 in the creek, so the bobber reads
+		-- under the canopy at dusk and in storms; a little ground mist at dawn.
+		exposureFloor = -0.25,
+		dawnMist = { density = 0.08, haze = 0.8 },
 	},
 	basin = {
 		-- The Big Lake's near half: a little cooler and airier than home.
@@ -899,10 +911,19 @@ local function tinted(c: Color3, t: Color3): Color3
 	return Color3.new(math.clamp(c.R * t.R, 0, 1), math.clamp(c.G * t.G, 0, 1), math.clamp(c.B * t.B, 0, 1))
 end
 
--- The look with the areas laid on top (a fresh table; at home, the same values exactly).
-function LookPresets.blendAreas(look: Look, weights: { [string]: number }): Look
+-- The look with the areas laid on top (a fresh table; at home, the same values exactly). With a
+-- clock, an area's dawnMist is added at the dawn preset's weight (N3); an area's exposureFloor
+-- applies with or without one.
+function LookPresets.blendAreas(look: Look, weights: { [string]: number }, clock: number?): Look
 	local a = LookPresets.areaMix(weights)
-	if isHome(a) then
+	local extras = false
+	for id, w in weights do
+		local ar = LookPresets.AREAS[id]
+		if ar and w > 0 and (ar.exposureFloor ~= nil or ar.dawnMist ~= nil) then
+			extras = true
+		end
+	end
+	if isHome(a) and not extras then
 		return look
 	end
 	local out: Look = {}
@@ -911,13 +932,32 @@ function LookPresets.blendAreas(look: Look, weights: { [string]: number }): Look
 	end
 	local light, atmo, cc = out.Lighting, out.Atmosphere, out.ColorCorrectionEffect
 	if light then
-		light.ExposureCompensation = math.clamp((light.ExposureCompensation :: number) + a.exposure, -3, 3)
+		local e = (light.ExposureCompensation :: number) + a.exposure
+		-- Each area's floor, by its share: fully at the floor inside it, eased across the band.
+		for id, w in weights do
+			local floor = LookPresets.AREAS[id] and LookPresets.AREAS[id].exposureFloor
+			if floor and w > 0 then
+				e += math.min(w, 1) * math.max(0, floor - e)
+			end
+		end
+		light.ExposureCompensation = math.clamp(e, -3, 3)
 		light.Ambient = tinted(light.Ambient :: Color3, a.ambient)
 		light.OutdoorAmbient = tinted(light.OutdoorAmbient :: Color3, a.ambient)
 	end
 	if atmo then
-		atmo.Density = math.clamp((atmo.Density :: number) + a.density, 0, LookPresets.MAX_DENSITY)
-		atmo.Haze = math.clamp((atmo.Haze :: number) + a.haze, 0, LookPresets.MAX_HAZE)
+		local density, haze = (atmo.Density :: number) + a.density, (atmo.Haze :: number) + a.haze
+		if clock ~= nil then
+			local dawn = LookPresets.weights(clock).dawn or 0
+			for id, w in weights do
+				local mist = LookPresets.AREAS[id] and LookPresets.AREAS[id].dawnMist
+				if mist and w > 0 and dawn > 0 then
+					density += mist.density * w * dawn
+					haze += mist.haze * w * dawn
+				end
+			end
+		end
+		atmo.Density = math.clamp(density, 0, LookPresets.MAX_DENSITY)
+		atmo.Haze = math.clamp(haze, 0, LookPresets.MAX_HAZE)
 		atmo.Color = tinted(atmo.Color :: Color3, a.atmosphere)
 		atmo.Decay = tinted(atmo.Decay :: Color3, a.decay)
 	end

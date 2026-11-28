@@ -1,12 +1,16 @@
 # Material families
 
-The Real-ish material families: the first seven (N0, 11/27/2026) and the next ten (N1, 11/27/2026). Each folder holds the maps for one Roblox `MaterialVariant`. Where each came from is in [SOURCES.md](SOURCES.md). The look is judged on the sheets:
+The Real-ish material families: the first seven (N0, 11/27/2026), the next ten (N1, 11/27/2026) and the four for Cedar Creek (N3, 11/27/2026). Each folder holds the maps for one Roblox `MaterialVariant`. `white_water/` is the exception: two plain images with alpha for the riffle's foam and spray. Where each came from is in [SOURCES.md](SOURCES.md). The look is judged on the sheets:
 
 ![Material sheet, N0](sheet-n0.png)
 
 ![Material sheet, N1](sheet-n1.png)
 
+![Material sheet, N3, Cedar Creek](sheet-n3.png)
+
 Rows on the sheets: sphere with the colour map; the thing the family is for; the same thing 30 studs away with a bobber for scale; sphere with the neutral map times a sample colour; the thing with the neutral map times a second colour. On the N1 sheet the two lake beds (lake_mud, deep_bed) lie half under a sheet of lake water in row 2 and fully under it in row 3, because that is the only way they are ever seen. The water there is a Blender stand-in, not the engine's.
+
+On the N3 sheet creek_pebble lies half under clear creek water (64,84,58) in rows 2 and 5 and fully under it in row 3: left of the line is a gravel bar, right of it the bed. wet_slate is shown as ground with two rock shelves and a boulder, moss as ground with two boulders and a log (it is a terrain map and a prop map). The last column is white_water: the foam image over creek water, a riffle built from the four families with foam strips and spray on it, the same riffle from 30 studs, the spray image, and the foam's alpha tiled. The sheet's light is an open sunny sky, so everything is brighter than it will be under the creek's closed canopy.
 
 ## Files per family
 
@@ -45,10 +49,14 @@ Uploads are permanent, so each map goes up once and its id is written here.
 | tin_roof | prop | 512 | 4 | 123504692013472 | 114659436037341 | 96342230031415 | 130249019931486 |
 | painted_wood | prop | 512 | 5 | n/a | 138548088880298 | 114031226403634 | 125197895604357 |
 | aluminium | prop | 512 | 4 | n/a | 140540589693552 | 130928792762580 | 116945538976167 |
+| creek_pebble | terrain | 1024 | 16 | 115838492914633 | 90324050686422 | 92628018119192 | n/a |
+| wet_slate | terrain | 1024 | 12 | 97920981489099 | 131130650754049 | 136570282484131 | n/a |
+| moss | terrain and prop | 1024 | 8 | 95460022034606 | 71904788721067 | 79579793871789 | 89093689228043 |
+| cedar_bark | prop | 512 | 4 | n/a | 136380260146967 | 115271845618414 | 71939342860443 |
 
 aluminium also has a metalness map. Metal id: (not uploaded yet).
 
-n/a means that map was not uploaded (not needed for that family). An empty cell means not uploaded yet (the ten N1 families, made 11/27/2026). Colour id is the palette colour map; rope, canvas and fish_skin use the neutral map only. Machine-readable copy: `ids.json`.
+n/a means that map was not uploaded (not needed for that family). The four N3 families were uploaded 11/27/2026. Colour id is the palette colour map; rope, canvas and fish_skin use the neutral map only. Machine-readable copy: `ids.json`.
 
 ## N1 families: base material and which map to use
 
@@ -67,6 +75,26 @@ n/a means that map was not uploaded (not needed for that family). An empty cell 
 
 The terrain base materials are picked for the footstep sound and so that no slot fights another: wet_sand and shore_sand share `Sand`, lake_mud and deep_bed share `Mud`, each in its own slot, the way wet_sand already sits in slot 23. None of them uses `Grass`, so no grass blades grow on them.
 
+## N3 families (Cedar Creek): base material and which map to use
+
+| Family | Roblox base material | Map to put in `ColorMap` | Mean colour of the colour map |
+|---|---|---|---|
+| creek_pebble | `Pebble` (terrain slot; `Ground` if a slot cannot take `Pebble`) | colour, white slot tint on the gravel bars; the same map with a darker tint for the bed under water | 126,116,100 |
+| wet_slate | `Slate` (terrain) | colour, white slot tint | 70,78,84 |
+| moss | `LeafyGrass` (terrain, no blades) | colour with a white tint on terrain; neutral on boulders, logs and cut banks, hue from the mesh (about 98,130,65 to land on the palette green) | 78,104,52 |
+| cedar_bark | `Wood` | neutral, hue from the mesh (about 138,88,62 to land on 110,70,50) | 110,70,50 |
+
+The creek has no palette colour for its pebbles, so 126,116,100 is our pick: a grey-brown between footpath_gravel and shore_stone, with the stones' own greys and warm browns left in (hue variation kept at 70 percent, the most of any family).
+
+### White water (images, not a MaterialVariant)
+
+| File | Size | What it is | Image id |
+|---|---|---|---|
+| `white_water/white_water_foam.png` | 512 x 512, RGBA | Foam streaks, white on transparent, for a scrolling Beam or Texture | 113344834192419 |
+| `white_water/white_water_spray.png` | 128 x 128, RGBA | One puff of spray, white on transparent, for a ParticleEmitter | 100468867784698 |
+
+`white_water_tile3.jpg` is the preview (do not upload) and `white_water.json` holds the settings and measured numbers.
+
 ## Notes for whoever applies them
 
 - **Studs per tile** are starting values from the sheet, where one unit is one stud. weathered_plank at 8 gives boards about 1.3 studs wide. fish_skin at 1 gives scales about a sixth of a stud; go to 0.75 for small fish if the scales look too big on them.
@@ -84,11 +112,17 @@ The terrain base materials are picked for the footstep sound and so that no slot
 - **tin_roof**: seven ribs per tile, so a rib every 0.57 stud at 4 studs per tile (wider than real tin, so it does not shimmer at distance). The ribs run along V: V must run down the roof slope. The colour map has brown rust runs; the neutral map can only show them as darker runs, so a painted roof gets worn streaks instead of rust.
 - **painted_wood**: four boards per tile running along V, 1.25 studs wide at 5 studs per tile, with a dark groove between boards and the paint worn thin beside the grooves. The wear shows as a darker, rougher band with the grain in it, since a neutral map cannot change hue.
 - **aluminium**: brushed lines run along U. `aluminium_metal.png` is the metalness map (mean 0.90, a touch lower where the surface is rougher); roughness mean 0.42. A few shallow dents are in the normal map. Metal takes its look from what it reflects, so judge it in Studio under the real sky, not on the sheet.
+- **creek_pebble**: rounded river pebbles in greys and warm browns. At 16 studs per tile the biggest stones are about 0.8 stud across and most are 0.3 to 0.5; they read as single stones out to about 12 studs and as calm speckled gravel beyond. The kit's placeholder says 6 studs: at 6 the biggest stone is 0.3 stud and the bed turns to grit. Roughness 0.6: damp, no glare on the bars. The stones have real relief in the normal map, so under moving water they will catch the light a little; if they shimmer, lower the slot's normal with `--set normal_strength=0.5`.
+- **wet_slate**: bedded slate, 70,78,84, roughness 0.36 so it shines where the sky is in it and stays dark elsewhere. The bedding lines run along U. Each tile has one dark crack; on a shelf wider than about 24 studs the crack shows as a repeat, so break big shelves with moss or a second rock, or go to 16 studs per tile. If it glares at noon in the open, `--set rough_mean=0.45`.
+- **moss**: a soft cushioned carpet with no leaves or stems to shimmer. 8 studs per tile on terrain; 5 or 6 on boulders and logs, where a cushion should be about half a stud. The colour map is the palette green exactly; in sun the reference picture's moss is yellower (about 112,118,50), which the neutral map takes from the mesh colour (row 5 of the sheet).
+- **cedar_bark**: long stringy strips running along the map's V direction, with dark gaps where the strips part and fine fibres along them (the strips and fibres are made by code on top of the scan). On a trunk V must run up the trunk, on a log along it. A few pale lichen flecks are left from the scan. One strip is about a quarter of a stud wide at 4 studs per tile; on trunks thicker than 3 studs go to 5 or 6.
+- **white_water foam**: the streaks run along the image's X axis (U), so scroll it along U. It wraps exactly in U. In V the foam fades to nothing at the top and bottom edge behind a ragged line: one tile across a Beam's width gives a soft-edged strip, and several tiles stacked in V on a Texture give lanes of foam with a thin clear gap between them and no seam. The colour is pure white everywhere, so tint it in the engine (a faint 235,240,235 sits better on the green water). Mean alpha is 0.18 and the most opaque pixel is 0.92, so one layer is lacy; stack two at different speeds over the drop, as the sheet's riffle does. On the sheet one tile covers 6 studs of flow and the strips are about 2 studs wide at the lip. Which image axis a Beam lays along its length was not checked in Studio: if the streaks come out across the flow, turn the image a quarter turn before uploading.
+- **white_water spray**: a soft core with small droplets around it, clear at the border, so it can be turned and scaled freely. It is meant for a handful of short-lived particles at the foot of each foam strip, 1 to 2 studs across.
 
 ## Rebuild
 
 ```powershell
-cd "C:\Users\stewa\Documents\Claude\Roblox"; python art\scripts\texture_pipeline.py --all --fetch; python art\scripts\material_sheet.py; python art\scripts\material_sheet.py --sheet n1
+cd "C:\Users\stewa\Documents\Claude\Roblox"; python art\scripts\texture_pipeline.py --all --fetch; python art\scripts\material_sheet.py; python art\scripts\material_sheet.py --sheet n1; python art\scripts\white_water.py; python art\scripts\material_sheet.py --sheet n3
 ```
 
-One family: `python art\scripts\texture_pipeline.py weathered_plank`. Try another source: `python art\scripts\texture_pipeline.py --candidates weathered_plank` (writes to `artifacts\textures_candidates\`). Add a family: add it to `art\scripts\texture_families.json` (source, size, target colour, studs per tile, and `"sheet": "n1"` to put it on the N1 sheet) and run it. The sheet needs Blender 5.1 at its default install path, or set the `BLENDER` environment variable.
+One family: `python art\scripts\texture_pipeline.py weathered_plank`. Try another source: `python art\scripts\texture_pipeline.py --candidates weathered_plank` (writes to `artifacts\textures_candidates\`). Add a family: add it to `art\scripts\texture_families.json` (source, size, target colour, studs per tile, and `"sheet": "n1"` to put it on the N1 sheet) and run it. White water is not a family: `python art\scripts\white_water.py` makes both images from the numbers under `effects.white_water` in the same table. `python art\scripts\material_sheet.py --sheet n3 --spt creek_pebble=12` tries another tile size on the sheet without changing the table. The sheet needs Blender 5.1 at its default install path, or set the `BLENDER` environment variable.

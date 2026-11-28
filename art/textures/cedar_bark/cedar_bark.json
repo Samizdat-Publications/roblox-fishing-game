@@ -1,0 +1,79 @@
+{
+  "family": "cedar_bark",
+  "kind": "prop",
+  "size": 512,
+  "source": "metasequoia_bark",
+  "source_page": "https://polyhaven.com/a/metasequoia_bark",
+  "licence": "CC0",
+  "studs_per_tile": 4,
+  "target_rgb": [
+    110,
+    70,
+    50
+  ],
+  "saturation": 1.0,
+  "target_rgb_used": [
+    110.0,
+    70.0,
+    50.0
+  ],
+  "mean_rgb": [
+    110.0,
+    70.0,
+    50.0
+  ],
+  "luma_rel_std_in": 0.1874,
+  "luma_rel_std_out": 0.1136,
+  "neutral_mean": 0.8,
+  "neutral_std": 0.0921,
+  "neutral_min_max": [
+    0.399,
+    1.0
+  ],
+  "rough_mean": 0.9,
+  "rough_std": 0.0214,
+  "metal_mean": null,
+  "normal_mean_tilt": 0.334,
+  "seam_in": 0.762,
+  "seam_fixed": false,
+  "seam_out": {
+    "color": 1.244,
+    "normal": 0.838,
+    "rough": 1.394
+  },
+  "settings": {
+    "ao_mix": 0.5,
+    "contrast": 1.0,
+    "despeckle_k": 1.6,
+    "fibres": {
+      "amount": 0.35,
+      "width": 7.0,
+      "length": 30.0,
+      "depth": 2.2,
+      "seed": 9
+    },
+    "flatten": 0.5,
+    "flatten_sigma": 0.12,
+    "hue_var": 0.25,
+    "kind": "prop",
+    "max_rel_std": 0.13,
+    "neutral_mean": 0.8,
+    "normal_strength": 1.3,
+    "rough_contrast": 1.0,
+    "rough_mean": 0.9,
+    "seam_blend": 0.2,
+    "seam_limit": 1.5,
+    "seamless": "auto",
+    "sheet": "n3",
+    "size": 512,
+    "soften": 0.5,
+    "soften_sigma": 1.5,
+    "source": "metasequoia_bark",
+    "studs_per_tile": 4,
+    "target_rgb": [
+      110,
+      70,
+      50
+    ]
+  }
+}

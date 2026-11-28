@@ -17,6 +17,9 @@ require(modules:WaitForChild("Fireflies")).start() -- fireflies on clear nights 
 if Config.PAINTED_SIGNS_ON then
 	require(modules:WaitForChild("Lanterns")).start() -- sign lanterns lit at night (N2)
 end
+if Config.WHITE_WATER_ON then
+	require(modules:WaitForChild("WhiteWater")).start() -- foam and spray on the creek's riffle (N3)
+end
 require(modules:WaitForChild("BoatClient")).start() -- UNVERIFIED in Studio (2026-11-26)
 require(modules:WaitForChild("AwayCard")).start() -- "While You Were Away" pond card (L6d, UNVERIFIED in Studio)
 print("[Client] fishing controller started")

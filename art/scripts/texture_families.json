@@ -424,6 +424,120 @@
         "scale": 0.07,
         "seed": 11
       }
+    },
+    "creek_pebble": {
+      "kind": "terrain",
+      "size": 1024,
+      "sheet": "n3",
+      "source": "Rocks022",
+      "candidates": [
+        "Rocks022",
+        "ganges_river_pebbles",
+        "Gravel022",
+        "Gravel041"
+      ],
+      "target_rgb": [
+        126,
+        116,
+        100
+      ],
+      "studs_per_tile": 16,
+      "rough_mean": 0.6,
+      "ao_mix": 0.4,
+      "soften": 0.5,
+      "flatten": 0.6,
+      "max_rel_std": 0.11,
+      "despeckle_k": 2.0,
+      "hue_var": 0.7,
+      "normal_strength": 0.8
+    },
+    "wet_slate": {
+      "kind": "terrain",
+      "size": 1024,
+      "sheet": "n3",
+      "source": "Rock022",
+      "candidates": [
+        "Rock022",
+        "Rock041",
+        "Rock035",
+        "Rock037",
+        "dark_rock_02"
+      ],
+      "target_rgb": [
+        70,
+        78,
+        84
+      ],
+      "studs_per_tile": 12,
+      "rough_mean": 0.36,
+      "rough_contrast": 0.5,
+      "soften": 0.6,
+      "flatten": 0.7,
+      "max_rel_std": 0.07,
+      "despeckle_k": 2.0,
+      "hue_var": 0.2,
+      "normal_strength": 0.65
+    },
+    "moss": {
+      "kind": "terrain",
+      "size": 1024,
+      "sheet": "n3",
+      "source": "Moss002",
+      "candidates": [
+        "Moss002",
+        "Moss004",
+        "Moss003",
+        "concrete_moss",
+        "Rock057"
+      ],
+      "target_rgb": [
+        78,
+        104,
+        52
+      ],
+      "studs_per_tile": 8,
+      "rough_mean": 0.92,
+      "rough_contrast": 0.4,
+      "soften": 0.6,
+      "flatten": 0.6,
+      "max_rel_std": 0.1,
+      "hue_var": 0.35,
+      "normal_strength": 1.0,
+      "seam_limit": 1.5,
+      "note": "seam score 1.4 is in the roughness only: a step of 0.009 on a map that spreads 0.015 around 0.92, nothing to see (checked by eye on the 3 by 3 tile)"
+    },
+    "cedar_bark": {
+      "kind": "prop",
+      "size": 512,
+      "sheet": "n3",
+      "source": "metasequoia_bark",
+      "candidates": [
+        "metasequoia_bark",
+        "japanese_cedar_bark",
+        "chinese_cedar_bark"
+      ],
+      "target_rgb": [
+        110,
+        70,
+        50
+      ],
+      "studs_per_tile": 4,
+      "rough_mean": 0.9,
+      "flatten": 0.5,
+      "max_rel_std": 0.13,
+      "despeckle_k": 1.6,
+      "hue_var": 0.25,
+      "ao_mix": 0.5,
+      "normal_strength": 1.3,
+      "fibres": {
+        "amount": 0.35,
+        "width": 7.0,
+        "length": 30.0,
+        "depth": 2.2,
+        "seed": 9
+      },
+      "seam_limit": 1.5,
+      "note": "seam score 1.4 is a gap between two bark strips that sits on the wrap edge, not a seam (checked by eye at full size)"
     }
   },
   "sources": {
@@ -875,6 +989,133 @@
       "generator": "builtin:leaf_needle",
       "dir": "artifacts/textures_src/leaf_needle_proc",
       "licence": "ours"
+    },
+    "ganges_river_pebbles": {
+      "provider": "Poly Haven",
+      "page": "https://polyhaven.com/a/ganges_river_pebbles",
+      "licence": "CC0",
+      "files": [
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/ganges_river_pebbles/ganges_river_pebbles_diff_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/ganges_river_pebbles/ganges_river_pebbles_nor_gl_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/ganges_river_pebbles/ganges_river_pebbles_rough_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/ganges_river_pebbles/ganges_river_pebbles_ao_1k.jpg"
+      ]
+    },
+    "dark_rock_02": {
+      "provider": "Poly Haven",
+      "page": "https://polyhaven.com/a/dark_rock_02",
+      "licence": "CC0",
+      "files": [
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/dark_rock_02/dark_rock_02_diff_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/dark_rock_02/dark_rock_02_nor_gl_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/dark_rock_02/dark_rock_02_rough_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/dark_rock_02/dark_rock_02_ao_1k.jpg"
+      ]
+    },
+    "concrete_moss": {
+      "provider": "Poly Haven",
+      "page": "https://polyhaven.com/a/concrete_moss",
+      "licence": "CC0",
+      "files": [
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_moss/concrete_moss_diff_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_moss/concrete_moss_nor_gl_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_moss/concrete_moss_rough_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_moss/concrete_moss_ao_1k.jpg"
+      ]
+    },
+    "metasequoia_bark": {
+      "provider": "Poly Haven",
+      "page": "https://polyhaven.com/a/metasequoia_bark",
+      "licence": "CC0",
+      "files": [
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/metasequoia_bark/metasequoia_bark_diff_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/metasequoia_bark/metasequoia_bark_nor_gl_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/metasequoia_bark/metasequoia_bark_rough_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/metasequoia_bark/metasequoia_bark_ao_1k.jpg"
+      ]
+    },
+    "japanese_cedar_bark": {
+      "provider": "Poly Haven",
+      "page": "https://polyhaven.com/a/japanese_cedar_bark",
+      "licence": "CC0",
+      "files": [
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/japanese_cedar_bark/japanese_cedar_bark_diff_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/japanese_cedar_bark/japanese_cedar_bark_nor_gl_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/japanese_cedar_bark/japanese_cedar_bark_rough_1k.jpg",
+        "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/japanese_cedar_bark/japanese_cedar_bark_ao_1k.jpg"
+      ]
+    },
+    "Rocks022": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Rocks022",
+      "zip": "https://ambientcg.com/get?file=Rocks022_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Gravel022": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Gravel022",
+      "zip": "https://ambientcg.com/get?file=Gravel022_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Rock022": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Rock022",
+      "zip": "https://ambientcg.com/get?file=Rock022_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Rock041": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Rock041",
+      "zip": "https://ambientcg.com/get?file=Rock041_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Rock035": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Rock035",
+      "zip": "https://ambientcg.com/get?file=Rock035_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Rock037": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Rock037",
+      "zip": "https://ambientcg.com/get?file=Rock037_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Moss003": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Moss003",
+      "zip": "https://ambientcg.com/get?file=Moss003_1K-JPG.zip",
+      "licence": "CC0"
+    },
+    "Rock057": {
+      "provider": "ambientCG",
+      "page": "https://ambientcg.com/a/Rock057",
+      "zip": "https://ambientcg.com/get?file=Rock057_1K-JPG.zip",
+      "licence": "CC0"
+    }
+  },
+  "effects": {
+    "white_water": {
+      "kind": "effect",
+      "sheet": "n3",
+      "source": "ours, code",
+      "generator": "white_water.py",
+      "shown_with": [
+        "creek_pebble",
+        "wet_slate",
+        "moss",
+        "cedar_bark"
+      ],
+      "foam_size": 512,
+      "spray_size": 128,
+      "seed": 7,
+      "cover": 0.68,
+      "streak": 16.0,
+      "wander": 7.0,
+      "edge": 0.045,
+      "edge_ragged": 0.07,
+      "peak": 0.92,
+      "spray_drops": 34
     }
   }
 }
