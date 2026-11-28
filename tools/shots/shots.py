@@ -22,6 +22,14 @@ A home lake and creek, B the Big Lake, C the boats (N4), D the island (N6), U th
   like "shot 03-dockend-noon set Clear"; record it right after the capture:
   python tools/shots/shots.py weather <run> <id> <kind>  writes run.json "weather": {"<id>": "<kind>"}
                                                        (<id> may be "all" for every shot of the run)
+  Session (N3 review 1, 11/27/2026: a creek run was captured in the Device Simulator and scored
+  as desktop): pin and every scenery shot snippet (sets A, B, C, D) also return the player's
+  LookTierActive, whether touch is on and the viewport, like
+  "shot 09-riffle-dawn set Clear tier desktop touch false viewport 1600x900". Record the whole
+  returned line right after the capture (it records the weather too):
+  python tools/shots/shots.py record <run> <id> "<the line the snippet returned>"
+  score refuses a scenery run where any scored shot has no session recorded, was a touch
+  session, on the phone tier, or narrower than 1280 (--any-tier overrides).
   (per shot: execute the snippet, then
    powershell -ExecutionPolicy Bypass -File tools/capture-studio.ps1 -ViewportOnly -Out <run>/<id>.jpg
    capture-studio.ps1 picks the window titled "Fishing Game" when several Studios are open)
@@ -60,7 +68,7 @@ A home lake and creek, B the Big Lake, C the boats (N4), D the island (N6), U th
   <run>/audit.json; score stores it beside the scores.
   python tools/shots/shots.py sheet <run> [--before <run>]   contact sheet (and before/after pairs)
   python tools/shots/shots.py score <run> --step <slug> [--runs 3] [--note "..."] [--also identity]
-                                                       [--any-weather]
+                                                       [--any-weather] [--any-tier]
                                                        Refuses a run whose run.json "weather" is not
                                                        Clear for every scored shot, unless --any-weather
                                                        (old runs, before the weather was recorded).
@@ -169,7 +177,10 @@ _G.__shotHB = RS.Heartbeat:Connect(function()
 \tcam.FieldOfView = s.fov
 \tcam.CFrame = CFrame.lookAt(s.eye, s.look)
 end)
-return "pin ready"
+local P = game:GetService("Players").LocalPlayer
+local v = workspace.CurrentCamera.ViewportSize
+return string.format("pin ready tier %s touch %s viewport %dx%d", tostring(P:GetAttribute("LookTierActive")),
+\ttostring(game:GetService("UserInputService").TouchEnabled), math.round(v.X), math.round(v.Y))
 """
 
 # Runs before every screen's own luau (set U): the background view, the HUD back on, and the
@@ -316,6 +327,14 @@ end
 return HS:JSONEncode(out)
 """
 
+# What every scenery shot snippet returns (sets A, B, C, D): the weather, the look tier, touch and
+# the viewport, so a Device Simulator capture cannot be scored as the desktop (N3 review 1).
+SESSION_TAIL = """local v = workspace.CurrentCamera.ViewportSize
+return string.format("shot {id} set %s tier %s touch %s viewport %dx%d", tostring(workspace:GetAttribute("Weather")),
+\ttostring(game:GetService("Players").LocalPlayer:GetAttribute("LookTierActive")),
+\ttostring(game:GetService("UserInputService").TouchEnabled), math.round(v.X), math.round(v.Y))
+"""
+
 DESKTOP_MIN = (1280, 720)
 PHONE = (667, 375)
 UI_CONTEXT = ("Files ending -1280 are the desktop: the Studio viewport as it is, at least 1280 by 720, "
@@ -336,8 +355,7 @@ def luau_for(s: dict) -> str:
         sizes = " and ".join(f"{w}x{h}" for w, h in SCREEN_SIZES)
         return (f"-- screen {s['id']}: {s['what']} (capture at {sizes}; run pin first)\n"
                 + shot_line(s) + SCREEN_PRELUDE + "\n".join(s["luau"]) + "\n")
-    return (f"-- shot {s['id']}: {s['what']}\n" + shot_line(s)
-            + f"task.wait(1.5)\nreturn \"shot {s['id']} set \" .. tostring(workspace:GetAttribute(\"Weather\"))\n")
+    return (f"-- shot {s['id']}: {s['what']}\n" + shot_line(s) + "task.wait(1.5)\n" + SESSION_TAIL.replace("{id}", s["id"]))
 
 
 def git_commit() -> str:
@@ -419,6 +437,77 @@ def cmd_weather(a):
     meta_path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
     note = "" if a.kind == SCORED_WEATHER else f"  (not {SCORED_WEATHER}: score will refuse it without --any-weather)"
     print(f"{run.name}: " + ", ".join(f"{sid} {a.kind}" for sid in targets) + note)
+
+
+def parse_session(line: str) -> dict:
+    """The weather, tier, touch and viewport out of a line a shot snippet returned."""
+    words = line.replace('"', " ").split()
+    out: dict = {}
+    for i, w in enumerate(words[:-1]):
+        nxt = words[i + 1]
+        if w == "set":
+            out["weather"] = nxt
+        elif w == "tier":
+            out["tier"] = nxt
+        elif w == "touch":
+            out["touch"] = nxt.lower() == "true"
+        elif w == "viewport" and "x" in nxt:
+            try:
+                a, b = nxt.lower().split("x", 1)
+                out["viewport"] = [int(a), int(b)]
+            except ValueError:
+                pass
+    return out
+
+
+def session_problem(sess: dict | None) -> str | None:
+    """Why a scenery shot's recorded session is not a desktop capture, or None when it is."""
+    if not sess:
+        return "no session recorded (python tools/shots/shots.py record <run> <id> \"<line>\")"
+    probs = []
+    if sess.get("touch") is True:
+        probs.append("a touch session (the Device Simulator)")
+    if str(sess.get("tier")) == "phone":
+        probs.append("on the phone tier")
+    vp = sess.get("viewport")
+    if not vp:
+        probs.append("no viewport")
+    elif int(vp[0]) < DESKTOP_MIN[0]:
+        probs.append(f"viewport {vp[0]}x{vp[1]} narrower than {DESKTOP_MIN[0]}")
+    return ", ".join(probs) if probs else None
+
+
+def cmd_record(a):
+    run = Path(a.run)
+    meta_path = run / "run.json"
+    if not meta_path.exists():
+        sys.exit(f"No run.json in {run}. Make the run with: python tools/shots/shots.py newrun")
+    meta = read_meta(run)
+    ids = meta.get("shots") or [s["id"] for s in need_set(meta.get("set", "A"))]
+    if a.id not in ids:
+        sys.exit(f"{a.id} is not a shot of {run.name}. Its shots: {', '.join(ids)}")
+    line = " ".join(a.line)
+    got = parse_session(line)
+    missing = [k for k in ("weather", "tier", "touch", "viewport") if k not in got]
+    if missing:
+        sys.exit(f"Could not read {', '.join(missing)} from {line!r}. Paste the whole line the shot snippet returned.")
+    meta.setdefault("weather", {})[a.id] = got["weather"]
+    meta.setdefault("session", {})[a.id] = {"tier": got["tier"], "touch": got["touch"], "viewport": got["viewport"]}
+    write_meta(run, meta)
+    bad = session_problem(meta["session"][a.id])
+    print(f"{run.name}: {a.id} weather {got['weather']} tier {got['tier']} touch {got['touch']} "
+          f"viewport {got['viewport'][0]}x{got['viewport'][1]}" + (f"  (WRONG: {bad}; score will refuse it)" if bad else ""))
+
+
+def tier_problems(run: Path, shots: list[dict]) -> list[str]:
+    """Scenery shots (sets A, B, C, D) not captured as a desktop session."""
+    recorded = read_meta(run).get("session", {}) or {}
+    bad = []
+    for s in shots:
+        why = session_problem(recorded.get(s["id"]))
+        if why:
+            bad.append(f"{s['id']} ({why})")
+    return bad
 
 
 def weather_problems(run: Path, shots: list[dict]) -> list[str]:
@@ -777,6 +866,14 @@ def cmd_score(a):
                  " (or pass --any-weather for an old run).")
     if bad:
         print(f"Warning (--any-weather): not recorded under {SCORED_WEATHER}: " + ", ".join(bad))
+    tier_bad = tier_problems(run, scored) if set_name in ("A", "B", "C", "D") else []
+    if tier_bad and not a.any_tier:
+        sys.exit(f"Refusing to score {run.name}: these shots were not a desktop session (no touch, not the "
+                 f"phone tier, at least {DESKTOP_MIN[0]} wide): " + "; ".join(tier_bad)
+                 + ". Recapture them outside the Device Simulator, or pass --any-tier for an old run.")
+    if tier_bad:
+        print("Warning (--any-tier): not a desktop session: " + "; ".join(tier_bad))
+    sessions = read_meta(run).get("session", {}) or {}
     recorded = read_meta(run).get("weather", {}) or {}
     weather = {s["id"]: recorded.get(s["id"]) for s in scored}
     if len(files) < len(found):
@@ -797,6 +894,10 @@ def cmd_score(a):
         entry.update(ui_meta)
         if bad:
             entry["any_weather"] = True
+        if tier_bad:
+            entry["any_tier"] = True
+        if set_name in ("A", "B", "C", "D"):
+            entry["session"] = {s["id"]: sessions.get(s["id"]) for s in scored}
         hist.append(entry)
         HISTORY.write_text(json.dumps(hist, indent=2) + "\n", encoding="utf-8")
         print(f"set {set_name}, {rubric}: median {entry['median']}/10 over {a.runs} runs, appended to {HISTORY.relative_to(ROOT)}")
@@ -814,6 +915,10 @@ def main():
     p.add_argument("run"); p.add_argument("id", help='a shot id of the run, or "all"')
     p.add_argument("kind", help="the Weather attribute the shot snippet returned, like Clear")
     p.set_defaults(fn=cmd_weather)
+    p = sub.add_parser("record", help="record a scenery shot's returned line (weather, tier, touch, viewport) in run.json")
+    p.add_argument("run"); p.add_argument("id", help="a shot id of the run")
+    p.add_argument("line", nargs="+", help="the whole line the shot snippet returned")
+    p.set_defaults(fn=cmd_record)
     p = sub.add_parser("viewport", help="record a screen file's ViewportSize in run.json (set U)")
     p.add_argument("run"); p.add_argument("id", help="<id>-1280 or <id>-667, or a bare screen id for the desktop file")
     p.add_argument("w", type=int); p.add_argument("h", type=int)
@@ -841,6 +946,7 @@ def main():
     p.add_argument("--note", default="")
     p.add_argument("--group", default=None, help="score only this group of the set, like lake or creek")
     p.add_argument("--any-weather", action="store_true", help="score even if a shot's recorded weather is not Clear (old runs)")
+    p.add_argument("--any-tier", action="store_true", help="score a scenery run even if a shot was not a desktop session (old runs)")
     p.add_argument("--skip-ui-checks", action="store_true", help="set U: score without the recorded viewports and uichecks")
     p.set_defaults(fn=cmd_score)
     a = ap.parse_args()

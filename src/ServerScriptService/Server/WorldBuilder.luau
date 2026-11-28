@@ -807,6 +807,15 @@ end
 
 local LAKEWARD = Vector3.new(0, 0, -1) -- the stands' open fronts face the lake (north, -z)
 
+-- The Cedar Creek gate board (width, height in studs). N3 review 1, HELD: the advisor asked for
+-- lettering twice as big; the words are width-limited, so the board grows to the arch beam's
+-- length (11.2): text size 37 to 69 (1.86 times; twice would need 12 studs, past the beam).
+-- Its bottom then hangs at about 8.2, under the gate part's top (9): check the gate in Studio.
+-- Goes live with CREEK_BOARD_REVIEW1_ON (one edit), then rerun paintSigns.
+local CREEK_BOARD = Vector2.new(6, 1.3)
+local CREEK_BOARD_REVIEW1 = Vector2.new(11.2, 2.2)
+local CREEK_BOARD_REVIEW1_ON = false
+
 function WorldBuilder.paintSigns(lake: Model): number
 	local folder = Signs.folder(lake)
 	local made = 0
@@ -906,7 +915,8 @@ function WorldBuilder.paintSigns(lake: Model): number
 			else
 				x, z, eave = gate.Position.X, gate.Position.Z, gate.Position.Y + gate.Size.Y / 2 + 1.75
 			end
-			local width, height = 6, 1.3
+			local boardSize = if CREEK_BOARD_REVIEW1_ON then CREEK_BOARD_REVIEW1 else CREEK_BOARD
+			local width, height = boardSize.X, boardSize.Y
 			local centre = Vector3.new(x, eave - 0.35 - height / 2, z)
 			local board = Signs.board({
 				name = "CreekSign",

@@ -18,6 +18,15 @@
 --     ServerStorage.Art (a missing model is skipped and counted).
 --  3. Lays a MossMat on top of each creek boulder above the water (RockLarge, RockMedium and any
 --     visible gray-box Boulder) and gives the rock's meshes the WetSlate variant when it exists.
+--  4. N3 review 1 (the advisor): paints the moss (slot 31) on out into the backing forest
+--     (CreekPlan.mossBand, to D 30, over grass-like slots only) and re-lays the bank path and the
+--     walk to the gate as slot 14 (FootpathGravel), giving the old path parts the FootpathGravel
+--     variant too. Each voxel it repaints is recorded (Lake.CreekDress.SlotRecords) and put back
+--     by revert. It also places shot 09's frame cedars, the backing forest, the emergent
+--     wet-slate rocks on the riffle (RockMedium, its top just out of the water) and, when
+--     CreekPlan.TUNING.boughsPer is above 0, CedarBough sprays hung from the riffle's cedars
+--     (inside each cedar's model, so the phone tier hides them together; skipped while the model
+--     is not in ServerStorage.Art).
 -- Slots 28 to 31 get MaterialKit's variant when it is in MaterialService, else the plain base
 -- material with a palette tint (FALLBACK), so the creek reads right before the maps are uploaded.
 -- Everything new is in Lake.CreekDress: anchored, no collision, queries or touches.
@@ -61,13 +70,20 @@ local function artModel(name: string): Model?
 	return if m and m:IsA("Model") then m else nil
 end
 
--- The kit model: its `_lite` copy when there is one (ShorePine2), as CreekSwap does.
+-- The kit model: its `_lite` copy when there is one (ShorePine2), as CreekSwap does; else the
+-- full one from ServerStorage.Art, else from Lake.Art (the rocks live there).
+local lakeArt: Instance? = nil
 local function template(name: string): (Model?, boolean)
 	local lite = artModel(name .. "_lite")
 	if lite then
 		return lite, true
 	end
-	return artModel(name), false
+	local m = artModel(name)
+	if not m and lakeArt then
+		local found = (lakeArt :: Instance):FindFirstChild(name)
+		m = if found and found:IsA("Model") then found else nil
+	end
+	return m, false
 end
 
 ---------------------------------------------------------------------------------------------
@@ -272,6 +288,116 @@ local function restoreTerrain(folder: Instance): boolean
 	return true
 end
 
+-- Repaints slot indexes inside lo..hi: `decide(x, z, slot)` gives a column's solid voxel its new
+-- slot (nil: leave it). `depth` studs under the column's top are considered (math.huge: all of
+-- it). Every change is recorded in folder.SlotRecords.<name> ("ix,iy,iz,old;") for revert.
+local function repaint(folder: Folder, name: string, lo: Vector3, hi: Vector3, depth: number, decide: (number, number, number) -> number?): number
+	local t = workspace.Terrain
+	local reg = Region3.new(lo, hi):ExpandToGrid(CELL)
+	local base = reg.CFrame.Position - reg.Size / 2
+	local ch = t:ReadVoxelChannels(reg, CELL, { "SolidMaterialIndex", "SolidOccupancy" }) :: any
+	local idx, occ = ch.SolidMaterialIndex, ch.SolidOccupancy
+	local size = ch.Size :: Vector3
+	local rec: { string } = {}
+	for ix = 1, size.X do
+		local cx = base.X + (ix - 0.5) * CELL
+		for iz = 1, size.Z do
+			local cz = base.Z + (iz - 0.5) * CELL
+			local top = -math.huge
+			for iy = 1, size.Y do
+				if occ[ix][iy][iz] > 0 then
+					top = base.Y + (iy - 1) * CELL + occ[ix][iy][iz] * CELL
+				end
+			end
+			if top > -math.huge then
+				for iy = 1, size.Y do
+					local y0 = base.Y + (iy - 1) * CELL
+					if occ[ix][iy][iz] > 0 and y0 + CELL > top - depth then
+						local old = idx[ix][iy][iz]
+						local new = decide(cx, cz, old)
+						if new and new ~= old then
+							idx[ix][iy][iz] = new
+							table.insert(rec, string.format("%d,%d,%d,%d", ix, iy, iz, old))
+						end
+					end
+				end
+			end
+		end
+	end
+	if #rec > 0 then
+		t:WriteVoxelChannels(reg, CELL, { SolidMaterialIndex = idx })
+	end
+	local records = folder:FindFirstChild("SlotRecords") or Instance.new("Folder")
+	records.Name = "SlotRecords"
+	records.Parent = folder
+	local sv = Instance.new("StringValue")
+	sv.Name = name
+	sv.Value = table.concat(rec, ";")
+	sv:SetAttribute("Lo", lo)
+	sv:SetAttribute("Hi", hi)
+	sv:SetAttribute("Order", #records:GetChildren())
+	sv.Parent = records
+	return #rec
+end
+
+-- Puts the recorded slots back, the last repaint first.
+local function restoreSlots(folder: Instance): number
+	local records = folder:FindFirstChild("SlotRecords")
+	if not records then
+		return 0
+	end
+	local list = records:GetChildren()
+	table.sort(list, function(a: Instance, b: Instance): boolean
+		return ((a:GetAttribute("Order") or 0) :: number) > ((b:GetAttribute("Order") or 0) :: number)
+	end)
+	local n = 0
+	local t = workspace.Terrain
+	for _, sv in list do
+		local lo, hi = sv:GetAttribute("Lo"), sv:GetAttribute("Hi")
+		if sv:IsA("StringValue") and sv.Value ~= "" and typeof(lo) == "Vector3" and typeof(hi) == "Vector3" then
+			local reg = Region3.new(lo :: Vector3, hi :: Vector3):ExpandToGrid(CELL)
+			local idx = (t:ReadVoxelChannels(reg, CELL, { "SolidMaterialIndex" }) :: any).SolidMaterialIndex
+			for _, e in string.split(sv.Value, ";") do
+				local p = string.split(e, ",")
+				local ix, iy, iz, old = tonumber(p[1]), tonumber(p[2]), tonumber(p[3]), tonumber(p[4])
+				if ix and iy and iz and old then
+					idx[ix][iy][iz] = old
+					n += 1
+				end
+			end
+			t:WriteVoxelChannels(reg, CELL, { SolidMaterialIndex = idx })
+		end
+	end
+	return n
+end
+
+-- N3 review 1: the moss band into the backing forest, and the creek paths as slot 14.
+local function paintBands(folder: Folder): (number, number)
+	local M = CreekPlan.MOSS_REGION
+	local moss = repaint(folder, "Moss", Vector3.new(M.x1, -16, M.z1), Vector3.new(M.x2, 40, M.z2), 5, function(x: number, z: number, slot: number): number?
+		if CreekPlan.MOSS_OVER[slot] and CreekPlan.mossBand(x, z, CreekPlan.D(x, z)) then
+			return CreekPlan.SLOT.MOSS
+		end
+		return nil
+	end)
+	local x1, x2, z1, z2 = math.huge, -math.huge, math.huge, -math.huge
+	for _, b in CreekPlan.PATH_BOXES do
+		x1, x2, z1, z2 = math.min(x1, b.x1), math.max(x2, b.x2), math.min(z1, b.z1), math.max(z2, b.z2)
+	end
+	local path = repaint(folder, "Path", Vector3.new(x1, -16, z1), Vector3.new(x2, 16, z2), math.huge, function(x: number, z: number, slot: number): number?
+		if slot ~= CreekDress.FOOTPATH_SLOT then
+			return nil
+		end
+		for _, b in CreekPlan.PATH_BOXES do
+			if Scatter.inBox(b, x, z) then
+				return CreekPlan.PATH_SLOT
+			end
+		end
+		return nil
+	end)
+	return moss, path
+end
+
 ---------------------------------------------------------------------------------------------
 -- Props
 ---------------------------------------------------------------------------------------------
@@ -371,14 +497,22 @@ export type Result = {
 	rocksSlate: number, -- rock parts given the WetSlate variant
 	triangles: number, -- the plan's estimate (CreekPlan.plan(...).triangles)
 	coverage: number, -- share of the riffle and run water under a crown (CreekPlan.coverage)
+	riffleCoverage: number, -- share of the riffle's water under a crown or a bough (N3 review 1)
+	mossPainted: number, -- voxels of the moss band past D 7 (N3 review 1)
+	pathPainted: number, -- path voxels re-laid as slot 14
+	pathParts: number, -- old path parts given the FootpathGravel variant
+	boughs: number, -- CedarBough sprays hung
+	emergent: number, -- wet-slate rocks placed on the riffle
 }
 
-export type RevertResult = { terrain: boolean, rocks: number }
+export type RevertResult = { terrain: boolean, rocks: number, slots: number }
 
 function CreekDress.revert(lake: Instance): RevertResult
 	local folder = lake:FindFirstChild(CreekDress.FOLDER)
 	local terrain = false
+	local slots = 0
 	if folder then
+		slots = restoreSlots(folder) -- the moss band and the paths first, then the region's record
 		terrain = restoreTerrain(folder)
 		folder:Destroy()
 	end
@@ -395,7 +529,30 @@ function CreekDress.revert(lake: Instance): RevertResult
 			end
 		end
 	end
-	return { terrain = terrain, rocks = rocks }
+	return { terrain = terrain, rocks = rocks, slots = slots }
+end
+
+-- The old straight creek paths (WorldBuilder's PathToCreek and BankPath, Sand): FootpathGravel
+-- like the re-laid paths (N3 review 1). Revert puts their material back (ORIG_MAT).
+local function skinPaths(lake: Instance): number
+	if not MaterialService:FindFirstChild("FootpathGravel") then
+		return 0
+	end
+	local creek = lake:FindFirstChild("CedarCreek")
+	local n = 0
+	for _, name in { "PathToCreek", "BankPath" } do
+		local p = creek and creek:FindFirstChild(name)
+		if p and p:IsA("BasePart") then
+			if p:GetAttribute(ORIG_MAT) == nil then
+				p:SetAttribute(ORIG_MAT, p.Material.Name)
+				p:SetAttribute(ORIG_VARIANT, p.MaterialVariant)
+			end
+			p.Material = Enum.Material.Ground
+			p.MaterialVariant = "FootpathGravel"
+			n += 1
+		end
+	end
+	return n
 end
 
 function CreekDress.apply(lake: Instance, seed: number?): Result
@@ -408,8 +565,10 @@ function CreekDress.apply(lake: Instance, seed: number?): Result
 	folder:SetAttribute("Seed", s)
 	folder.Parent = lake
 
+	lakeArt = lake:FindFirstChild("Art")
 	local slots = ensureSlots()
 	local tc = reshape(folder)
+	local mossPainted, pathPainted = paintBands(folder)
 
 	local plan = CreekPlan.plan(s)
 	local params = RaycastParams.new()
@@ -443,11 +602,17 @@ function CreekDress.apply(lake: Instance, seed: number?): Result
 		rocksSlate = 0,
 		triangles = plan.triangles,
 		coverage = plan.coverage,
+		riffleCoverage = plan.riffleCoverage,
+		mossPainted = mossPainted,
+		pathPainted = pathPainted,
+		pathParts = skinPaths(lake),
+		boughs = 0,
+		emergent = 0,
 	}
 	local missingSet: { [string]: boolean } = {}
 	local alt: { [string]: number } = {}
 
-	local function place(model: string, group: string, cf: CFrame, scale: number, shadow: boolean): Model?
+	local function place(model: string, group: string, cf: CFrame, scale: number, shadow: boolean, parent: Instance?): Model?
 		local tpl, isLite = template(model)
 		if not tpl then
 			if not missingSet[model] then
@@ -469,7 +634,7 @@ function CreekDress.apply(lake: Instance, seed: number?): Result
 			alt[tag] = c
 			m:SetAttribute("FoliageAlt", c % 2)
 		end
-		m.Parent = groupFolder(group)
+		m.Parent = parent or groupFolder(group)
 		res.placed[model] = (res.placed[model] or 0) + 1
 		if isLite then
 			res.lite += 1
@@ -477,10 +642,34 @@ function CreekDress.apply(lake: Instance, seed: number?): Result
 		return m
 	end
 
-	for _, it in plan.items do
+	local placedAt: { [number]: Model } = {}
+	for i, it in plan.items do
 		local bury = (CreekPlan.KIT[it.model] or 0) * it.scale
 		local y: number?
-		if it.ends then
+		if it.model == "CedarBough" then
+			-- Hung from its cedar, inside the cedar's model (pivot at the bough's base, spray
+			-- along its -X; skipped with its tree, or while the model is not in Art).
+			local tree = it.parent and placedAt[it.parent]
+			local g = tree and groundY(params, it.footX :: number, it.footZ :: number)
+			if tree and g then
+				local cf = CFrame.new(it.x, g + (it.lift :: number), it.z) * CFrame.Angles(0, it.yaw, 0)
+				if place(it.model, it.group, cf, it.scale, it.shadow, tree) then
+					res.boughs += 1
+				end
+			end
+			continue
+		elseif it.group == "Rocks" then
+			-- An emergent rock: its top just out of the water (y 0), wet slate all over.
+			local m = place(it.model, it.group, CFrame.new(it.x, 0, it.z) * CFrame.Angles(0, it.yaw, 0), it.scale, it.shadow)
+			if m then
+				local cf, size = m:GetBoundingBox()
+				local top = 0.3 + 0.2 * (it.r or 1)
+				m:PivotTo(m:GetPivot() + Vector3.new(0, top - (cf.Position.Y + size.Y / 2), 0))
+				wetSlate(m)
+				res.emergent += 1
+			end
+			continue
+		elseif it.ends then
 			local e = it.ends
 			local g1, g2 = groundY(params, e[1], e[2]), groundY(params, e[3], e[4])
 			y = if g1 and g2 then (g1 + g2) / 2 - bury else nil
@@ -493,14 +682,20 @@ function CreekDress.apply(lake: Instance, seed: number?): Result
 			if g and it.tilt then
 				-- A bank tree leans out over the water (its -X) about the trunk's foot on the ground.
 				local foot = CFrame.new(it.x, g, it.z) * CFrame.Angles(0, it.yaw, 0) * CFrame.Angles(0, 0, it.tilt)
-				place(it.model, it.group, foot * CFrame.new(0, -bury, 0), it.scale, it.shadow)
+				local m = place(it.model, it.group, foot * CFrame.new(0, -bury, 0), it.scale, it.shadow)
+				if m then
+					placedAt[i] = m
+				end
 				continue
 			end
 		end
 		if y == nil then
 			res.noGround += 1
 		else
-			place(it.model, it.group, CFrame.new(it.x, y, it.z) * CFrame.Angles(0, it.yaw, 0), it.scale, it.shadow)
+			local m = place(it.model, it.group, CFrame.new(it.x, y, it.z) * CFrame.Angles(0, it.yaw, 0), it.scale, it.shadow)
+			if m then
+				placedAt[i] = m
+			end
 		end
 	end
 

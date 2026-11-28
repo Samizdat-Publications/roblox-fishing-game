@@ -25,6 +25,14 @@ WhiteWater.TEXTURES = {
 WhiteWater.CENTRE = Vector3.new(-230, 0, 30)
 WhiteWater.FAR = 180 -- studs from CENTRE past which the white water is taken out
 WhiteWater.SURFACE = 0.06 -- the strips' height over the water (y 0) so the small chop does not hide them
+WhiteWater.TEXTURE_TRANSPARENCY = 0.25 -- the foam map's transparency
+-- N3 review 1, HELD: the advisor's numbers (wider riffle strips in CreekPlan.FOAM_REVIEW1, a
+-- denser map, higher off the chop). They go live with CreekPlan.REVIEW1_FOAM (one edit).
+WhiteWater.REVIEW1 = { SURFACE = 0.12, TEXTURE_TRANSPARENCY = 0.1 }
+if CreekPlan.REVIEW1_FOAM then
+	WhiteWater.SURFACE = WhiteWater.REVIEW1.SURFACE
+	WhiteWater.TEXTURE_TRANSPARENCY = WhiteWater.REVIEW1.TEXTURE_TRANSPARENCY
+end
 WhiteWater.FOAM_COLOR = Color3.fromRGB(236, 240, 230)
 WhiteWater.EVERY = 0.5 -- seconds between distance and tier checks
 
@@ -66,7 +74,7 @@ local function build(): Folder
 			t.Face = Enum.NormalId.Top
 			t.StudsPerTileU = s.w
 			t.StudsPerTileV = 4
-			t.Transparency = 0.25
+			t.Transparency = WhiteWater.TEXTURE_TRANSPARENCY
 			t.Color3 = WhiteWater.FOAM_COLOR
 			t.Parent = p
 			tex = t

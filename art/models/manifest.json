@@ -3369,5 +3369,109 @@
         52
       ]
     }
+  },
+  "CedarBough_bark": {
+    "name": "CedarBough_bark",
+    "studs": [
+      12.31,
+      5.4,
+      4.58
+    ],
+    "triangles": 42,
+    "parts": 1,
+    "replaces": "Nothing yet: the drooping cedar sprays over the creek (leg 3, N3)",
+    "notes": "Plant kit (Cedar Creek), Layer B, bark family: MaterialVariant bark with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/CedarBough_bark.glb. Pivot at the BRANCH BASE (the file's origin), not the bottom centre: the bough runs 11.94 studs toward Roblox -X (Blender +X), lifts 1.14 and hangs 4.27 studs below the pivot. Both meshes share one box, so both go at the same CFrame. Not yet checked in Studio: if the importer puts the pivot on the middle of the box and not on the file's origin, the branch base is at (5.78, 1.56, 0) from the middle of each MeshPart, in the part's own axes (model.WorldPivot = part.CFrame * CFrame.new(5.78, 1.56, 0)). On a bank cedar's trunk, 6 to 10 studs up (times the tree's scale), reaching out over the stream. The pivot is the branch base: put it on the trunk's centre line (the first 0.3 studs of wood hide inside the trunk). The bough runs 12 studs toward Roblox -X and hangs 4.3 studs below its base, so turn its -X toward the water: CFrame.new(base) * CFrame.Angles(0, Scatter.yawMinusX(dx, dz), 0), or on a placed Cedar, the tree's foot CFrame * CFrame.new(0, height, 0), since the Cedar's own -X already faces the water. One or two per tree, the second turned 0.4 to 0.7 radians and 2 to 3 studs higher; scale it with its tree.",
+    "model": "CedarBough",
+    "family": "bark",
+    "variant": "bark",
+    "area": "creek",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.0,
+    "height_above_ground": 1.14,
+    "true_studs": [
+      12.31,
+      5.4,
+      3.97
+    ],
+    "model_triangles": 256,
+    "source": "hand-built in this script",
+    "palette_seen_rgb": {
+      "cedar_bark": [
+        110,
+        70,
+        50
+      ],
+      "cedar_bark_grey": [
+        128,
+        112,
+        98
+      ],
+      "cedar_bark_dark": [
+        78,
+        52,
+        40
+      ]
+    },
+    "pivot": "branch base (file origin)",
+    "reach": 11.94,
+    "hang": 4.27,
+    "pivot_from_box_middle": [
+      5.78,
+      1.56,
+      0.0
+    ]
+  },
+  "CedarBough_leaf": {
+    "name": "CedarBough_leaf",
+    "studs": [
+      12.31,
+      5.4,
+      4.58
+    ],
+    "triangles": 214,
+    "parts": 1,
+    "replaces": "Nothing yet: the drooping cedar sprays over the creek (leg 3, N3)",
+    "notes": "Plant kit (Cedar Creek), Layer B, leaf family: MaterialVariant leaf_needle with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/CedarBough_leaf.glb. Pivot at the BRANCH BASE (the file's origin), not the bottom centre: the bough runs 11.94 studs toward Roblox -X (Blender +X), lifts 1.14 and hangs 4.27 studs below the pivot. Both meshes share one box, so both go at the same CFrame. Not yet checked in Studio: if the importer puts the pivot on the middle of the box and not on the file's origin, the branch base is at (5.78, 1.56, 0) from the middle of each MeshPart, in the part's own axes (model.WorldPivot = part.CFrame * CFrame.new(5.78, 1.56, 0)). On a bank cedar's trunk, 6 to 10 studs up (times the tree's scale), reaching out over the stream. The pivot is the branch base: put it on the trunk's centre line (the first 0.3 studs of wood hide inside the trunk). The bough runs 12 studs toward Roblox -X and hangs 4.3 studs below its base, so turn its -X toward the water: CFrame.new(base) * CFrame.Angles(0, Scatter.yawMinusX(dx, dz), 0), or on a placed Cedar, the tree's foot CFrame * CFrame.new(0, height, 0), since the Cedar's own -X already faces the water. One or two per tree, the second turned 0.4 to 0.7 radians and 2 to 3 studs higher; scale it with its tree.",
+    "model": "CedarBough",
+    "family": "leaf",
+    "variant": "leaf_needle",
+    "area": "creek",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.0,
+    "height_above_ground": 1.14,
+    "true_studs": [
+      12.31,
+      5.4,
+      3.97
+    ],
+    "model_triangles": 256,
+    "source": "hand-built in this script",
+    "palette_seen_rgb": {
+      "cedar_leaf": [
+        66,
+        96,
+        50
+      ],
+      "cedar_leaf_sun": [
+        82,
+        112,
+        56
+      ],
+      "cedar_leaf_deep": [
+        42,
+        64,
+        38
+      ]
+    },
+    "pivot": "branch base (file origin)",
+    "reach": 11.94,
+    "hang": 4.27,
+    "pivot_from_box_middle": [
+      5.78,
+      1.56,
+      0.0
+    ]
   }
 }

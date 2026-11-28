@@ -371,7 +371,7 @@ MaterialKit.SLOTS = {
 	-- the riffle's cobbles, the bed seen through the clear water (the same pebble map, darker),
 	-- wet slate on the rocky run's banks, moss on the bank tops (LeafyGrass: no blades).
 	{ slot = 28, base = Enum.Material.Ground, variant = "CreekPebble", tint = Color3.new(1, 1, 1) },
-	{ slot = 29, base = Enum.Material.Ground, variant = "CreekPebble", tint = Color3.fromRGB(170, 160, 140) },
+	{ slot = 29, base = Enum.Material.Ground, variant = "CreekPebble", tint = Color3.fromRGB(118, 112, 96) }, -- N3 review 1 (was 170,160,140): the wet bed, darker
 	{ slot = 30, base = Enum.Material.Slate, variant = "WetSlate", tint = Color3.new(1, 1, 1) },
 	{ slot = 31, base = Enum.Material.LeafyGrass, variant = "Moss", tint = Color3.new(1, 1, 1) },
 } :: { { slot: number, base: Enum.Material, variant: string, tint: Color3 } }

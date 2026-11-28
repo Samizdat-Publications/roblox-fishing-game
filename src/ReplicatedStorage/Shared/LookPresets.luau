@@ -718,6 +718,27 @@ LookPresets.AREAS = {
 	},
 } :: { [string]: Area }
 
+-- N3 review 1 (the advisor), HELD: the creek captures were taken in the phone simulator, so the
+-- advisor's water, exposure and dawn mist wait for a clean desktop capture. Set REVIEW1_CREEK to
+-- true (one edit) and these replace the creek's live values when this module loads.
+LookPresets.REVIEW1_CREEK = false
+LookPresets.CREEK_REVIEW1 = {
+	exposure = 0, -- from 0.15 (the exposure floor stays)
+	water = { WaterTransparency = 0.6, WaterReflectance = 0.28, WaterWaveSize = 0.1 },
+	dawnMist = { density = 0.14, haze = 1.4 },
+}
+if LookPresets.REVIEW1_CREEK then
+	local creek = LookPresets.AREAS.creek
+	local r1 = LookPresets.CREEK_REVIEW1
+	creek.exposure = r1.exposure
+	local water = table.clone(creek.water) :: any
+	for k, v in r1.water do
+		water[k] = v
+	end
+	creek.water = water
+	creek.dawnMist = table.clone(r1.dawnMist)
+end
+
 -- Where each area is, in world studs (x, z), checked against the code on 11/27/2026: the home
 -- lake is Shore.LAKE (x -110..110, z -80..80) plus its shore; Cedar Creek's stretches are
 -- x -252..-208, z -70..75 (Shore.AREAS); the basin is BoatRules' Basin zone (z -290..-140,

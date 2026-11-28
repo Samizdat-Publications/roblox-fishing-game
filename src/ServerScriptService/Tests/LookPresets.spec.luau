@@ -456,7 +456,7 @@ return function(t, Shared)
 		t.eq(LookPresets.AREAS.bluewater.water.WaterWaveSize, 2 * LookPresets.AREAS.home.water.WaterWaveSize, "blue water swell is doubled")
 		-- A half-and-half blend sits between the two.
 		local half = LookPresets.areaWater({ home = 0.5, creek = 0.5 })
-		t.ok(math.abs(half.WaterTransparency - (0.42 + 0.8) / 2) < 1e-9, "water blends")
+		t.ok(math.abs(half.WaterTransparency - (0.42 + LookPresets.AREAS.creek.water.WaterTransparency) / 2) < 1e-9, "water blends")
 	end)
 
 	t.test("tiers: desktop and phone, and phone has no sun rays", function()
@@ -731,6 +731,26 @@ return function(t, Shared)
 		local shown = Weather.windNow(mid)
 		local after = Weather.stepWind(mid, Weather.windFor("Fog"), 0)
 		t.ok((after - shown).Magnitude < 1e-9, "a mid-blend change does not jump")
+	end)
+
+	-- N3 review 1, held: the advisor's creek numbers wait behind one switch.
+	t.test("the creek's review 1 numbers are held behind REVIEW1_CREEK", function()
+		local r1 = LookPresets.CREEK_REVIEW1 :: any
+		t.eq(r1.exposure, 0, "exposure 0")
+		t.eq(r1.water.WaterTransparency, 0.6, "transparency 0.6")
+		t.eq(r1.water.WaterReflectance, 0.28, "reflectance 0.28")
+		t.eq(r1.water.WaterWaveSize, 0.1, "wave 0.1")
+		t.eq(r1.dawnMist.density, 0.14, "mist density 0.14")
+		t.eq(r1.dawnMist.haze, 1.4, "mist haze 1.4")
+		local creek = LookPresets.AREAS.creek :: any
+		if LookPresets.REVIEW1_CREEK then
+			t.eq(creek.water.WaterTransparency, 0.6, "switched on: live")
+			t.eq(creek.exposure, 0, "switched on: exposure")
+		else
+			t.eq(creek.water.WaterTransparency, 0.8, "held: the live water stays")
+			t.eq(creek.exposure, 0.15, "held: the live exposure stays")
+		end
+		t.ok(type(creek.exposureFloor) == "number", "the floor stays either way")
 	end)
 
 	-- N3: the creek's exposure floor and dawn mist (blendAreas, and applyTo passes the clock).

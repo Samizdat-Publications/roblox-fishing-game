@@ -16,6 +16,9 @@ neutral colour map multiplies them and has a mean of 0.80 (so 204 is the lightes
 The kit (12 models, 17 meshes):
     Cedar Creek:  Cedar (bark + leaf), MossyLog (bark + leaf), CreekRoots (bark),
                   CreekFern1, CreekFern2, MossMat (leaf)
+                  and CedarBough (bark + leaf), added after the kit of 12: a drooping spray that
+                  hangs out over the stream from a bank cedar's trunk. Its pivot is the branch
+                  base, not the bottom centre (see cedar_bough).
     The island:   LonePine (bark + leaf), Juniper1 (bark + leaf), Juniper2 (bark + leaf),
                   HeathTufts, LichenTufts, LichenCrust (leaf)          = 9 of the island's 12 meshes
 
@@ -42,6 +45,8 @@ Roblox -X once imported (art/README.md, Importing, step 3).
     python art/scripts/plant_kit.py                 build, export, render, sheet
     python art/scripts/plant_kit.py --no-render     models and manifest only
     python art/scripts/plant_kit.py --compose-only  rebuild the sheet from the renders already made
+    python art/scripts/plant_kit.py --only CedarBough   one model: its files, its manifest entries
+                                                    and (CedarBough) art/previews/CedarBough.png
     blender -b -P art/scripts/plant_kit.py -- --measure <thuja.fbx>   re-measure the cedar outline
 
 Writes art/models/<Name>_<family>.glb (linear colours, as Blender wants them),
@@ -165,6 +170,9 @@ KIT = {
     "MossMat": {"area": "creek", "kind": "moss",
                 "where": "On the top of a boulder: fitted to RockLarge (scale 1) and RockMedium (scale 0.6). Sink it 0.1 so no gap shows; scale X and Z to fit, Y to match the rock's curve.",
                 "replaces": "Nothing yet: moss on the creek boulders (RockLarge, RockMedium)"},
+    "CedarBough": {"area": "creek", "kind": "bough", "pivot": "base",
+                   "where": "On a bank cedar's trunk, 6 to 10 studs up (times the tree's scale), reaching out over the stream. The pivot is the branch base: put it on the trunk's centre line (the first 0.3 studs of wood hide inside the trunk). The bough runs 12 studs toward Roblox -X and hangs 4.3 studs below its base, so turn its -X toward the water: CFrame.new(base) * CFrame.Angles(0, Scatter.yawMinusX(dx, dz), 0), or on a placed Cedar, the tree's foot CFrame * CFrame.new(0, height, 0), since the Cedar's own -X already faces the water. One or two per tree, the second turned 0.4 to 0.7 radians and 2 to 3 studs higher; scale it with its tree.",
+                   "replaces": "Nothing yet: the drooping cedar sprays over the creek (leg 3, N3)"},
     "LonePine": {"area": "island", "kind": "tree",
                  "where": "The island's landmark: on its highest granite knoll, alone, so the sky is behind it from the approach. The trunk bends and the crown streams toward Roblox -X: turn that away from the prevailing wind (downwind), and so the approach from the marina sees it side on. At scale 1 it stands 29.6 studs and its crown reaches 16 studs downwind of the foot.",
                  "replaces": "Nothing yet: the island landmark (plan, N6)"},
@@ -191,6 +199,7 @@ def parse_args(argv):
     ap.add_argument("--lift", type=float, default=1.25, help="how much lighter than the target the vertex colours are stored")
     ap.add_argument("--no-render", action="store_true", help="build and export only")
     ap.add_argument("--compose-only", action="store_true", help="rebuild the sheet from the renders already made")
+    ap.add_argument("--only", nargs="+", metavar="NAME", choices=sorted(KIT), help="build these models only; the others' files are left alone")
     ap.add_argument("--check-faces", action="store_true", help="line-ups with back faces in magenta, to artifacts/plant_kit/")
     ap.add_argument("--measure", nargs="+", metavar="FBX", help="(in Blender) measure crown outlines from PlantFactory FBX files")
     ap.add_argument("--samples", type=int, default=int(os.environ.get("ART_SAMPLES", "64")))
@@ -1060,9 +1069,109 @@ def blender_main(argv):
                        [rim_c] * 4, Vector((x, y, 0.0)), smooth=False)
         return {"leaf": G}, {"keys": {"leaf": ["lichen_orange", "lichen_orange_dark", "lichen", "lichen_grey"]}}
 
+    # ------------------------------------------------------------------ 13. the cedar bough
+    def spray(G, origin, az, length, e0, e1, half, prof=((0.24, 1.0), (0.6, 0.76), (1.0, 0.18)), tone=1.0, thick=0.22, bend=0.6):
+        """One flat spray of cedar foliage: a tongue that leaves `origin` (a point) e0 degrees above
+        level, turns over early (bend < 1) and hangs at e1 at its end, `half` studs to each side at
+        its widest. A shallow ridge along the top, flat and a touch lighter underneath. prof =
+        (share of the length, share of the width) for each ring; 16 triangles with three rings."""
+        d = Vector((math.cos(az), math.sin(az), 0))
+        side = Vector((-d.y, d.x, 0))
+        deep, base, sun = PAL["cedar_leaf_deep"], PAL["cedar_leaf"], PAL["cedar_leaf_sun"]
+        p, s0 = Vector(origin), 0.0
+        rings = []
+        for s1, wf in prof:
+            for q in range(6):   # walk the curve in small steps so the hang is a true arc
+                e = math.radians(e0 + (e1 - e0) * (s0 + (s1 - s0) * (q + 0.5) / 6) ** bend)
+                p = p + (d * math.cos(e) + UP * math.sin(e)) * (s1 - s0) * length / 6
+            e = math.radians(e0 + (e1 - e0) * s1 ** bend)
+            nrm = -d * math.sin(e) + UP * math.cos(e)
+            w = half * wf
+            rings.append((p - side * w, p + nrm * (thick * w + 0.04), p + side * w, w, s1 * length, s1))
+            s0 = s1
+
+        def cols(sm):
+            top = mix(deep, base, 0.35 + 1.6 * sm) if sm < 0.4 else mix(base, sun, (sm - 0.4) * 0.8)
+            under = mix(base, sun, 0.75 + 0.25 * sm)
+            return shade(top, tone), shade(top, tone * 0.93), shade(under, tone)
+
+        o = Vector(origin)
+        L, S, R, w, v, s1 = rings[0]
+        a, b, u = cols(s1 * 0.5)
+        inside = (o + L + S + R) / 4
+        G.flat([o, S, L], a, inside, uvs=[(0, 0), (0, v), (-w, v)])
+        G.flat([o, R, S], b, inside, uvs=[(0, 0), (w, v), (0, v)])
+        G.flat([o, L, R], u, inside, uvs=[(0, 0), (-w, v), (w, v)])
+        for (L0, S0, R0, w0, v0, t0), (L1, S1, R1, w1, v1, t1) in zip(rings, rings[1:]):
+            a, b, u = cols((t0 + t1) / 2)
+            inside = (L0 + S0 + R0 + L1 + S1 + R1) / 6
+            G.flat([L0, S0, S1, L1], a, inside, uvs=[(-w0, v0), (0, v0), (0, v1), (-w1, v1)])
+            G.flat([S0, R0, R1, S1], b, inside, uvs=[(0, v0), (w0, v0), (w1, v1), (0, v1)])
+            G.flat([L0, L1, R1, R0], u, inside, uvs=[(-w0, v0), (-w1, v1), (w1, v1), (w0, v0)])
+        L, S, R, w, v, s1 = rings[-1]
+        if w > 1e-3:
+            G.flat([L, S, R], cols(1.0)[0], inside, uvs=[(-w, v), (0, v + 0.1), (w, v)])
+
+    def cedar_bough():
+        """A western red cedar bough, 12 studs: a thick limb that leaves the trunk, lifts a little,
+        then arcs over and droops; flat sprays hang from its outer half in layers, like a fringe,
+        and one hangs from the tip. Built along +X from the branch base at the origin, which is
+        the pivot (not the bottom centre): it goes on the trunk's centre line."""
+        rng = random.Random(941)
+        bark, leaf = Geo(), Geo()
+        n = 6
+        path = spline([(-0.3, 0.0, -0.03), (1.3, 0.0, 0.45), (3.7, 0.12, 0.9), (6.3, 0.2, 0.75), (8.6, 0.1, 0.05), (10.4, -0.05, -1.1)], n)
+        radii = [0.36, 0.32, 0.26, 0.2, 0.13, 0.045]
+        fl = {}
+
+        def col(i, k, mid, out):
+            f = fl.setdefault((i, k), rng.random())
+            c = mix(PAL["cedar_bark_dark"], PAL["cedar_bark"], 0.65 + 0.5 * out.z)
+            if out.z > 0.2 and f < 0.4:
+                c = mix(c, PAL["cedar_bark_grey"], 0.55)
+            return shade(c, 0.94 + 0.12 * f)
+
+        tube(bark, path, radii, 4, col, spin=math.pi / 4)
+        arc = [0.0]
+        for a, b in zip(path, path[1:]):
+            arc.append(arc[-1] + (b - a).length)
+
+        def on_limb(t):
+            """The point, the heading and the slope (degrees) of the limb at share t of its length."""
+            want = t * arc[-1]
+            for i in range(n - 1):
+                if want <= arc[i + 1] or i == n - 2:
+                    f = clamp((want - arc[i]) / (arc[i + 1] - arc[i]))
+                    tan = (path[i + 1] - path[i]).normalized()
+                    return path[i].lerp(path[i + 1], f), math.atan2(tan.y, tan.x), math.degrees(math.asin(tan.z))
+        # the fringe: sprays to either side of the outer half that turn over and hang, long and
+        # short by turns so their ends make layers
+        #        share  side  turn  length  half  e0   e1
+        sides = [(0.38, +1, 74, 2.6, 0.80, 12, -84), (0.45, -1, 70, 3.3, 0.88, 10, -86),
+                 (0.54, +1, 66, 3.9, 0.98, 8, -86), (0.62, -1, 62, 3.0, 0.92, 6, -86),
+                 (0.71, +1, 58, 4.2, 1.02, 2, -87), (0.79, -1, 54, 3.4, 0.98, 0, -87),
+                 (0.88, +1, 44, 3.9, 0.98, -6, -88), (0.95, -1, 40, 3.2, 0.92, -10, -88)]
+        for t, sd, turn, length, half, e0, e1 in sides:
+            p, head, _slope = on_limb(t)
+            spray(leaf, p, head + sd * math.radians(turn + rng.uniform(-4, 4)), length, e0, e1, half, tone=rng.uniform(0.96, 1.04))
+        # the tip spray, and three shingles along the top of the limb
+        p, head, slope = on_limb(1.0)
+        spray(leaf, p - UP * 0.02, head, 3.6, slope + 6, -88, 1.0, tone=1.03)
+        for t, turn, length, half in ((0.5, 8, 2.7, 0.72), (0.66, -10, 2.8, 0.78), (0.82, 6, 2.6, 0.75)):
+            p, head, slope = on_limb(t)
+            spray(leaf, p + UP * 0.1, head + math.radians(turn), length, slope + 16, slope - 55, half, tone=rng.uniform(0.98, 1.05), bend=0.9)
+        # two small ones nearer the trunk, so the foliage thins out instead of stopping
+        for t, sd, turn in ((0.27, +1, 48), (0.33, -1, 52)):
+            p, head, slope = on_limb(t)
+            spray(leaf, p, head + sd * math.radians(turn), 2.1, 14, -70, 0.6, prof=((0.45, 1.0), (1.0, 0.3)), tone=0.97)
+        return {"bark": bark, "leaf": leaf}, {
+            "keys": {"bark": ["cedar_bark", "cedar_bark_grey", "cedar_bark_dark"], "leaf": ["cedar_leaf", "cedar_leaf_sun", "cedar_leaf_deep"]},
+            "pivot": "base"}
+
     BUILDERS = {
         "Cedar": cedar, "MossyLog": mossy_log, "CreekRoots": creek_roots,
         "CreekFern1": lambda: creek_fern(1), "CreekFern2": lambda: creek_fern(2), "MossMat": moss_mat,
+        "CedarBough": cedar_bough,
         "LonePine": lone_pine, "Juniper1": lambda: juniper(1), "Juniper2": lambda: juniper(2),
         "HeathTufts": heath_tufts, "LichenTufts": lichen_tufts, "LichenCrust": lichen_crust,
     }
@@ -1116,37 +1225,56 @@ def blender_main(argv):
 
     kit = {}
 
-    def build_kit():
+    def build_kit(only=None, stage_only=()):
+        """Build, and export, the kit (or just `only`). `stage_only` models are built for the
+        preview stage and neither exported nor recorded."""
         result = {}
         for name, fn in BUILDERS.items():
+            if only and name not in only and name not in stage_only:
+                continue
             geos, info = fn()
             los, his = zip(*(g.bounds() for g in geos.values()))
             lo = Vector(tuple(min(v[i] for v in los) for i in range(3)))
             hi = Vector(tuple(max(v[i] for v in his) for i in range(3)))
             two = len(geos) > 1 or bool(info.get("foot_centred"))
-            if two:   # the box is centred on the trunk's foot (or the log's middle)
+            base = info.get("pivot") == "base"
+            if base:   # the pivot is the builder's origin (a bough's branch base); one box for both meshes,
+                hy = max(abs(lo.y), abs(hi.y))   # the same to either side, so the pivot is on its middle plane
+                blo, bhi = Vector((lo.x, -hy, lo.z)), Vector((hi.x, hy, hi.z))
+                for fam, g in geos.items():
+                    anchors(g, blo, bhi, PAL[info["keys"][fam][0]])
+            elif two:   # the box is centred on the trunk's foot (or the log's middle)
                 hx, hy = max(abs(lo.x), abs(hi.x)), max(abs(lo.y), abs(hi.y))
                 blo, bhi = Vector((-hx, -hy, lo.z)), Vector((hx, hy, hi.z))
                 for fam, g in geos.items():
                     anchors(g, blo, bhi, PAL[info["keys"][fam][0]])
             else:
                 blo, bhi = lo, hi
-            pivot = Vector(((blo.x + bhi.x) / 2, (blo.y + bhi.y) / 2, blo.z))
-            entry = {"kind": KIT[name]["kind"], "area": KIT[name]["area"], "bury": round(-blo.z, 2), "height": round(hi.z, 2),
+            pivot = Vector((0, 0, 0)) if base else Vector(((blo.x + bhi.x) / 2, (blo.y + bhi.y) / 2, blo.z))
+            entry = {"kind": KIT[name]["kind"], "area": KIT[name]["area"], "bury": 0.0 if base else round(-blo.z, 2), "height": round(hi.z, 2),
                      "true_studs": [round(hi.x - lo.x, 2), round(hi.z - lo.z, 2), round(hi.y - lo.y, 2)],
                      "studs": [round(bhi.x - blo.x, 2), round(bhi.z - blo.z, 2), round(bhi.y - blo.y, 2)],
                      "foot_centred": two, "anchors": two,
                      "palette": {k: list(PAL[k]) for keys in info["keys"].values() for k in keys},
                      "keys": info["keys"], "source": info.get("source", "hand-built in this script"), "meshes": {}}
+            if base:   # the box about the pivot, in the file's axes (X, up, -Y) and as plain numbers
+                entry["pivot"] = "base"
+                entry["anchors"] = True
+                entry["box"] = {"min": [round(blo.x, 3), round(blo.z, 3), round(-bhi.y, 3)], "max": [round(bhi.x, 3), round(bhi.z, 3), round(-blo.y, 3)]}
+                entry["reach"] = round(hi.x, 2)
+                entry["hang"] = round(-lo.z, 2)
             objs = {}
             for fam, g in geos.items():
                 g.verts = [(x - pivot.x, y - pivot.y, z - pivot.z) for x, y, z in g.verts]
                 obj = to_object(g, f"{name}_{fam}")
                 objs[fam] = obj
+                if name in stage_only and not (only and name in only):
+                    continue
                 entry["meshes"][fam] = {"triangles": g.triangles(), **export(obj)}
                 print(f"[plant_kit] {obj.name}: {g.triangles()} triangles")
-            kit[name] = {"objs": objs, "lo": lo - pivot, "hi": hi - pivot, "bury": -blo.z, "pivot": pivot}
-            result[name] = entry
+            kit[name] = {"objs": objs, "lo": lo - pivot, "hi": hi - pivot, "bury": 0.0 if base else -blo.z, "pivot": pivot}
+            if entry["meshes"]:
+                result[name] = entry
         return result
 
     # ------------------------------------------------------------------ preview
@@ -1488,14 +1616,61 @@ def blender_main(argv):
         for (x, y) in ((-1.0, -3.0), (6.0, 2.0), (-8.0, 9.0), (2.0, 6.0), (-3.0, -11.0)):
             instance("LichenCrust", (x, y, granite_h(x, y) + 0.02), yaw=x - y)
 
+    # ---- the cedar bough: side on, from the water under it, and two on a cedar over the stream
+    def bough_shots(tag="bough"):
+        def stand_in(height=8.0, person=True):
+            """A bare trunk with the bough on it at `height`, a figure under it, level ground."""
+            bpy.ops.mesh.primitive_cylinder_add(vertices=10, radius=0.55, depth=16.0, location=(0, 0, 7.0))
+            o = bpy.context.object
+            o.data.materials.append(flat("StandInTrunk", PAL["cedar_bark"], 0.9))
+            o["_stage"] = True
+            bpy.ops.mesh.primitive_plane_add(size=1000, location=(0, 0, 0))
+            g = bpy.context.object
+            g.data.materials.append(flat("BoughGround", (150, 150, 146)))
+            g["_stage"] = True
+            instance("CedarBough", (0, 0, height))
+            if person:
+                figure((8.2, 0.6, 0), yaw=0.5)
+
+        setup_cycles(1600, 900)
+        stand_in()
+        shoot(SCRATCH / f"{tag}-side.png", (5.6, -44.0, 6.2), (5.6, 0.0, 5.4), fov=17.0)
+        shoot(SCRATCH / f"{tag}-front.png", (44.0, -10.0, 9.0), (5.0, 0.0, 5.6), fov=17.0)
+        shoot(SCRATCH / f"{tag}-top.png", (6.0, -8.0, 44.0), (6.0, 0.0, 6.0), fov=17.0)
+        # from under it: the game's camera, a little above the water, looking up and back at the trunk
+        setup_cycles(1600, 900, sky=(0.72, 0.8, 0.86), sky_strength=1.0, sun_rot=(38, 8, 150))
+        stand_in(person=False)
+        shoot(SCRATCH / f"{tag}-below.png", (11.5, -4.2, 1.6), (5.6, 0.3, 7.4))
+        # on a cedar on the creek's bank, two of them out over the water
+        setup_cycles(1600, 900, sky=(0.72, 0.8, 0.86), sky_strength=0.9, sun_rot=(38, 8, 150))
+        terrain(creek_h, -40, 40, -30, 70, 1.0, flat("ForestFloor", (92, 72, 48)), "Creek")
+        water(-0.15, (64, 84, 58), 200, name="CreekWater")
+        tx, ty = -7.6, 12.0
+        gz = creek_h(tx, ty)
+        instance("Cedar", (tx, ty, gz))
+        for height, yaw in ((6.4, -0.12), (9.3, 0.5)):
+            instance("CedarBough", (tx, ty, gz + height), yaw=yaw)
+        instance("Cedar", (-11.5, 27.0, creek_h(-11.5, 27.0)), yaw=2.0, scale=1.05)
+        instance("Cedar", (10.0, 30.0, creek_h(10.0, 30.0)), yaw=3.4, scale=0.95)
+        figure((-5.2, 5.5, creek_h(-5.2, 5.5)), yaw=1.2)
+        shoot(SCRATCH / f"{tag}-cedar.png", (3.4, -7.5, 3.4), (-3.2, 12.0, 6.6))
+
     # ------------------------------------------------------------------ run
     for d in (MODELS, ROBLOX, PREVIEWS, SCRATCH):
         d.mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     scene_of().unit_settings.system = "NONE"
-    result = {"lift": LIFT, "uv_studs": 1.0, "maps": maps, "models": build_kit(), "lineups": {}}
-    (SCRATCH / "result.json").write_text(json.dumps(result, indent=1), encoding="utf-8")
+    only = set(args.only or ())
+    stage_only = {"Cedar"} if "CedarBough" in only else set()   # the bough is shown on a cedar
+    result_path = SCRATCH / ("result-only.json" if only else "result.json")
+    result = {"lift": LIFT, "uv_studs": 1.0, "maps": maps, "models": build_kit(only, stage_only), "lineups": {}}
+    result_path.write_text(json.dumps(result, indent=1), encoding="utf-8")
     if args.no_render:
+        return
+    if only:   # one model: no line-ups, no sheet
+        if "CedarBough" in only:
+            dress_kit(face_check_material if args.check_faces else None)
+            bough_shots("faces-bough" if args.check_faces else "bough")
         return
 
     def on_rock(x):   # the MossMat in the line-up sits on a stand-in RockLarge
@@ -1547,6 +1722,7 @@ def blender_main(argv):
     dress_island()
     shoot(SCRATCH / "pine-500.png", (-30.0, -500.0, 5.5), (2.0, 0.0, 16.0))
     shoot(SCRATCH / "pine-500-tele.png", (-30.0, -500.0, 5.5), (2.0, 0.0, 16.0), fov=12.0)
+    bough_shots()
 
 
 # =======================================================================================
@@ -1596,7 +1772,9 @@ def read_glb(path: Path):
     return json.loads(data[20:20 + json_len])
 
 
-def check_glb(path: Path, want_studs):
+def check_glb(path: Path, want_studs, box=None):
+    """One mesh, one material, the four attributes, no texture, the right size and the right
+    pivot: the bottom centre, or (box given) the origin where the builder put it."""
     g = read_glb(path)
     if len(g["meshes"]) != 1 or len(g["meshes"][0]["primitives"]) != 1:
         raise SystemExit(f"{path.name}: expected one mesh with one material")
@@ -1611,12 +1789,15 @@ def check_glb(path: Path, want_studs):
     tris = g["accessors"][prim["indices"]]["count"] // 3
     if any(abs(a - b) > 0.011 for a, b in zip(size, want_studs)):
         raise SystemExit(f"{path.name}: size {size}, expected {want_studs}")
-    if abs(pos["min"][1]) > 0.002 or abs(pos["min"][0] + pos["max"][0]) > 0.002 or abs(pos["min"][2] + pos["max"][2]) > 0.002:
+    if box:
+        if any(abs(a - b) > 0.002 for k in ("min", "max") for a, b in zip(pos[k], box[k])):
+            raise SystemExit(f"{path.name}: the box is {pos['min']} to {pos['max']}, expected {box['min']} to {box['max']}")
+    elif abs(pos["min"][1]) > 0.002 or abs(pos["min"][0] + pos["max"][0]) > 0.002 or abs(pos["min"][2] + pos["max"][2]) > 0.002:
         raise SystemExit(f"{path.name}: pivot is not the bottom centre ({pos['min']} to {pos['max']})")
     return size, tris
 
 
-BUDGET = {"Cedar": 1300, "LonePine": 1300, "MossyLog": 1200}   # everything else: 800
+BUDGET = {"Cedar": 1300, "LonePine": 1300, "MossyLog": 1200, "CedarBough": 270}   # everything else: 800
 
 
 def driver_main():
@@ -1637,12 +1818,14 @@ def driver_main():
         if not (args.no_render or args.check_faces):
             make_standins(maps)
         subprocess.run([BLENDER, "-b", "--factory-startup", "-P", str(Path(__file__).resolve()), "--", *sys.argv[1:]], check=True)
-    result = json.loads((SCRATCH / "result.json").read_text(encoding="utf-8"))
+    result = json.loads((SCRATCH / ("result-only.json" if args.only else "result.json")).read_text(encoding="utf-8"))
     maps = result["maps"]
 
-    # Check what was written, then record it. Only this script's own entries are touched.
+    # Check what was written, then record it. Only this script's own entries are touched
+    # (with --only, only those models' entries).
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8")) if MANIFEST.exists() else {}
-    for key in [k for k in manifest if k.rsplit("_", 1)[0] in KIT and k.rsplit("_", 1)[-1] in FAMILIES]:
+    mine = set(args.only) if args.only else set(KIT)
+    for key in [k for k in manifest if k.rsplit("_", 1)[0] in mine and k.rsplit("_", 1)[-1] in FAMILIES]:
         del manifest[key]
     total, over, table = 0, [], []
     for name, entry in result["models"].items():
@@ -1652,13 +1835,28 @@ def driver_main():
             over.append(f"{name}: {model_tris} triangles is over its {BUDGET.get(name, 800)} budget")
         for fam, mesh in entry["meshes"].items():
             for sub in ("glb", "roblox_glb"):
-                size, tris = check_glb(REPO / mesh[sub], entry["studs"])
+                size, tris = check_glb(REPO / mesh[sub], entry["studs"], entry.get("box"))
             if tris != mesh["triangles"]:
                 raise SystemExit(f"{name}_{fam}: {tris} triangles in the file, {mesh['triangles']} in Blender")
             where = KIT[name]["where"]
             centre = (" Both meshes share one box, centred on the foot of the trunk (or the middle of the log), so both go at "
                       "the same CFrame." if entry["anchors"] else "")
             src = "" if entry["source"].startswith("hand-built") else f" Crown shape from {entry['source']}."
+            pivot = (f"Pivot at the bottom centre; the ground line is {entry['bury']:g} studs above it, so place the pivot at ground "
+                     f"height minus {entry['bury']:g}. It stands {entry['height']:.1f} studs above the ground line.{centre}")
+            extra = {}
+            if entry.get("pivot") == "base":
+                lo_b, hi_b = entry["box"]["min"], entry["box"]["max"]
+                # the middle of the box, from the pivot, in Roblox's axes (the file's X is Roblox -X; up is up)
+                mid = [round(-(lo_b[0] + hi_b[0]) / 2, 2), round((lo_b[1] + hi_b[1]) / 2, 2), 0.0]
+                pivot = (f"Pivot at the BRANCH BASE (the file's origin), not the bottom centre: the bough runs {entry['reach']:g} studs "
+                         f"toward Roblox -X (Blender +X), lifts {entry['height']:g} and hangs {entry['hang']:g} studs below the pivot. "
+                         f"Both meshes share one box, so both go at the same CFrame. Not yet checked in Studio: if the importer "
+                         f"puts the pivot on the middle of the box and not on the file's origin, the branch base is at "
+                         f"({-mid[0]:g}, {-mid[1]:g}, 0) from the middle of each MeshPart, in the part's own axes "
+                         f"(model.WorldPivot = part.CFrame * CFrame.new({-mid[0]:g}, {-mid[1]:g}, 0)).")
+                extra = {"pivot": "branch base (file origin)", "reach": entry["reach"], "hang": entry["hang"],
+                         "pivot_from_box_middle": [-mid[0], -mid[1], 0.0]}
             manifest[f"{name}_{fam}"] = {
                 "name": f"{name}_{fam}",
                 "studs": size,
@@ -1668,8 +1866,7 @@ def driver_main():
                 "notes": (f"Plant kit ({'Cedar Creek' if entry['area'] == 'creek' else 'the first island'}), Layer B, {fam} family: "
                           f"MaterialVariant {WANTED[fam]} with its NEUTRAL colour map, normal and roughness. Vertex colours stored "
                           f"{result['lift']:g} times the colour wanted. UVs at 1 stud per UV unit. Upload art/models/roblox/{name}_{fam}.glb. "
-                          f"Pivot at the bottom centre; the ground line is {entry['bury']:g} studs above it, so place the pivot at ground "
-                          f"height minus {entry['bury']:g}. It stands {entry['height']:.1f} studs above the ground line.{centre} {where}{src}"),
+                          f"{pivot} {where}{src}"),
                 "model": name,
                 "family": fam,
                 "variant": WANTED[fam],
@@ -1682,6 +1879,7 @@ def driver_main():
                 "model_triangles": model_tris,
                 "source": entry["source"],
                 "palette_seen_rgb": {k: entry["palette"][k] for k in entry["keys"][fam]},
+                **extra,
             }
             print(f"{name}_{fam}: {size} studs, {tris} triangles")
         tri = " + ".join(f"{m['triangles']} {fam}" for fam, m in entry["meshes"].items())
@@ -1689,13 +1887,13 @@ def driver_main():
                      f"{' x '.join('%g' % v for v in entry['true_studs'])} | {tri} = {model_tris} | {entry['bury']:g} | {KIT[name]['where']} |")
     if over and not os.environ.get("PLANT_KIT_WIP"):
         raise SystemExit("\n".join(over))
-    MANIFEST.write_text(json.dumps(dict(sorted(manifest.items())), indent=2) + "\n", encoding="utf-8")
-    (SCRATCH / "table.md").write_text("\n".join(table) + "\n", encoding="utf-8")
+    # --only leaves the other entries where they are (its own go last), so the diff is just its own
+    MANIFEST.write_text(json.dumps(manifest if args.only else dict(sorted(manifest.items())), indent=2) + "\n", encoding="utf-8")
+    (SCRATCH / ("table-only.md" if args.only else "table.md")).write_text("\n".join(table) + "\n", encoding="utf-8")
     print(f"plant kit: {len(result['models'])} models, {sum(len(e['meshes']) for e in result['models'].values())} meshes, {total} triangles")
     if args.no_render or args.check_faces:
         return
 
-    # ---- the sheet
     def font(size, bold=False):
         for f in (("segoeuib.ttf",) if bold else ()) + ("segoeui.ttf", "arial.ttf"):
             try:
@@ -1703,6 +1901,36 @@ def driver_main():
             except OSError:
                 continue
         return ImageFont.load_default()
+
+    def small(im):
+        return im.convert("RGB").quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.FLOYDSTEINBERG)
+
+    # ---- the cedar bough's own preview: side on and from under it, then on a cedar over the stream
+    bough = result["models"].get("CedarBough")
+    if bough:
+        pad, head, pw, ph = 16, 34, 960, 540
+        W, H = 2 * pw + 3 * pad, 64 + 2 * (head + ph + pad) + 30
+        sheet = Image.new("RGB", (W, H), (24, 24, 27))
+        draw = ImageDraw.Draw(sheet)
+        tri = " + ".join(f"{m['triangles']} {fam}" for fam, m in bough["meshes"].items())
+        draw.text((pad, 12), f"CedarBough: a drooping western red cedar spray for the bank cedars ({tri} = "
+                  f"{sum(m['triangles'] for m in bough['meshes'].values())} triangles)", font=font(26, True), fill=(240, 240, 240))
+        panels = (("Side on, 8 studs up a stand-in trunk (6 stud figure)", "bough-side.png"),
+                  ("From the water under it, the game's 70 degree camera", "bough-below.png"),
+                  ("Two on a Cedar, out over the creek", "bough-cedar.png"),
+                  ("From above: the pivot is the branch base, on the trunk's centre line", "bough-top.png"))
+        for i, (label, name) in enumerate(panels):
+            x, y = pad + (i % 2) * (pw + pad), 58 + (i // 2) * (head + ph + pad)
+            draw.text((x, y + 6), label, font=font(17), fill=(210, 210, 214))
+            sheet.paste(Image.open(SCRATCH / name).convert("RGB").resize((pw, ph), Image.LANCZOS), (x, y + head))
+        draw.text((pad, H - 32), f"Runs {bough['reach']:g} studs toward Blender +X (Roblox -X) and hangs {bough['hang']:g} below its base. "
+                  "Trunk, ground and water are preview stand-ins.", font=font(16), fill=(170, 170, 175))
+        small(sheet).save(PREVIEWS / "CedarBough.png", optimize=True)
+        print(f"sheet: {PREVIEWS / 'CedarBough.png'}")
+    if args.only:
+        return
+
+    # ---- the sheet
 
     pad, head = 16, 34
     W = 2400 + 2 * pad
@@ -1784,9 +2012,6 @@ def driver_main():
               "The Cedar's crown outline is measured from the PlantFactory western red cedar; everything else is hand-built.",
               font=font(16), fill=(200, 200, 205))
     out = PREVIEWS / "plant_kit.png"
-
-    def small(im):
-        return im.convert("RGB").quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.FLOYDSTEINBERG)
 
     small(sheet).save(out, optimize=True)
     for path in [PREVIEWS / f"plant_kit-lineup-{k}.png" for k, _ in rows] + [PREVIEWS / "plant_kit-creek.png", PREVIEWS / "plant_kit-island.png"]:

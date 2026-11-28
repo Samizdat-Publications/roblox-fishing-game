@@ -221,5 +221,9 @@ Built by `scripts/plant_kit.py` for leg 3, N3 (Cedar Creek) and N6 (the first is
 | LichenTufts | Island | 3.26 x 0.68 x 2.71 | 404 leaf = 404 | 0.1 | Pale reindeer-lichen cushions: on thin soil and in the dips of the granite, near the heath. | leaf 91237021151038 |
 | LichenCrust | Island | 4.75 x 0.1 x 3.02 | 300 leaf = 300 | 0.04 | Orange and grey-green crust on the granite itself: lay it on a rock face (tilt it to the slope; it is 0.1 studs thick), mostly on the sunny, bird-perch tops. | leaf 107634350418508 |
 
+**CedarBough (added 11/27/2026, not uploaded yet).** ![CedarBough](previews/CedarBough.png)
+
+A drooping western red cedar spray for the bank cedars, to hang out over the stream: 12.31 x 5.4 x 3.97 studs, 42 bark + 214 leaf = 256 triangles, same Layer B rules. It is the one model whose pivot is **not** the bottom centre: the pivot is the branch base (the file's origin), the bough runs 12 studs toward Blender +X (**Roblox -X**) and hangs 4.3 studs below the pivot. Put the pivot on the trunk's centre line, 6 to 10 studs up (times the tree's scale), and turn its -X toward the water: `CFrame.new(base) * CFrame.Angles(0, Scatter.yawMinusX(dx, dz), 0)`, or on a placed Cedar `foot * CFrame.new(0, height, 0)`, since the Cedar's own -X already faces the water. Both meshes share one box and go at the same CFrame. Not yet checked in Studio: whether the importer keeps the file's origin as the pivot (the manifest entry has the offset to set if it does not). Rebuild just this one: `python art/scripts/plant_kit.py --only CedarBough`.
+
 Rebuild: `python art/scripts/plant_kit.py` (the models, the manifest entries and the sheet; `--no-render` for the models only). The previews read the real `bark` and `leaf_needle` maps from `art/textures/` when they are there, or from the folder in `PLANT_KIT_TEXTURES`. To re-measure the cedar from a PlantFactory export: `blender -b -P art/scripts/plant_kit.py -- --measure <file.fbx>`.
 

@@ -21,6 +21,10 @@
 --    bank path, the walk to the gate, the gate itself and the fixed shot cameras.
 --  * the white water (CreekPlan.foam): foam strips over the riffle and below the boulders, and
 --    where the spray goes.
+--  * N3 review 1 (the advisor): a backing forest behind both banks, shot 09's two frame cedars,
+--    CedarBough sprays from the riffle's cedars (held at 0 per tree: TUNING.boughsPer, BOUGHS_ON),
+--    ten emergent wet-slate rocks on the riffle with foam trails, the moss band to D 30 and the
+--    creek paths as slot 14. Held numbers: REVIEW1_FOAM (with WhiteWater.REVIEW1).
 local Shore = require(script.Parent.Shore)
 local WaterMap = require(script.Parent.WaterMap)
 local Scatter = require(script.Parent.Scatter)
@@ -37,8 +41,19 @@ CreekPlan.REGION = { x1 = -268, x2 = -208, y1 = -16, y2 = 8, z1 = -84, z2 = 72 }
 CreekPlan.TOUCH = 11
 CreekPlan.BLEND = { 7, 11 } -- studs from the water over which the new ground eases into the old
 
--- Where props may stand at all (the creek look zone, LookPresets creek x -260..-160).
-CreekPlan.PROPS = { x1 = -270, x2 = -186, z1 = -82, z2 = 76 }
+-- Where props may stand at all (round the creek look zone, LookPresets creek x -260..-160). N3
+-- review 1 (the advisor): out to x -300 on the west and -172 on the east for the backing forest.
+CreekPlan.PROPS = { x1 = -300, x2 = -172, z1 = -82, z2 = 76 }
+
+-- N3 review 1, held (the captures were taken in the phone simulator): the advisor's foam numbers
+-- (CreekPlan.FOAM_REVIEW1, WhiteWater.REVIEW1) go live when this is true. One edit after a clean
+-- desktop capture.
+CreekPlan.REVIEW1_FOAM = false
+CreekPlan.FOAM = { riffleW = { 0.7, 1.4 } }
+CreekPlan.FOAM_REVIEW1 = { riffleW = { 1.6, 3.0 } }
+function CreekPlan.foamTuning(): { riffleW: { number } }
+	return if CreekPlan.REVIEW1_FOAM then CreekPlan.FOAM_REVIEW1 else CreekPlan.FOAM
+end
 
 ---------------------------------------------------------------------------------------------
 -- Small maths
@@ -226,13 +241,13 @@ function CreekPlan.slotAt(x: number, z: number, h: number, D: number): number?
 	if h < 0 and D < 0.5 then
 		if pool > 0.5 and h < -7 then
 			return S.MUD -- the deep of the pool
-		elseif riffle > 0.5 then
-			return S.PEBBLE -- the riffle's cobbles
+		elseif riffle > 0.5 and D >= -0.5 then
+			return S.PEBBLE -- the riffle's cobbles at its very edge
 		end
-		return S.BED -- pebbles under clear water
+		return S.BED -- pebbles under clear water (N3 review 1: the riffle's bed too, not the dry bar slot)
 	end
 	if D >= 7 then
-		return nil
+		return nil -- CreekDress paints the moss band past this (CreekPlan.mossBand)
 	end
 	local g = CreekPlan.gravelWidth(x, z)
 	local c = CreekPlan.cut(x, z)
@@ -245,6 +260,25 @@ function CreekPlan.slotAt(x: number, z: number, h: number, D: number): number?
 	end
 	return S.MOSS -- the bank tops under the canopy
 end
+
+-- N3 review 1: the moss (slot 31) reaches into the backing forest, out to MOSS_D studs from the
+-- drawn water, everywhere but the bank path, the walk to the gate and the gate. CreekDress paints
+-- it over grass-like slots only (MOSS_OVER), never over the path's gravel.
+CreekPlan.MOSS_D = 30
+CreekPlan.MOSS_REGION = { x1 = -300, x2 = -172, z1 = -84, z2 = 80 }
+CreekPlan.MOSS_OVER = { [2] = true, [19] = true, [25] = true, [26] = true, [27] = true } :: { [number]: boolean }
+function CreekPlan.mossBand(x: number, z: number, D: number): boolean
+	return D >= 7 and D < CreekPlan.MOSS_D and not CreekPlan.kept(x, z, 1)
+end
+
+-- N3 review 1: the bank path and the walk to the gate are re-laid as slot 14 (FootpathGravel,
+-- as the home lake's stock-ground paths). CreekDress repaints their slot 24 voxels inside these
+-- boxes, and gives the old path parts the FootpathGravel variant.
+CreekPlan.PATH_SLOT = 14
+CreekPlan.PATH_BOXES = {
+	{ name = "BankPath", x1 = -212, x2 = -194, z1 = -80, z2 = 80 },
+	{ name = "GateWalk", x1 = -212, x2 = -120, z1 = -10, z2 = 10 }, -- short of the lake's PathWest (x -118 on)
+} :: { Scatter.Box }
 
 ---------------------------------------------------------------------------------------------
 -- Keep-clears
@@ -324,12 +358,75 @@ end
 
 -- True when something can stand at (x, z): inside the props box, out of every keep-clear, every
 -- lane and every shot camera's view (Scatter.shotClear; `tree` uses the canopy-sized clearance).
-function CreekPlan.clear(x: number, z: number, tree: boolean): boolean
+-- `model` (a tree's kit name): a cedar gets shot 09's looser clearance (CreekPlan.treeShotClear).
+function CreekPlan.clear(x: number, z: number, tree: boolean, model: string?): boolean
 	local P = CreekPlan.PROPS
 	if x < P.x1 or x > P.x2 or z < P.z1 or z > P.z2 then
 		return false
 	end
-	return not CreekPlan.kept(x, z) and not CreekPlan.inLane(x, z) and Scatter.shotClear(x, z, tree)
+	if CreekPlan.kept(x, z) or CreekPlan.inLane(x, z) then
+		return false
+	end
+	if tree then
+		return CreekPlan.treeShotClear(x, z, model)
+	end
+	return Scatter.shotClear(x, z, false)
+end
+
+-- N3 review 1 (the advisor): shot 09 looks down the riffle between its bank trees, so cedars may
+-- stand nearer its camera than Scatter's tree clearance allows: SHOT09 eye and line radii, cedars
+-- only. Every other shot, and every other tree, keeps Scatter's (Scatter.SHOT_EYE_R_TREE,
+-- SHOT_LINE_R). The same test as Scatter.shotClear, per camera.
+CreekPlan.SHOT09 = { id = "09-riffle-dawn", eyeR = 10, lineR = 5 }
+
+local function camClear(c: Scatter.ShotCam, x: number, z: number, H: number, R: number, lineR: number): boolean
+	local ex, ey, ez = c.eye[1], c.eye[2], c.eye[3]
+	local h2 = (x - ex) ^ 2 + (z - ez) ^ 2
+	local dy = math.max(0, ey - H, -ey)
+	if h2 + dy * dy < R * R then
+		return false
+	end
+	local lx, ly, lz = c.look[1] - ex, c.look[2] - ey, c.look[3] - ez
+	local len = math.sqrt(lx * lx + ly * ly + lz * lz)
+	local f = math.min(1, Scatter.SHOT_LINE / len)
+	local y0, y1 = ey, ey + ly * f
+	local t0, t1 = 0, 1
+	if y1 ~= y0 then
+		local ta, tb = (0 - y0) / (y1 - y0), (H - y0) / (y1 - y0)
+		t0, t1 = math.max(0, math.min(ta, tb)), math.min(1, math.max(ta, tb))
+	elseif y0 < 0 or y0 > H then
+		t0, t1 = 1, 0
+	end
+	if t0 <= t1 then
+		local ax, az = ex + lx * f * t0, ez + lz * f * t0
+		local bx, bz = ex + lx * f * t1, ez + lz * f * t1
+		if segDist(x, z, ax, az, bx, bz) < lineR then
+			return false
+		end
+	end
+	return true
+end
+
+function CreekPlan.treeShotClear(x: number, z: number, model: string?): boolean
+	for _, c in Scatter.SHOT_CAMS do
+		local loose = model == "Cedar" and c.id == CreekPlan.SHOT09.id
+		local R = if loose then CreekPlan.SHOT09.eyeR else Scatter.SHOT_EYE_R_TREE
+		local lineR = if loose then CreekPlan.SHOT09.lineR else Scatter.SHOT_LINE_R
+		if not camClear(c, x, z, Scatter.TREE_H, R, lineR) then
+			return false
+		end
+	end
+	return true
+end
+
+-- The camera of a fixed shot (Scatter.SHOT_CAMS), by the start of its id.
+function CreekPlan.shotCam(prefix: string): Scatter.ShotCam?
+	for _, c in Scatter.SHOT_CAMS do
+		if string.sub(c.id, 1, #prefix) == prefix then
+			return c
+		end
+	end
+	return nil
 end
 
 ---------------------------------------------------------------------------------------------
@@ -346,6 +443,7 @@ CreekPlan.KIT = {
 	CreekRoots = 3.52,
 	MossMat = 0.48,
 	MossyLog = 0.27,
+	CedarBough = 0, -- hangs from its trunk (pivot at the bough's base, assumed; CreekDress sets the height)
 } :: { [string]: number }
 
 -- Triangles per copy (manifest model_triangles; ShorePine2 places its lite copy, as CreekSwap does).
@@ -358,9 +456,16 @@ CreekPlan.TRIS = {
 	CreekRoots = 540,
 	MossMat = 216,
 	MossyLog = 1152,
+	CedarBough = 250, -- the modeler's target (N3 review 1)
+	RockMedium = 100,
 } :: { [string]: number }
 CreekPlan.ROCK_MATS = 9 -- moss mats CreekDress lays on the creek's boulders (5 in the run, 4 at the head)
-CreekPlan.BUDGET = 75000 -- triangles added in the creek's views (raised from about 60k for the closed canopy)
+-- Triangles added in the creek's views. N3 review 1 ruled 120k (BUDGET_RULED), but the ruled
+-- counts (60 backing trees, 70 percent cedar at 1272 each, and fewer ShorePine2) measure about
+-- 149k, 157k with the boughs on: BUDGET holds the measured plan until the orchestrator settles it.
+CreekPlan.BUDGET_RULED = 120000
+CreekPlan.BUDGET = 160000
+CreekPlan.CEDAR_H = 18 -- a cedar's height over its ground line at scale 1 (manifest height_above_ground 17.99)
 
 -- A crown, for the canopy check: radius at scale 1, how far it reaches toward the water (the
 -- cedar's nodding leader, the pine's long limbs), and the height of its middle (a tilted trunk
@@ -374,14 +479,14 @@ CreekPlan.CROWN = {
 -- How many of each, and where. The main session tunes these against the frame budget.
 CreekPlan.TUNING = {
 	trees = 48, -- cedars and shore pines lining both banks
-	treeBand = { 2, 6 }, -- studs back from the drawn water (N3 review: was 3 to 8)
-	nearBand = 4, -- most trunks stand at 2 to this, so the crowns reach over the water
-	nearShare = 0.85,
+	treeBand = { 1, 9 }, -- studs back from the drawn water (N3 review 1: was 2 to 6)
+	nearBand = 4, -- most trunks stand at 1 to this, so the crowns reach over the water
+	nearShare = 0.6, -- N3 review 1 (was 0.85)
 	runShare = 0.45, -- share of trunk tries along the riffle and the rocky run (z -12 to 74)
 	treeGap = 4.5, -- between trunks (the crowns overlap)
 	poolEastBand = { 10, 17 }, -- the pool's east side: past the bank path
 	poolEastTrees = 4,
-	riffleShorePine2 = 0.55, -- share of ShorePine2 (long limbs over the water) on the riffle and run
+	riffleShorePine2 = 0.15, -- share of ShorePine2 on the riffle and run (N3 review 1: was 0.55; fewer "pancake" pines)
 	runShorePine1 = 0.2, -- share of ShorePine1 on the rocky run and the pool
 	cedarScale = { 1.2, 1.5 }, -- N3 review (the kit note says 0.7 to 1.1; bigger to close the canopy)
 	tilt = { 4, 10 }, -- degrees the bank trees lean out over the water, about the trunk foot
@@ -393,6 +498,36 @@ CreekPlan.TUNING = {
 	roots = 6,
 	bankMats = 6,
 	shadowDist = 120, -- trees further than this from the creek's water cast no shadow
+	-- N3 review 1: depth behind the banks. A backing forest, 70 percent cedar (the rest ShorePine1).
+	backWest = 40, -- west of the creek, D 8 to 30, x from PROPS.x1
+	backWestBand = { 8, 30 },
+	backWestX = -238, -- west of the riffle's west edge
+	backEast = 20, -- east of the bank path
+	backEastX = { -196, -172 },
+	backGap = 6.5,
+	backCedar = 0.7,
+	backCedarScale = { 1.0, 1.4 },
+	-- N3 review 1: two frame cedars on shot 09's thirds (CreekPlan.FRAME_CEDARS) and CedarBough
+	-- sprays from the bank cedars along the riffle. Boughs are OFF (0) until real foliage shadows
+	-- are seen on the desktop; BOUGHS_ON is the advisor's count.
+	boughsPer = 0,
+	boughHeight = { 0.55, 0.85 }, -- share of the cedar's height the bough hangs from
+	boughSpread = 0.6, -- radians between a cedar's two boughs, about its turn toward the water
+	-- N3 review 1: emergent wet-slate rocks on the riffle, each trailing foam.
+	rocks = 10,
+	rockR = { 1, 2 },
+	rockZ = { 36, 70 },
+}
+CreekPlan.BOUGHS_ON = 2 -- the advisor's boughs per bank cedar along the riffle (TUNING.boughsPer)
+CreekPlan.BOUGH_REACH = 10 -- studs a bough's spray reaches out over the water (12 long, drooping)
+CreekPlan.BOUGH_R = 2.5 -- its half width, for the coverage check
+CreekPlan.ROCK_EXTENT = 4.7 -- RockMedium's mean width at scale 1 (manifest 5.27 by 4.16)
+
+-- Two cedars placed by hand (N3 review 1) whose trunks frame shot 09 on its thirds. Their
+-- foliage must stay in the top quarter of 09's frame (the spec projects it).
+CreekPlan.FRAME_CEDARS = {
+	{ x = -218.5, z = 37, scale = 1.5 },
+	{ x = -211, z = 40.5, scale = 1.5 },
 }
 
 export type Item = {
@@ -407,6 +542,12 @@ export type Item = {
 	lipX: number?, -- roots: where to read the bank lip's height (the pivot sits bury under it)
 	lipZ: number?,
 	ends: { number }?, -- the log: x1, z1, x2, z2 of its two bank ends (heights read there)
+	row: string?, -- trees: "bank" (the row along the water), "frame" (shot 09's), "poolEast", "back"
+	parent: number?, -- boughs: the index (in items) of the cedar it hangs from
+	footX: number?, -- boughs: the cedar's foot, where the ground is read
+	footZ: number?,
+	lift: number?, -- boughs: height of the bough's base over that ground
+	r: number?, -- rocks: radius
 }
 
 export type Plan = {
@@ -414,13 +555,14 @@ export type Plan = {
 	counts: { [string]: number },
 	triangles: number,
 	coverage: number,
+	riffleCoverage: number, -- N3 review 1: share of the riffle's water under crowns or boughs
 }
 
 local TAU = 2 * math.pi
 
 -- Shore points' noses are land but sit inside the water boxes: gravel only, no trunks.
-local function trunkOk(x: number, z: number, band: { number }, gap: number, placed: { any }): boolean
-	if not CreekPlan.clear(x, z, true) then
+local function trunkOk(x: number, z: number, band: { number }, gap: number, placed: { any }, model: string?): boolean
+	if not CreekPlan.clear(x, z, true, model) then
 		return false
 	end
 	local D = CreekPlan.D(x, z)
@@ -443,8 +585,7 @@ end
 
 -- Fraction of the drawn water of the riffle, the rocky run and the pool (every 2 studs) that
 -- lies under some crown: the dappled canopy. `middle` true: only along the creek's middle line.
-function CreekPlan.coverage(items: { Item }, middle: boolean?): number
-	local hit, n = 0, 0
+local function crownsOf(items: { Item }): { { x: number, z: number, r: number } }
 	local crowns = {}
 	for _, it in items do
 		local c = CreekPlan.CROWN[it.model]
@@ -454,6 +595,58 @@ function CreekPlan.coverage(items: { Item }, middle: boolean?): number
 			table.insert(crowns, { x = it.x + lx * reach, z = it.z + lz * reach, r = c.r * it.scale })
 		end
 	end
+	return crowns
+end
+
+-- A bough's shade: a capsule from its base out BOUGH_REACH along its -X, BOUGH_R wide.
+local function boughsOf(items: { Item }): { { ax: number, az: number, bx: number, bz: number, r: number } }
+	local out = {}
+	for _, it in items do
+		if it.model == "CedarBough" then
+			local lx, lz = -math.cos(it.yaw), math.sin(it.yaw)
+			local reach = CreekPlan.BOUGH_REACH * it.scale
+			table.insert(out, { ax = it.x, az = it.z, bx = it.x + lx * reach, bz = it.z + lz * reach, r = CreekPlan.BOUGH_R * it.scale })
+		end
+	end
+	return out
+end
+
+-- N3 review 1: the share of the riffle's drawn water (z 30 to 76, every stud) under a crown or a
+-- bough. The advisor's target is 0.6 with the boughs on.
+function CreekPlan.riffleCoverage(items: { Item }): number
+	local crowns, boughs = crownsOf(items), boughsOf(items)
+	local hit, n = 0, 0
+	for z = 30, 76 do
+		for x = -242, -218 do
+			if CreekPlan.D(x, z) < 0 then
+				n += 1
+				local under = false
+				for _, c in crowns do
+					if (x - c.x) ^ 2 + (z - c.z) ^ 2 <= c.r * c.r then
+						under = true
+						break
+					end
+				end
+				if not under then
+					for _, b in boughs do
+						if segDist(x, z, b.ax, b.az, b.bx, b.bz) <= b.r then
+							under = true
+							break
+						end
+					end
+				end
+				if under then
+					hit += 1
+				end
+			end
+		end
+	end
+	return if n > 0 then hit / n else 0
+end
+
+function CreekPlan.coverage(items: { Item }, middle: boolean?): number
+	local hit, n = 0, 0
+	local crowns = crownsOf(items)
 	for z = -72, 72, 2 do
 		for x = -258, -208, 2 do
 			if (if middle then x == -230 else CreekPlan.D(x, z) < 0) then
@@ -491,28 +684,38 @@ function CreekPlan.plan(seed: number?, tuning: { [string]: any }?): Plan
 		return Scatter.yawMinusX(dx, dz) + Scatter.range(r, -wobble, wobble)
 	end
 
+	-- 0. Shot 09's two frame cedars (placed by hand; upright, turned to the water).
+	local trunks: { any } = {}
+	for _, f in CreekPlan.FRAME_CEDARS do
+		local dx, dz = CreekPlan.toWater(f.x, f.z)
+		local it = add("Cedar", "Trees", f.x, f.z, Scatter.yawMinusX(dx, dz), f.scale, shadowAt(f.x, f.z))
+		it.row = "frame"
+		table.insert(trunks, { x = f.x, z = f.z })
+	end
+
 	-- 1. Trees along both banks, nearer the water more often (the crowns must reach over it).
 	local rt = Scatter.rng(s + 1)
-	local trunks: { any } = {}
 	local band = T.treeBand
 	local tries = 0
-	while #trunks < T.trees and tries < 30000 do
+	local bank = 0
+	while bank < T.trees and tries < 30000 do
 		tries += 1
-		local x = Scatter.range(rt, P.x1, -209)
+		local x = Scatter.range(rt, -270, -209)
 		local z = if Scatter.next(rt) < T.runShare then Scatter.range(rt, -12, 74) else Scatter.range(rt, -76, 74)
 		local u = Scatter.next(rt)
-		if trunkOk(x, z, band, T.treeGap, trunks) then
+		local pick = Scatter.next(rt)
+		local model = if z > -8
+			then (if pick < T.riffleShorePine2 then "ShorePine2" else "Cedar")
+			else (if pick < T.runShorePine1 then "ShorePine1" else "Cedar")
+		if trunkOk(x, z, band, T.treeGap, trunks, model) then
 			local D = CreekPlan.D(x, z)
 			if (D <= T.nearBand) == (u < T.nearShare) then
 				table.insert(trunks, { x = x, z = z })
-				local riffle = CreekPlan.weights(z)
-				local pick = Scatter.next(rt)
-				local model = if z > -8
-					then (if pick < T.riffleShorePine2 then "ShorePine2" else "Cedar")
-					else (if pick < T.runShorePine1 then "ShorePine1" else "Cedar")
+				bank += 1
 				local sc = if model == "Cedar" then Scatter.range(rt, T.cedarScale[1], T.cedarScale[2]) else Scatter.range(rt, T.pineScale[1], T.pineScale[2])
 				local it = add(model, "Trees", x, z, towardWater(rt, x, z, 0.25), sc, shadowAt(x, z))
 				it.tilt = math.rad(Scatter.range(rt, T.tilt[1], T.tilt[2]))
+				it.row = "bank"
 			end
 		end
 	end
@@ -521,13 +724,75 @@ function CreekPlan.plan(seed: number?, tuning: { [string]: any }?): Plan
 	tries = 0
 	while east < T.poolEastTrees and tries < 2000 do
 		tries += 1
-		local x = Scatter.range(rt, -197, P.x2)
+		local x = Scatter.range(rt, -197, -186)
 		local z = Scatter.range(rt, -72, -12)
 		if trunkOk(x, z, T.poolEastBand, T.treeGap, trunks) then
 			table.insert(trunks, { x = x, z = z })
-			add("Cedar", "Trees", x, z, towardWater(rt, x, z, 0.3), Scatter.range(rt, 1.05, T.cedarScale[2]), shadowAt(x, z))
+			local it = add("Cedar", "Trees", x, z, towardWater(rt, x, z, 0.3), Scatter.range(rt, 1.05, T.cedarScale[2]), shadowAt(x, z))
+			it.row = "poolEast"
 			east += 1
 		end
+	end
+
+	-- 1b. The backing forest (N3 review 1): depth behind both banks, upright, 70 percent cedar.
+	local rb = Scatter.rng(s + 11)
+	local function backRow(want: number, drawX: () -> number, ok: (number, number, number) -> boolean)
+		local n = 0
+		local t = 0
+		while n < want and t < 20000 do
+			t += 1
+			local x = drawX()
+			local z = Scatter.range(rb, P.z1, P.z2)
+			local model = if Scatter.next(rb) < T.backCedar then "Cedar" else "ShorePine1"
+			local D = CreekPlan.D(x, z)
+			if ok(x, z, D) and trunkOk(x, z, { -math.huge, math.huge }, T.backGap, trunks, model) then
+				table.insert(trunks, { x = x, z = z })
+				local sc = if model == "Cedar" then Scatter.range(rb, T.backCedarScale[1], T.backCedarScale[2]) else Scatter.range(rb, T.pineScale[1], T.pineScale[2])
+				local it = add(model, "Trees", x, z, Scatter.range(rb, 0, TAU), sc, shadowAt(x, z))
+				it.row = "back"
+				n += 1
+			end
+		end
+	end
+	backRow(T.backWest, function()
+		return Scatter.range(rb, P.x1, T.backWestX)
+	end, function(x: number, _z: number, D: number): boolean
+		return x <= T.backWestX and D >= T.backWestBand[1] and D <= T.backWestBand[2]
+	end)
+	backRow(T.backEast, function()
+		return Scatter.range(rb, T.backEastX[1], T.backEastX[2])
+	end, function(x: number, _z: number, D: number): boolean
+		return x >= T.backEastX[1] and x <= T.backEastX[2] and D >= T.backWestBand[1]
+	end)
+
+	-- 1c. CedarBough sprays (N3 review 1): boughsPer from each bank and frame cedar along the
+	-- riffle, hung at 55 to 85 percent of the tree's height and pointing out over the water.
+	if T.boughsPer > 0 then
+		local rbo = Scatter.rng(s + 12)
+		local count = #items
+		for i = 1, count do
+			local tree = items[i]
+			if tree.model == "Cedar" and (tree.row == "bank" or tree.row == "frame") and CreekPlan.weights(tree.z) > 0.5 then
+				local H = CreekPlan.CEDAR_H * tree.scale
+				local lean = tree.tilt or 0
+				local lx, lz = -math.cos(tree.yaw), math.sin(tree.yaw) -- the trunk leans toward its -X
+				for k = 1, T.boughsPer do
+					local h = H * Scatter.range(rbo, T.boughHeight[1], T.boughHeight[2])
+					local off = (k - (T.boughsPer + 1) / 2) * T.boughSpread + Scatter.range(rbo, -0.12, 0.12)
+					local bx, bz = tree.x + lx * math.sin(lean) * h, tree.z + lz * math.sin(lean) * h
+					local b = add("CedarBough", "Boughs", bx, bz, tree.yaw + off, 1, tree.shadow)
+					b.parent = i
+					b.footX, b.footZ = tree.x, tree.z
+					b.lift = math.cos(lean) * h
+				end
+			end
+		end
+	end
+
+	-- 1d. Emergent wet-slate rocks on the riffle (N3 review 1), each trailing foam (CreekPlan.foam).
+	for _, rk in CreekPlan.emergentRocks(s, T) do
+		local it = add("RockMedium", "Rocks", rk.x, rk.z, rk.yaw, rk.r * 2 / CreekPlan.ROCK_EXTENT, true)
+		it.r = rk.r
 	end
 
 	-- 2. Fern clumps on the bank tops.
@@ -603,7 +868,46 @@ function CreekPlan.plan(seed: number?, tuning: { [string]: any }?): Plan
 		counts[it.model] = (counts[it.model] or 0) + 1
 		tris += CreekPlan.TRIS[it.model] or 0
 	end
-	return { items = items, counts = counts, triangles = tris, coverage = CreekPlan.coverage(items) }
+	return { items = items, counts = counts, triangles = tris, coverage = CreekPlan.coverage(items), riffleCoverage = CreekPlan.riffleCoverage(items) }
+end
+
+-- N3 review 1: emergent rocks on the riffle (radius rockR, z rockZ), wholly over the drawn water
+-- (half a stud in), off every cast lane by their radius, and apart from each other and the old
+-- boulders. Same seed, same rocks: CreekPlan.plan places them and CreekPlan.foam trails foam
+-- below them.
+export type Rock = { x: number, z: number, r: number, yaw: number }
+function CreekPlan.emergentRocks(seed: number?, tuning: { [string]: any }?): { Rock }
+	local T = tuning or CreekPlan.TUNING :: any
+	local r = Scatter.rng((seed or CreekPlan.SEED) + 13)
+	local out: { Rock } = {}
+	local tries = 0
+	while #out < T.rocks and tries < 4000 do
+		tries += 1
+		local x = Scatter.range(r, -238, -222)
+		local z = Scatter.range(r, T.rockZ[1], T.rockZ[2])
+		local rad = Scatter.range(r, T.rockR[1], T.rockR[2])
+		local yaw = Scatter.range(r, 0, TAU)
+		local ok = CreekPlan.D(x, z) <= -(rad + 0.5) and not CreekPlan.inLane(x, z, rad)
+		if ok then
+			for _, o in out do
+				if (x - o.x) ^ 2 + (z - o.z) ^ 2 < (rad + o.r + 2) ^ 2 then
+					ok = false
+					break
+				end
+			end
+		end
+		if ok then
+			for _, b in CreekPlan.BOULDERS do
+				if (x - b[1]) ^ 2 + (z - b[2]) ^ 2 < (rad + b[3] + 2) ^ 2 then
+					ok = false
+				end
+			end
+		end
+		if ok then
+			table.insert(out, { x = x, z = z, r = rad, yaw = yaw })
+		end
+	end
+	return out
 end
 
 -- The log: centre, yaw and its two ends. Searches centres round the pool's south-west corner and
@@ -702,11 +1006,12 @@ function CreekPlan.foam(seed: number?): { Strip }
 		table.insert(out, { x = x, z = z, len = len, w = w, yaw = angle, speed = speed })
 	end
 	-- The riffle: a broken line of streaks down the chute, thicker at the head and the bends.
+	local W = CreekPlan.foamTuning().riffleW
 	local z = 71
 	while z > 34 do
 		local n = if z > 64 then 3 else 2
 		for _ = 1, n do
-			strip(Scatter.range(r, -233, -227), z, Scatter.range(r, 3, 6), Scatter.range(r, 0.7, 1.4), Scatter.range(r, -0.18, 0.18), Scatter.range(r, 3, 5))
+			strip(Scatter.range(r, -233, -227), z, Scatter.range(r, 3, 6), Scatter.range(r, W[1], W[2]), Scatter.range(r, -0.18, 0.18), Scatter.range(r, 3, 5))
 		end
 		z -= Scatter.range(r, 3, 4.5)
 	end
@@ -720,6 +1025,11 @@ function CreekPlan.foam(seed: number?): { Strip }
 			local len = Scatter.range(r, 3, 5)
 			strip(b[1] + side * b[3] * 0.6, b[2] - b[3] - len / 2, len, Scatter.range(r, 0.6, 1.1), Scatter.range(r, -0.15, 0.15) + side * 0.12, Scatter.range(r, 2, 3.5))
 		end
+	end
+	-- One trail below each emergent rock on the riffle (N3 review 1).
+	for _, k in CreekPlan.emergentRocks(seed) do
+		local len = Scatter.range(r, 2.5, 4)
+		strip(k.x + Scatter.range(r, -0.3, 0.3), k.z - k.r - len / 2, len, Scatter.range(r, 0.5, 0.9) * k.r, Scatter.range(r, -0.12, 0.12), Scatter.range(r, 3, 4.5))
 	end
 	return out
 end
