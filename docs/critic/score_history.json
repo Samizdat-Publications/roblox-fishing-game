@@ -2546,5 +2546,43 @@
       ]
     },
     "left_out": []
+  },
+  {
+    "date": "2026-11-27",
+    "step": "n2-ui-4",
+    "set": "U",
+    "rubric": "ui",
+    "run": "2026-11-27-2208-U",
+    "commit": "9405dc4",
+    "shots": 12,
+    "median": 7.5,
+    "scores": [
+      7.5,
+      7.5,
+      7.5
+    ],
+    "points": {
+      "readability": 8,
+      "hierarchy": 7.5,
+      "consistency": 8.0,
+      "handmade_feel": 8.5,
+      "contrast": 8.0,
+      "touch_targets": 7,
+      "phone_readability": 6.5,
+      "broken_or_ugly": 5.5
+    },
+    "reports": [
+      "docs\\critic\\2026-11-27-n2-ui-4-ui-neon.md",
+      "docs\\critic\\2026-11-27-n2-ui-4-ui-neon-2.md",
+      "docs\\critic\\2026-11-27-n2-ui-4-ui-neon-3.md"
+    ],
+    "weather": {
+      "u01-hud": "Clear",
+      "u02-shop": "Clear",
+      "u03-journal": "Clear",
+      "u04-card-rare": "Clear",
+      "u05-fight": "Clear",
+      "u06-bench": "Clear"
+    }
   }
 ]

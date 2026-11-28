@@ -13,7 +13,7 @@ return function(t, Shared)
 	end
 
 	t.test("the restyle lands switched off", function()
-		t.eq(Config.UI_STYLE_ON, false, "UI_STYLE_ON")
+		t.eq(Config.UI_STYLE_ON, true, "UI_STYLE_ON (on since 11/27/2026)")
 	end)
 
 	t.test("ink and every text ink read on paper and on the older paper", function()

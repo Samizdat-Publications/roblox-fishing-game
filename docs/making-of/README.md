@@ -4,6 +4,33 @@ A Roblox fishing game where real fishing knowledge matters: the right bait, spot
 
 Newest first. The live page with before and after sliders is `docs/making-of/index.html` (published as a Claude artifact).
 
+## N2: Screens like a field guide and a tackle box
+
+2026-11-27 23:59
+
+Every screen in the game got a handmade look and it is now switched on. The top bar is a paper strip with a brass coin, a little sun-and-moon dial and a creel for the fish in your bag. The side buttons are tabs on a tackle box, the shop is canvas and leather with brass buttons, and the journal is paper pages. A catch is a field-guide plate: the fish turning in its window, a ruler with its length, the weight on a tag on a string, and the rarity stamped in ink. The fight bar and the bait bench wear wood and brass but stay exactly where they were, because their timing is tuned. The chalkboard by the bait shop now reads clearly from the path, and pressing its prompt opens a paper card with the day's forecast, the fish of the day and the rumour of the Legendary. Fable's review sent it back twice for fixes the eye could not miss: text sitting on the paper's edge and, on phones, the screens tested without touch. On a real touch layout every screen fits a small phone with large enough text and buttons.
+
+**The screen while fishing**
+
+| Before | After |
+|---|---|
+| ![before](stills/2026-11-27-n2-hud-before.jpg) | ![after](stills/2026-11-27-n2-hud-after.jpg) |
+
+**The bait and tackle shop**
+
+| Before | After |
+|---|---|
+| ![before](stills/2026-11-27-n2-shop-before.jpg) | ![after](stills/2026-11-27-n2-shop-after.jpg) |
+
+![A Rare catch as a field-guide plate](stills/2026-11-27-n2-card.jpg)
+*A Rare catch as a field-guide plate*
+
+![Reading today's board](stills/2026-11-27-n2-board.jpg)
+*Reading today's board*
+
+![A fight on a small phone](stills/2026-11-27-n2-fight-phone.jpg)
+*A fight on a small phone*
+
 ## N1: The home lake, Real-ish: real light, real ground, a dressed shore
 
 2026-11-27 23:30

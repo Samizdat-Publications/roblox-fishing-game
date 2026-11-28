@@ -1,5 +1,30 @@
 # Progress
 
+## N2 report, 11/27/2026 (night): the handmade UI (leg 3)
+
+N2 is done and switched on (`UI_STYLE_ON`, `BOARD_CARD_ON`), saved in the place as version 156 ("N2: the field-guide UI and the board card on"). 443 tests pass in Studio and with Lune; a playtest with the new screens (real casts, three catches, the card with the real fish, a sale, buying worms, the journal) logged no script errors.
+
+**What changed in the game**
+- **Every screen is a field guide and a tackle box now:** the top bar is a paper strip with a brass coin, a sun-and-moon dial with the weather word and a creel for the bag; the side buttons are tabs on a tackle box; the shop is canvas and leather with brass buttons; the journal is paper pages; toasts and goals are paper notes in a handwriting face.
+- **The catch card is a field-guide plate:** the fish turning in its window, a ruler under it with the length, the weight on a hanging tag, the rarity as a stamped seal and ribbon, the name in a serif.
+- **The fight bar, cast ring and bait bench** wear wood and brass and a water-blue track, at exactly their old sizes and places (checked by measuring them with the new look on and off).
+- **The chalkboard** has big hand-lettered chalk text you can read from the path, and a "Read today's board" prompt opens a paper card with the forecast, the fish of the day with its stamp and the Legendary rumour (Gemini's idea).
+- **Phones:** text never under 14 pixels, buttons at least 44, touch wording instead of key names, the top bar and the Fish button step aside while a panel is open.
+
+**Proven (with evidence)**
+- Advisor (Fable), two reviews: not yet (plumbing, not looks: the panel art sat inside each box's padding, the bench's layering, labels that wrapped), then not yet (five small fixes and a capture fault: the "phone" captures had not been touch sessions). Both lists were done; the advisor's bar for done was the ui score at 7.5 and the phone rules measured on a touch session.
+- Critic (Neon, ui rubric, median of three): 5.0 at the start, then 5.5, 7.0, 7.0, and **7.5** (readability 8, consistency 8, handmade feel 8.5, contrast 8, touch targets 7). Sheet: `docs/critic/2026-11-27-n2-final-sheet.jpg`.
+- Measured on a touch phone (Studio's iPhone 7 at 667 by 375) and on desktop, every screen: nothing off the screen, no text under 14 px, no button under 44 px, no key names on the phone. The advisor ruled the critic's own phone number (6.5) advisory; the measured rules are the gate.
+- No floating labels anywhere (the painted signs from N0).
+
+**Not verified, or carried on**
+- The plan's last check for N2 needs Liam: from the spawn, with no labels in the sky, does he walk to Sell Fish, Bait and Tackle and his pond without asking? (Next weekend.)
+- On a real phone (not Studio's simulator) the screens have not been seen. Studio's simulator gave a 666 by 374 viewport for a 667 by 375 phone.
+- The critic's remaining wishes are carried: the bait bench sits left of centre on purpose (it clears the Fish button), the worm on the bench is a pink sphere, stale toasts could clear when a panel opens. Icons for bait, rods and boats rendered from the models are not done yet.
+
+**What needs you**
+- Play it once on your own phone and look at the catch card, the shop and the fight: is everything readable and easy to tap?
+
 ## N1 report, 11/27/2026 (night): the home lake, Real-ish (leg 3)
 
 N1 is done. Fable's advisor ruled it would close on one clear-sky re-shoot that met four measured targets, and that re-shoot met all four. Gate passes, 433 tests pass in Studio and with Lune, no script errors. Saved in the place as version 145 ("N1: the home lake, Real-ish (done)").

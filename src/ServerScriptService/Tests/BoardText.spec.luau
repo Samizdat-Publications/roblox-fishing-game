@@ -19,7 +19,7 @@ return function(t, Shared)
 	end
 
 	t.test("the readable board lands switched off", function()
-		t.eq(Config.BOARD_CARD_ON, false, "BOARD_CARD_ON")
+		t.eq(Config.BOARD_CARD_ON, true, "BOARD_CARD_ON (on since 11/27/2026)")
 	end)
 
 	t.test("the slate is short enough to read from the path, every day, with and without the Big Lake", function()

@@ -106,7 +106,7 @@ Config.WIND_ON = true
 Config.WATER_BY_TIME_ON = true
 -- The field guide and tackle box interface (leg 3, N2): paper, canvas, leather and brass, with
 -- every colour, font and panel image in Shared/UIStyle. Off, every screen is exactly as before.
-Config.UI_STYLE_ON = false
+Config.UI_STYLE_ON = true -- on 11/27/2026 after N2 round 4 (ui 7.5, touch-phone checks clean)
 -- The phone tier's foliage savings (leg 3, N1 round 2, ClientModules/FoliageTier): on a phone
 -- (player attribute LookTierActive "phone") tagged foliage casts no shadow, undergrowth past 80
 -- studs is hidden, and every second reed, stone group (past 80) and tree (past 150). It does
@@ -116,7 +116,7 @@ Config.FOLIAGE_TIER_ON = true
 -- board (the weather in a few words, the fish of the day, a teaser) and a "Read today's board"
 -- prompt that opens a field-guide card (Shared/BoardText, ClientModules/BoardCard). Needs
 -- UI_STYLE_ON too; with either off, the board and the screens are exactly as before.
-Config.BOARD_CARD_ON = false
+Config.BOARD_CARD_ON = true -- on 11/27/2026 with the UI restyle
 
 function Config.boatsOn(): boolean
 	return Config.BOATS_ON and Config.BIG_LAKE_ON

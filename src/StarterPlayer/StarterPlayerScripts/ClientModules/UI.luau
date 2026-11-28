@@ -60,6 +60,11 @@ local function updateTop()
 		return
 	end
 	refs.top.Visible = not benchOpen and not (refs.phone and (not tabsShown or openPanel ~= nil))
+	-- The touch Fish button hides while a panel (shop, journal, the board card, the pond) is
+	-- open: on a phone the board card covered part of it (N2 round 4). The fight keeps it.
+	if refs.touchFish then
+		refs.touchFish.Visible = openPanel == nil
+	end
 end
 local cardSpin: RBXScriptConnection? = nil -- turns the fish in the catch card
 
@@ -2102,6 +2107,7 @@ function UI.closePanels()
 		BoardCard.hide()
 	end
 	openPanel = nil
+	updateTop()
 	GuiService.SelectedObject = nil
 	sideTabs(true)
 end
@@ -2112,6 +2118,7 @@ function UI.openShop()
 	end
 	UI.closePanels()
 	openPanel = "Shop"
+	updateTop()
 	sideTabs(false)
 	UI.refreshShop()
 	refs.shop.Visible = true
@@ -2127,6 +2134,7 @@ function UI.openBoard()
 	end
 	UI.closePanels()
 	openPanel = "Board"
+	updateTop()
 	sideTabs(false)
 	BoardCard.show(UI.inputName() == "R2")
 end
@@ -2141,6 +2149,7 @@ function UI.toggleJournal()
 	end
 	UI.closePanels()
 	openPanel = "Journal"
+	updateTop()
 	sideTabs(false)
 	UI.refreshJournal()
 	refs.journal.Visible = true
@@ -2275,6 +2284,7 @@ function UI.openPond()
 	end
 	UI.closePanels()
 	openPanel = "Pond"
+	updateTop()
 	sideTabs(false)
 	refs.pond.Visible = true
 	UI.refreshPond()
@@ -2380,6 +2390,7 @@ function UI.openTackle()
 	end
 	UI.closePanels()
 	openPanel = "Tackle"
+	updateTop()
 	sideTabs(false)
 	refs.tackle.Visible = true
 	UI.refreshTackle()
