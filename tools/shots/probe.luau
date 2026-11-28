@@ -13,6 +13,12 @@ pins it: Level21 on the desktop tier, Level3 with PHONE = true. PHONE = true als
 LocalPlayer attribute LookTier = "phone" (read by the LookDirector client module) and waits for
 the look to settle. Both are put back afterwards.
 ]]
+-- N3 review 3 (11/28/2026): the numbers depend on the viewport's size (a 1701 wide run read very
+-- differently from PERF.md's 1237 x 787 baseline). The line ends with the viewport, and starts
+-- "NOT COMPARABLE" when it is not BASELINE_WIDTH wide; Lua cannot resize Studio's viewport, so
+-- size the Studio window until the pin reports viewport 1237 wide before probing. Record the line
+-- with: python tools/shots/shots.py perf <run> <id> "<line>".
+local BASELINE_WIDTH = 1237
 local SECONDS = 4
 local PHONE = false
 local SETTLE = 1.5 -- seconds after a tier or quality change before sampling
@@ -127,4 +133,10 @@ line ..= string.format(
 	fmt(ta, "%.0f"), fmt(tw, "%.0f"), fmt(da, "%.0f"), fmt(dw, "%.0f"),
 	fmt(texMb, "%.0f"), fmt(terrainMb, "%.0f"), fmt(meshMb, "%.0f"), fmt(partsMb, "%.0f")
 )
+local vp = workspace.CurrentCamera.ViewportSize
+local vw, vh = math.round(vp.X), math.round(vp.Y)
+line ..= string.format(" | viewport %dx%d", vw, vh)
+if vw ~= BASELINE_WIDTH then
+	line = string.format("NOT COMPARABLE (viewport %d wide, docs/PERF.md budgets are at %d wide) | ", vw, BASELINE_WIDTH) .. line
+end
 return line

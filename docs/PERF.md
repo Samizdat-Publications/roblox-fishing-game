@@ -4,6 +4,9 @@ The beauty pass (L5) and the living lake (L6) must not make the game slow on a p
 
 ## How to read the numbers
 
+- **Every budget on this page was measured with the Studio viewport at 1237 wide (1237 x 787).** The probe's numbers change with the viewport's size (the N3 creek run on 11/28/2026 was 1701 wide), so numbers from any other width are not compared with these. `tools/shots/probe.luau` ends its line with `viewport WxH` and starts it with `NOT COMPARABLE` at any other width; `python tools/shots/shots.py perf <run> <id> "<line>"` records it in run.json and exits 1 when the width is not 1237. Lua cannot resize Studio's viewport: size the Studio window until the pin reports `viewport 1237x...` before probing. `capture-studio.ps1` also prints the captured area's own size.
+- Shot 07 (the high overview) stays the logged aerial exception: no player stands there, so its triangle and draw call counts are not held to the budgets.
+
 - Studio holds a window that is not in front to about 15 fps, so the raw frame time is always about 66.7 ms and means nothing.
 - Render CPU and GPU time (from the Stats service) are what each frame costs. A phone at 30 fps has about 33 ms per frame for everything, and phones are several times slower than this PC, so the PC numbers must stay small.
 - Studio's Device Simulator only changes the screen size and does not slow the GPU, so it cannot stand in for a phone. The real phone check is on Stewart's list.

@@ -363,7 +363,8 @@ return function(t, Shared)
 	t.test("nothing stands at a shot camera; no tree on the first 25 studs of its line", function()
 		-- Scatter.SHOT_CAMS mirrors tools/shots/shots.json sets A and B, and (11/28/2026) the three
 		-- set P eyes of their own (p01, p02, p05; the other P shots reuse set A eyes).
-		t.eq(#Scatter.SHOT_CAMS, 18, "15 distinct cameras in sets A and B, 3 more in set P")
+		-- N3 review 3 (final): p07 has its own eye too.
+		t.eq(#Scatter.SHOT_CAMS, 19, "15 distinct cameras in sets A and B, 4 more in set P")
 		t.eq(Scatter.SHOT_CAMS[4].eye[1], 126, "06-logs-dawn's eye x")
 		local hillItems = Scatter.hillPines(SEED, function()
 			return 10

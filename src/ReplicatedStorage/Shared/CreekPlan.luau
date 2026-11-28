@@ -336,14 +336,22 @@ local APPROACH_LAWN_OVER = { [2] = true, [19] = true, [25] = true, [27] = true }
 -- past the lawn band, grass (slot 2) becomes the hill forest floor too. Beside the walk it is
 -- round 3's lawn band (slot 26), as before.
 CreekPlan.GATE_FOREGROUND = { name = "GateForeground", x1 = -155, x2 = -120, z1 = -25, z2 = 25 }
+-- N3 review 3 (final, 11/28/2026): shot 11's lime lawn was MeadowLawn (slot 26 painted beside
+-- the walk, and slot 19 never converted). APPROACH_NO_LAWN on: the walk band becomes the hill
+-- forest floor (27) too, and slots 19 and 26 become 27 anywhere in the APPROACH box. The walk's
+-- own gravel (14, 24, 32) is never touched.
+CreekPlan.APPROACH_NO_LAWN = true
+local APPROACH_ALWAYS = { [19] = true, [26] = true } :: { [number]: boolean }
 function CreekPlan.approachSlot(x: number, z: number, slot: number): number?
 	if not Scatter.inBox(CreekPlan.APPROACH :: any, x, z) then
 		return nil
 	end
 	local W = CreekPlan.WALK
 	local nearWalk = z >= W.z1 - CreekPlan.WALK_BAND and z <= W.z2 + CreekPlan.WALK_BAND
-	if nearWalk and APPROACH_LAWN_OVER[slot] then
-		return CreekPlan.LAWN_SLOT
+	if CreekPlan.APPROACH_NO_LAWN and APPROACH_ALWAYS[slot] then
+		return CreekPlan.FOREST_SLOT
+	elseif nearWalk and APPROACH_LAWN_OVER[slot] then
+		return if CreekPlan.APPROACH_NO_LAWN then CreekPlan.FOREST_SLOT else CreekPlan.LAWN_SLOT
 	elseif not nearWalk and slot == 25 then
 		return CreekPlan.FOREST_SLOT
 	elseif not nearWalk and slot == CreekPlan.GRASS_SLOT and Scatter.inBox(CreekPlan.GATE_FOREGROUND :: any, x, z) then
@@ -358,7 +366,7 @@ end
 -- N3 review 2: their own slot (MaterialKit.SLOTS 32, FootpathGravel tinted PATH_TINT), and the
 -- path parts take the same colour.
 CreekPlan.PATH_SLOT = 32
-CreekPlan.PATH_TINT = { 150, 140, 120 }
+CreekPlan.PATH_TINT = { 120, 110, 92 } -- N3 review 3 (was 150,140,120): the lit path read too pale
 CreekPlan.PATH_BOXES = {
 	{ name = "BankPath", x1 = -212, x2 = -194, z1 = -80, z2 = 80 },
 	{ name = "GateWalk", x1 = -212, x2 = -120, z1 = -10, z2 = 10 }, -- short of the lake's PathWest (x -118 on)
@@ -468,6 +476,10 @@ end
 -- Neon Pass 1: 09's eye stands on the run's east bank at the riffle mouth (-223.5, 25), looking
 -- up the chute; the same radii (its line runs out over the water).
 CreekPlan.SHOT09 = { id = "09-riffle-dawn", eyeR = 10, lineR = 5 }
+-- N3 review 3 (final, 11/28/2026): prime shot p07 has its own eye low in the riffle, looking up
+-- the chute between the same bank cedars, so its cedars get shot 09's looser radii too
+-- (Scatter's 16 and 9 took three riffle cedars and six boughs out of 09's frame).
+CreekPlan.LOOSE_CEDAR_SHOTS = { ["09-riffle-dawn"] = true, ["p07-riffle-morning"] = true } :: { [string]: boolean }
 
 local function camClear(c: Scatter.ShotCam, x: number, z: number, H: number, R: number, lineR: number): boolean
 	local ex, ey, ez = c.eye[1], c.eye[2], c.eye[3]
@@ -499,7 +511,7 @@ end
 
 function CreekPlan.treeShotClear(x: number, z: number, model: string?): boolean
 	for _, c in Scatter.SHOT_CAMS do
-		local loose = model == "Cedar" and c.id == CreekPlan.SHOT09.id
+		local loose = model == "Cedar" and CreekPlan.LOOSE_CEDAR_SHOTS[c.id] == true
 		local R = if loose then CreekPlan.SHOT09.eyeR else Scatter.SHOT_EYE_R_TREE
 		local lineR = if loose then CreekPlan.SHOT09.lineR else Scatter.SHOT_LINE_R
 		if not camClear(c, x, z, Scatter.TREE_H, R, lineR) then
@@ -624,6 +636,11 @@ CreekPlan.TUNING = {
 	rowSouth = { n = 18, x = { -296, -168 }, z = { -110, -78 } },
 	rowHead = { n = 10, x = { -290, -176 }, z = { 88, 124 } },
 	rowGate = { n = 10, x = { -200, -168 }, z = { -36, 36 } },
+	-- N3 review 3 (final, 11/28/2026): the south row reads as one even wall of far pines, so
+	-- southPines of its 18 become ShorePine1 or ShorePine2 (about 2.6k more triangles) and the rest
+	-- take a seeded scale in southScale. 0 turns it off.
+	southPines = 6,
+	southScale = { 0.85, 1.35 },
 	-- N3 review 1: two frame cedars on shot 09's thirds (CreekPlan.FRAME_CEDARS) and CedarBough
 	-- sprays from the bank cedars along the riffle. Boughs are OFF (0) until real foliage shadows
 	-- are seen on the desktop; BOUGHS_ON is the advisor's count.
@@ -698,6 +715,7 @@ export type Item = {
 	footZ: number?,
 	lift: number?, -- boughs: height of the bough's base over that ground
 	r: number?, -- rocks: radius
+	southPine: boolean?, -- N3 review 3: one of the south row's trees turned into a shore pine
 }
 
 export type Plan = {
@@ -936,6 +954,29 @@ function CreekPlan.plan(seed: number?, tuning: { [string]: any }?): Plan
 		backRow(spec.n, row, function()
 			return Scatter.range(rb, spec.x[1], spec.x[2])
 		end, zIn(spec.z[1], spec.z[2]), anywhere, CreekPlan.FENCE)
+	end
+	-- N3 review 3: break up the south row (its own random numbers, so nothing else moves).
+	if T.southPines > 0 then
+		local rs = Scatter.rng(s + 19)
+		local south: { Item } = {}
+		for _, it in items do
+			if it.row == "south" then
+				table.insert(south, it)
+			end
+		end
+		for i = #south, 2, -1 do -- a seeded shuffle, then the first southPines become shore pines
+			local j = math.floor(Scatter.range(rs, 1, i + 1 - 1e-9))
+			south[i], south[j] = south[j], south[i]
+		end
+		for i, it in south do
+			if i <= T.southPines then
+				it.model = if i % 2 == 1 then "ShorePine1" else "ShorePine2"
+				it.scale = Scatter.range(rs, T.pineScale[1], T.pineScale[2])
+				it.southPine = true
+			else
+				it.scale = Scatter.range(rs, T.southScale[1], T.southScale[2])
+			end
+		end
 	end
 
 	-- 1c. CedarBough sprays (N3 review 1): boughsPer from each bank and frame cedar along the
@@ -1350,6 +1391,35 @@ CreekPlan.SPRAY = {
 }
 
 export type Strip = { x: number, z: number, len: number, w: number, yaw: number, speed: number }
+
+-- N3 review 3 (final, 11/28/2026): the foam map (art/textures/white_water) streaks along its U
+-- (image X) and fades to nothing on its top and bottom rows (V edges). Round 3 laid U across the
+-- strip and scrolled V, so the streaks ran bank to bank in hard rectangles. Now the strip's part
+-- has its local +X downstream: a Texture on the Top face runs U along the part's +X and V along
+-- its +Z, so U is along the flow, one V tile is exactly the strip's width (the faded rows sit on
+-- its long edges), and OffsetStudsU scrolls it. A feature at u sits at X = OffsetStudsU + u *
+-- StudsPerTileU, so a growing offset carries the foam toward +X, downstream.
+CreekPlan.FOAM_TILE_U = 6 -- studs of flow per tile of the foam map
+
+export type FoamFace = { sizeX: number, sizeZ: number, rx: number, rz: number, tileU: number, tileV: number }
+
+-- How ClientModules/WhiteWater lays one strip: the part's size (X along the flow, Z across),
+-- its local +X in world (rx, rz: unit, downstream) and the texture's tiles.
+function CreekPlan.foamFace(st: Strip): FoamFace
+	return {
+		sizeX = st.len,
+		sizeZ = st.w,
+		rx = math.sin(st.yaw),
+		rz = -math.cos(st.yaw),
+		tileU = CreekPlan.FOAM_TILE_U,
+		tileV = st.w,
+	}
+end
+
+-- The texture's OffsetStudsU at `clock` seconds for a strip scrolling `speed` studs a second.
+function CreekPlan.foamOffsetU(clock: number, speed: number): number
+	return (clock * speed) % CreekPlan.FOAM_TILE_U
+end
 
 -- Foam strips: x, z the middle, `len` along the flow and `w` across, `yaw` turns the strip's
 -- length (its local Z) onto the flow, `speed` the scroll in studs a second. The water runs from

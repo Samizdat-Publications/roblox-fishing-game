@@ -636,8 +636,9 @@ function Scenery.apply(lake: Model): Result
 	-- N3 review 2 (11/28/2026): it lit nothing in shot 12. Brighter and wider, and it may cast
 	-- shadows (the LanternShadows attribute; WorldBuilder.LANTERN.pool and poolLantern match).
 	-- Neon Pass 1 (11/28/2026): 2.6, range 22, warmer (WorldBuilder.LANTERN.pool matches).
-	light.Range = 22
-	light.Brightness = 2.6
+	-- N3 review 3 (final, 11/28/2026): 1.6, range 26 (WorldBuilder.LANTERN.pool matches).
+	light.Range = 26
+	light.Brightness = 1.6
 	light.Color = Color3.fromRGB(255, 186, 108)
 	light.Shadows = true
 	light:SetAttribute("LanternShadows", true)

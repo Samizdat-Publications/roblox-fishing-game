@@ -67,7 +67,7 @@ CreekDress.FALLBACK = {
 	[29] = Color3.fromRGB(96, 88, 70),
 	[30] = Color3.fromRGB(70, 78, 84),
 	[31] = Color3.fromRGB(78, 104, 52),
-	[32] = Color3.fromRGB(150, 140, 120), -- N3 review 2: the creek paths
+	[32] = Color3.fromRGB(120, 110, 92), -- N3 review 3 (was 150,140,120): the creek paths, darker
 } :: { [number]: Color3 }
 
 local VARIANT_BY_SUFFIX = {
@@ -316,7 +316,10 @@ end
 -- Repaints slot indexes inside lo..hi: `decide(x, z, slot)` gives a column's solid voxel its new
 -- slot (nil: leave it). `depth` studs under the column's top are considered (math.huge: all of
 -- it). Every change is recorded in folder.SlotRecords.<name> ("ix,iy,iz,old;") for revert.
-local function repaint(folder: Folder, name: string, lo: Vector3, hi: Vector3, depth: number, decide: (number, number, number) -> number?): number
+-- N3 review 3: with `hist`, every voxel considered is counted by slot before and after (keys are
+-- the slot numbers as strings, so the result reads plainly from execute_luau).
+export type SlotHist = { before: { [string]: number }, after: { [string]: number } }
+local function repaint(folder: Folder, name: string, lo: Vector3, hi: Vector3, depth: number, decide: (number, number, number) -> number?, hist: SlotHist?): number
 	local t = workspace.Terrain
 	local reg = Region3.new(lo, hi):ExpandToGrid(CELL)
 	local base = reg.CFrame.Position - reg.Size / 2
@@ -343,6 +346,11 @@ local function repaint(folder: Folder, name: string, lo: Vector3, hi: Vector3, d
 						if new and new ~= old then
 							idx[ix][iy][iz] = new
 							table.insert(rec, string.format("%d,%d,%d,%d", ix, iy, iz, old))
+						end
+						if hist then
+							local kb, ka = tostring(old), tostring(idx[ix][iy][iz])
+							hist.before[kb] = (hist.before[kb] or 0) + 1
+							hist.after[ka] = (hist.after[ka] or 0) + 1
 						end
 					end
 				end
@@ -399,7 +407,7 @@ end
 -- N3 review 1: the moss band into the backing forest, and the creek paths as slot 14.
 -- N3 review 2: the moss and grass repaint covers the whole fence (CreekPlan.fenceSlot), the paths
 -- go on CreekPlan.PATH_SLOT, and the gate approach outside the fence is repainted too.
-local function paintBands(folder: Folder): (number, number, number)
+local function paintBands(folder: Folder, approachHist: SlotHist): (number, number, number)
 	-- Neon Pass 1: Neon's moss box joined with the fence (the fence reaches z 126, past the box's
 	-- 115, and round 3 left no meadow grass inside it).
 	local M, F = CreekPlan.MOSS_REGION, CreekPlan.FENCE
@@ -425,7 +433,7 @@ local function paintBands(folder: Folder): (number, number, number)
 	local A = CreekPlan.APPROACH
 	local approach = repaint(folder, "Approach", Vector3.new(A.x1, -16, A.z1), Vector3.new(A.x2, 40, A.z2), 5, function(x: number, z: number, slot: number): number?
 		return CreekPlan.approachSlot(x, z, slot)
-	end)
+	end, approachHist)
 	return moss, path, approach
 end
 
@@ -579,6 +587,10 @@ export type Result = {
 	mossPainted: number, -- voxels of the moss band past D 7 (N3 review 1), and (N3 review 2) the grass past D 30 turned to slot 27
 	pathPainted: number, -- path voxels re-laid on CreekPlan.PATH_SLOT
 	approachPainted: number, -- N3 review 2: gate approach voxels repainted
+	-- N3 review 3: the approach box's voxels by slot (the top 5 studs of each column, as
+	-- repainted), before and after. After the repaint there should be no 19 or 26.
+	approachSlotsBefore: { [string]: number },
+	approachSlotsAfter: { [string]: number },
 	edgeStones: number, -- N3 review 2: wet-slate stones along the pool's east edge
 	pathParts: number, -- old path parts given the FootpathGravel variant
 	boughs: number, -- CedarBough sprays hung
@@ -660,7 +672,8 @@ function CreekDress.apply(lake: Instance, seed: number?): Result
 	lakeArt = lake:FindFirstChild("Art")
 	local slots = ensureSlots()
 	local tc = reshape(folder)
-	local mossPainted, pathPainted, approachPainted = paintBands(folder)
+	local approachHist: SlotHist = { before = {}, after = {} }
+	local mossPainted, pathPainted, approachPainted = paintBands(folder, approachHist)
 
 	local plan = CreekPlan.plan(s)
 	local params = RaycastParams.new()
@@ -698,6 +711,8 @@ function CreekDress.apply(lake: Instance, seed: number?): Result
 		mossPainted = mossPainted,
 		pathPainted = pathPainted,
 		approachPainted = approachPainted,
+		approachSlotsBefore = approachHist.before,
+		approachSlotsAfter = approachHist.after,
 		edgeStones = 0,
 		pathParts = skinPaths(lake),
 		boughs = 0,

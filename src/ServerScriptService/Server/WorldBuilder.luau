@@ -75,7 +75,8 @@ WorldBuilder.LANTERN = {
 	-- and wider than the rest and may cast shadows (WorldBuilder.poolLantern).
 	-- Neon's N3 review, Pass 1 (11/28/2026): warmer and a touch smaller, so it pools on the bank
 	-- and the water instead of washing the gravel (was brightness 3, range 24, the lantern colour).
-	pool = { brightness = 2.6, range = 22, color = Color3.fromRGB(255, 186, 108) },
+	-- N3 review 3 (final, 11/28/2026): dimmer and wider, a soft pool of light (was 2.6, 22).
+	pool = { brightness = 1.6, range = 26, color = Color3.fromRGB(255, 186, 108) },
 }
 
 -- Makes one globe a lantern, in place: safe to run again.

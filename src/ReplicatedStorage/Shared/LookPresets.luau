@@ -779,6 +779,18 @@ if LookPresets.NEON_CREEK_PASS1 then
 	end
 end
 
+-- N3 review 3 (final, the advisor, 11/28/2026), last so it wins over Neon Pass 1: the creek's
+-- exposure back to 0 (Pass 1's -0.10 read too dark under the canopy) and the floor raised to
+-- -0.10 (from -0.25), so the bobber and the pool read at dusk and in storms.
+LookPresets.N3_REVIEW3_CREEK = true
+LookPresets.CREEK_REVIEW3 = { exposure = 0, exposureFloor = -0.1 }
+if LookPresets.N3_REVIEW3_CREEK then
+	local creek = LookPresets.AREAS.creek :: any
+	for k, v in LookPresets.CREEK_REVIEW3 do
+		creek[k] = v
+	end
+end
+
 -- Neon Pass 1: the creek's water by time of day (the home lake has had WATER_BY_TIME since N1).
 -- With a clock (Config.WATER_BY_TIME_ON), areaMix gives the creek this, blended by the preset
 -- weights, colour included; without one, AREAS.creek.water (review 2's water) stays the

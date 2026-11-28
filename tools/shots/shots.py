@@ -79,6 +79,12 @@ P the prime shots for the making-of (docs/looks/prime-shots.md; score refuses se
   leaves out any file whose uicheck found something outside the viewport. --skip-ui-checks scores
   without them. Older runs (no protocol) score as before.
   Frame cost at a shot: run tools/shots/probe.luau the same way; budget in docs/PERF.md.
+  The probe's numbers depend on the viewport's size (N3 review 3: 1701 wide vs PERF.md's 1237), so
+  its line ends with "viewport WxH" and starts "NOT COMPARABLE" at any other width. Record it:
+  python tools/shots/shots.py perf <run> <id> "<the line the probe returned>"
+                                                       writes run.json "perf" (the line, the viewport
+                                                       and whether it is comparable with PERF.md);
+                                                       exits 1 when the width is not PERF_WIDTH (1237)
   Default-look counts: run tools/shots/audit.luau the same way and save its JSON line as
   <run>/audit.json; score stores it beside the scores.
   python tools/shots/shots.py sheet <run> [--before <run>]   contact sheet (and before/after pairs)
@@ -208,6 +214,24 @@ while os.clock() - t0 < 10 do
 \ttask.wait(0.25)
 end
 _G.__shotTopbarHidden = (topbar == "hidden")
+-- N3 review 3 (11/28/2026): SetCore said "hidden" but the top bar still drew in the Play session,
+-- so also switch off the core top bar's own ScreenGuis (TopBarApp, TopBarScrim), now and if they
+-- come back. Command-level code can reach CoreGui; a failure leaves "coretopbar 0".
+local CG = game:GetService("CoreGui")
+local CORE_TOPBAR = { TopBarApp = true, TopBarScrim = true }
+local function coreOff(g: Instance): number
+\tif CORE_TOPBAR[g.Name] and g:IsA("LayerCollector") then
+\t\tlocal ok = pcall(function() (g :: any).Enabled = false end)
+\t\treturn if ok then 1 else 0
+\tend
+\treturn 0
+end
+local coreTopbar = 0
+pcall(function()
+\tfor _, g in CG:GetChildren() do coreTopbar += coreOff(g) end
+\tif _G.__shotCoreTopbar then _G.__shotCoreTopbar:Disconnect() end
+\t_G.__shotCoreTopbar = CG.ChildAdded:Connect(function(g) task.defer(coreOff, g) end)
+end)
 -- Studio's Automatic quality drops low when its window is not in front (no lantern light, no
 -- Soft vs Realistic difference), so pin the desktop tier's top level for every shot.
 pcall(function() settings().Rendering.QualityLevel = Enum.QualityLevel.Level21 end)
@@ -257,9 +281,9 @@ end)
 pcall(function() RS:UnbindFromRenderStep("ShotPin") end)
 RS:BindToRenderStep("ShotPin", Enum.RenderPriority.First.Value, pin)
 local v = workspace.CurrentCamera.ViewportSize
-return string.format("pin ready tier %s touch %s viewport %dx%d topbar %s cursor %s clock via DebugClock",
+return string.format("pin ready tier %s touch %s viewport %dx%d topbar %s coretopbar %d cursor %s clock via DebugClock",
 \ttostring(P:GetAttribute("LookTierActive")), tostring(UIS.TouchEnabled), math.round(v.X), math.round(v.Y),
-\ttopbar, if UIS.MouseIconEnabled then "shown" else "hidden")
+\ttopbar, coreTopbar, if UIS.MouseIconEnabled then "shown" else "hidden")
 """.replace("{topbar_px}", str(TOPBAR_PX))
 
 # Runs before every screen's own luau (set U): the background view, the HUD back on, and the
@@ -415,6 +439,9 @@ return string.format("shot {id} set %s tier %s touch %s viewport %dx%d", tostrin
 """
 
 DESKTOP_MIN = (1280, 720)
+# docs/PERF.md's budgets were measured at this viewport width (1237 x 787). Probe numbers taken at
+# another width are recorded but never compared with them (N3 review 3, 11/28/2026).
+PERF_WIDTH = 1237
 PHONE = (667, 375)
 UI_CONTEXT = ("Files ending -1280 are the desktop: the Studio viewport as it is, at least 1280 by 720, "
               "no Device Simulator (recorded viewport sizes: {sizes}). Files ending -667 are a 667 by 375 "
@@ -583,6 +610,28 @@ def cmd_record(a):
     bad = session_problem(meta["session"][a.id])
     print(f"{run.name}: {a.id} weather {got['weather']} tier {got['tier']} touch {got['touch']} "
           f"viewport {got['viewport'][0]}x{got['viewport'][1]}" + (f"  (WRONG: {bad}; score will refuse it)" if bad else ""))
+
+
+def cmd_perf(a):
+    run = Path(a.run)
+    meta_path = run / "run.json"
+    if not meta_path.exists():
+        sys.exit(f"No run.json in {run}. Make the run with: python tools/shots/shots.py newrun")
+    meta = read_meta(run)
+    line = " ".join(a.line)
+    vp = parse_session(line).get("viewport")
+    if not vp:
+        sys.exit(f"Could not read the viewport from {line!r}. Use tools/shots/probe.luau from 11/28/2026 on "
+                 "(its line ends with 'viewport WxH').")
+    ok = int(vp[0]) == PERF_WIDTH
+    meta.setdefault("perf", {})[a.id] = {"line": line, "viewport": vp, "comparable": ok}
+    write_meta(run, meta)
+    if ok:
+        print(f"{run.name}: {a.id} perf recorded at {vp[0]}x{vp[1]}: comparable with docs/PERF.md")
+    else:
+        print(f"{run.name}: {a.id} perf recorded at {vp[0]}x{vp[1]}: NOT comparable with docs/PERF.md "
+              f"(budgets are at {PERF_WIDTH} wide; resize the Studio viewport and probe again)")
+        sys.exit(1)
 
 
 def tier_problems(run: Path, shots: list[dict]) -> list[str]:
@@ -1048,6 +1097,10 @@ def main():
     p.add_argument("run"); p.add_argument("id", help="a shot id of the run")
     p.add_argument("line", nargs="+", help="the whole line the shot snippet returned")
     p.set_defaults(fn=cmd_record)
+    p = sub.add_parser("perf", help=f"record a probe.luau line in run.json; exits 1 unless its viewport is {PERF_WIDTH} wide")
+    p.add_argument("run"); p.add_argument("id", help="the shot the probe ran at")
+    p.add_argument("line", nargs="+", help="the whole line probe.luau returned")
+    p.set_defaults(fn=cmd_perf)
     p = sub.add_parser("viewport", help="record a screen file's ViewportSize in run.json (set U)")
     p.add_argument("run"); p.add_argument("id", help="<id>-1280 or <id>-667, or a bare screen id for the desktop file")
     p.add_argument("w", type=int); p.add_argument("h", type=int)

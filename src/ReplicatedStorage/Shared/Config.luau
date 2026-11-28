@@ -108,9 +108,10 @@ Config.WATER_BY_TIME_ON = true
 -- every colour, font and panel image in Shared/UIStyle. Off, every screen is exactly as before.
 Config.UI_STYLE_ON = true -- on 11/27/2026 after N2 round 4 (ui 7.5, touch-phone checks clean)
 -- The phone tier's foliage savings (leg 3, N1 round 2, ClientModules/FoliageTier): on a phone
--- (player attribute LookTierActive "phone") tagged foliage casts no shadow, undergrowth past 80
--- studs is hidden, and every second reed, stone group (past 80) and tree (past 150). It does
--- nothing on the desktop tier, so it is on. Off, foliage is never touched on the client.
+-- (player attribute LookTierActive "phone") tagged foliage casts no shadow, undergrowth past 40
+-- studs is hidden, every second reed and stone group (past 60) and tree (past 100), and every
+-- kit tree past 220 (N3 review 3, final: were 80 and 150, and no limit). It does nothing on the
+-- desktop tier, so it is on. Off, foliage is never touched on the client.
 Config.FOLIAGE_TIER_ON = true
 -- The readable chalkboard (leg 3, N2, from Gemini's review): bigger hand-lettered chalk on the
 -- board (the weather in a few words, the fish of the day, a teaser) and a "Read today's board"

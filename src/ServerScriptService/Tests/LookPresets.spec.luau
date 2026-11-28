@@ -748,7 +748,13 @@ return function(t, Shared)
 		t.eq(r2.WaterWaveSize, 0.06, "wave 0.06")
 		t.ok(math.abs(r2.WaterColor.G * 255 - 70) < 1, "colour 52, 70, 48")
 		local creek = LookPresets.AREAS.creek :: any
-		if LookPresets.NEON_CREEK_PASS1 then
+		if LookPresets.N3_REVIEW3_CREEK then
+			-- N3 review 3 (final) comes last: exposure 0, floor -0.10; Neon's mist stays.
+			t.eq(creek.exposure, 0, "review 3: exposure")
+			t.eq(creek.exposureFloor, -0.1, "review 3: floor")
+			t.eq(creek.dawnMist.density, 0.12, "Neon Pass 1: mist")
+			t.eq(creek.saturation, -0.06, "Neon Pass 1: saturation")
+		elseif LookPresets.NEON_CREEK_PASS1 then
 			-- Neon Pass 1 comes last, so its numbers win.
 			t.eq(creek.exposure, -0.1, "Neon Pass 1: exposure")
 			t.eq(creek.dawnMist.density, 0.12, "Neon Pass 1: mist")

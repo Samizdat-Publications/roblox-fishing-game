@@ -229,6 +229,26 @@ return function(t, Shared)
 		t.eq(found, #CreekPlan.FRAME_CEDARS, "both frame cedars")
 	end)
 
+	-- N3 review 3 (final): p07 has its own eye low in the riffle; every tree keeps clear of every
+	-- camera, cedars by 09's looser radii for 09 and p07, so the riffle's cedars still frame both.
+	t.test("p07's own eye: every tree clear of every camera, the riffle's cedars kept", function()
+		local c = CreekPlan.shotCam("p07") :: any
+		t.ok(c ~= nil and c.eye[1] == -229.5 and c.eye[2] == 2.8 and c.eye[3] == 27, "p07's eye in SHOT_CAMS")
+		t.ok(CreekPlan.LOOSE_CEDAR_SHOTS["p07-riffle-morning"] == true, "p07 frames between cedars like 09")
+		for _, it in plan.items do
+			if it.group == "Trees" and it.row ~= "frame" then
+				t.ok(CreekPlan.treeShotClear(it.x, it.z, it.model), bad(it, "clear of every shot camera"))
+			end
+		end
+		local bankCedars = 0
+		for _, it in plan.items do
+			if it.model == "Cedar" and it.row == "bank" and it.z > 26 and it.z < 76 then
+				bankCedars += 1
+			end
+		end
+		t.ok(bankCedars >= 8, "cedars along the riffle: " .. bankCedars)
+	end)
+
 	t.test("trunks: the bank row 1 to 9 studs back leaning out, the backing forest behind it", function()
 		local trees = 0
 		local rows: { [string]: number } = {}
@@ -250,7 +270,9 @@ return function(t, Shared)
 					t.ok(it.tilt == nil, bad(it, "the backing forest stands upright"))
 					-- N3 review 2: at D 20 and beyond, far pines; nearer, cedar and shore pine.
 					local far = string.sub(it.model, 1, 7) == "FarPine"
-					t.ok(far == (D >= T.backFarD), bad(it, string.format("far pines from D %d (D %.1f)", T.backFarD, D)))
+					-- N3 review 3: the south row's shore pines stand at any distance.
+					local southPine = it.southPine == true
+					t.ok(southPine or far == (D >= T.backFarD), bad(it, string.format("far pines from D %d (D %.1f)", T.backFarD, D)))
 				end
 				if it.row == "south" or it.row == "head" or it.row == "gate" then
 					local spec = if it.row == "south" then T.rowSouth elseif it.row == "head" then T.rowHead else T.rowGate
@@ -290,8 +312,24 @@ return function(t, Shared)
 		t.eq(rows.head or 0, T.rowHead.n, "the head hill's row")
 		t.eq(rows.gate or 0, T.rowGate.n, "the row behind the gate")
 		local pine2 = 0
+		local southPines, southOther = 0, 0
 		for _, it in plan.items do
-			if it.model == "ShorePine2" then
+			if it.row == "south" then
+				if it.southPine then
+					southPines += 1
+					t.ok(string.sub(it.model, 1, 9) == "ShorePine", bad(it, "a south shore pine"))
+					t.ok(it.scale >= T.pineScale[1] and it.scale <= T.pineScale[2], bad(it, "south shore pine scale"))
+				else
+					southOther += 1
+					t.ok(it.scale >= T.southScale[1] and it.scale <= T.southScale[2], bad(it, "south row scale"))
+				end
+			end
+		end
+		-- N3 review 3 (final): six of the south row's 18 are shore pines, the rest varied in scale.
+		t.eq(southPines, T.southPines, "shore pines in the south row")
+		t.eq(southOther, T.rowSouth.n - T.southPines, "the rest of the south row")
+		for _, it in plan.items do
+			if it.model == "ShorePine2" and it.row ~= "south" then
 				pine2 += 1
 			end
 		end
@@ -396,11 +434,12 @@ return function(t, Shared)
 		end
 		t.eq(grassLeft, 0, "no grass left inside the fence past the banks")
 		-- The gate approach: lawn five studs each side of the walk, forest floor beyond.
-		t.eq(CreekPlan.approachSlot(-140, 7, 25), CreekPlan.LAWN_SLOT, "lawn beside the walk")
+		local band = if CreekPlan.APPROACH_NO_LAWN then CreekPlan.FOREST_SLOT else CreekPlan.LAWN_SLOT
+		t.eq(CreekPlan.approachSlot(-140, 7, 25), band, "the walk band")
 		t.eq(CreekPlan.approachSlot(-140, 9, 25), CreekPlan.FOREST_SLOT, "forest floor past the band")
 		-- Neon Pass 1: no meadow grass left in the gate's foreground; out past it, meadow stays.
 		t.eq(CreekPlan.approachSlot(-140, 20, 2), CreekPlan.FOREST_SLOT, "meadow in the gate's foreground is forest floor")
-		t.eq(CreekPlan.approachSlot(-140, 5, 2), CreekPlan.LAWN_SLOT, "meadow beside the walk is lawn")
+		t.eq(CreekPlan.approachSlot(-140, 5, 2), band, "meadow beside the walk takes the band's slot")
 		t.eq(CreekPlan.approachSlot(-125, 32, 2), nil, "meadow out past the foreground stays")
 		for x = -154, -121, 4 do
 			for z = -24, 24, 4 do
@@ -409,6 +448,23 @@ return function(t, Shared)
 		end
 		t.eq(CreekPlan.approachSlot(-170, 0, 25), nil, "inside the fence is not the approach")
 		t.eq(CreekPlan.PATH_SLOT, 32, "the creek paths on their own slot")
+		local pt = CreekPlan.PATH_TINT
+		t.ok(pt[1] == 120 and pt[2] == 110 and pt[3] == 92, "N3 review 3: the path gravel 120, 110, 92")
+		-- N3 review 3 (final): no MeadowLawn anywhere in the approach box (slots 19 and 26 become
+		-- 27 everywhere in it), and the walk's gravel is never touched.
+		if CreekPlan.APPROACH_NO_LAWN then
+			local A = CreekPlan.APPROACH
+			for x = A.x1 + 1, A.x2 - 1, 4 do
+				for z = A.z1 + 1, A.z2 - 1, 4 do
+					for _, lawn in { 19, 26 } do
+						t.eq(CreekPlan.approachSlot(x, z, lawn), CreekPlan.FOREST_SLOT, string.format("slot %d to 27 at %d, %d", lawn, x, z))
+					end
+					for _, gravel in { 14, 24, 32 } do
+						t.eq(CreekPlan.approachSlot(x, z, gravel), nil, string.format("gravel %d kept at %d, %d", gravel, x, z))
+					end
+				end
+			end
+		end
 	end)
 
 	t.test("the mossy log lies across the pool's corner, out of the cast lanes", function()
@@ -455,6 +511,27 @@ return function(t, Shared)
 		end
 	end)
 
+	-- N3 review 3 (final): the foam map streaks along U, so the strip's +X (U) runs downstream,
+	-- one V tile is the strip's width, and the U offset grows downstream.
+	t.test("foam strips lay the map's U along the flow and scroll it downstream", function()
+		for _, st in CreekPlan.foam(CreekPlan.SEED) do
+			local f = CreekPlan.foamFace(st)
+			t.eq(f.sizeX, st.len, "length along X")
+			t.eq(f.sizeZ, st.w, "width along Z")
+			t.ok(math.abs(f.rx * f.rx + f.rz * f.rz - 1) < 1e-9, "a unit direction")
+			-- The water runs from the riffle's head (z 75) to the pool (-z): +X points south.
+			t.ok(f.rz < -0.9, string.format("+X downstream (rz %.2f)", f.rz))
+			t.eq(f.tileU, 6, "6 studs of flow a tile")
+			t.eq(f.tileV, st.w, "one V tile across the strip")
+		end
+		t.eq(CreekPlan.foamOffsetU(0, 4), 0, "no offset at the start")
+		t.ok(CreekPlan.foamOffsetU(0.5, 4) > CreekPlan.foamOffsetU(0.25, 4), "the offset grows (downstream)")
+		for i = 0, 50 do
+			local o = CreekPlan.foamOffsetU(i * 0.37, 3.5)
+			t.ok(o >= 0 and o < CreekPlan.FOAM_TILE_U, "within one tile")
+		end
+	end)
+
 	t.test("foam lies on the riffle and below the boulders, over the water", function()
 		local foam = CreekPlan.foam(CreekPlan.SEED)
 		t.ok(#foam >= 15 and #foam <= 60, "strips: " .. #foam)
@@ -490,7 +567,13 @@ return function(t, Shared)
 		-- Neon Pass 1 (11/28/2026): the exposure is lowered a little (-0.10; round 3's 0 blew out the
 		-- noon grass and the night gravel); the floor stays -0.25 so the bobber reads.
 		t.ok(c.exposure >= c.exposureFloor, "the exposure above the floor")
-		t.eq(c.exposureFloor, -0.25, "the floor stays -0.25")
+		-- N3 review 3 (final, 11/28/2026): exposure 0 and the floor raised to -0.10.
+		if LookPresets.N3_REVIEW3_CREEK then
+			t.eq(c.exposure, 0, "review 3: exposure 0")
+			t.eq(c.exposureFloor, -0.1, "review 3: the floor -0.10")
+		else
+			t.eq(c.exposureFloor, -0.25, "the floor stays -0.25")
+		end
 		t.ok(type(c.dawnMist) == "table" and c.dawnMist.density > 0, "a little mist at dawn")
 		-- With a clock the creek's water is its time-of-day water (CREEK_WATER_BY_TIME); review 2's
 		-- water above is the fallback without one.

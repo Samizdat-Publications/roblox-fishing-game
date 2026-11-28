@@ -376,7 +376,8 @@ MaterialKit.SLOTS = {
 	{ slot = 31, base = Enum.Material.LeafyGrass, variant = "Moss", tint = Color3.fromRGB(200, 210, 195) }, -- Neon Pass 1 (11/28/2026, was white): deeper woodland shade
 	-- N3 review 2 (11/28/2026): the creek's paths on their own slot (CreekPlan.PATH_SLOT), the
 	-- path gravel tinted warmer and darker than the lake's; the old path parts take the same colour.
-	{ slot = 32, base = Enum.Material.Ground, variant = "FootpathGravel", tint = Color3.fromRGB(150, 140, 120) },
+	-- N3 review 3 (final, 11/28/2026): 120,110,92 (was 150,140,120); the lit path read too pale.
+	{ slot = 32, base = Enum.Material.Ground, variant = "FootpathGravel", tint = Color3.fromRGB(120, 110, 92) },
 } :: { { slot: number, base: Enum.Material, variant: string, tint: Color3 } }
 
 local function asset(id: number?): string

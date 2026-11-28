@@ -91,8 +91,14 @@ $dir = Split-Path -Parent $Out
 if ($dir -and -not (Test-Path $dir)) { New-Item -ItemType Directory -Force $dir | Out-Null }
 $codec = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() | Where-Object { $_.MimeType -eq "image/jpeg" }
 $ep = New-Object System.Drawing.Imaging.EncoderParameters 1
-$ep.Param[0] = New-Object System.Drawing.Imaging.EncoderParameter ([System.Drawing.Imaging.Encoder]::Quality), [long]$Quality
+# ::new, not New-Object: New-Object's argument array picked the EncoderParameter(Encoder, string)
+# overload in Windows PowerShell 5.1 (an ASCII parameter), and Save failed with "Parameter is not
+# valid". ::new resolves the (Encoder, long) overload, a ValueTypeLong quality.
+$ep.Param[0] = [System.Drawing.Imaging.EncoderParameter]::new([System.Drawing.Imaging.Encoder]::Quality, [long]$Quality)
 $full = [System.IO.Path]::GetFullPath($Out)
+# The captured area's own size before any scaling (N3 review 3): probe numbers and lenses depend
+# on the viewport's size, so it is said every time.
+$srcW = $src.Width; $srcH = $src.Height
 $outBmp.Save($full, $codec, $ep)
 $outBmp.Dispose(); if ($src -ne $bmp) { $src.Dispose() }; $bmp.Dispose()
-"Saved $full ($ow x $oh)"
+"Saved $full ($ow x $oh) from $srcW x $srcH"

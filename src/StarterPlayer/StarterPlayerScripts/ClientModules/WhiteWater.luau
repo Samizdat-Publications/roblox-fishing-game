@@ -55,7 +55,9 @@ local function build(): Folder
 	f.Name = "WhiteWater"
 	local foamId = WhiteWater.TEXTURES.foam
 	for i, s in CreekPlan.foam(CreekPlan.SEED) do
-		local fx, fz = math.sin(s.yaw), -math.cos(s.yaw) -- along the flow (CreekPlan.foam)
+		-- N3 review 3: the part's +X runs downstream so the map's U (its streaks) lies along the
+		-- flow and its faded V rows on the strip's long edges (CreekPlan.foamFace).
+		local face = CreekPlan.foamFace(s)
 		local pos = Vector3.new(s.x, WhiteWater.SURFACE, s.z)
 		local p = Instance.new("Part")
 		p.Name = "Foam" .. i
@@ -64,8 +66,8 @@ local function build(): Folder
 		p.CanQuery = false
 		p.CanTouch = false
 		p.CastShadow = false
-		p.Size = Vector3.new(s.w, 0.05, s.len)
-		p.CFrame = CFrame.lookAt(pos, pos + Vector3.new(fx, 0, fz)) -- length (Z) along the flow
+		p.Size = Vector3.new(face.sizeX, 0.05, face.sizeZ)
+		p.CFrame = CFrame.fromMatrix(pos, Vector3.new(face.rx, 0, face.rz), Vector3.yAxis) -- length (X) downstream
 		p.Material = Enum.Material.SmoothPlastic
 		p.Color = WhiteWater.FOAM_COLOR
 		local tex: Texture? = nil
@@ -74,8 +76,8 @@ local function build(): Folder
 			local t = Instance.new("Texture")
 			t.Texture = asset(foamId)
 			t.Face = Enum.NormalId.Top
-			t.StudsPerTileU = s.w
-			t.StudsPerTileV = 4
+			t.StudsPerTileU = face.tileU
+			t.StudsPerTileV = face.tileV
 			t.Transparency = WhiteWater.TEXTURE_TRANSPARENCY
 			t.Color3 = WhiteWater.FOAM_COLOR
 			t.Parent = p
@@ -164,7 +166,7 @@ function WhiteWater.start()
 		clock += dt
 		for _, s in strips do
 			if s.tex then
-				s.tex.OffsetStudsV = (clock * s.speed) % 4 -- downstream
+				s.tex.OffsetStudsU = CreekPlan.foamOffsetU(clock, s.speed) -- downstream (+X)
 			else
 				s.part.Transparency = 0.8 + 0.07 * math.sin(clock * s.speed * 1.3 + s.phase)
 			end

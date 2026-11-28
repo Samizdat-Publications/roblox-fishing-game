@@ -855,11 +855,13 @@ Scatter.SHOT_CAMS = {
 	{ id = "b05-bluewater-noon", eye = { 24, 5, -280 }, look = { 50, 0, -420 } },
 	{ id = "b06-marina-night", eye = { 80, 7, -205 }, look = { 40, 2, -140 } },
 	-- Set P, the making-of's prime shots (docs/looks/prime-shots.md, 11/28/2026): the three with
-	-- eyes of their own (the others reuse set A eyes: p03 is 05's bank, p04 03's, p06 08's, p07
-	-- 09's and p08 10's since Neon's N3 review, Pass 1).
+	-- eyes of their own (the others reuse set A eyes: p03 is 05's bank, p04 03's, p06 08's and
+	-- p08 10's since Neon's N3 review, Pass 1; p07 has its own since N3 review 3).
 	{ id = "p01-lake-high-golden", eye = { 78, 46, 172 }, look = { 7, 0, 13 } },
 	{ id = "p02-dock-dawn", eye = { -2.4, 6, 76 }, look = { 2, 3.4, 30 } },
 	{ id = "p05-sellstand-morning", eye = { -3, 6, 66 }, look = { -18, 6.2, 96 } },
+	-- N3 review 3 (final, 11/28/2026): p07 low in the riffle looking up the chute, its own eye.
+	{ id = "p07-riffle-morning", eye = { -229.5, 2.8, 27 }, look = { -230.5, 1.6, 60 } },
 } :: { ShotCam }
 Scatter.SHOT_EYE_R = 8
 -- N1 round 4 (the advisor, review 2): a tree's keep-clear counts its canopy, not just its trunk

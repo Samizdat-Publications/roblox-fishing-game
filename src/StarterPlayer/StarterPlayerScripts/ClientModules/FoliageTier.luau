@@ -7,15 +7,18 @@
 --   * no foliage casts a shadow: every tagged copy, and (N1 close-out) every untagged model named
 --     in FoliageTier.SHADOW_NAMES (driftwood, the old trees and reeds, the Big Lake's dressing);
 --   * undergrowth past 40 studs from the camera is hidden (LocalTransparencyModifier 1);
---   * every second reed clump and stone group (FoliageAlt 1) past 80 studs is hidden;
+--   * every second reed clump and stone group (FoliageAlt 1) past NEAR (60) studs is hidden;
 --   * every second far tree (FoliageFar, FoliageAlt 1) past 40 studs is hidden;
---   * every second kit tree (FoliageAlt 1) past 150 studs is hidden.
+--   * every second kit tree (FoliageAlt 1) past FAR (100) studs is hidden;
+--   * (N3 review 3) every kit tree past GONE (220) studs is hidden: Cedar Creek's 63 cedars
+--     alone are about 80k triangles.
+-- (N3 review 3, final, 11/28/2026: NEAR 60 and FAR 100, were 80 and 150; GONE is new.)
 -- (N1 round 4, the advisor: from shot 01's view that drops every second far pine and all the
 -- undergrowth, for about 300 draw calls on a phone. The overview, shot 07, is no player's view.)
 -- On the desktop tier it does nothing (and puts everything back when the tier changes to it).
 --
 -- Cheap by design: copies sit in 24 stud buckets; twice a second it works out, per bucket, which
--- distance band (past 40, past 80, past 150) its centre is in, and touches only the copies in
+-- distance band (past UNDER, NEAR, FAR and GONE) its centre is in, and touches only the copies in
 -- buckets whose band changed. Copies that stream in or out are added and dropped as they go.
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -24,8 +27,9 @@ local FoliageTier = {}
 
 FoliageTier.TAGS = { "FoliageUnder", "FoliageReed", "FoliageStone", "FoliageTree" }
 FoliageTier.UNDER = 40 -- undergrowth, and every second far tree, hide past this
-FoliageTier.NEAR = 80 -- every second reed and stone group hides past this
-FoliageTier.FAR = 150 -- every second kit tree hides past this
+FoliageTier.NEAR = 60 -- every second reed and stone group hides past this (N3 review 3: was 80)
+FoliageTier.FAR = 100 -- every second kit tree hides past this (N3 review 3: was 150)
+FoliageTier.GONE = 220 -- every kit tree hides past this (N3 review 3)
 FoliageTier.EVERY = 0.5 -- seconds between checks
 local BUCKET = 24
 
@@ -80,7 +84,8 @@ local function key(ix: number, iz: number): number
 	return (ix + 4096) * 8192 + (iz + 4096)
 end
 
--- Which copies hide in a band (0: within UNDER, 1: UNDER to NEAR, 2: NEAR to FAR, 3: past FAR).
+-- Which copies hide in a band (0: within UNDER, 1: UNDER to NEAR, 2: NEAR to FAR, 3: FAR to
+-- GONE, 4: past GONE).
 function FoliageTier.hides(tag: string, alt: number, band: number, far: boolean?): boolean
 	if band == 0 then
 		return false
@@ -89,13 +94,13 @@ function FoliageTier.hides(tag: string, alt: number, band: number, far: boolean?
 	elseif tag == "FoliageReed" or tag == "FoliageStone" then
 		return band >= 2 and alt == 1
 	elseif tag == "FoliageTree" then
-		return alt == 1 and (band >= 3 or far == true)
+		return band >= 4 or (alt == 1 and (band >= 3 or far == true))
 	end
 	return false
 end
 
 function FoliageTier.band(d: number): number
-	return if d > FoliageTier.FAR then 3 elseif d > FoliageTier.NEAR then 2 elseif d > FoliageTier.UNDER then 1 else 0
+	return if d > FoliageTier.GONE then 4 elseif d > FoliageTier.FAR then 3 elseif d > FoliageTier.NEAR then 2 elseif d > FoliageTier.UNDER then 1 else 0
 end
 
 local function setHidden(e: Entry, hide: boolean)
