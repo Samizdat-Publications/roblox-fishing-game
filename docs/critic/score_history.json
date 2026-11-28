@@ -2987,5 +2987,303 @@
         ]
       }
     }
+  },
+  {
+    "date": "2026-11-28",
+    "step": "N3 creek round 3",
+    "set": "A",
+    "rubric": "look",
+    "run": "2026-11-28-0057",
+    "commit": "1d3298e",
+    "shots": 4,
+    "median": 5.5,
+    "scores": [
+      5.5,
+      5.5,
+      5.5
+    ],
+    "points": {
+      "composition": 6,
+      "light": 6,
+      "water": 3,
+      "mood": 7,
+      "want_to_fish": 6,
+      "phone_readability": 5,
+      "broken_or_ugly": 4
+    },
+    "reports": [
+      "docs\\critic\\2026-11-28-N3 creek round 3-neon.md",
+      "docs\\critic\\2026-11-28-N3 creek round 3-neon-2.md",
+      "docs\\critic\\2026-11-28-N3 creek round 3-neon-3.md"
+    ],
+    "audit": {
+      "floatingLabels": 0,
+      "wind": 4,
+      "terrainRemappedStockSlots": [
+        2,
+        6,
+        12,
+        14,
+        19
+      ],
+      "stockMaterial": 79,
+      "heroSets": 1,
+      "materialVariants": 25,
+      "stockTerrain_bigLakeBasin": 0,
+      "stockGround": 3,
+      "alwaysOnTopLabels": 0,
+      "parts": 2936,
+      "alwaysOnTopLabelsNotPrompt": 0,
+      "lightingStyle": "Realistic",
+      "plastic": 375,
+      "surfaceAppearances": 1,
+      "stockTerrain_homeLake": 0,
+      "terrainCustomSlots": 10,
+      "plasticTop": "Reeds_Node 101, PineShort_Node 53, LeafyTree_Node 51, PineTall_Node 50, LilyPads_Node 27, FishShadows 22, BigLake 20, MyPondFish 12, RockMedium_Node 10, ProBabyTurtle_Dinghy 7"
+    },
+    "weather": {
+      "09-riffle-dawn": "Clear",
+      "10-pool-golden": "Clear",
+      "11-gate-noon": "Clear",
+      "12-pool-night": "Clear"
+    },
+    "session": {
+      "09-riffle-dawn": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      },
+      "10-pool-golden": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      },
+      "11-gate-noon": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      },
+      "12-pool-night": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      }
+    }
+  },
+  {
+    "date": "2026-11-28",
+    "step": "N3 creek round 3",
+    "set": "A",
+    "rubric": "identity",
+    "run": "2026-11-28-0057",
+    "commit": "1d3298e",
+    "shots": 4,
+    "median": 4,
+    "scores": [
+      4,
+      4,
+      4
+    ],
+    "points": {
+      "materials": 4,
+      "signature": 3,
+      "cohesion": 4,
+      "stock_free": 3,
+      "identity": 4
+    },
+    "reports": [
+      "docs\\critic\\2026-11-28-N3 creek round 3-identity-neon.md",
+      "docs\\critic\\2026-11-28-N3 creek round 3-identity-neon-2.md",
+      "docs\\critic\\2026-11-28-N3 creek round 3-identity-neon-3.md"
+    ],
+    "stock_items": [
+      {
+        "item": "Stock Roblox Grass and Ground terrain (11-gate-noon.jpg, entire foreground)",
+        "reason": "Saturated lime-green default Roblox Grass and jagged voxel-blended brown Ground dirt path immediately read as untouched Roblox terrain.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox shoreline and path terrain (10-pool-golden.jpg and 12-pool-night.jpg, right bank; 09-riffle-dawn.jpg, lower-left and right bank)",
+        "reason": "Default Roblox terrain materials (smooth pale Sand/Concrete strip, Grass, Mud, and pebbled Rock) with standard terrain blending dominate the banks.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox noon skybox and stock Clouds (11-gate-noon.jpg, upper sky; 10-pool-golden.jpg, top-left sky; 12-pool-night.jpg, top-center sky)",
+        "reason": "The bright royal-blue midday sky in 11-gate-noon.jpg and the default puffy volumetric Clouds layer across the shots are instantly recognizable stock Roblox sky settings.",
+        "runs": 1
+      },
+      {
+        "item": "Stock LeafyGrass material on geometric canopies and bush (11-gate-noon.jpg, left foreground pine tiers; 09-riffle-dawn.jpg, bottom-left dome bush)",
+        "reason": "Roblox's built-in LeafyGrass material wrapped onto faceted pyramid tiers and a smooth hemisphere reads as printed plastic geometry rather than evergreen boughs or foliage.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Wood material on plain block fence, gate framing, and trunks (11-gate-noon.jpg, center archway timber and side fences; 09-riffle-dawn.jpg, right foreground trunk)",
+        "reason": "Simple straight posts and smooth cylinder trunks use recognizable default Roblox Wood grain with little weathering or custom carpentry detail.",
+        "runs": 1
+      },
+      {
+        "item": "Plain boxy lantern post (10-pool-golden.jpg and 12-pool-night.jpg, mid-right path; 11-gate-noon.jpg, right of archway)",
+        "reason": "A bare straight post holding a flat rectangular yellow or Neon block inside a simple frame looks like a placeholder Roblox Part prop.",
+        "runs": 1
+      },
+      {
+        "item": "Flat rectangular riffle foam planes (09-riffle-dawn.jpg, lower-center creek)",
+        "reason": "Two flat overlapping rectangular decals on the water surface show crisp geometric borders typical of raw Roblox decals placed on invisible parts.",
+        "runs": 1
+      },
+      {
+        "item": "Default bright-blue skybox (11-gate-noon.jpg, top center and top right)",
+        "reason": "The saturated cobalt gradient and default wispy clouds immediately read as the unedited Roblox midday sky.",
+        "runs": 1
+      },
+      {
+        "item": "Stock terrain grass and dirt path (11-gate-noon.jpg, bottom half)",
+        "reason": "Unmodified bright lime-green Roblox terrain Grass and default Mud/Ground splat edges along the center path.",
+        "runs": 1
+      },
+      {
+        "item": "Faceted pine trees with stock Grass part material (11-gate-noon.jpg, left and right sides)",
+        "reason": "Hard-edged stacked cones and angular wedge branches coated in Roblox's tiled Grass part texture rather than conifer needles.",
+        "runs": 1
+      },
+      {
+        "item": "Wooden fence and gate frame posts (11-gate-noon.jpg, center and midground left/right)",
+        "reason": "Plain rectangular blocks using stock Roblox Wood material without beveled detail or custom weathering.",
+        "runs": 1
+      },
+      {
+        "item": "Smooth pale lakeside path (10-pool-golden.jpg and 12-pool-night.jpg, right edge)",
+        "reason": "Reads as a flat, featureless stock terrain surface (Sand/Concrete) that reflects lantern light smoothly and meets grass and mud with harsh default terrain transitions.",
+        "runs": 1
+      },
+      {
+        "item": "Post lanterns (11-gate-noon.jpg right of gate; 10-pool-golden.jpg and 12-pool-night.jpg right bank)",
+        "reason": "Simple boxy primitive parts with a flat glowing Neon/SmoothPlastic yellow block for the lamp pane.",
+        "runs": 1
+      },
+      {
+        "item": "Creek bank terrain (09-riffle-dawn.jpg, bottom-left and sunlit mid-right patch)",
+        "reason": "Visible stock Roblox terrain Rock/Mud lumpy tiling along the shoreline.",
+        "runs": 1
+      },
+      {
+        "item": "Foreground mossy mound (09-riffle-dawn.jpg, bottom center)",
+        "reason": "Simple rounded dome primitive wrapped in stock Roblox leafy Grass part material.",
+        "runs": 1
+      },
+      {
+        "item": "Terrain Grass and Ground/Mud path (11-gate-noon.jpg, entire foreground)",
+        "reason": "Bright yellow-green default Roblox terrain grass and brown dirt with Roblox's unmistakable soft voxel-blend edges.",
+        "runs": 1
+      },
+      {
+        "item": "Terrain pale path and lumpy mud/cobble shoreline (10-pool-golden.jpg and 12-pool-night.jpg, right bank; 09-riffle-dawn.jpg, bottom-left and right bank)",
+        "reason": "Default Roblox terrain materials with a flat, overly bright pale path abruptly blending into stock bumpy brown mud and cobbles.",
+        "runs": 1
+      },
+      {
+        "item": "Default Skybox and clouds (10-pool-golden.jpg, upper sky; 11-gate-noon.jpg, upper blue sky and top-right clouds; 12-pool-night.jpg, night clouds and stars)",
+        "reason": "Standard Roblox sky dome with recognizable default wispy clouds and saturated noon blue.",
+        "runs": 1
+      },
+      {
+        "item": "LeafyGrass material on geometric tree cones and dome bush (11-gate-noon.jpg, left and right pine trees; 09-riffle-dawn.jpg, bottom-left foreground bush)",
+        "reason": "Repeating stock Roblox LeafyGrass texture wrapped directly over sharp-faceted pyramids and a plain dome primitive.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Wood material on plain box posts, rails, and trunks (11-gate-noon.jpg, center archway posts, left and right fence rails, lantern post; 09-riffle-dawn.jpg, lit tree trunk on right)",
+        "reason": "Uncustomized default Roblox Wood grain applied to straight, unchamfered rectangular parts and cylindrical trunks.",
+        "runs": 1
+      },
+      {
+        "item": "Boxy trail lanterns with glowing Neon cube (11-gate-noon.jpg, right of gate; 10-pool-golden.jpg and 12-pool-night.jpg, right bank)",
+        "reason": "Simple unchamfered square wooden post holding a plain box frame around a default Roblox Neon block.",
+        "runs": 1
+      },
+      {
+        "item": "Flat rectangular whitewater riffle planes (09-riffle-dawn.jpg, bottom-center in stream)",
+        "reason": "Raw overlapping rectangular decals or transparent parts with hard straight corners sitting on top of the creek.",
+        "runs": 1
+      }
+    ],
+    "audit": {
+      "floatingLabels": 0,
+      "wind": 4,
+      "terrainRemappedStockSlots": [
+        2,
+        6,
+        12,
+        14,
+        19
+      ],
+      "stockMaterial": 79,
+      "heroSets": 1,
+      "materialVariants": 25,
+      "stockTerrain_bigLakeBasin": 0,
+      "stockGround": 3,
+      "alwaysOnTopLabels": 0,
+      "parts": 2936,
+      "alwaysOnTopLabelsNotPrompt": 0,
+      "lightingStyle": "Realistic",
+      "plastic": 375,
+      "surfaceAppearances": 1,
+      "stockTerrain_homeLake": 0,
+      "terrainCustomSlots": 10,
+      "plasticTop": "Reeds_Node 101, PineShort_Node 53, LeafyTree_Node 51, PineTall_Node 50, LilyPads_Node 27, FishShadows 22, BigLake 20, MyPondFish 12, RockMedium_Node 10, ProBabyTurtle_Dinghy 7"
+    },
+    "weather": {
+      "09-riffle-dawn": "Clear",
+      "10-pool-golden": "Clear",
+      "11-gate-noon": "Clear",
+      "12-pool-night": "Clear"
+    },
+    "session": {
+      "09-riffle-dawn": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      },
+      "10-pool-golden": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      },
+      "11-gate-noon": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      },
+      "12-pool-night": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      }
+    }
   }
 ]
