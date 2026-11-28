@@ -845,4 +845,104 @@ return function(t, Shared)
 		t.ok(north > 200, "the green floor is laid")
 		t.ok(southSand > 50, "the dock beach (south) keeps its sand")
 	end)
+	-- Seams (Gemini's review 1.2): plants and flat stones along the borders between ground slots.
+	t.test("seamKind and seamEdges find the borders and their soft side", function()
+		t.eq((Scatter.seamKind(24, 26)), "gravel", "gravel with lawn")
+		local _, soft = Scatter.seamKind(24, 26)
+		t.eq(soft, 2, "plants on the lawn side, not the gravel")
+		local _, soft2 = Scatter.seamKind(26, 24)
+		t.eq(soft2, 1, "either order")
+		t.eq((Scatter.seamKind(25, 2)), "forest", "forest floor with meadow")
+		t.eq((Scatter.seamKind(27, 26)), "forest", "hill floor with lawn")
+		t.eq((Scatter.seamKind(6, 23)), "sand", "dry with wet sand")
+		local _, soft3 = Scatter.seamKind(23, 6)
+		t.eq(soft3, 2, "plants on the dry sand side")
+		t.eq((Scatter.seamKind(2, 26)), nil, "meadow with lawn is no seam")
+		t.eq((Scatter.seamKind(24, 25)), nil, "gravel through forest floor is not in the list")
+		-- A row of three columns: gravel, lawn, lawn.
+		local g = { nx = 3, ny = 1, nz = 1, ix0 = 0, iz0 = 0, cell = 4, idx = {}, occ = {} }
+		for x, s in { 24, 26, 26 } do
+			g.idx[x] = { { s } }
+			g.occ[x] = { { 1 } }
+		end
+		local e = Scatter.seamEdges(g)
+		t.eq(#e, 1, "one border")
+		t.eq(e[1].x, 4, "on the shared edge")
+		t.eq(e[1].z, 2, "half way along the cell")
+		t.eq(e[1].nx, 1, "pointing at the lawn")
+	end)
+
+	t.test("seam scatter: budget, clusters, and nothing in a lane, keep-clear, path or the water", function()
+		local g = makeGrid()
+		-- A wet sand band at the water's edge, as WaterLook paints it.
+		for x = 1, g.nx do
+			for z = 1, g.nz do
+				local cx, cz = (g.ix0 + x - 0.5) * 4, (g.iz0 + z - 0.5) * 4
+				local w = Scatter.waterline(cx, cz)
+				if w >= 0 and w < 2.5 and g.idx[x][3][z] == 6 then
+					g.idx[x][3][z] = 23
+					if g.occ[x][4][z] > 0 then
+						g.idx[x][4][z] = 23
+					end
+				end
+			end
+		end
+		Scatter.paintGrid(g, plan, SEED)
+		local items, info = Scatter.seams(g, plan, SEED)
+		local kinds = {}
+		for _, e in Scatter.seamEdges(g, SEED) do
+			kinds[e.kind] = (kinds[e.kind] or 0) + 1
+		end
+		local byModel = {}
+		for _, it in items do
+			byModel[it.model] = (byModel[it.model] or 0) + 1
+		end
+		print(string.format("  [Scatter] seams: %d edges (gravel %d, forest %d, sand %d), %d items, %d triangles; ferns %d, bushes %d, stones %d", info.edges, kinds.gravel or 0, kinds.forest or 0, kinds.sand or 0, #items, info.tris, (byModel.Fern1 or 0) + (byModel.Fern2 or 0), (byModel.Bush1 or 0) + (byModel.Bush2 or 0), (byModel.ShoreStones1 or 0) + (byModel.ShoreStones2 or 0)))
+		t.ok((kinds.gravel or 0) > 50 and (kinds.forest or 0) > 50 and (kinds.sand or 0) > 50, "all three seam kinds found")
+		t.ok(#items >= 40, "a real number of seam items")
+		t.ok(info.tris <= 15000, "inside the 15k triangle budget")
+		local sum = 0
+		for _, it in items do
+			sum += Scatter.SEAM_TRIS[it.model]
+		end
+		t.eq(sum, info.tris, "the triangle count adds up")
+		t.ok((byModel.Bush1 or 0) + (byModel.Bush2 or 0) < #items / 3, "bushes sparingly")
+		local cells = Scatter.pathCells(plan.routes, 4, SEED)
+		local edges = Scatter.seamEdges(g, SEED)
+		for _, it in items do
+			t.eq(it.group, "Seams", "group")
+			t.eq(Scatter.TAGS[it.group], "FoliageUnder", "the phone tier hides them past 40 studs")
+			t.ok(Scatter.SEAM_TRIS[it.model] ~= nil, "a seam model")
+			local stone = string.sub(it.model, 1, 5) == "Shore"
+			if stone then
+				t.ok(it.scale >= 0.5 and it.scale <= 0.8, "flat stones 0.5 to 0.8")
+			end
+			t.ok(not Scatter.kept(it.x, it.z), string.format("%s at (%.1f, %.1f) in a keep-clear", it.model, it.x, it.z))
+			t.ok(not Scatter.inLane(it.x, it.z), string.format("%s at (%.1f, %.1f) in a cast lane", it.model, it.x, it.z))
+			t.ok(Scatter.shotClear(it.x, it.z, false), "out of the shot cameras")
+			t.ok(not Scatter.onCells(cells, it.x, it.z, 0.5, 4), string.format("%s at (%.1f, %.1f) on the gravel", it.model, it.x, it.z))
+			t.ok(Scatter.waterline(it.x, it.z) >= (if stone then -0.3 else 0.6), "not in the water")
+			local nearest = math.huge
+			for _, e in edges do
+				nearest = math.min(nearest, math.sqrt((e.x - it.x) ^ 2 + (e.z - it.z) ^ 2))
+			end
+			t.ok(nearest <= 2.6, string.format("%s at (%.1f, %.1f) is on a seam (%.1f)", it.model, it.x, it.z, nearest))
+		end
+		-- Clustered, not even: the nearest-neighbour spread is wide.
+		local cv = Scatter.cv(Scatter.nearest(items))
+		print(string.format("  [Scatter] seams: nearest-neighbour CV %.2f", cv))
+		t.ok(cv > 0.5, "clustered")
+		local again = Scatter.seams(g, plan, SEED)
+		t.eq(#again, #items, "same seed, same count")
+		t.ok(#again == 0 or (again[1].x == items[1].x and again[#again].z == items[#items].z), "same seed, same layout")
+	end)
+
+	t.test("creek pines: kit pines by the water, far pines past 25 studs", function()
+		t.eq(Scatter.creekWaterDist(-230, -40), 0, "inside the pool")
+		t.eq(Scatter.creekWaterDist(-200, -40), 8, "8 east of the pool")
+		t.eq(string.sub(Scatter.creekPine(-200, 10, 0.2), 1, 9), "ShorePine", "Trunk7 (20 from the rocks) is a kit pine")
+		t.eq(string.sub(Scatter.creekPine(-265, 40, 0.7), 1, 7), "FarPine", "Trunk1 (29 from the riffle) is a far pine")
+		t.eq(Scatter.creekPine(-190, -40, 0.2), "ShorePine1", "u under 0.5")
+		t.eq(Scatter.creekPine(-190, -40, 0.8), "ShorePine2", "u over 0.5")
+	end)
 end

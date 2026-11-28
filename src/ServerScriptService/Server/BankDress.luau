@@ -48,6 +48,10 @@
 --
 --   require(game.ServerScriptService.Server.BankDress).cleanGravel(workspace.Lake)
 --   require(game.ServerScriptService.Server.BankDress).undoClean() -- right after, if needed
+--
+-- Gemini's review 1.2 (11/27/2026): a group "Seams" of low ferns, a few low bushes and flat shore
+-- stones along the borders between ground slots (gravel, forest floor, meadow, sand, wet sand),
+-- from the painted grid (Scatter.seams), about 15k triangles, tagged FoliageUnder.
 local ServerStorage = game:GetService("ServerStorage")
 local MaterialService = game:GetService("MaterialService")
 local CollectionService = game:GetService("CollectionService")
@@ -267,13 +271,13 @@ end
 
 -- Repaints the region's voxels (Scatter.paintGrid: footpaths, forest floor, meadow blobs, the
 -- green floor behind the north shore, the sand ring's far side). Returns the counts and the
--- record of every voxel's original slot.
-local function paint(plan: Scatter.Plan, seed: number, tuning: { [string]: any }?): (Scatter.PaintCounts, string, Region3)
+-- record of every voxel's original slot, and the painted grid (for the seams).
+local function paint(plan: Scatter.Plan, seed: number, tuning: { [string]: any }?): (Scatter.PaintCounts, string, Region3, Scatter.Grid)
 	local g, region = readGrid()
 	local record = hexRecord(g.idx, g.nx, g.ny, g.nz)
 	local counts = Scatter.paintGrid(g, plan, seed, tuning)
 	workspace.Terrain:WriteVoxelChannels(region, CELL, { SolidMaterialIndex = g.idx })
-	return counts, record, region
+	return counts, record, region, g
 end
 
 -- Slot 24 voxels in the paint region outside the footpath cells of `seed`'s plan.
@@ -423,6 +427,9 @@ export type Result = {
 	sandVoxels: number, -- the sand ring's far side, repainted meadow (N1 round 4)
 	northVoxels: number, -- the green floor behind the north shore (N1 round 4)
 	farTagged: number, -- copies of far models (FoliageFar)
+	seamEdges: number, -- borders between ground slots in the painted grid (Scatter.seams)
+	seamItems: number, -- seam plants and stones placed (group Seams)
+	seamTris: number, -- their planned triangles (Scatter.SEAM_TRIS; the budget is 15k)
 }
 
 export type RevertResult = {
@@ -569,7 +576,7 @@ function BankDress.apply(lake: Instance, seed: number?, tuning: { [string]: any 
 	end
 
 	-- Terrain first, so the ground raycasts read the finished ground (painting moves no surface).
-	local pc, record, region = paint(plan, s, tuning)
+	local pc, record, region, painted = paint(plan, s, tuning)
 	local rec = Instance.new("StringValue")
 	rec.Name = "TerrainRecord"
 	rec.Value = record
@@ -674,6 +681,16 @@ function BankDress.apply(lake: Instance, seed: number?, tuning: { [string]: any 
 
 	for _, it in plan.items do
 		placeItem(it, true)
+	end
+
+	-- (Gemini's review 1.2) Ferns, a few low bushes and flat stones along the borders between
+	-- ground slots, read from the grid just painted. Tagged FoliageUnder (Scatter.TAGS.Seams).
+	local seamItems, seamInfo = Scatter.seams(painted, plan, s, tuning)
+	local nSeams = 0
+	for _, it in seamItems do
+		if placeItem(it, true) then
+			nSeams += 1
+		end
 	end
 
 	-- The hill pines and the green forest floor under them.
@@ -853,6 +870,9 @@ function BankDress.apply(lake: Instance, seed: number?, tuning: { [string]: any 
 		sandVoxels = pc.sand,
 		northVoxels = pc.north,
 		farTagged = farTagged,
+		seamEdges = seamInfo.edges,
+		seamItems = nSeams,
+		seamTris = seamInfo.tris,
 	}
 end
 

@@ -709,7 +709,7 @@ Scatter.TUNING = {
 export type Item = {
 	model: string,
 	group: string, -- Reeds, Stones, Birches, Driftwood, Lip, Treeline, Undergrowth, FarRow,
-	-- HillPines, CornerTree, CornerUnder, FrontRow, BackRow (and BankDress's TreeSwap)
+	-- HillPines, CornerTree, CornerUnder, FrontRow, BackRow, Seams (and BankDress's TreeSwap)
 	x: number,
 	z: number,
 	yaw: number,
@@ -734,6 +734,7 @@ Scatter.TAGS = {
 	Lip = "FoliageUnder",
 	Undergrowth = "FoliageUnder",
 	CornerUnder = "FoliageUnder",
+	Seams = "FoliageUnder", -- the seam plants and stones (Scatter.seams), stones too
 	Birches = "FoliageTree",
 	Treeline = "FoliageTree",
 	FarRow = "FoliageTree",
@@ -1607,6 +1608,265 @@ function Scatter.countSlot(g: Grid, slot: number, except: { [number]: boolean }?
 		end
 	end
 	return n
+end
+
+---------------------------------------------------------------------------------------------
+-- Seams (N1, Gemini's review 1.2): low plants and flat stones along the borders between ground
+-- slots, so the 4 stud voxel paint's stair-step edges and the abrupt end of the grass blades are
+-- broken up by geometry. Pure over the painted Scatter.Grid (BankDress passes the grid it just
+-- painted, wet sand from WaterLook included).
+---------------------------------------------------------------------------------------------
+
+-- Triangles per seam model as BankDress places it (the `_lite` copies of the ferns and bushes;
+-- the shore stones have no lite copy). art/models/manifest.json.
+Scatter.SEAM_TRIS = {
+	Fern1 = 155,
+	Fern2 = 137,
+	Bush1 = 286,
+	Bush2 = 304,
+	ShoreStones1 = 668,
+	ShoreStones2 = 588,
+} :: { [string]: number }
+
+Scatter.SEAM_TUNING = {
+	seamTris = 15000, -- the whole rule's triangle budget
+	seamCentres = 48, -- cluster centres at most
+	seamGap = 10, -- studs between centres
+	seamPer = { 2, 5 }, -- members per cluster
+	seamR = 6, -- a cluster's reach along the seam, studs
+	seamSpacing = 1.8, -- studs between members
+	seamNoise = 26, -- the density mask's feature size, studs
+	seamMask = 0.4, -- the mask must be at least this for a centre
+	seamClear = 1.6, -- studs from any other placed item
+}
+
+-- What a pair of surface slots is, as a seam: "gravel" (footpath 24 with lawn 26, meadow 2 or
+-- leafy grass 19), "forest" (forest floor 25 or the hill floor 27 with meadow or lawn), "sand"
+-- (dry sand 6 with wet sand 23, meadow or lawn), or nil. Second result: which of the two is the
+-- soft side (1 or 2) where plants stand: never the gravel or the wet sand; 0 when either will do.
+local MEADOWS = { [2] = true, [19] = true, [26] = true }
+function Scatter.seamKind(a: number, b: number): (string?, number)
+	local function one(p: number, q: number): (string?, number)
+		if p == 24 and MEADOWS[q] then
+			return "gravel", 2
+		elseif (p == 25 or p == 27) and MEADOWS[q] then
+			return "forest", 0
+		elseif p == 6 and q == 23 then
+			return "sand", 1
+		elseif p == 6 and MEADOWS[q] then
+			return "sand", 2
+		end
+		return nil, 0
+	end
+	local k, s = one(a, b)
+	if k then
+		return k, s
+	end
+	k, s = one(b, a)
+	if k then
+		return k, if s == 0 then 0 else 3 - s
+	end
+	return nil, 0
+end
+
+-- One border between two 4-neighbour columns: (x, z) the middle of their shared edge; (nx, nz)
+-- the unit step across it toward the soft side.
+export type SeamEdge = { x: number, z: number, kind: string, nx: number, nz: number }
+
+-- Every border between two columns whose surface slots make a seam (Scatter.seamKind), each
+-- edge once, in grid order.
+function Scatter.seamEdges(g: Grid, seed: number?): { SeamEdge }
+	local sd = seed or 0
+	local surf: { { number } } = {}
+	for x = 1, g.nx do
+		surf[x] = {}
+		for z = 1, g.nz do
+			local top = Scatter.surface(g, x, z)
+			surf[x][z] = if top > 0 then g.idx[x][top][z] else 0
+		end
+	end
+	local out: { SeamEdge } = {}
+	for x = 1, g.nx do
+		for z = 1, g.nz do
+			local a = surf[x][z]
+			if a > 0 then
+				for _, st in { { 1, 0 }, { 0, 1 } } do
+					local x2, z2 = x + st[1], z + st[2]
+					if x2 <= g.nx and z2 <= g.nz then
+						local b = surf[x2][z2]
+						if b > 0 and b ~= a then
+							local kind, soft = Scatter.seamKind(a, b)
+							if kind then
+								local ix, iz = g.ix0 + x - 1, g.iz0 + z - 1
+								local mx, mz = (ix + 0.5 + st[1] / 2) * g.cell, (iz + 0.5 + st[2] / 2) * g.cell
+								if soft == 0 then
+									soft = if Scatter.hash(ix * 2 + st[1], iz * 2 + st[2], sd + 43) < 0.5 then 1 else 2
+								end
+								local sign = if soft == 2 then 1 else -1
+								table.insert(out, { x = mx, z = mz, kind = kind, nx = st[1] * sign, nz = st[2] * sign })
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+	return out
+end
+
+-- The seam plants and stones for a painted grid: cluster centres picked from the seam edges
+-- under a slow noise mask (so they clump and leave gaps), 2 to 5 members each along the nearby
+-- seams, on the soft side (stones straddle the line). Ferns mostly, bushes sparingly, flat shore
+-- stones (0.5 to 0.8) mostly on the sand seams. Out of the paths' cells, the cast lanes, the
+-- keep-clears, the shot cameras' spheres, the water, and clear of every land item in `plan`.
+-- Stops at the triangle budget (Scatter.SEAM_TRIS). Group "Seams". Second result: how many seam
+-- edges there were and the triangles placed.
+function Scatter.seams(g: Grid, plan: Plan, seed: number, tuning: { [string]: any }?): ({ Item }, { edges: number, tris: number })
+	local T: { [string]: any } = table.clone(Scatter.SEAM_TUNING)
+	for k, v in tuning or {} do
+		T[k] = v
+	end
+	local edges = Scatter.seamEdges(g, seed)
+	local pcells = Scatter.pathCells(plan.routes, g.cell, seed)
+	local others: { Pt } = {}
+	for _, it in plan.items do
+		if not it.water then
+			table.insert(others, { x = it.x, z = it.z })
+		end
+	end
+	local r = Scatter.rng(seed + 40)
+	-- The edges in 8 stud buckets, for a cluster's neighbours.
+	local buckets: { [number]: { number } } = {}
+	for i, e in edges do
+		local k = Scatter.key(math.floor(e.x / 8), math.floor(e.z / 8))
+		local list = buckets[k]
+		if not list then
+			list = {}
+			buckets[k] = list
+		end
+		table.insert(list, i)
+	end
+	local order = table.create(#edges)
+	for i = 1, #edges do
+		order[i] = i
+	end
+	for i = #order, 2, -1 do
+		local j = Scatter.int(r, 1, i)
+		order[i], order[j] = order[j], order[i]
+	end
+	local weight = { gravel = 1, forest = 0.8, sand = 0.9 } :: { [string]: number }
+	local centres: { Pt } = {}
+	local centreEdges: { SeamEdge } = {}
+	for _, i in order do
+		if #centres >= T.seamCentres then
+			break
+		end
+		local e = edges[i]
+		local mask = Scatter.noise(e.x, e.z, T.seamNoise, seed + 41)
+		if mask >= T.seamMask and Scatter.next(r) < weight[e.kind] and farEnough(centres, e.x, e.z, T.seamGap) and not Scatter.kept(e.x, e.z, 2) then
+			table.insert(centres, { x = e.x, z = e.z })
+			table.insert(centreEdges, e)
+		end
+	end
+	local items: { Item } = {}
+	local placed: { Pt } = {}
+	local tris = 0
+	local function ok(x: number, z: number, stone: boolean): boolean
+		if Scatter.kept(x, z, 1) or not Scatter.shotClear(x, z, false) or Scatter.inLane(x, z) then
+			return false
+		end
+		if Scatter.onCells(pcells, x, z, 0.6, g.cell) then
+			return false
+		end
+		if Scatter.waterline(x, z) < (if stone then -0.3 else 0.6) or not Scatter.dry(x, z, if stone then 0 else 0.5) then
+			return false
+		end
+		return farEnough(others, x, z, T.seamClear) and farEnough(placed, x, z, T.seamSpacing)
+	end
+	for ci, c in centres do
+		local e0 = centreEdges[ci]
+		-- The nearby edges (same kind first, so a cluster follows its own seam), shuffled.
+		local near: { number } = {}
+		local bx, bz = math.floor(c.x / 8), math.floor(c.z / 8)
+		for ix = bx - 1, bx + 1 do
+			for iz = bz - 1, bz + 1 do
+				for _, i in buckets[Scatter.key(ix, iz)] or {} do
+					local e = edges[i]
+					if e.kind == e0.kind and (e.x - c.x) ^ 2 + (e.z - c.z) ^ 2 <= T.seamR * T.seamR then
+						table.insert(near, i)
+					end
+				end
+			end
+		end
+		table.sort(near)
+		for i = #near, 2, -1 do
+			local j = Scatter.int(r, 1, i)
+			near[i], near[j] = near[j], near[i]
+		end
+		local want = Scatter.int(r, T.seamPer[1], T.seamPer[2])
+		local got = 0
+		for _, i in near do
+			if got >= want then
+				break
+			end
+			local e = edges[i]
+			local u = Scatter.next(r)
+			local model: string
+			if e.kind == "sand" then
+				model = if u < 0.45 then (if Scatter.next(r) < 0.5 then "ShoreStones1" else "ShoreStones2") elseif u < 0.55 then (if Scatter.next(r) < 0.5 then "Bush1" else "Bush2") else (if Scatter.next(r) < 0.5 then "Fern1" else "Fern2")
+			elseif e.kind == "gravel" then
+				model = if u < 0.08 then (if Scatter.next(r) < 0.5 then "ShoreStones1" else "ShoreStones2") elseif u < 0.2 then (if Scatter.next(r) < 0.5 then "Bush1" else "Bush2") else (if Scatter.next(r) < 0.5 then "Fern1" else "Fern2")
+			else
+				model = if u < 0.18 then (if Scatter.next(r) < 0.5 then "Bush1" else "Bush2") else (if Scatter.next(r) < 0.5 then "Fern1" else "Fern2")
+			end
+			local stone = string.sub(model, 1, 5) == "Shore"
+			local along = Scatter.range(r, -1.8, 1.8)
+			local across = if stone then Scatter.range(r, -0.6, 0.6) else Scatter.range(r, 0.5, 1.6)
+			-- (nx, nz) is axis-aligned, so (nz, nx) runs along the edge.
+			local x = e.x + e.nx * across + e.nz * along
+			local z = e.z + e.nz * across + e.nx * along
+			local cost = Scatter.SEAM_TRIS[model]
+			if tris + cost <= T.seamTris and ok(x, z, stone) then
+				local scale = if stone then Scatter.range(r, 0.5, 0.8) elseif string.sub(model, 1, 4) == "Bush" then Scatter.range(r, 0.6, 0.9) else Scatter.range(r, 0.7, 1.1)
+				table.insert(items, { model = model, group = "Seams", x = x, z = z, yaw = Scatter.range(r, 0, TAU), scale = scale, water = false, shadow = false })
+				table.insert(placed, { x = x, z = z })
+				tris += cost
+				got += 1
+			end
+		end
+	end
+	return items, { edges = #edges, tris = tris }
+end
+
+---------------------------------------------------------------------------------------------
+-- Cedar Creek's stock pines (N1, Gemini's review 1.3; CreekSwap places them): which kit or far
+-- pine replaces an old cone pine.
+---------------------------------------------------------------------------------------------
+
+-- The creek area whose old cone pines CreekSwap swaps (the art copies over the creek's gray-box
+-- trunks are swapped wherever they stand).
+Scatter.CREEK_BOX = { x1 = -270, x2 = -150, z1 = -100, z2 = 100 }
+Scatter.CREEK_FAR = 25 -- studs from the creek's water past which a far pine stands in
+
+-- Distance in x, z to the nearest creek water rectangle (Riffle, Rocks, Pool); 0 inside one.
+function Scatter.creekWaterDist(x: number, z: number): number
+	local best = math.huge
+	for _, name in { "Riffle", "Rocks", "Pool" } do
+		local a = areaNamed(name)
+		local dx = math.max(a.x1 - x, 0, x - a.x2)
+		local dz = math.max(a.z1 - z, 0, z - a.z2)
+		best = math.min(best, math.sqrt(dx * dx + dz * dz))
+	end
+	return best
+end
+
+-- The replacement for an old pine at (x, z), `u` a 0..1 draw: ShorePine1 or ShorePine2 within
+-- CREEK_FAR of the water, FarPine1 or FarPine2 past it.
+function Scatter.creekPine(x: number, z: number, u: number): string
+	if Scatter.creekWaterDist(x, z) > Scatter.CREEK_FAR then
+		return if u < 0.5 then "FarPine1" else "FarPine2"
+	end
+	return if u < 0.5 then "ShorePine1" else "ShorePine2"
 end
 
 return Scatter
