@@ -47,13 +47,19 @@ export type Data = {
 	assistSet: boolean, -- v8: the player turned reel assist on or off by hand (it then never changes by itself)
 	giftDay: number, -- v9: the last day (Goals.dayOf) the shopkeeper's tackle box was taken; 0 for never (L6d)
 	braid: boolean, -- v10: braided line bought at Bait and Tackle (RodData.BRAID_LB more on every rod)
+	assists: Assists, -- v11: fish you helped someone else land (a net, a Deep-V team catch), N4
+	doubleHauls: number, -- v11: Double Haul stamps (both landed a fish in a Double Hookup), N4
 }
+
+-- An assist in the journal: the fish someone else landed with your help and your 10 percent.
+export type Assist = { id: string, name: string, cm: number, kg: number, price: number, bonus: number, how: string, at: number }
+export type Assists = { count: number, coins: number, recent: { Assist } }
 
 local Inventory = {}
 
 function Inventory.new(): Data
 	return {
-		v = 10,
+		v = 11,
 		coins = Config.START_COINS,
 		bait = { Worm = Config.START_WORMS },
 		lures = {},
@@ -75,8 +81,12 @@ function Inventory.new(): Data
 		assistSet = false,
 		giftDay = 0,
 		braid = false,
+		assists = { count = 0, coins = 0, recent = {} },
+		doubleHauls = 0,
 	}
 end
+
+Inventory.ASSISTS_KEEP = 20 -- most recent assists kept in the journal
 
 -- Fill in anything missing from an older or partial save.
 function Inventory.reconcile(saved: any): Data
@@ -156,7 +166,56 @@ function Inventory.reconcile(saved: any): Data
 	if saved.v < 10 then
 		saved.v = 10
 	end
+	-- v11: the fleet (N4). Boats owned were already saved (v5); a damaged list is repaired so the
+	-- canoe and the rest can be added. Assists and Double Haul stamps start empty.
+	if type(saved.boats) ~= "table" then
+		saved.boats = {}
+	end
+	if type(saved.boat) ~= "string" then
+		saved.boat = ""
+	end
+	if type(saved.assists) ~= "table" then
+		saved.assists = { count = 0, coins = 0, recent = {} }
+	end
+	if type(saved.assists.count) ~= "number" then
+		saved.assists.count = 0
+	end
+	if type(saved.assists.coins) ~= "number" then
+		saved.assists.coins = 0
+	end
+	if type(saved.assists.recent) ~= "table" then
+		saved.assists.recent = {}
+	end
+	if type(saved.doubleHauls) ~= "number" then
+		saved.doubleHauls = 0
+	end
+	if saved.v < 11 then
+		saved.v = 11
+	end
 	return saved
+end
+
+-- A helper's share of someone else's catch (Coop): the fish goes in their journal as an
+-- assist and the bonus is paid straight to their coins (it never takes a bag slot). `how` is
+-- "net" or "crew".
+function Inventory.recordAssist(data: Data, fish: Fish, bonus: number, how: string, now: number)
+	local a = data.assists
+	a.count += 1
+	a.coins += bonus
+	table.insert(a.recent, {
+		id = fish.id,
+		name = fish.name,
+		cm = fish.cm,
+		kg = fish.kg,
+		price = fish.price,
+		bonus = bonus,
+		how = how,
+		at = now,
+	})
+	while #a.recent > Inventory.ASSISTS_KEEP do
+		table.remove(a.recent, 1)
+	end
+	data.coins += bonus
 end
 
 -- The player flipped the reel assist toggle: their choice sticks from now on.
@@ -361,6 +420,8 @@ function Inventory.snapshot(data: Data): any
 		creekPass = data.creekPass,
 		boats = table.clone(data.boats),
 		boat = data.boat,
+		assists = { count = data.assists.count, coins = data.assists.coins, recent = table.clone(data.assists.recent) },
+		doubleHauls = data.doubleHauls,
 		goals = (function()
 			local out = {}
 			local list = type(data.goals) == "table" and data.goals.list or {}

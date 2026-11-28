@@ -123,6 +123,32 @@ Config.BOARD_CARD_ON = true -- on 11/27/2026 with the UI restyle
 -- on the phone tier (player attribute LookTierActive "phone": fill rate). Off, nothing is made.
 Config.WHITE_WATER_ON = false
 
+-- The fleet (leg 3, N4). Each lands switched off and is turned on after its own playtest.
+-- CANOE_ON: the Cedar Canoe is for sale (350 coins, two paddlers, Lily Cove), the dinghy gets
+-- its passenger seat, every boat keeps to its own waters (BoatData.waters) and the canoe and
+-- dinghy can land at any shore ("Land here") and be re-boarded there. Off, the fleet is the
+-- L7 dinghy exactly. The journal's "Send my boat home" works with boats on, switch or not.
+Config.CANOE_ON = false
+-- NET_ON: a player within 10 studs of someone whose fish is at 70 percent gets "Net it"; a
+-- press while the fish is up lands it (Shared/Net). Off, no prompt and no progress is read.
+Config.NET_ON = false
+-- ASSIST_BONUS_ON: on a shared catch (a net, or a Deep-V team catch) the angler keeps the full
+-- price and each helper gets an assist in the journal plus 10 percent of it (Shared/Coop).
+-- Off, a team catch is split evenly as in L7 and a net pays the helper nothing.
+Config.ASSIST_BONUS_ON = false
+-- QUIET_APPROACH_ON: arriving under paddle, or gliding the last 25 studs with the motor at
+-- idle, makes wary fish 1.25 times as likely for a minute at that spot (Shared/Quiet).
+Config.QUIET_APPROACH_ON = false
+-- Gemini's co-op items for N4 (Shared/Coop). BUDDY_LOAN_ON: a passenger fishes with the boat
+-- owner's rod and line if they are better, and a player within 20 studs of a Creek Pass holder
+-- may walk through the creek gate and fish the creek. DOUBLE_HOOKUP_ON: two players within 15
+-- studs fighting at once get a banner, and if both land, 10 percent more coins and a Double
+-- Haul stamp each. CHUM_ON: the second seat of a canoe or dinghy can toss chum every 90
+-- seconds; for 25 seconds bites come a quarter sooner for everyone aboard.
+Config.BUDDY_LOAN_ON = false
+Config.DOUBLE_HOOKUP_ON = false
+Config.CHUM_ON = false
+
 function Config.boatsOn(): boolean
 	return Config.BOATS_ON and Config.BIG_LAKE_ON
 end

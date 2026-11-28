@@ -69,6 +69,7 @@ local snapshot: any = nil
 local castTimeout = 0
 local graceUntil = 0 -- after a fight: no new cast until this time...
 local needRelease = false -- ...and until every reel input is let go
+local progressSentAt = 0 -- the last FightProgress sent (N4, the landing net)
 local heldInputs: { [InputObject]: boolean } = {}
 local autoHolding = false
 local savedMove: { walk: number, jumpPower: number, jumpHeight: number }? = nil
@@ -760,10 +761,13 @@ local function updateCreekGate(s: any)
 	local lake = workspace:FindFirstChild("Lake")
 	local gate = lake and lake:FindFirstChild("CreekGate", true) :: BasePart?
 	local prompt = lake and lake:FindFirstChild("CreekPrompt", true) :: ProximityPrompt?
+	-- A creek buddy (N4, Config.BUDDY_LOAN_ON): the server sets CreekBuddy while you are within
+	-- 20 studs of a Creek Pass holder, and the gate lets you through with them.
+	local open = s.creekPass or Players.LocalPlayer:GetAttribute("CreekBuddy") == true
 	if gate then
-		gate.CanCollide = not s.creekPass
+		gate.CanCollide = not open
 		-- Open means gone (it was 0.85, a faint grey pane in the arch the critic kept naming).
-		gate.Transparency = if s.creekPass then 1 else 0
+		gate.Transparency = if open then 1 else 0
 		-- N3 review 2: the gate's knee braces (Scenery.dressCreekGate) open with it.
 		for _, d in gate:GetChildren() do
 			if d:IsA("BasePart") then
@@ -908,6 +912,11 @@ function Controller.start()
 		TrophyWall.update(s)
 		updateCreekGate(s)
 	end)
+	Players.LocalPlayer:GetAttributeChangedSignal("CreekBuddy"):Connect(function()
+		if snapshot then
+			updateCreekGate(snapshot)
+		end
+	end)
 	Remotes.event("FishingEvent").OnClientEvent:Connect(onFishingEvent)
 	Remotes.event("Toast").OnClientEvent:Connect(function(text)
 		UI.toast(text)
@@ -1042,6 +1051,12 @@ function Controller.start()
 			end
 			local hold = holding()
 			local result = FightModel.step(fight, math.min(dt, 0.1), hold)
+			-- The landing net (N4, Config.NET_ON): the server hears the fight's progress about four
+			-- times a second, so a friend within 10 studs can net it at 70 percent.
+			if Config.NET_ON and os.clock() - progressSentAt >= 0.25 then
+				progressSentAt = os.clock()
+				Remotes.event("FightProgress"):FireServer(fight.progress)
+			end
 			UI.showFight(fight, nil, hold, FightModel.slack(fight))
 			SoundFX.fight(fight, hold, dt)
 			SoundFX.strain(fight.strain)

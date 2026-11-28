@@ -303,3 +303,23 @@ fable-advisor, on the clean desktop creek frames of round 2 (shots 09 to 12). Ro
 - **Gate and fence:** weathered plank in 122,104,86 on the fence, the arch and the gate, and two knee braces on the gate leaf (corner to corner, one on each face). They are part of the gate, so they open with it for a player who owns the Creek Pass.
 - **Out of scope this round:** the sky, the water surface pattern, the home meadow colour and a modelled gate.
 - **A side effect to know about:** moving shot 11's camera shifts the home lake's seam scatter plan (60 items to 46 in the Lune run) the next time BankDress runs. Nothing changes in the place until then.
+
+## 11/28/2026: N4 rules and server (the fleet)
+
+- **Every N4 system lands switched off,** each behind its own `Config` switch: `CANOE_ON` (the canoe, the dinghy's passenger seat, each boat's waters, landing on a shore), `NET_ON`, `ASSIST_BONUS_ON`, `QUIET_APPROACH_ON`, `BUDDY_LOAN_ON`, `DOUBLE_HOOKUP_ON`, `CHUM_ON`. With all of them off the game plays as before; "Send my boat home" (the `SendBoatHome` remote) works whenever boats are on.
+- **"Motor off" for the quiet approach means a quarter throttle or less.** A dinghy cut to nothing coasts only about 6 studs, so a true drift could never cover the plan's 25. Arriving under paddle, or the last 25 studs at idle, is a quiet arrival; the bonus lasts 60 seconds within 20 studs of where the boat stopped (`Shared/Quiet`).
+- **The net is a prompt on the angler,** not a new screen: "Net it" appears to anyone within 10 studs once the server believes the fish is at 70 percent, and its text says when the fish is up (it surfaces 1.2 s after the net comes out, then every 2.6 s for 0.8 s). The angler's own screen hides it. The server believes the angler's progress reports only as fast as the fastest possible win (`Shared/Net`).
+- **Shared-catch money with the switch off:** a netted fish still goes in the helper's journal as an assist, with no coins; only a Deep-V team catch pays, split evenly as in L7.
+- **The buddy loan never makes a passenger worse off:** they fish with the owner's rod and braided line only when the owner's line rating is higher.
+- **The Deep-V keeps to the Big Lake once the fleet is on,** as the plan says, but it still uses the dock slips until N5 builds the marina. It is not for sale, so this only matters if it is given out in a test.
+- **Lily Cove's refusal is in place before the cove:** `BoatRules.PADDLE_ONLY` is empty until N5 adds the cove's box.
+- **The Double Hookup bonus is 10 percent, not Gemini's 25** (`Coop.DOUBLE_BONUS`). In `tools/econ/sim.py --fleet` (40 careers) a smart pair with nets, assists, chum and a 25 percent Double Hookup earned 110.6 coins a minute, over the leg ceiling of 107.5 (15 percent over today's 93.5). At 10 percent the same pair earns 107.2, inside it; nets, assists and chum alone give 106.1. The toast, the banner event and the Double Haul stamp are unchanged.
+- **The dock kid's Graphite Rod moves back 12.08 minutes with the canoe** (57.04 to 69.12 minutes, median of 40 careers; the median of the per-career differences is 12.41), just over the plan's 12. Spending 350 coins at his 30.7 coins a minute costs 11.40 minutes by itself, and the rest is the shop trip. No small change was found that keeps the canoe at 350 and its speeds: he never uses the canoe, so nothing about it can earn the time back, and raising his catch payouts would move the whole economy. Left as is for a ruling. He owns the canoe at 18 minutes (the target is 20).
+
+### Defaults chosen, open to Stewart (N4)
+
+1. The quiet approach counts a motor at a quarter throttle or less as "off" (a dinghy cut to nothing coasts only about 6 studs, so a true drift can never cover 25).
+2. A boat landed on a shore waits while its owner is within 80 studs; left alone, it goes home after 60 seconds like any empty boat.
+3. The Deep-V keeps to the Big Lake once `CANOE_ON` is on, but uses the dock slips until N5 builds the marina.
+4. The net's beat: the fish first surfaces 1.2 seconds after the net comes out, then every 2.6 seconds, up for 0.8 seconds each time, with 0.25 seconds of slack for the round trip.
+5. The sim's pair is an upper bound: the partner is free to net whenever they are not fighting, half of the fish that would get away are saved by the net, and the partner's catch is a mirror of the player's own.

@@ -12,9 +12,25 @@ local Remotes = require(Shared.Remotes)
 
 local BoatClient = {}
 
-local OWNER_ONLY = { DrivePrompt = true, TiePrompt = true }
+local OWNER_ONLY = { DrivePrompt = true, TiePrompt = true, BeachPrompt = true }
+
+local function keepOff(prompt: ProximityPrompt)
+	prompt.Enabled = false
+	prompt:GetPropertyChangedSignal("Enabled"):Connect(function()
+		if prompt.Enabled then
+			prompt.Enabled = false
+		end
+	end)
+end
 
 local function watch(prompt: ProximityPrompt)
+	-- The landing net (N4): "Net it" sits on the angler; their own screen never shows it.
+	if prompt.Name == "NetPrompt" then
+		if prompt:GetAttribute("AnglerId") == Players.LocalPlayer.UserId then
+			keepOff(prompt)
+		end
+		return
+	end
 	if not OWNER_ONLY[prompt.Name] then
 		return
 	end

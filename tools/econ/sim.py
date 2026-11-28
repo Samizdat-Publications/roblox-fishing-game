@@ -261,6 +261,45 @@ _daily_src = (_shared / "Daily.luau").read_text(encoding="utf-8")
 FISH_OF_DAY_BOOST = _const(_daily_src, "FISH_OF_DAY_BOOST")
 FISH_OF_DAY = None
 
+# The fleet (leg 3, N4; --fleet and --pair), read from Shared/Quiet.luau, Net.luau and Coop.luau.
+# --fleet: the Cedar Canoe is bought after the Fiberglass Rod and takes its owner to the Big Lake
+# basin and the island point at 7 studs a second; arriving there by canoe is a quiet approach, so
+# wary fish are QUIET_MULT as likely for the first QUIET_WINDOW seconds at that spot.
+# --pair: two smart players fish side by side (one boat between them, so the canoe does 11).
+# Each player's partner is free to net about (1 - the partner's share of time spent fighting)
+# of their fish: a netted fish lands at 70 percent, after a short wait for it to surface, and a
+# fish that would have got away is saved half of those times (an upper bound). Each netted
+# fish pays the helper ASSIST_SHARE of its price (mirrored: the player nets the partner's fish
+# as often). A Double Hookup (the partner is fighting at the moment of the hook, within 15
+# studs) pays DOUBLE_BONUS of the fish's price. Chum from the second seat on the Big Lake cuts
+# bite waits by a quarter for 25 of every 90 seconds.
+_quiet_src = (_shared / "Quiet.luau").read_text(encoding="utf-8")
+_net_src = (_shared / "Net.luau").read_text(encoding="utf-8")
+_coop_src = (_shared / "Coop.luau").read_text(encoding="utf-8")
+QUIET_MULT = _const(_quiet_src, "WARY_MULT")
+QUIET_WINDOW = _const(_quiet_src, "WINDOW")
+QUIET_WARY = {"NorthernPike", "Muskellunge", "TigerMuskie", "LakeSturgeon"}
+NET_AT = _const(_net_src, "THRESHOLD")
+NET_WAIT = _const(_net_src, "FIRST_UP") + _const(_net_src, "UP_FOR") / 2  # first surfacing, pressed in the middle
+ASSIST_SHARE = _const(_coop_src, "ASSIST_SHARE")
+DOUBLE_BONUS = _const(_coop_src, "DOUBLE_BONUS")
+CHUM_MULT = 1 - (1 - _const(_coop_src, "CHUM_BITE")) * _const(_coop_src, "CHUM_LASTS") / _const(_coop_src, "CHUM_COOLDOWN")
+CANOE_GOAL = ("Cedar Canoe", BOATS["Canoe"]["price"]) if "Canoe" in BOATS else None
+CANOE_PAIR_SPEED = 11  # BoatData pairSpeed
+FLEET_ON = False  # --fleet
+PAIR_ON = False  # --pair
+PAIR_DOUBLE = True  # the pair also gets Double Hookups (Config.DOUBLE_HOOKUP_ON)
+
+
+def quiet_wary(sid):
+    return sid in QUIET_WARY or "Trout" in sid
+
+
+def quiet_boost(weights):
+    out = [(sid, w * QUIET_MULT if quiet_wary(sid) else w) for sid, w in weights]
+    out.sort(key=lambda x: -x[1])
+    return out
+
 
 def hook_miss(hook, sid):
     m = MOUTHS.get(FISH_BY_ID[sid].get("mouth"))
@@ -694,6 +733,11 @@ class Player:
         self.spat = 0  # hook-size misses (L3)
         self.fights = 0  # fish hooked (L4d report)
         self.snaps = 0  # lines snapped (L4d)
+        self.fight_time = 0.0  # seconds spent fighting (the partner's share, --pair)
+        self.assist_coins = 0.0  # 10 percent on the partner's netted fish (--pair)
+        self.double_coins = 0.0  # Double Hookup bonuses (--pair)
+        self.netted = 0  # own fish a partner netted (--pair)
+        self.quiet_casts = 0  # casts with the quiet bonus (--fleet)
 
     def has(self, bait):
         if BAIT_BY_ID[bait]["kind"] == "lure":
@@ -890,6 +934,8 @@ def play_session(p, strat, rng, clock_start, minutes=SESSION_MIN, log=None):
                     p.rod = "Graphite"
                 elif g[0] == "Inflatable Dinghy":
                     p.boat = "Dinghy"
+                elif g[0] == "Cedar Canoe":
+                    p.boat = p.boat or "Canoe"
                 elif g[0] == "Deep-V":
                     p.boat = "DeepV"
                 else:
@@ -920,6 +966,9 @@ def play_session(p, strat, rng, clock_start, minutes=SESSION_MIN, log=None):
 
     global WEATHER_NOW, WIND_NOW, BOAT_SPEED
     BOAT_SPEED = BOATS[p.boat]["speed"] if p.boat else 12
+    if PAIR_ON and p.boat == "Canoe":
+        BOAT_SPEED = CANOE_PAIR_SPEED  # two paddling
+    arrived = 0.0  # when the player reached the spot they're at (the quiet approach)
     day_kind, day_wind, day_index = "Clear", None, None
     next_rise = rng.uniform(RISE_MIN, RISE_MAX)  # when the next rise this player can reach is up
     while t < end:
@@ -967,11 +1016,16 @@ def play_session(p, strat, rng, clock_start, minutes=SESSION_MIN, log=None):
         if g and p.coins + p.bag_value() >= g[1] and p.coins < g[1]:
             go_to_stands("goal")
             continue
+        if spot != here:
+            arrived = t + walk_time(here, spot)
         t += walk_time(here, spot)
         here = spot
         # One cast.
         cover = strat.uses_cover and spot in COVER_SPOTS
         w = bite_weights(spot, period, bait, cover)
+        if FLEET_ON and w and p.boat == "Canoe" and spot in BIG_SPOTS and t - arrived < QUIET_WINDOW:
+            w = quiet_boost(w)  # paddled in quietly (Quiet.luau)
+            p.quiet_casts += 1
         t += CAST_OVERHEAD
         if not w:
             t += CFG["NOTHING_WAIT"]
@@ -991,6 +1045,8 @@ def play_session(p, strat, rng, clock_start, minutes=SESSION_MIN, log=None):
         sid = None
         while not hooked and t < end:
             d = bite_delay(w, rng) * (COVER_DELAY if cover else 1) * (RIG_BITE_MULT if live else LURE_BITE_MULT)[grade]
+            if PAIR_ON and p.boat in ("Canoe", "Dinghy") and spot in BIG_SPOTS:
+                d *= CHUM_MULT  # chum off the bow, 25 of every 90 seconds
             # An attentive player casts onto a rise about once per rise interval (lake and creek).
             if first and strat.uses_rises and spot in LAKE_SPOTS + CREEK_SPOTS and t >= next_rise:
                 d = rng.uniform(RISE_BITE_MIN, RISE_BITE_MAX)
@@ -1042,6 +1098,20 @@ def play_session(p, strat, rng, clock_start, minutes=SESSION_MIN, log=None):
             p.snaps += 1 if info.get("snapped") else 0
         else:
             won, ft = fight_once(prof, assist_for(p), strat.skill, rng, start=RIG_FIGHT_START[grade])
+        partner_fighting = 0.0
+        if PAIR_ON:
+            # The partner is a mirror of this player: fighting this share of the time.
+            partner_fighting = min(0.9, p.fight_time / max(p.played + t, 60.0))
+            if rng.random() < 1 - partner_fighting:
+                start = RIG_FIGHT_START[grade]
+                climb = (NET_AT - start) / max(1 - start, 1e-6)
+                if won:
+                    ft = ft * climb + NET_WAIT
+                    p.netted += 1
+                elif rng.random() < 0.5:
+                    won, ft = True, ft * climb + NET_WAIT  # saved by the net
+                    p.netted += 1
+        p.fight_time += ft
         t += ft
         if not won:
             t += AFTER_ESCAPE
@@ -1051,6 +1121,18 @@ def play_session(p, strat, rng, clock_start, minutes=SESSION_MIN, log=None):
         t += AFTER_CATCH
         price = price_for(s, kg)
         p.catches += 1
+        if PAIR_ON:
+            # Mirror: this player nets the partner's fish as often as the partner nets theirs,
+            # each paying ASSIST_SHARE of a fish like this one; and a Double Hookup now and then.
+            free = 1 - min(0.9, p.fight_time / max(p.played + t, 60.0))
+            bonus = price * ASSIST_SHARE * free
+            if PAIR_DOUBLE and rng.random() < partner_fighting:
+                bonus += price * DOUBLE_BONUS
+                p.double_coins += price * DOUBLE_BONUS
+            p.assist_coins += price * ASSIST_SHARE * free
+            p.coins += bonus
+            p.earned["coop"] += bonus
+            p.gross += bonus
         p.tiers[s.get("tier") or "Common"] += 1
         if p.session_tiers:
             p.session_tiers[-1][s.get("tier") or "Common"] += 1
@@ -1479,6 +1561,78 @@ def report_drag(runs, sessions=10):
     return out
 
 
+def report_fleet(runs, sessions=12):
+    """The fleet's economy lines (leg 3, N4): the canoe in the purchase order, the quiet
+    approach, and a pair using nets, assists, Double Hookups and chum."""
+    global GOALS, FLEET_ON, PAIR_ON
+    base_goals = list(GOALS)
+
+    def careers(strat_fn, goals, fleet, pair, seed0, double=True):
+        global GOALS, FLEET_ON, PAIR_ON, PAIR_DOUBLE
+        GOALS, FLEET_ON, PAIR_ON, PAIR_DOUBLE = goals, fleet, pair, double
+        mins, rates, extra = defaultdict(list), [], defaultdict(list)
+        for i in range(runs):
+            p, per, _ = run_career(strat_fn(), seed=seed0 + i, sessions=sessions, stop_early=False)
+            for g, _ in goals:
+                mins[g].append(p.goal_minutes.get(g))
+            rates.append(statistics.mean(per[1:]) if len(per) > 1 else per[0])
+            extra["assist"].append(p.assist_coins / max(p.played / 60, 1))
+            extra["double"].append(p.double_coins / max(p.played / 60, 1))
+            extra["netted"].append(p.netted / max(p.catches, 1))
+            extra["quiet"].append(p.quiet_casts)
+        GOALS, FLEET_ON, PAIR_ON, PAIR_DOUBLE = base_goals, False, False, True
+        return mins, statistics.median(rates), {k: statistics.median(v) for k, v in extra.items()}
+
+    def med(vals):
+        got = [x for x in vals if x is not None]
+        if len(got) < len(vals) / 2:
+            return None
+        return statistics.median(got)
+
+    fleet_goals = [base_goals[0], CANOE_GOAL] + base_goals[1:]
+    rows, out = [], {}
+    for name, fn in (("dock and worms", DockWorms), ("smart", lambda: Smart(pond=True)), ("random", RandomPlayer)):
+        b_mins, b_rate, _ = careers(fn, base_goals, False, False, 7000)
+        f_mins, f_rate, f_x = careers(fn, fleet_goals, True, False, 7000)
+        p_mins, p_rate, p_x = careers(fn, fleet_goals, True, True, 7000)
+        _, n_rate, _ = careers(fn, fleet_goals, True, True, 7000, double=False)
+        canoe = med(f_mins[CANOE_GOAL[0]])
+        g_base, g_fleet = med(b_mins["Graphite Rod"]), med(f_mins["Graphite Rod"])
+        delta = (g_fleet - g_base) if (g_base is not None and g_fleet is not None) else None
+        # The same seeds play both ways, so the per-career difference is the steadier measure.
+        pairs = [f - b for b, f in zip(b_mins["Graphite Rod"], f_mins["Graphite Rod"]) if b is not None and f is not None]
+        paired = statistics.median(pairs) if pairs else None
+        rows.append([
+            name, fmt_min(canoe), fmt_min(g_base), fmt_min(g_fleet), "n/a" if delta is None else f"{delta:+.0f} min",
+            f"{b_rate:.1f}", f"{f_rate:.1f} ({(f_rate / b_rate - 1) * 100:+.0f}%)",
+            f"{n_rate:.1f} ({(n_rate / b_rate - 1) * 100:+.0f}%)", f"{p_rate:.1f} ({(p_rate / b_rate - 1) * 100:+.0f}%)",
+            f"{p_x['assist']:.1f} + {p_x['double']:.1f}", f"{p_x['netted'] * 100:.0f}%",
+        ])
+        out[name] = {"canoe": canoe, "graphite_base": g_base, "graphite_fleet": g_fleet, "delta": delta, "paired": paired,
+                     "rate": b_rate, "rate_fleet": f_rate, "rate_pair": p_rate, "rate_pair_nodouble": n_rate}
+    print("## The fleet (N4): the canoe, the quiet approach, nets and assists\n")
+    print(f"{runs} careers each, {sessions} sessions of {SESSION_MIN} min; coins/min is the mean over sessions 2 on (fish sold or held, pond, co-op pay).")
+    print("Fleet: Fiberglass Rod, then the Cedar Canoe (350), then the Creek Pass and the Graphite Rod; quiet approach by canoe on the Big Lake.")
+    print(f"Pair: the fleet plus a partner who nets, assists (10 percent) and chums; then with Double Hookups ({DOUBLE_BONUS * 100:.0f} percent) too.\n")
+    print(table(rows, ["Player", "owns the canoe", "Graphite, today", "Graphite, fleet", "Graphite moves",
+                       "coins/min today", "with the fleet", "pair: nets, assists, chum", "pair + Double Hookup", "pair: assist + double c/min", "own fish netted"]))
+    dk, sm = out["dock and worms"], out["smart"]
+    budget_hi = sm["rate"] * 1.15
+    print()
+    print(f"Targets (leg plan, N4 and the leg budget):")
+    print(f"- dock kid owns the canoe inside 20 min: {fmt_min(dk['canoe'])} -> {'PASS' if dk['canoe'] is not None and dk['canoe'] <= 20 else 'FAIL'}")
+    moved = "n/a" if dk["delta"] is None else f"{dk['delta']:+.2f} min ({dk['graphite_base']:.2f} to {dk['graphite_fleet']:.2f}; per career, median {dk['paired']:+.2f})"
+    print(f"- his Graphite Rod moves back no more than 12 min from {fmt_min(dk['graphite_base'])}: {moved} -> "
+          f"{'PASS' if dk['delta'] is not None and dk['delta'] <= 12 else 'FAIL'}")
+    print(f"- an expert earns no more than 15 percent over today ({sm['rate']:.1f} -> at most {budget_hi:.1f}): "
+          f"fleet {sm['rate_fleet']:.1f} -> {'PASS' if sm['rate_fleet'] <= budget_hi else 'FAIL'}; "
+          f"pair with nets and assists {sm['rate_pair_nodouble']:.1f} -> {'PASS' if sm['rate_pair_nodouble'] <= budget_hi else 'FAIL'}; "
+          f"pair with Double Hookups too {sm['rate_pair']:.1f} -> {'PASS' if sm['rate_pair'] <= budget_hi else 'FAIL'}")
+    print(f"- the dock kid earns no less than today ({dk['rate']:.1f}): fleet {dk['rate_fleet']:.1f}, pair {dk['rate_pair']:.1f} -> "
+          f"{'PASS' if min(dk['rate_fleet'], dk['rate_pair']) >= dk['rate'] * 0.97 else 'FAIL'}")
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true", help="fewer runs")
@@ -1495,6 +1649,7 @@ def main():
     ap.add_argument("--fish-of-day", help="this species bites a little more readily all day (Daily.luau, L6d)")
     ap.add_argument("--retrieve", action="store_true", help="only report working the lures against today's bobber (L4c)")
     ap.add_argument("--drag", action="store_true", help="only report line and drag against the fight before it (L4d)")
+    ap.add_argument("--fleet", action="store_true", help="only report the fleet (N4): the canoe, the quiet approach, and a pair with nets and assists")
     args = ap.parse_args()
     global SIZE_CLASSES, WEATHER_ON, GOALS, ASSIST_ALWAYS, FISH_OF_DAY
     FISH_OF_DAY = args.fish_of_day
@@ -1519,6 +1674,9 @@ def main():
         return
     if args.drag:
         report_drag(12 if args.quick else 60)
+        return
+    if args.fleet:
+        report_fleet(12 if args.quick else 40)
         return
     if args.grace:
         print("## Slack-line grace: chance to land, Willow Rod (mean over the fish, worst fish)\n")

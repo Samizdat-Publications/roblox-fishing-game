@@ -42,6 +42,10 @@ local Teamwork = require(Shared.Teamwork)
 local BoatService = require(Server.BoatService)
 local RiseService = require(Server.RiseService)
 local BobberGlow = require(Server.BobberGlow)
+-- Leg 3, N4: the quiet approach, the landing net and playing together (each behind its switch).
+local Quiet = require(Shared.Quiet)
+local Net = require(Shared.Net)
+local Coop = require(Shared.Coop)
 
 local FishingService = {}
 
@@ -83,7 +87,17 @@ type Run = {
 	refused: number, -- events refused this cast
 }
 
+-- A net chance on this angler's fish (Net, NET_ON): the "Net it" prompt on the angler, when it
+-- opened (the fish surfaces on a beat from then) and each helper's last miss.
+type NetChance = {
+	prompt: ProximityPrompt,
+	openedAt: number,
+	helpers: { [Player]: Net.Helper },
+	up: boolean, -- the prompt's text says the fish is up
+}
+
 type Session = {
+	owner: Player,
 	phase: string, -- Idle, Waiting, Retrieving, Snagged, Bite, Fighting
 	token: number,
 	nibbling: boolean?, -- a fish is testing the bait (small dips before the real bite)
@@ -108,6 +122,13 @@ type Session = {
 	rigEmptyAt: number, -- os.clock() when the hook last went empty (a bench can't start sooner)
 	lastRigAt: number, -- os.clock() of the last Rig accepted (rate limit)
 	retrieve: Run?, -- a lure being worked back (L4c)
+	quiet: boolean?, -- this cast came after a quiet arrival (N4)
+	onBoat: boolean?, -- this cast was made from a boat (N4, for the quiet tally)
+	progress: number, -- the fight's progress as the angler's screen last reported it (N4, NET_ON)
+	progressAt: number, -- os.clock() of that report
+	fightFrom: number, -- the fight's starting progress (Net.maxProgress)
+	net: NetChance?, -- the "Net it" prompt on this angler (N4)
+	pair: Coop.Pair?, -- a Double Hookup this fight is part of (N4)
 }
 
 local RIG_MIN_GAP = 0.5 -- seconds between Rig messages the server will look at
@@ -118,6 +139,8 @@ local REEL_BURST = 12 -- ...with this many in a burst
 local REEL_REFUSE_MAX = 30 -- a cast with this many refused presses is ended
 
 local sessions: { [Player]: Session } = {}
+local quietTally: { [Player]: Quiet.Tally } = {} -- quiet against normal arrivals, for the playtest log (N4)
+local creekBuddies: { [Player]: boolean } = {} -- near a Creek Pass holder right now (N4, BUDDY_LOAN_ON)
 local rng = Random.new()
 -- The lake, the creek and (when it's switched on) the channel and the Big Lake. The client's
 -- landing ring reads the same WaterMap. Big Lake part UNVERIFIED in Studio, 2026-11-26.
@@ -131,9 +154,13 @@ local function session(player: Player): Session
 	local s = sessions[player]
 	if not s then
 		s = {
+			owner = player,
 			phase = "Idle",
 			token = 0,
 			fightStart = 0,
+			progress = 0,
+			progressAt = 0,
+			fightFrom = Config.FIGHT_START,
 			rigEmptyAt = os.clock(),
 			lastRigAt = 0,
 			waitGen = 0,
@@ -153,7 +180,30 @@ local function toast(player: Player, text: string)
 	toastEvent:FireClient(player, text)
 end
 
+-- The rod and braided line this player fishes with right now: their own, or (BUDDY_LOAN_ON) the
+-- owner's when they ride as a passenger in someone else's boat and the owner's is better.
+local function tackleFor(player: Player, data: Inventory.Data): (string, boolean)
+	if Config.BUDDY_LOAN_ON then
+		local owner = BoatService.ownerIfPassenger(player)
+		local od = owner and PlayerData.get(owner)
+		if od then
+			return Coop.loanTackle(data.rod, data.braid == true, od.rod, od.braid == true)
+		end
+	end
+	return data.rod, data.braid == true
+end
+
+local closeNet: (Session) -> ()
+local pairDone: (Player, Session, string, number) -> ()
+
 local function cleanup(s: Session)
+	if s.net then
+		closeNet(s)
+	end
+	if s.pair then
+		pairDone(s.owner, s, "lost", 0) -- a fight that ended any way but landed
+	end
+	s.progress = 0
 	s.token += 1
 	if s.bobber then
 		s.bobber:Destroy()
@@ -446,6 +496,13 @@ local function startComing(player: Player, s: Session, plan: Approach.Plan, from
 		return
 	end
 	local cm, kg, class = rollComing(player, species)
+	-- The quiet approach's playtest log: is the fish coming in wary, after which arrival?
+	if Config.QUIET_APPROACH_ON and s.onBoat then
+		local tally = quietTally[player] or Quiet.newTally()
+		quietTally[player] = tally
+		Quiet.countBite(tally, s.quiet == true, Quiet.isWary(species))
+		print(string.format("[Quiet] %s: %s coming (%s) after a %s arrival. %s", player.Name, species.id, if Quiet.isWary(species) then "wary" else "not wary", if s.quiet then "quiet" else "normal", Quiet.tallyText(tally)))
+	end
 	s.coming = {
 		species = species.id,
 		cm = cm,
@@ -496,6 +553,10 @@ local function castDelay(s: Session): (number?, boolean)
 	if delay and rig then
 		-- Well-baited hooks get bit sooner (L3); Okay is x1. Lures use their own table (L3b).
 		delay *= BaitRig.biteMult(rig.grade, BaitData.byId[rig.bait].kind == "lure")
+	end
+	-- Chum off the bow (CHUM_ON): bites come a quarter sooner for everyone aboard.
+	if delay and Config.CHUM_ON and BoatService.chumFor(s.owner) then
+		delay *= Coop.CHUM_BITE
 	end
 	local fromRise = false
 	if delay and s.fastBite then
@@ -851,7 +912,8 @@ local function onCast(player: Player, dir: any, power: any, clientLanding: any)
 	local tied = rigFor(s, baitId)
 	local castScale = BaitRig.castScale(baitId, if tied then tied.grade else "Okay")
 	local origin = hrp.Position
-	local landing = CastLogic.landing(origin, flat, p, data.rod, baitId, castScale)
+	local castRod = tackleFor(player, data)
+	local landing = CastLogic.landing(origin, flat, p, castRod, baitId, castScale)
 	if landing then
 		landing = CastLogic.assist(landing, origin, waters, FishLogic.isOnWaterAny)
 	end
@@ -876,7 +938,9 @@ local function onCast(player: Player, dir: any, power: any, clientLanding: any)
 		send(player, "Hint", { text = boatMsg or "You can't cast there from here." })
 		return
 	end
-	if FishLogic.CREEK_SPOTS[FishLogic.spotAt(landing, zones)] and not data.creekPass then
+	-- A creek buddy (BUDDY_LOAN_ON) near a Creek Pass holder may fish the creek with them.
+	local creekOk = data.creekPass or (Config.BUDDY_LOAN_ON and creekBuddies[player] == true)
+	if FishLogic.CREEK_SPOTS[FishLogic.spotAt(landing, zones)] and not creekOk then
 		send(player, "Hint", { text = "Cedar Creek needs a Creek Pass. Get one at the gate on the west path." })
 		return
 	end
@@ -919,6 +983,24 @@ local function onCast(player: Player, dir: any, power: any, clientLanding: any)
 	end
 	-- The fish of the day (the chalkboard, L6d) bites a little more readily, where it already bites.
 	s.weights = Daily.boost(s.weights :: { FishLogic.Weight }, Daily.fishOfDay(Today.day()))
+	-- Quiet approach (N4): after a quiet arrival, wary fish are 1.25 times as likely here for a
+	-- minute. Every cast from a boat is logged, so a playtest can compare 30 casts each way.
+	s.quiet, s.onBoat = false, false
+	if Config.QUIET_APPROACH_ON then
+		local quiet, onBoat = BoatService.quietFor(player)
+		s.onBoat = onBoat
+		if onBoat then
+			s.quiet = quiet
+			local plain = Quiet.waryShare(s.weights :: { FishLogic.Weight }, FishData.byId)
+			if quiet then
+				s.weights = Quiet.boost(s.weights :: { FishLogic.Weight }, FishData.byId)
+			end
+			local tally = quietTally[player] or Quiet.newTally()
+			quietTally[player] = tally
+			Quiet.countCast(tally, quiet)
+			print(string.format("[Quiet] %s cast at %s after a %s arrival: wary share %.0f%% (%.0f%% without the bonus). %s", player.Name, tostring(s.spot), if quiet then "quiet" else "normal", Quiet.waryShare(s.weights :: { FishLogic.Weight }, FishData.byId) * 100, plain * 100, Quiet.tallyText(tally)))
+		end
+	end
 	-- A cast onto an open rise claims it: a quick bite, if anything here wants this bait.
 	if #(s.weights :: { FishLogic.Weight }) > 0 and RiseService.claim(player, landing) then
 		s.fastBite = Rises.biteDelay(rng)
@@ -1068,16 +1150,23 @@ local function onHook(player: Player)
 	s.catch = { cm = cm, kg = kg, class = class }
 	print(string.format("[Fishing] %s hooked size: %s %.1f cm %s, its shadow was %.2f studs", player.Name, species.id, cm, class, Approach.shadowLength(cm)))
 	local profile = FishLogic.fightFor(species.fight, class)
-	-- Line and drag (L4d): the fish's weight over this rod's line rating (plus braided line if owned).
-	local braid = data.braid == true
-	local load = RodData.lineLoad(kg, data.rod, braid)
+	-- Line and drag (L4d): the fish's weight over this rod's line rating (plus braided line if
+	-- owned). A passenger may fish with the boat owner's tackle (BUDDY_LOAN_ON, N4).
+	local rodId, braid = tackleFor(player, data)
+	local load = RodData.lineLoad(kg, rodId, braid)
 	s.fightCheck = FightModel.checkFor(profile, start, load)
-	local lineLb = RodData.lineLbFor(data.rod, braid)
+	s.fightFrom = start
+	s.progress = start
+	s.progressAt = os.clock()
+	local lineLb = RodData.lineLbFor(rodId, braid)
+	if rodId ~= data.rod or braid ~= (data.braid == true) then
+		print(string.format("[Coop] %s fishes with the boat owner's %s%s", player.Name, rodId, if braid then " and braided line" else ""))
+	end
 	print(string.format("[Fishing] %s hooked %s, fight starts at %.2f (%s), %.1f lb on %d lb line%s: load %.2f", player.Name, species.id, start, if rig then rig.grade else "lure", kg / 0.45359237, lineLb, if braid then " (braided)" else "", load))
 	setBobberY(s, -1)
 	local token = s.token
 	send(player, "Hooked", {
-		fight = RodData.applyFight(profile, data.rod),
+		fight = RodData.applyFight(profile, rodId),
 		assist = data.assist,
 		seed = rng:NextInteger(1, 1e6),
 		start = start,
@@ -1093,6 +1182,27 @@ local function onHook(player: Player)
 			cleanup(s)
 		end
 	end)
+	-- Double Hookup (DOUBLE_HOOKUP_ON, N4): someone within 15 studs is fighting a fish too.
+	if Config.DOUBLE_HOOKUP_ON then
+		local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		for other, os2 in sessions do
+			local oroot = other.Character and other.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+			if other ~= player and os2.phase == "Fighting" and os2.pair == nil and root and oroot then
+				local gap = Vector3.new(root.Position.X - oroot.Position.X, 0, root.Position.Z - oroot.Position.Z).Magnitude
+				if gap <= Coop.DOUBLE_RANGE then
+					local pair = Coop.newPair(player, other)
+					s.pair = pair
+					os2.pair = pair
+					print(string.format("[Coop] Double Hookup: %s and %s (%.0f studs apart)", player.Name, other.Name, gap))
+					for _, p in { player, other } do
+						send(p, "DoubleHookup", { with = (if p == player then other else player).DisplayName })
+						toast(p, "Double Hookup! Land them both for a bonus.")
+					end
+					break
+				end
+			end
+		end
+	end
 end
 
 -- The species' own model from ServerStorage.Art (art/README.md), stretched to this fish's
@@ -1185,6 +1295,8 @@ local function showCatch(player: Player, species: FishData.Species, cm: number)
 	end)
 end
 
+local landCatch: (Player, Session, Player?) -> ()
+
 -- `claim`: "won", "lost" or "snapped" (true from older clients means won). `report` (L4d):
 -- { tight = the drag was Tight at some point, drag = the drag at the end }.
 local function onFightResult(player: Player, claim: any, report: any)
@@ -1219,6 +1331,18 @@ local function onFightResult(player: Player, claim: any, report: any)
 		cleanup(s)
 		return
 	end
+	landCatch(player, s, nil)
+end
+
+-- Land the fish on the line: the angler's own win (the client's fight, judged above), or a
+-- helper's net (NET_ON, N4: `netter`). Pays the angler, any helpers, and a Double Hookup.
+function landCatch(player: Player, s: Session, netter: Player?)
+	local data = PlayerData.get(player)
+	local species = s.species and FishData.byId[s.species :: string]
+	if not data or not species then
+		cleanup(s)
+		return
+	end
 	local rolled = s.catch
 	local cm, kg, class = 0, 0, "normal"
 	if rolled then
@@ -1239,10 +1363,45 @@ local function onFightResult(player: Player, claim: any, report: any)
 		at = os.time(),
 		sizeClass = if class ~= "normal" then class else nil,
 	}
-	-- Team catch on the Deep-V in blue water: both journals, the coins split evenly.
-	-- UNVERIFIED in Studio (boat plan Task 8, 2026-11-26).
+	-- Team catch on the Deep-V in blue water. With ASSIST_BONUS_ON (N4) the angler keeps the full
+	-- price and each mate gets an assist and 10 percent; off, both journals and an even split
+	-- as before. UNVERIFIED in Studio (boat plan Task 8, 2026-11-26).
 	local boatId, mates, aboard, blue = BoatService.crewOf(player)
-	if Teamwork.isTeamCatch(boatId, blue, aboard) then
+	local team = Teamwork.isTeamCatch(boatId, blue, aboard)
+	local helpers: { { p: Player, how: string } } = {}
+	if team then
+		for _, mate in mates do
+			table.insert(helpers, { p = mate, how = if mate == netter then "net" else "crew" })
+		end
+	end
+	if netter and not (team and table.find(mates, netter)) then
+		table.insert(helpers, { p = netter, how = "net" })
+	end
+	local function assist(helper: Player, how: string, bonus: number)
+		local hd = PlayerData.get(helper)
+		if not hd then
+			return
+		end
+		Inventory.recordAssist(hd, fish, bonus, how, os.time())
+		PlayerData.changed(helper)
+		print(string.format("[Coop] %s assisted %s (%s) on a %s worth %d: +%d coins", helper.Name, player.Name, how, fish.name, fish.price, bonus))
+		if bonus > 0 then
+			toast(helper, string.format("Assist! You helped %s land a %s. +%d coins.", player.DisplayName, species.name, bonus))
+		else
+			toast(helper, string.format("Assist! You helped %s land a %s.", player.DisplayName, species.name))
+		end
+	end
+	if Config.ASSIST_BONUS_ON then
+		for _, h in helpers do
+			assist(h.p, h.how, Coop.assistBonus(fish.price))
+		end
+	else
+		-- The net still goes in the helper's journal; only a team catch pays, split as in L7.
+		if netter and not (team and table.find(mates, netter)) then
+			assist(netter, "net", 0)
+		end
+	end
+	if team and not Config.ASSIST_BONUS_ON then
 		local shares = Teamwork.split(fish.price, 1 + #mates)
 		fish.price = shares[1]
 		for i, mate in mates do
@@ -1266,8 +1425,15 @@ local function onFightResult(player: Player, claim: any, report: any)
 	local first = (data.journal.counts[species.id] or 0) == 0
 	local best = Inventory.recordCatch(data, fish)
 	GoalService.onCatch(player, data, fish, FrenzyService.at(fish.spot))
-	print(string.format("[Fishing] %s caught %s %.1f cm %.2f kg worth %d at %s (%s, %s)", player.Name, fish.name, cm, kg, fish.price, fish.spot, fish.period, fish.bait))
-	send(player, "Caught", { fish = fish, best = best, first = first, habit = species.habit, tier = Rarity.of(species), sizeClass = class })
+	print(string.format("[Fishing] %s caught %s %.1f cm %.2f kg worth %d at %s (%s, %s)%s", player.Name, fish.name, cm, kg, fish.price, fish.spot, fish.period, fish.bait, if netter then ", netted by " .. netter.Name else ""))
+	send(player, "Caught", { fish = fish, best = best, first = first, habit = species.habit, tier = Rarity.of(species), sizeClass = class, netter = if netter then netter.DisplayName else nil })
+	if netter then
+		toast(player, string.format("%s netted it for you!", netter.DisplayName))
+	end
+	-- Double Hookup (N4): this side landed; the bonus pays once the other side is done too.
+	if s.pair then
+		pairDone(player, s, "won", fish.price)
+	end
 	-- Reel assist turns itself off after the first few catches, once (L4b). UNVERIFIED in Studio.
 	if Inventory.assistAfterCatch(data) then
 		task.delay(1.5, function()
@@ -1304,6 +1470,175 @@ local function onCancel(player: Player)
 	elseif s.phase == "Fighting" then
 		send(player, "Escaped", { text = "You let it go." })
 		cleanup(s)
+	end
+end
+
+-- The landing net (NET_ON, N4) -------------------------------------------------------------
+
+function closeNet(s: Session)
+	local n = s.net
+	s.net = nil
+	if n then
+		n.prompt:Destroy()
+	end
+end
+
+-- Double Hookup (N4): one side's fight is over. Pays both once both are done and both landed.
+function pairDone(player: Player, s: Session, outcome: string, price: number)
+	local pair = s.pair
+	s.pair = nil
+	if not pair then
+		return
+	end
+	local pay = Coop.pairResult(pair, player, outcome, price)
+	if not pay then
+		return -- the other one is still fighting
+	end
+	for p, bonus in pay do
+		local d = PlayerData.get(p)
+		if d and bonus > 0 then
+			d.coins += bonus
+			d.doubleHauls += 1
+			print(string.format("[Coop] Double Haul for %s: +%d coins", p.Name, bonus))
+			send(p, "DoubleHaul", { bonus = bonus })
+			toast(p, string.format("Double Haul! You both landed one. +%d coins.", bonus))
+			PlayerData.changed(p)
+		end
+	end
+end
+
+-- A helper pressed "Net it" on this angler's fish. The server decides: in reach, the angler
+-- still fighting, the helper's hands free, and the fish up at the surface.
+local function onNetPress(helper: Player, angler: Player)
+	local s = sessions[angler]
+	if helper == angler or not s or s.phase ~= "Fighting" or not s.net then
+		return
+	end
+	local hs = sessions[helper]
+	if hs and hs.phase == "Fighting" then
+		toast(helper, "Your hands are full with your own fish!")
+		return
+	end
+	local hr = helper.Character and helper.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local ar = angler.Character and angler.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not hr or not ar or not Net.inReach(hr.Position, ar.Position) then
+		return
+	end
+	local n = s.net :: NetChance
+	local h = n.helpers[helper] or {}
+	n.helpers[helper] = h
+	local result = Net.press(h, n.openedAt, os.clock())
+	print(string.format("[Net] %s pressed on %s's %s: %s", helper.Name, angler.Name, tostring(s.species), result))
+	if result == "landed" then
+		landCatch(angler, s, helper)
+	elseif result == "missed" then
+		toast(helper, "Missed! It went back down. Try again in 2 seconds.")
+	else
+		toast(helper, "Get the net ready...")
+	end
+end
+
+local function openNet(player: Player, s: Session)
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not root then
+		return
+	end
+	local p = Instance.new("ProximityPrompt")
+	p.Name = "NetPrompt"
+	p.ActionText = "Net it"
+	p.ObjectText = "Wait for it to surface"
+	p.HoldDuration = 0
+	p.MaxActivationDistance = Net.RANGE
+	p.RequiresLineOfSight = false
+	p.KeyboardKeyCode = Enum.KeyCode.E
+	p.GamepadKeyCode = Enum.KeyCode.ButtonX
+	p:SetAttribute("AnglerId", player.UserId) -- the angler's own screen hides it (BoatClient)
+	p.Parent = root
+	p.Triggered:Connect(function(who: Player)
+		onNetPress(who, player)
+	end)
+	s.net = { prompt = p, openedAt = os.clock(), helpers = {}, up = false }
+	print(string.format("[Net] %s's %s is at %.0f%%: the net is out", player.Name, tostring(s.species), s.progress * 100))
+end
+
+-- The angler's screen reports the fight's progress (NET_ON). Believed only as fast as the fish
+-- could really be won (Net.acceptProgress).
+local function onFightProgress(player: Player, progress: any)
+	if not Config.NET_ON then
+		return
+	end
+	local s = sessions[player]
+	local check = s and s.fightCheck
+	if not s or s.phase ~= "Fighting" or not check then
+		return
+	end
+	local now = os.clock()
+	if now - s.progressAt < 0.1 then
+		return -- about four a second is plenty
+	end
+	local p = Net.acceptProgress(progress, s.fightFrom, check.minSecsTight, now - s.fightStart)
+	if p then
+		s.progress = p
+		s.progressAt = now
+	end
+end
+
+-- Ten times a second: open and close each angler's net chance, and say when the fish is up.
+local function netTick()
+	local now = os.clock()
+	for player, s in sessions do
+		if not (Config.NET_ON and s.phase == "Fighting") then
+			if s.net then
+				closeNet(s)
+			end
+			continue
+		end
+		local prog = s.progress
+		local fresh = now - s.progressAt <= 1.5 -- no word from the angler's screen for a while: no net
+		local forced = if RunService:IsStudio() then player:GetAttribute("DebugFightProgress") else nil
+		if type(forced) == "number" then
+			prog, fresh = forced, true -- Studio only: a test dummy's fish at a set progress
+		end
+		local open = fresh and Net.open(s.net ~= nil, prog)
+		if open and not s.net then
+			s.progress = prog
+			openNet(player, s)
+		elseif not open and s.net then
+			closeNet(s)
+		end
+		local n = s.net
+		if n then
+			local up = Net.surfacing(n.openedAt, now)
+			if up ~= n.up then
+				n.up = up
+				n.prompt.ObjectText = if up then "It's up! Net it now" else "Wait for it to surface"
+			end
+		end
+	end
+end
+
+-- Creek buddies (BUDDY_LOAN_ON): once a second, who is within 20 studs of a Creek Pass holder.
+-- The attribute opens the gate on that player's screen; the cast check reads the same table.
+local function creekBuddyTick()
+	local holders = {}
+	for _, p in Players:GetPlayers() do
+		local d = PlayerData.get(p)
+		local r = p.Character and p.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if d and d.creekPass and r then
+			table.insert(holders, r.Position)
+		end
+	end
+	for _, p in Players:GetPlayers() do
+		local d = PlayerData.get(p)
+		local r = p.Character and p.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		local buddy = d ~= nil and not d.creekPass and r ~= nil and Coop.creekBuddy(r.Position, holders)
+		if buddy ~= (creekBuddies[p] == true) then
+			creekBuddies[p] = if buddy then true else nil
+			p:SetAttribute("CreekBuddy", buddy)
+			if buddy then
+				toast(p, "You're with a Creek Pass holder: the creek gate lets you through.")
+			end
+		end
 	end
 end
 
@@ -1348,11 +1683,29 @@ function FishingService.start()
 	Remotes.event("Twitch").OnServerEvent:Connect(onTwitch)
 	Remotes.event("Rig").OnServerEvent:Connect(onRig)
 	Remotes.event("Reel").OnServerEvent:Connect(onReel)
+	Remotes.event("FightProgress").OnServerEvent:Connect(onFightProgress)
 	Players.PlayerRemoving:Connect(function(player)
 		local s = sessions[player]
 		if s then
 			cleanup(s)
 			sessions[player] = nil
+		end
+		quietTally[player] = nil
+		creekBuddies[player] = nil
+	end)
+	-- The net (NET_ON) and the creek buddy (BUDDY_LOAN_ON), N4.
+	task.spawn(function()
+		local sinceBuddy = 0
+		while true do
+			task.wait(0.1)
+			netTick()
+			sinceBuddy += 0.1
+			if sinceBuddy >= 1 then
+				sinceBuddy = 0
+				if Config.BUDDY_LOAN_ON then
+					creekBuddyTick()
+				end
+			end
 		end
 	end)
 	-- Fishing from a boat: twice a second, a line that the boat ran away from comes free.
