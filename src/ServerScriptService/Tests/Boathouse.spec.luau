@@ -161,6 +161,20 @@ return function(t, Shared)
 		end
 	end)
 
+	-- The Deep-V's model has its pivot at its bounding box's middle (art/models/DeepV.glb: skeg
+	-- 2.07, keel 1.94 and deck top 0.74 under it, gunwale 0.83 over). At the mooring it sat with
+	-- its skeg at -2.67, only a white outline above the water (11/28/2026).
+	t.test("the Deep-V at the mooring floats with its keel under and its sides over the water", function()
+		for _, s in Plan.mooring() do
+			if s.id == "DeepV" then
+				local y = s.boat.Position.Y
+				t.ok(y - 1.94 < Plan.WATER_Y and y - 1.94 > Plan.WATER_Y - 1.2, string.format("keel just under the water (%.2f)", y - 1.94))
+				t.ok(y - 0.74 > Plan.WATER_Y, string.format("deck over the water (%.2f)", y - 0.74))
+				t.ok(y + 0.83 > Plan.WATER_Y + 1.5, string.format("a boat's worth of side showing (%.2f)", y + 0.83))
+			end
+		end
+	end)
+
 	t.test("Your boat lists the boats you own that are in the game, in the shop's order", function()
 		with("CANOE_ON", false, function()
 			t.eq(#Plan.yours({ boats = {} }), 0, "none")

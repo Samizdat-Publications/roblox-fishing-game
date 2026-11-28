@@ -175,10 +175,21 @@ end
 
 -- Landing on a shore (the fleet, CANOE_ON): a boat that lands on shores, slow enough, with dry
 -- land within a few studs of its bow. Returns where its riders step off, or nil.
+--
+-- The look-ahead stop (below) keeps 1.5 studs of water plus a quarter second of travel, and the
+-- server's ray down also stops a boat where the real terrain bank rises out of the shallows,
+-- which can be several studs before the map's water boxes end (11/28/2026, measured in Studio:
+-- the east bank's terrain reaches the water line at x 106, the map says water to x 110). So the
+-- server passes `isDry`, its own probe of the real ground (terrain at or above the water line),
+-- searched up to 12 studs past the bow; the map's own shore still counts within 5 studs as
+-- before. The first dry point either way wins.
 BoatRules.BEACH_SPEED = 4
-BoatRules.BEACH_REACH = 5 -- studs past the bow that are searched for dry land
+BoatRules.BEACH_REACH = 5 -- studs past the bow where the map's shore counts
+BoatRules.BEACH_DRY_REACH = 12 -- studs past the bow where the server's ground probe counts
+BoatRules.BEACH_STEP = 1 -- studs between probes
+BoatRules.BEACH_UP = 2 -- riders step off this far up the bank from the first dry point
 
-function BoatRules.beachAt(boatId: string, pos: Vector3, look: Vector3, speed: number): Vector3?
+function BoatRules.beachAt(boatId: string, pos: Vector3, look: Vector3, speed: number, isDry: ((Vector3) -> boolean)?): Vector3?
 	local b = assert(BoatData.byId[boatId], "unknown boat")
 	if not Config.CANOE_ON or b.lands ~= "shore" or math.abs(speed) > BoatRules.BEACH_SPEED then
 		return nil
@@ -188,11 +199,15 @@ function BoatRules.beachAt(boatId: string, pos: Vector3, look: Vector3, speed: n
 		return nil
 	end
 	flat = flat.Unit
-	for k = 1, BoatRules.BEACH_REACH do
+	local reach = if isDry then math.max(BoatRules.BEACH_REACH, BoatRules.BEACH_DRY_REACH) else BoatRules.BEACH_REACH
+	local k = BoatRules.BEACH_STEP
+	while k <= reach + 1e-6 do
 		local probe = Vector3.new(pos.X, BoatRules.WATER_Y, pos.Z) + flat * (b.length / 2 + k)
-		if not BoatRules.isBoatWater(probe) then
-			return probe + flat * 2 -- two studs up the bank
+		local mapShore = k <= BoatRules.BEACH_REACH + 1e-6 and not BoatRules.isBoatWater(probe)
+		if mapShore or (isDry ~= nil and isDry(probe)) then
+			return probe + flat * BoatRules.BEACH_UP
 		end
+		k += BoatRules.BEACH_STEP
 	end
 	return nil
 end

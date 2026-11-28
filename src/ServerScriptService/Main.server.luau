@@ -34,6 +34,7 @@ require(Server.PondService).start()
 require(Server.GoalService).start() -- daily goals; does nothing while GOALS_ON is off
 require(Server.BoatService).start() -- boats; only refuses buying while boats are off
 require(Server.Boathouse).start() -- the boathouse and sales mooring (N4): stored away while BOATHOUSE_ON is off
+require(Server.DebugCoop).start() -- Studio-only test dummies for the N4 two-player checks; nothing in a live game
 if Config.FRENZIES_ON then
 	require(Server.FrenzyService).run() -- feeding frenzies (UNVERIFIED in Studio, 2026-11-26)
 end

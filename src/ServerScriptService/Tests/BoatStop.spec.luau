@@ -73,6 +73,54 @@ return function(t, Shared)
 		end)
 	end)
 
+	-- Measured in Studio (11/28/2026): the terrain bank reaches the water line well before the
+	-- map's water boxes end, so the ray down stopped the hull with no map shore within 5 studs of
+	-- the bow and "Land here" never showed. The server's ground probe (isDry) now counts too.
+	t.test("stopped by the terrain bank, a lander is offered Land here on the first dry ground", function()
+		withCanoe(true, function()
+			local SOUTH = Vector3.new(0, 0, 1)
+			local eastBank = function(p: Vector3): boolean
+				return p.X >= 106
+			end
+			local southBank = function(p: Vector3): boolean
+				return p.Z >= 76.5
+			end
+			for _, id in { "Canoe", "Dinghy" } do
+				local hull = Vector3.new(96.3, 0, 0)
+				t.eq(BoatRules.beachAt(id, hull, EAST, 0), nil, id .. ": the map alone finds no shore (the bug)")
+				local at = BoatRules.beachAt(id, hull, EAST, 0, eastBank)
+				t.ok(at ~= nil, id .. ": east bank, Land here")
+				local x = (at :: Vector3).X
+				t.ok(x >= 106 and x <= 106 + BoatRules.BEACH_STEP + BoatRules.BEACH_UP + 1e-6, id .. string.format(": steps off on the bank (x %.1f)", x))
+				local south = BoatRules.beachAt(id, Vector3.new(60, 0, 67.7), SOUTH, 0, southBank)
+				t.ok(south ~= nil and (south :: Vector3).Z >= 76.5, id .. ": south bank, Land here")
+			end
+			-- Still only when slow, bow on, and within reach.
+			t.eq(BoatRules.beachAt("Canoe", Vector3.new(96.3, 0, 0), EAST, BoatRules.BEACH_SPEED + 1, eastBank), nil, "too fast")
+			t.eq(BoatRules.beachAt("Canoe", Vector3.new(96.3, 0, 0), -EAST, 0, eastBank), nil, "stern to the bank")
+			t.eq(BoatRules.beachAt("Canoe", Vector3.new(60, 0, 0), EAST, 0, eastBank), nil, "the bank is past the reach")
+			-- The Deep-V lands at piers only, whatever the ground says.
+			t.eq(BoatRules.beachAt("DeepV", Vector3.new(94, 0, 0), EAST, 0, eastBank), nil, "Deep-V refuses the bank")
+			t.eq(BoatRules.beachAt("DeepV", Vector3.new(100, 0, 0), EAST, 0, function()
+				return true
+			end), nil, "Deep-V refuses any shore")
+		end)
+	end)
+
+	t.test("the look-ahead stop at the measured east bank leaves the bow within the dry search", function()
+		withCanoe(true, function()
+			-- The ray stops the hull 1.5 studs plus a quarter second short of the terrain; at a creep
+			-- the bow is about 2 studs off it, at full paddle about 4.25. Both are in reach.
+			for _, speed in { 1, BoatData.byId.Canoe.pairSpeed } do
+				local gap = BoatRules.STOP_CLEAR + speed * BoatRules.STOP_LOOK
+				local hull = Vector3.new(106 - gap - BoatData.byId.Canoe.length / 2, 0, 0)
+				t.ok(BoatRules.beachAt("Canoe", hull, EAST, 0, function(p: Vector3)
+					return p.X >= 106
+				end) ~= nil, string.format("stopped %.2f studs short at speed %.0f", gap, speed))
+			end
+		end)
+	end)
+
 	t.test("a boat stops before a log and before backing into the dock from its slip", function()
 		-- The log at (70, 55) lies along yaw 0.5: drive at it from the south.
 		local kind = BoatRules.stopAhead("Dinghy", Vector3.new(70, 0, 63), NORTH, 6)

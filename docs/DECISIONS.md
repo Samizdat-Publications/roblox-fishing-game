@@ -430,3 +430,35 @@ The N3 final critic read the foam as "hard-edged rectangular whitewater foam pat
 
 1. Boats keep 1.5 studs of water plus a quarter second of travel ahead of them (at the canoe's 11 studs a second, about 4 studs).
 2. The Drive prompt's reach grows with long boats (half the length plus 6), so the canoe and Deep-V can be boarded from the shore at either end.
+
+## 11/28/2026: Land here after the look-ahead stop, the Deep-V's float height, a Studio co-op test helper
+
+- **Land here was never offered at a bank.** The ray down in the look-ahead stops a hull where the terrain bank rises, which is several studs before the map's water boxes end (measured in Studio: east bank, hull stopped at x 96.3, terrain at the water line from x 106, map water to x 110; south bank, hull z 67.7, terrain from z 76.5, map water to z 81). `BoatRules.beachAt` only looked 5 studs past the bow on the map, so it found nothing. Now the server hands it a ground probe (`terrainDry` in BoatService: a ray down at terrain only, dry when the terrain is at or above the water line, 0.05 slack) that is searched up to 12 studs past the bow (`BEACH_DRY_REACH`); the map's own shore still counts within 5 studs as before. Riders step off 2 studs up the bank from the first dry point. Only the bow's centre line is probed, as before. The Deep-V still refuses any shore (spec `BoatStop`).
+- **The Deep-V sat too deep.** Its model's pivot is the middle of its bounding box, not the water line: from `art/models/DeepV.glb` the skeg is 2.07 under the pivot, the hull's keel 1.94, the deck top 0.74, and the gunwale 0.83 over. `BoatFeel.ART.DeepV.lift` (a first guess of -0.6) put the skeg at -2.67. It is now 1.24: the water line 0.5 under the deck top, matching its `floor.y`, so the keel is 0.70 down and the gunwale 2.07 up. One number moves both the moored boat (BoathousePlan reads it) and the moving one (BoatFeelClient). Computed from the file, not yet seen in Studio; rebuild the boathouse (`Boathouse.build()` in Edit) to move the moored one.
+- **Studio test helper for the N4 two-player checks** (`Server/DebugCoop`, Studio only). A Humanoid rig stands in for the second player. In a live game it does nothing: `DebugCoop.start()` returns at once outside Studio, and the hooks it uses (`FishingService.debugHookDummy`, `debugNetPress`, `debugDummyState`, `debugEndDummy`, `BoatService.debugSeatSecond`) all check `RunService:IsStudio()`. The test angler's fish uses the same `DebugFightProgress` attribute (on the rig) and the same Net rules, prompt and reach check as a real angler's; a net on it credits the helper exactly as a net on a real angler outside a team catch does (the shared `creditHelper`). The angler's own side (its bag, a Double Hookup) is not simulated.
+- **How to call it.** In Play, from `execute_luau` on the server, through a BindableFunction (so it reaches the running game's own services, whatever the calling context):
+
+```lua
+local F = game:GetService("ServerStorage"):WaitForChild("DebugCoop")
+-- Net it: a dummy angler 6 studs from the player, its fish at 70 percent.
+local me = game.Players:GetPlayers()[1]
+local at = me.Character.HumanoidRootPart.Position + Vector3.new(6, -3, 0)
+F:Invoke("angler", at, 0.7)            -- optional: species id, a point to face
+F:Invoke("state")                      -- after 0.2 s: open = true, text "Wait for it to surface"
+F:Invoke("assists", me.Name)           -- the journal's assists before
+F:Invoke("press", me.Name, true)       -- a timed press (waits for the fish to surface): "landed"
+F:Invoke("assists", me.Name)           -- count + 1, last.how = "net", last.bonus = 10 percent of last.price
+F:Invoke("angler", at, 0.6)            -- below 70 percent: state().open stays false
+F:Invoke("progress", 0.75)             -- the net comes out
+F:Invoke("press", me.Name, false)      -- an untimed press: "landed" if the fish is up, else "missed"
+-- A crew of two: a dummy in the second seat of the player's boat.
+F:Invoke("seat", me.Name)              -- the rig's path, or why not ("no boat", "the second seat is taken")
+F:Invoke("clear")                      -- removes every dummy
+```
+
+  For the prompt itself, walk the real player within 10 studs and press E with `user_keyboard_input` while `state().up` is true; the prompt's text reads "It's up! Net it now" then. The rig is named TestAngler (TestCrew in a boat).
+
+### Defaults chosen, open to Stewart (this round)
+
+1. Land here searches the real ground up to 12 studs past the bow (the stop keeps about 2 to 4.25 studs of water, so this is generous).
+2. The Deep-V's water line sits 0.5 under its deck top (its keel 0.70 down).

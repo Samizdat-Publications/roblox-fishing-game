@@ -74,7 +74,13 @@ BoatFeel.ART = {
 	DeepV = {
 		hero = "DeepV",
 		plain = "DeepV",
-		lift = -0.6,
+		-- Its pivot is the middle of its bounding box (7.19 x 4.14 x 17.75; Studio measured the
+		-- skeg 2.07 under the pivot). From art/models/DeepV.glb: the skeg is 2.07 under the box
+		-- middle, the hull's keel 1.94 under, the deck top 0.74 under and the gunwale 0.83 over.
+		-- The water line is put 0.5 under the deck top (floor.y below), so the pivot rides 1.24
+		-- over the water: keel 0.70 down, gunwale 2.07 up. (Was -0.6, a guess that
+		-- sank it to the stripe: the skeg at -2.67 at the mooring, 11/28/2026.)
+		lift = 1.24,
 		yaw = 0,
 		trimPivotZ = 8.5,
 		floor = { y = 0.5, halfW = 2.8, halfL = 7, rocker = 0 },

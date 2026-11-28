@@ -445,6 +445,20 @@ local function groundAt(x: number, z: number): number
 	return if hit then hit.Position.Y else BoatRules.WATER_Y + 1
 end
 
+-- Is the real ground at this point dry (the terrain at or above the water line)? The look-ahead
+-- stop can halt a boat where the terrain bank rises, a few studs before the map's water boxes
+-- end, so "Land here" asks the terrain too (BoatRules.beachAt, 11/28/2026).
+local DRY_SLACK = 0.05 -- terrain this little under the water line still counts as the bank
+local dryParams = RaycastParams.new()
+dryParams.FilterType = Enum.RaycastFilterType.Include
+dryParams.IgnoreWater = true
+local function terrainDry(p: Vector3): boolean
+	dryParams.FilterDescendantsInstances = { workspace.Terrain }
+	local top = BoatRules.WATER_Y + 20
+	local hit = workspace:Raycast(Vector3.new(p.X, top, p.Z), Vector3.new(0, -40, 0), dryParams)
+	return hit ~= nil and hit.Position.Y >= BoatRules.WATER_Y - DRY_SLACK
+end
+
 -- Land on a shore (the fleet): the boat stays where it is, tied to the bank (anchored), and
 -- everyone aboard steps off onto dry land ahead of the bow. Its owner re-boards with "Drive".
 local function beach(boat: Boat, ashore: Vector3)
@@ -632,7 +646,7 @@ function spawnFor(player: Player)
 		if who ~= player or occupantPlayer(helm) ~= player or boat.docked or boat.beached then
 			return
 		end
-		local ashore = BoatRules.beachAt(boat.id, boat.hull.Position, boat.hull.CFrame.LookVector, boat.motion.speed)
+		local ashore = BoatRules.beachAt(boat.id, boat.hull.Position, boat.hull.CFrame.LookVector, boat.motion.speed, terrainDry)
 		if not ashore then
 			hint(who, "Point the bow at the shore and slow right down to land.")
 			return
@@ -911,7 +925,7 @@ local function step(dt: number)
 		-- Land on a shore (the fleet): slow, bow on a bank, and not right at your own slip.
 		boat.beachPrompt.Enabled = boat.helm.Occupant ~= nil
 			and not boat.tiePrompt.Enabled
-			and BoatRules.beachAt(boat.id, pos, boat.hull.CFrame.LookVector, boat.motion.speed) ~= nil
+			and BoatRules.beachAt(boat.id, pos, boat.hull.CFrame.LookVector, boat.motion.speed, terrainDry) ~= nil
 
 		-- Empty boats away from the slip go home on their own.
 		if n == 0 then
@@ -946,6 +960,32 @@ local function step(dt: number)
 			boat.chumPrompt.Enabled = boat.nav ~= nil and boat.nav.Occupant ~= nil and not boat.docked and Coop.chumReady(boat.chumAt, now)
 		end
 	end
+end
+
+-- Studio only (DebugCoop): sit this Humanoid (a test rig) in the second seat of this owner's
+-- boat, so a one-player test has a crew of two. False, with why, when it can't.
+function BoatService.debugSeatSecond(owner: Player, hum: Humanoid): (boolean, string?)
+	if not RunService:IsStudio() then
+		return false, "Studio only"
+	end
+	local boat = boats[owner]
+	if not boat then
+		return false, "no boat"
+	end
+	local nav = boat.nav
+	if not nav then
+		return false, "this boat has no second seat"
+	end
+	if nav.Occupant then
+		return false, "the second seat is taken"
+	end
+	local root = hum.Parent and hum.Parent:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if root then
+		root.Anchored = false
+		root.CFrame = nav.CFrame + Vector3.new(0, 2.5, 0)
+	end
+	nav:Sit(hum)
+	return true, nil
 end
 
 -- For FishingService: the boat this player sits in (as driver or rider), and its speed.

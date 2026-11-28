@@ -1334,6 +1334,23 @@ local function onFightResult(player: Player, claim: any, report: any)
 	landCatch(player, s, nil)
 end
 
+-- A helper's share of someone else's catch: an assist in their journal, the bonus (if any) in
+-- their coins, and a toast. Used by landCatch and by the Studio-only test angler (DebugCoop).
+local function creditHelper(helper: Player, anglerName: string, anglerShown: string, fish: Inventory.Fish, speciesName: string, how: string, bonus: number)
+	local hd = PlayerData.get(helper)
+	if not hd then
+		return
+	end
+	Inventory.recordAssist(hd, fish, bonus, how, os.time())
+	PlayerData.changed(helper)
+	print(string.format("[Coop] %s assisted %s (%s) on a %s worth %d: +%d coins", helper.Name, anglerName, how, fish.name, fish.price, bonus))
+	if bonus > 0 then
+		toast(helper, string.format("Assist! You helped %s land a %s. +%d coins.", anglerShown, speciesName, bonus))
+	else
+		toast(helper, string.format("Assist! You helped %s land a %s.", anglerShown, speciesName))
+	end
+end
+
 -- Land the fish on the line: the angler's own win (the client's fight, judged above), or a
 -- helper's net (NET_ON, N4: `netter`). Pays the angler, any helpers, and a Double Hookup.
 function landCatch(player: Player, s: Session, netter: Player?)
@@ -1378,18 +1395,7 @@ function landCatch(player: Player, s: Session, netter: Player?)
 		table.insert(helpers, { p = netter, how = "net" })
 	end
 	local function assist(helper: Player, how: string, bonus: number)
-		local hd = PlayerData.get(helper)
-		if not hd then
-			return
-		end
-		Inventory.recordAssist(hd, fish, bonus, how, os.time())
-		PlayerData.changed(helper)
-		print(string.format("[Coop] %s assisted %s (%s) on a %s worth %d: +%d coins", helper.Name, player.Name, how, fish.name, fish.price, bonus))
-		if bonus > 0 then
-			toast(helper, string.format("Assist! You helped %s land a %s. +%d coins.", player.DisplayName, species.name, bonus))
-		else
-			toast(helper, string.format("Assist! You helped %s land a %s.", player.DisplayName, species.name))
-		end
+		creditHelper(helper, player.Name, player.DisplayName, fish, species.name, how, bonus)
 	end
 	if Config.ASSIST_BONUS_ON then
 		for _, h in helpers do
@@ -1538,11 +1544,9 @@ local function onNetPress(helper: Player, angler: Player)
 	end
 end
 
-local function openNet(player: Player, s: Session)
-	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
-	if not root then
-		return
-	end
+-- The "Net it" prompt on an angler's root. anglerId is the angler's UserId: their own screen
+-- hides it (BoatClient). 0 for the Studio test angler (DebugCoop).
+local function newNetPrompt(root: BasePart, anglerId: number, onPress: (Player) -> ()): ProximityPrompt
 	local p = Instance.new("ProximityPrompt")
 	p.Name = "NetPrompt"
 	p.ActionText = "Net it"
@@ -1552,9 +1556,27 @@ local function openNet(player: Player, s: Session)
 	p.RequiresLineOfSight = false
 	p.KeyboardKeyCode = Enum.KeyCode.E
 	p.GamepadKeyCode = Enum.KeyCode.ButtonX
-	p:SetAttribute("AnglerId", player.UserId) -- the angler's own screen hides it (BoatClient)
+	p:SetAttribute("AnglerId", anglerId)
 	p.Parent = root
-	p.Triggered:Connect(function(who: Player)
+	p.Triggered:Connect(onPress)
+	return p
+end
+
+-- Say on the prompt whether the fish is up right now.
+local function showSurfacing(n: NetChance, now: number)
+	local up = Net.surfacing(n.openedAt, now)
+	if up ~= n.up then
+		n.up = up
+		n.prompt.ObjectText = if up then "It's up! Net it now" else "Wait for it to surface"
+	end
+end
+
+local function openNet(player: Player, s: Session)
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not root then
+		return
+	end
+	local p = newNetPrompt(root, player.UserId, function(who: Player)
 		onNetPress(who, player)
 	end)
 	s.net = { prompt = p, openedAt = os.clock(), helpers = {}, up = false }
@@ -1583,6 +1605,189 @@ local function onFightProgress(player: Player, progress: any)
 	end
 end
 
+-- Studio-only test anglers (DebugCoop) ------------------------------------------------------
+-- A Humanoid rig standing in for a second player: it "has a fish on" at a set fight progress
+-- (the DebugFightProgress attribute on the rig, the same attribute a real angler's Studio test
+-- uses), so one real player can check "Net it" and the assist alone. Never in a live game:
+-- debugHookDummy refuses outside Studio, so dummyFights stays empty there.
+type DummyFight = {
+	model: Model,
+	species: string,
+	net: NetChance?,
+}
+local dummyFights: { [Model]: DummyFight } = {}
+
+local function dummyRoot(model: Model): BasePart?
+	return model:FindFirstChild("HumanoidRootPart") :: BasePart?
+end
+
+local function endDummy(d: DummyFight)
+	dummyFights[d.model] = nil
+	local n = d.net
+	d.net = nil
+	if n then
+		n.prompt:Destroy()
+	end
+end
+
+-- The helper netted the test angler's fish: the helper's side of landCatch (the journal assist
+-- and bonus, as for a net on a real angler outside a team catch). The rig gets DebugLanded.
+local function landDummy(d: DummyFight, helper: Player)
+	local species = FishData.byId[d.species]
+	if not species then
+		endDummy(d)
+		return
+	end
+	local cm, kg = FishLogic.rollSize(species, rng)
+	local fish: Inventory.Fish = {
+		id = species.id,
+		name = species.name,
+		cm = cm,
+		kg = kg,
+		price = FishLogic.priceFor(species, kg),
+		bait = "",
+		spot = "OpenWater",
+		period = "Day",
+		at = os.time(),
+	}
+	local bonus = if Config.ASSIST_BONUS_ON then Coop.assistBonus(fish.price) else 0
+	creditHelper(helper, d.model.Name, d.model.Name, fish, species.name, "net", bonus)
+	print(string.format("[DebugCoop] %s netted %s's %s, %.1f cm worth %d: +%d", helper.Name, d.model.Name, fish.name, cm, fish.price, bonus))
+	d.model:SetAttribute("DebugLanded", fish.name)
+	d.model:SetAttribute("DebugFightProgress", nil)
+	endDummy(d)
+end
+
+-- A press of "Net it" on the test angler: the same server checks as onNetPress.
+local function onDummyNetPress(helper: Player, d: DummyFight): string
+	local n = d.net
+	if not n then
+		return "closed"
+	end
+	local hs = sessions[helper]
+	if hs and hs.phase == "Fighting" then
+		toast(helper, "Your hands are full with your own fish!")
+		return "busy"
+	end
+	local hr = helper.Character and helper.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local ar = dummyRoot(d.model)
+	if not hr or not ar or not Net.inReach(hr.Position, ar.Position) then
+		return "far"
+	end
+	local h = n.helpers[helper] or {}
+	n.helpers[helper] = h
+	local result = Net.press(h, n.openedAt, os.clock())
+	print(string.format("[Net] %s pressed on %s's %s: %s", helper.Name, d.model.Name, d.species, result))
+	if result == "landed" then
+		landDummy(d, helper)
+	elseif result == "missed" then
+		toast(helper, "Missed! It went back down. Try again in 2 seconds.")
+	else
+		toast(helper, "Get the net ready...")
+	end
+	return result
+end
+
+local function dummyTick(now: number)
+	for model, d in dummyFights do
+		local root = dummyRoot(model)
+		if not model.Parent or not root then
+			endDummy(d)
+			continue
+		end
+		local prog = model:GetAttribute("DebugFightProgress")
+		local open = Config.NET_ON and type(prog) == "number" and Net.open(d.net ~= nil, prog)
+		if open and not d.net then
+			local p = newNetPrompt(root, 0, function(who: Player)
+				onDummyNetPress(who, d)
+			end)
+			d.net = { prompt = p, openedAt = now, helpers = {}, up = false }
+			print(string.format("[Net] %s's %s is at %.0f%%: the net is out", model.Name, d.species, (prog :: number) * 100))
+		elseif not open and d.net then
+			local n = d.net :: NetChance
+			d.net = nil
+			n.prompt:Destroy()
+		end
+		local n = d.net
+		if n then
+			showSurfacing(n, now)
+		end
+	end
+end
+
+-- Studio only: give this rig (a Model with a Humanoid and a HumanoidRootPart) a hooked fish at
+-- this fight progress (0 to 1). False outside Studio, or for a bad rig or species.
+function FishingService.debugHookDummy(model: Model, speciesId: string?, progress: number): boolean
+	if not RunService:IsStudio() or not dummyRoot(model) then
+		return false
+	end
+	local id = speciesId or "Bluegill"
+	if not FishData.byId[id] then
+		return false
+	end
+	local old = dummyFights[model]
+	if old then
+		endDummy(old)
+	end
+	model:SetAttribute("DebugLanded", nil)
+	model:SetAttribute("DebugFightProgress", progress)
+	dummyFights[model] = { model = model, species = id }
+	return true
+end
+
+-- Studio only: the test angler's net chance as the server sees it.
+function FishingService.debugDummyState(model: Model): { [string]: any }?
+	if not RunService:IsStudio() then
+		return nil
+	end
+	local d = dummyFights[model]
+	local n = d and d.net
+	return {
+		hooked = d ~= nil,
+		species = if d then d.species else nil,
+		progress = model:GetAttribute("DebugFightProgress"),
+		open = n ~= nil,
+		up = if n then (Net.surfacing(n.openedAt, os.clock())) else false,
+		text = if n then n.prompt.ObjectText else nil,
+		landed = model:GetAttribute("DebugLanded"),
+	}
+end
+
+-- Studio only: press "Net it" on the test angler for this helper, through the same server
+-- checks as the prompt: "landed", "missed", "wait", "far", "busy" or "closed". With waitUp, it
+-- first waits (up to 10 s) until the fish is up: a timed press. Without, it presses at once.
+function FishingService.debugNetPress(helper: Player, model: Model, waitUp: boolean?): string?
+	if not RunService:IsStudio() then
+		return nil
+	end
+	local d = dummyFights[model]
+	if not d then
+		return "closed"
+	end
+	if waitUp then
+		local deadline = os.clock() + 10
+		while os.clock() < deadline do
+			local n = d.net
+			if n and Net.surfacing(n.openedAt, os.clock()) then
+				break
+			end
+			task.wait(0.05)
+		end
+	end
+	return onDummyNetPress(helper, d)
+end
+
+-- Studio only: take the test angler's fish away (the rig stays).
+function FishingService.debugEndDummy(model: Model)
+	local d = dummyFights[model]
+	if d then
+		endDummy(d)
+	end
+	if RunService:IsStudio() then
+		model:SetAttribute("DebugFightProgress", nil)
+	end
+end
+
 -- Ten times a second: open and close each angler's net chance, and say when the fish is up.
 local function netTick()
 	local now = os.clock()
@@ -1608,12 +1813,11 @@ local function netTick()
 		end
 		local n = s.net
 		if n then
-			local up = Net.surfacing(n.openedAt, now)
-			if up ~= n.up then
-				n.up = up
-				n.prompt.ObjectText = if up then "It's up! Net it now" else "Wait for it to surface"
-			end
+			showSurfacing(n, now)
 		end
+	end
+	if next(dummyFights) ~= nil then
+		dummyTick(now) -- Studio-only test anglers (empty in a live game)
 	end
 end
 
