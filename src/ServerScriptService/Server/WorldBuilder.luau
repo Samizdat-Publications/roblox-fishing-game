@@ -67,8 +67,8 @@ end
 WorldBuilder.LANTERN = {
 	color = Color3.fromRGB(255, 190, 120),
 	size = 0.7,
-	range = 24,
-	brightness = 3.5,
+	range = 18, -- 24 until 11/27/2026: at 3.5 and 24 the lantern glow reflected as a hard tan band across the night water (shot 04 test: gone with lanterns off)
+	brightness = 2.0,
 	shadows = false, -- every lantern but the dock's two
 	SHADOW_ATTR = "LanternShadows", -- true on a lantern light that may cast shadows
 }
