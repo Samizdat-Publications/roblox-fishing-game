@@ -11,6 +11,7 @@ local Config = require(Shared.Config)
 local Shore = require(Shared.Shore)
 local Cover = require(Shared.Cover)
 local BoathousePlan = require(Shared.BoathousePlan)
+local BigWater = require(Shared.BigWater) -- N5, the bigger lake (Config.BIG_WATER_ON)
 
 local BoatRules = {}
 
@@ -47,6 +48,19 @@ BoatRules.BLUE_WATER = box(-200, -440, 200, -290)
 -- The Big Lake's water box (Shore carves the island and the banks out of it).
 local BIG_LAKE_WATER: { Box } = { BoatRules.BIG_LAKE }
 
+-- N5, big water (Config.BIG_WATER_ON, read at call time): the basin as it was, the blue water out
+-- to x -450..450 and north to the wall at z -1150, and Lily Cove off the basin's west bank.
+local function rectBox(r: BigWater.Rect): Box
+	return box(r.x1, r.z1, r.x2, r.z2)
+end
+BoatRules.BASIN = rectBox(BigWater.BASIN)
+BoatRules.BIG_BLUE = rectBox(BigWater.BLUE)
+BoatRules.COVE = rectBox(BigWater.COVE)
+local BIG_WATER_WATERS: { Box } = { BoatRules.BASIN, BoatRules.BIG_BLUE, BoatRules.COVE }
+local function bigLakeWaters(): { Box }
+	return if Config.BIG_WATER_ON then BIG_WATER_WATERS else BIG_LAKE_WATER
+end
+
 -- Fishing spots on the Big Lake. Order matters: the island point is checked before the basin.
 BoatRules.ZONES = {
 	zone("IslandPoint", -70, -258, -40, -222), -- the weedy east tip of the island
@@ -55,6 +69,28 @@ BoatRules.ZONES = {
 } :: { Zone }
 
 BoatRules.BOAT_SPOTS = { Basin = true, IslandPoint = true, DropOff = true }
+
+-- With big water on (read when this module loads, as other modules walk ZONES directly): the
+-- drop-off covers all the blue water, and Lily Cove fishes as the basin (its own fish are not
+-- planned yet).
+-- The zones with the bigger lake's changes (BigWater.zoneChanges), whatever the switch says: the
+-- Edit builder makes its zone parts from this.
+local L7_ZONES = table.clone(BoatRules.ZONES)
+function BoatRules.bigWaterZones(): { Zone }
+	local ch = BigWater.zoneChanges()
+	local out = {}
+	for _, z in L7_ZONES do
+		local r = ch.replace[z.name]
+		table.insert(out, if r then zone(z.name, r.x1, r.z1, r.x2, r.z2) else z)
+	end
+	for _, a in ch.add do
+		table.insert(out, zone(a.name, a.rect.x1, a.rect.z1, a.rect.x2, a.rect.z2))
+	end
+	return out
+end
+if Config.BIG_WATER_ON then
+	BoatRules.ZONES = BoatRules.bigWaterZones()
+end
 
 BoatRules.SPOT_NAMES = {
 	Basin = "the open basin",
@@ -97,7 +133,7 @@ end
 -- Every box a boat may be over: the lake, the channel and the Big Lake around the island.
 function BoatRules.waters(): { Box }
 	local out = { BoatRules.LAKE, BoatRules.CHANNEL }
-	for _, b in BIG_LAKE_WATER do
+	for _, b in bigLakeWaters() do
 		table.insert(out, b)
 	end
 	return out
@@ -106,7 +142,7 @@ end
 -- Water boxes a cast may land in that the lake's own list doesn't have yet.
 function BoatRules.extraCastWaters(): { Box }
 	local out = { BoatRules.CHANNEL }
-	for _, b in BIG_LAKE_WATER do
+	for _, b in bigLakeWaters() do
 		table.insert(out, b)
 	end
 	return out
@@ -126,11 +162,33 @@ end
 
 -- The channel and the Big Lake: places you can only fish from a boat.
 function BoatRules.needsBoat(pos: Vector3): boolean
-	return inBox(pos, BoatRules.CHANNEL) or inBox(pos, BoatRules.BIG_LAKE)
+	if inBox(pos, BoatRules.CHANNEL) then
+		return true
+	end
+	for _, b in bigLakeWaters() do
+		if inBox(pos, b) then
+			return true
+		end
+	end
+	return false
 end
 
 function BoatRules.inBlueWater(pos: Vector3): boolean
-	return inBox(pos, BoatRules.BLUE_WATER)
+	return inBox(pos, if Config.BIG_WATER_ON then BoatRules.BIG_BLUE else BoatRules.BLUE_WATER)
+end
+
+-- How far across the buoy line this point is, 0 to 1 (N5): with big water on it eases over
+-- BigWater.CROSS_BAND studs on the Big Lake, so the swell builds as you cross; off, 1 in blue water
+-- and 0 elsewhere, as before.
+function BoatRules.blueShare(pos: Vector3): number
+	if not Config.BIG_WATER_ON then
+		return if BoatRules.inBlueWater(pos) then 1 else 0
+	end
+	local u = BigWater.BLUE
+	if pos.X < u.x1 or pos.X > u.x2 or pos.Z > BigWater.BASIN.z2 then
+		return 0
+	end
+	return BigWater.crossing(pos.Z)
 end
 
 -- Where a boat sits at slip i: centred so its stern is at the slip edge, bow east.
@@ -147,12 +205,17 @@ end
 -- the refusal below already applies to it.
 BoatRules.PADDLE_ONLY = {} :: { Zone }
 BoatRules.LILY_TEXT = "Too shallow and weedy for a motor. Paddle in."
+-- N5: Lily Cove itself, counted with PADDLE_ONLY while Config.BIG_WATER_ON is on.
+BoatRules.LILY_COVE = zone("LilyCove", BigWater.COVE.x1, BigWater.COVE.z1, BigWater.COVE.x2, BigWater.COVE.z2)
 
 function BoatRules.paddleOnlyAt(pos: Vector3): Zone?
 	for _, z in BoatRules.PADDLE_ONLY do
 		if inBox(pos, z) then
 			return z
 		end
+	end
+	if Config.BIG_WATER_ON and inBox(pos, BoatRules.LILY_COVE) then
+		return BoatRules.LILY_COVE
 	end
 	return nil
 end
@@ -169,7 +232,7 @@ function BoatRules.waterAt(pos: Vector3): string?
 	if BoatRules.inBlueWater(pos) then
 		return "BlueWater"
 	end
-	if inBox(pos, BoatRules.BIG_LAKE) then
+	if inBox(pos, BoatRules.BIG_LAKE) or (Config.BIG_WATER_ON and inBox(pos, BoatRules.BASIN)) then
 		return "Basin"
 	end
 	if inBox(pos, BoatRules.CHANNEL) then
@@ -281,6 +344,10 @@ end
 -- What a boat would hit at this point: "shore" (off the water), "log", "dock", "water" (water
 -- this boat may not use, with the reason) or nil when it is clear.
 function BoatRules.blockedAt(boatId: string, point: Vector3): (string?, string?)
+	-- N5: past the north wall the water goes on (drawn only), so it is the lake's end, not a shore.
+	if Config.BIG_WATER_ON and BigWater.pastNorthWall(point.X, point.Z) then
+		return "edge", nil
+	end
 	if not BoatRules.isBoatWater(point) then
 		return "shore", nil
 	end
@@ -410,6 +477,8 @@ function BoatRules.stopText(boatId: string, kind: string, msg: string?): string
 		return "The dock is in the way. Turn the boat."
 	elseif kind == "water" then
 		return msg or "The boat can't go there."
+	elseif kind == "edge" then
+		return BigWater.EDGE_TEXT
 	end
 	return "Something is in the way. Turn the boat."
 end

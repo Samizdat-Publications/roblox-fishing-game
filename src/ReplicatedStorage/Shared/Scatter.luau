@@ -23,6 +23,8 @@
 -- wall, the channel and its footbridge, the creek gate and every fishing spot's cast lane, and
 -- (11/27/2026) of the fixed shot cameras (Scatter.SHOT_CAMS, mirroring tools/shots/shots.json).
 local Shore = require(script.Parent.Shore)
+local Config = require(script.Parent.Config)
+local BigWater = require(script.Parent.BigWater)
 local ShoreEdge = require(script.Parent.ShoreEdge)
 
 local Scatter = {}
@@ -852,9 +854,9 @@ Scatter.SHOT_CAMS = {
 	{ id = "b01-bridge-dawn", eye = { 12, 5, -48 }, look = { 0, 5, -95 } },
 	{ id = "b02-basin-boat-noon", eye = { -20, 4, -180 }, look = { -90, 3, -245 } },
 	{ id = "b03-lighthouse-golden", eye = { -32, 5, -224 }, look = { -72, 2, -239 } },
-	{ id = "b04-buoys-dusk", eye = { 52, 4, -282 }, look = { -80, 0, -292 } },
-	{ id = "b05-bluewater-noon", eye = { 24, 5, -280 }, look = { 50, 0, -420 } },
-	{ id = "b06-marina-night", eye = { 80, 7, -205 }, look = { 40, 2, -140 } },
+	{ id = "b04-buoys-dusk", eye = { 52, 4, -282 }, look = { -205, 1, -296 } }, -- N5: the west elbow
+	{ id = "b05-bluewater-noon", eye = { 24, 5, -280 }, look = { 90, 0, -520 } }, -- N5: islets and the bell buoy
+	{ id = "b06-marina-night", eye = { 80, 7, -205 }, look = { 70, 2, -160 } }, -- N5: the marina pier
 	-- Set P, the making-of's prime shots (docs/looks/prime-shots.md, 11/28/2026): the three with
 	-- eyes of their own (the others reuse set A eyes: p03 is 05's bank, p04 03's, p06 08's and
 	-- p08 10's since Neon's N3 review, Pass 1; p07 has its own since N3 review 3).
@@ -1464,7 +1466,11 @@ end
 
 -- The Big Lake (BoatRules.BIG_LAKE, x -200..200, z -440..-140) and the 45 studs round it that
 -- BoatWorld dresses itself.
+-- With big water on (N5) it is BigWater.CLEAR, the bigger lake's whole rewrite, and 45 studs.
 function Scatter.inBigLake(x: number, z: number): boolean
+	if Config.BIG_WATER_ON then
+		return BigWater.inRect(BigWater.CLEAR, x, z, 45)
+	end
 	return x >= -245 and x <= 245 and z >= -485 and z <= -95
 end
 

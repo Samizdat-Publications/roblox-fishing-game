@@ -178,8 +178,8 @@ end
 -- blades, the critic's riffle shot was all grass and no water.
 WaterLook.CREEK_MEADOW = 14
 local function creekMeadow(t: Terrain)
-	for _, a in Shore.AREAS do
-		if a.name ~= "Lake" then
+	for _, a in Shore.areas() do
+		if a.name ~= "Lake" and not a.own then -- N5: BigWaterBuild writes its own areas
 			local m = WaterLook.CREEK_MEADOW
 			local region = Region3.new(Vector3.new(a.x1 - m, -4, a.z1 - m), Vector3.new(a.x2 + m, 12, a.z2 + m)):ExpandToGrid(CELL)
 			local lo = region.CFrame.Position - region.Size / 2
@@ -190,8 +190,8 @@ local function creekMeadow(t: Terrain)
 				for iz = 1, #mats[1][1] do
 					local cz = lo.Z + (iz - 0.5) * CELL
 					local near = false
-					for _, b in Shore.AREAS do
-						if b.name ~= "Lake" and Shore.depthIn(b, cx, cz) < m then
+					for _, b in Shore.areas() do
+						if b.name ~= "Lake" and not b.own and Shore.depthIn(b, cx, cz) < m then
 							near = true
 							break
 						end
@@ -214,8 +214,10 @@ end
 local function shoreTerrain(lake: Model)
 	local t = workspace.Terrain
 	creekBanks(lake)
-	for _, a in Shore.AREAS do
-		shoreArea(t, a)
+	for _, a in Shore.areas() do
+		if not a.own then -- N5: the big water's terrain is BigWaterBuild's
+			shoreArea(t, a)
+		end
 	end
 	creekMeadow(t)
 end
@@ -255,7 +257,7 @@ local function lawnParts(lake: Instance): { BasePart }
 end
 
 local function areaNamed(name: string): Shore.Area?
-	for _, a in Shore.AREAS do
+	for _, a in Shore.areas() do
 		if a.name == name then
 			return a
 		end

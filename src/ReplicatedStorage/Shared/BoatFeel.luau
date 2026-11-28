@@ -241,10 +241,13 @@ BoatFeel.FLOOR_MIN = 0.02 -- the drawn floor is always kept this far above the w
 
 export type Bob = { heave: number, pitch: number, roll: number }
 
--- The bob at time t (seconds), for this share of top speed. phase staggers boats.
-function BoatFeel.bob(boatId: string, t: number, speedFrac: number, blue: boolean, phase: number?): Bob
+-- The bob at time t (seconds), for this share of top speed. phase staggers boats. `blue` is true in
+-- blue water, or (N5, BoatRules.blueShare) how far across the buoy line the boat is, 0 to 1, so the
+-- swell builds over the crossing.
+function BoatFeel.bob(boatId: string, t: number, speedFrac: number, blue: boolean | number, phase: number?): Bob
 	local c = BoatFeel.BOB[kindOf(boatId)]
-	local k = (1 - (1 - BoatFeel.BOB_AT_SPEED) * math.clamp(math.abs(speedFrac), 0, 1)) * (if blue then BoatFeel.BOB_BLUE else 1)
+	local share = if type(blue) == "number" then math.clamp(blue, 0, 1) elseif blue then 1 else 0
+	local k = (1 - (1 - BoatFeel.BOB_AT_SPEED) * math.clamp(math.abs(speedFrac), 0, 1)) * (1 + (BoatFeel.BOB_BLUE - 1) * share)
 	local p = phase or 0
 	local P = BoatFeel.BOB_PERIOD
 	local tau = 2 * math.pi

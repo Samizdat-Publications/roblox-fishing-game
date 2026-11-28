@@ -835,7 +835,7 @@ local function stepFeel(f: Feel, dt: number, now: number, localHum: Humanoid?)
 	local trim = BoatFeel.trim(f.id, f.trimW)
 	f.lean = BoatFeel.approach(f.lean, BoatFeel.lean(f.id, turn, math.abs(frac)), dt, 0.25, 0.25)
 	local onShore = ashore(f)
-	local blue = BoatRules.inBlueWater(f.hull.Position)
+	local blue = BoatRules.blueShare(f.hull.Position) -- 0 or 1, or (big water, N5) eased over the buoy line
 	local bob = if onShore then { heave = 0, pitch = 0, roll = 0 } else BoatFeel.bob(f.id, now, frac, blue, f.phase)
 
 	-- Paddling: everyone seated in a paddled boat strokes while it moves.

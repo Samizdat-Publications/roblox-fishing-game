@@ -65,6 +65,11 @@ local function inRect(r: Rect, x: number, z: number, pad: number): boolean
 end
 
 local function bigLake(): Rect
+	if Config.BIG_WATER_ON then -- N5: the bigger lake's whole rewrite stays clear of hills and trees
+		local BigWater = require(Shared:WaitForChild("BigWater"))
+		local c = BigWater.CLEAR
+		return { x1 = c.x1, x2 = c.x2, z1 = c.z1, z2 = c.z2 }
+	end
 	local b = BoatRules.BIG_LAKE
 	local c, s = b.cframe.Position, b.size
 	return { x1 = c.X - s.X / 2, x2 = c.X + s.X / 2, z1 = c.Z - s.Z / 2, z2 = c.Z + s.Z / 2 }

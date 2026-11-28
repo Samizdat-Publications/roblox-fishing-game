@@ -9,6 +9,8 @@
 --
 -- Pure data and math, no Roblox services: runs in the Lune tests.
 local Shore = {}
+local Config = require(script.Parent.Config)
+local BigWater = require(script.Parent.BigWater) -- N5's bigger lake (data only; it requires Shore lazily)
 
 export type Point = { name: string, x: number, z: number, r: number }
 -- A stretch of one edge that isn't shore (where two creek stretches join): edge "x1", "x2",
@@ -26,6 +28,10 @@ export type Area = {
 	points: { Point },
 	bed: number, -- the bed's height, where the shallows bottom out
 	shallows: number, -- studs of sloping bed off a shore
+	-- N5 (big water), optional: each corner's own radius { x1z1, x2z1, x1z2, x2z2 } in place of
+	-- `corner`, and `own` naming the builder that writes this area's terrain (WaterLook skips it).
+	corners: { number }?,
+	own: string?,
 }
 
 -- The lake's water rectangle (WaterMap.WATER_SIZE centred on the origin).
@@ -105,9 +111,32 @@ Shore.AREAS = {
 	},
 } :: { Area }
 
+-- The areas in use: AREAS, or with Config.BIG_WATER_ON (N5) the same list with L7's BigLake swapped
+-- for the bigger lake's basin, blue water, Lily Cove and North Reach (BigWater.areas). Read at call
+-- time, so a spec can flip the switch.
+local BIG_AREAS: { Area }? = nil
+function Shore.areas(): { Area }
+	if not Config.BIG_WATER_ON then
+		return Shore.AREAS
+	end
+	if not BIG_AREAS then
+		local out: { Area } = {}
+		for _, a in Shore.AREAS do
+			if a.name ~= "BigLake" then
+				table.insert(out, a)
+			end
+		end
+		for _, a in BigWater.ownAreas() do
+			table.insert(out, a :: Area)
+		end
+		BIG_AREAS = out
+	end
+	return BIG_AREAS :: { Area }
+end
+
 -- The area this point lies in, if any.
 function Shore.areaAt(x: number, z: number): Area?
-	for _, a in Shore.AREAS do
+	for _, a in Shore.areas() do
 		if x >= a.x1 and x <= a.x2 and z >= a.z1 and z <= a.z2 then
 			return a
 		end
@@ -145,12 +174,12 @@ function Shore.depthIn(a: Area, x: number, z: number): number
 		end
 		d = -nearest
 	end
-	local r = a.corner
-	if r > 0 then
-		for _, c in { { a.x1, a.z1, 1, 1 }, { a.x2, a.z1, -1, 1 }, { a.x1, a.z2, 1, -1 }, { a.x2, a.z2, -1, -1 } } do
+	if a.corner > 0 or a.corners then
+		for i, c in { { a.x1, a.z1, 1, 1 }, { a.x2, a.z1, -1, 1 }, { a.x1, a.z2, 1, -1 }, { a.x2, a.z2, -1, -1 } } do
+			local r = if a.corners then a.corners[i] else a.corner
 			local cx, cz, sx, sz = c[1], c[2], c[3], c[4]
 			local u, v = (x - cx) * sx, (z - cz) * sz -- 0..r inside the corner square
-			if u >= 0 and u <= r and v >= 0 and v <= r then
+			if r > 0 and u >= 0 and u <= r and v >= 0 and v <= r then
 				local du, dv = r - u, r - v -- from the circle's centre
 				d = math.max(d, math.sqrt(du * du + dv * dv) - r)
 			end

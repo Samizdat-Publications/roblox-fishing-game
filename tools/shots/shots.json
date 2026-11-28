@@ -284,11 +284,11 @@
         -282
       ],
       "look": [
-        -80,
-        0,
-        -292
+        -205,
+        1,
+        -296
       ],
-      "what": "Along the line of orange buoys toward the west headland at dusk"
+      "what": "Along the buoy line (red and green with big water on, orange before) toward the west elbow headland at dusk"
     },
     {
       "id": "b05-bluewater-noon",
@@ -302,11 +302,11 @@
         -280
       ],
       "look": [
-        50,
+        90,
         0,
-        -420
+        -520
       ],
-      "what": "Past a buoy into the open blue water toward the north headland at noon (set C adds a boat on plane later)"
+      "what": "Past the buoy gate into the open blue water toward the rock islets and the bell buoy at noon (set C adds a boat on plane later)"
     },
     {
       "id": "b06-marina-night",
@@ -320,11 +320,11 @@
         -205
       ],
       "look": [
-        40,
+        70,
         2,
-        -140
+        -160
       ],
-      "what": "The south shore of the Big Lake east of the channel, where the marina will go, at night"
+      "what": "The marina pier and its lantern on the Big Lake's south shore east of the channel, at night"
     },
     {
       "id": "u01-hud",

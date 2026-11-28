@@ -166,6 +166,15 @@ Config.BOAT_FEEL_ON = true -- on 11/28/2026 at the N4 close (advisor review 3 ch
 -- at start and the shop at Bait and Tackle still sells boats, exactly as before.
 Config.BOATHOUSE_ON = true -- on 11/28/2026 at the N4 close (advisor review 3 checks)
 
+-- BIG_WATER_ON (N5, Shared/BigWater, Server/BigWaterBuild): the Big Lake at its new size. The blue
+-- water opens out to x -450..450 and runs north to an invisible wall at z -1150, with rock islets,
+-- headlands, the North Reach and far ridgelines, Lily Cove (paddle only) off the basin's west bank,
+-- the marina and its path, red and green buoys and a bell buoy. The terrain is written once in Edit
+-- (BigWaterBuild, after a save) and the switch then turns on the rules: Shore's shape, BoatRules'
+-- waters, the cove's refusal, the north wall's words and the swell that builds over the buoy line.
+-- Off, everything reads L7's Big Lake exactly as before.
+Config.BIG_WATER_ON = false
+
 function Config.boatsOn(): boolean
 	return Config.BOATS_ON and Config.BIG_LAKE_ON
 end
