@@ -209,13 +209,15 @@ end
 
 local function baitLabel(state: any): string
 	local b = BaitData.byId[state.equipped]
+	-- The new look's tab carries a bait icon, so the word "Bait" goes (N2 review 1).
+	local prefix = if STYLED then "" else "Bait: "
 	if not b then
-		return "Bait: none"
+		return if STYLED then "No bait" else "Bait: none"
 	end
 	if b.kind == "lure" then
-		return "Bait: " .. b.name
+		return prefix .. b.name
 	end
-	return string.format("Bait: %s x%d", b.name, state.bait[b.id] or 0)
+	return string.format("%s%s x%d", prefix, b.name, state.bait[b.id] or 0)
 end
 
 function UI.init(cbs: { [string]: (...any) -> () })
@@ -237,12 +239,23 @@ function UI.init(cbs: { [string]: (...any) -> () })
 			local v = cam.ViewportSize
 			scale.Scale = math.clamp(math.min(v.X / 1280, v.Y / 720) * 1.15, 0.72, 1.25)
 		end
-		-- Panels shrink to fit short phone screens (heights are in scaled units).
+		-- Panels shrink to fit short phone screens (heights are in scaled units). In the new
+		-- look a short screen gets the whole height, and the top bar steps aside (sideTabs).
 		local h = gui.AbsoluteSize.Y / scale.Scale
+		refs.phone = STYLED and h < UIStyle.PHONE_PANEL_H
 		for _, panel in { refs.shop, refs.journal, refs.pond, refs.tackle } do
 			if panel then
-				panel.Size = UDim2.fromOffset(640, math.min(470, h - 70))
+				if refs.phone then
+					panel.Size = UDim2.fromOffset(640, h - 12)
+					panel.Position = UDim2.new(0.5, 0, 0.5, 0)
+				else
+					panel.Size = UDim2.fromOffset(640, math.min(470, h - 70))
+					panel.Position = UDim2.new(0.5, 0, 0.5, 24)
+				end
 			end
+		end
+		if STYLED and refs.top then
+			refs.top.Visible = not (refs.phone and openPanel ~= nil)
 		end
 		if refs.boardCard then
 			BoardCard.fit(h)
@@ -741,15 +754,15 @@ function UI.toast(text: string, color: Color3?)
 		-- A paper slip in ink; the colour it came with becomes a ribbon down its left edge.
 		t.TextColor3 = K.ink
 		Skin.surface(t, "paper", "card", 1)
-		Skin.pad(t, 8)
-		local u = t:FindFirstChildOfClass("UIPadding") :: UIPadding
-		u.PaddingLeft = UDim.new(0, 20)
+		local u = Skin.padPaper(t)
+		u.PaddingLeft = UDim.new(0, 22)
+		local P = UIStyle.PAPER_PAD
 		local ribbon = Instance.new("Frame")
 		ribbon.Name = "Ribbon"
 		ribbon.BorderSizePixel = 0
 		ribbon.BackgroundColor3 = color or K.brass
-		ribbon.Size = UDim2.new(0, 7, 1, 16)
-		ribbon.Position = UDim2.fromOffset(-20, -8)
+		ribbon.Size = UDim2.new(0, 7, 1, P.top + P.bottom - 12)
+		ribbon.Position = UDim2.fromOffset(-16, -P.top + 6)
 		ribbon.Parent = t
 	end
 	local count = 0
@@ -957,13 +970,8 @@ function UI.buildPlate()
 	Skin.surface(card, "paper", "card")
 	card.Visible = false
 	card.Parent = gui
-	local ribbon = Instance.new("Frame")
-	ribbon.Name = "Ribbon"
-	ribbon.BorderSizePixel = 0
-	ribbon.Size = UDim2.new(1, 0, 0, 8)
-	ribbon.Parent = card
-	Skin.surface(ribbon, "rarityRibbon", "tag", nil, 8 / 32)
-	refs.cardRibbon = ribbon
+	-- (No ribbon along the top: the 8-unit strip read as a selection bar, N2 review 1. The
+	-- tier's colour is on the seal and the stamp.)
 	local inner = Instance.new("Frame")
 	inner.Name = "Inner"
 	inner.BackgroundTransparency = 1
@@ -972,14 +980,16 @@ function UI.buildPlate()
 	inner.Parent = card
 
 	-- Left column: what it is and what it is worth.
-	refs.cardKicker = styledLabel(inner, "Kicker", "", UDim2.fromOffset(226, 24), UDim2.fromOffset(0, 0), "hand", "note", K.inkSoft)
+	local LEFT = 204 -- the left column's width; the right column (window, ruler) is 176
+	local RIGHT = 176
+	refs.cardKicker = styledLabel(inner, "Kicker", "", UDim2.fromOffset(LEFT, 28), UDim2.fromOffset(0, -4), "hand", "note", K.inkSoft)
 	refs.cardKicker.TextXAlignment = Enum.TextXAlignment.Left
-	refs.cardTitle = styledLabel(inner, "Title", "", UDim2.fromOffset(226, 62), UDim2.fromOffset(0, 24), "title", 24, K.ink)
+	refs.cardTitle = styledLabel(inner, "Title", "", UDim2.fromOffset(LEFT, 62), UDim2.fromOffset(0, 24), "title", 24, K.ink)
 	refs.cardTitle.TextXAlignment = Enum.TextXAlignment.Left
 	refs.cardTitle.TextYAlignment = Enum.TextYAlignment.Top
-	refs.cardBody = styledLabel(inner, "Body", "", UDim2.fromOffset(226, 26), UDim2.fromOffset(0, 90), "bodyBold", "body", K.brassInk)
+	refs.cardBody = styledLabel(inner, "Body", "", UDim2.fromOffset(LEFT, 26), UDim2.fromOffset(0, 90), "bodyBold", "body", K.brassInk)
 	refs.cardBody.TextXAlignment = Enum.TextXAlignment.Left
-	refs.cardNote = styledLabel(inner, "Note", "", UDim2.fromOffset(210, 104), UDim2.fromOffset(0, 120), "hand", "note", K.inkSoft)
+	refs.cardNote = styledLabel(inner, "Note", "", UDim2.fromOffset(LEFT, 104), UDim2.fromOffset(0, 120), "hand", "note", K.inkSoft)
 	refs.cardNote.TextXAlignment = Enum.TextXAlignment.Left
 	refs.cardNote.TextYAlignment = Enum.TextYAlignment.Top
 	refs.cardNote.TextTruncate = Enum.TextTruncate.AtEnd
@@ -987,8 +997,8 @@ function UI.buildPlate()
 	-- Right column: the window with the fish, the ruler under it, the length.
 	local window = Instance.new("Frame")
 	window.Name = "Window"
-	window.Size = UDim2.fromOffset(150, 104)
-	window.Position = UDim2.new(1, -150, 0, 6)
+	window.Size = UDim2.fromOffset(RIGHT, 122)
+	window.Position = UDim2.new(1, -RIGHT, 0, 6)
 	window.BorderSizePixel = 0
 	window.BackgroundColor3 = K.paper
 	Skin.corner(window, "tag")
@@ -1016,8 +1026,8 @@ function UI.buildPlate()
 	local ruler = Instance.new("Frame")
 	ruler.Name = "Ruler"
 	ruler.BackgroundTransparency = 1
-	ruler.Size = UDim2.fromOffset(150, 12)
-	ruler.Position = UDim2.new(1, -150, 0, 116)
+	ruler.Size = UDim2.fromOffset(RIGHT, 12)
+	ruler.Position = UDim2.new(1, -RIGHT, 0, 134)
 	ruler.Parent = inner
 	local rulerArt = Skin.image(ruler, "ruler", UDim2.fromScale(1, 1), UDim2.new(), K.ink)
 	if rulerArt then
@@ -1027,10 +1037,10 @@ function UI.buildPlate()
 		Skin.rule(ruler, "Line", UDim2.new(1, 0, 0, 2), UDim2.fromOffset(0, 0), K.ink)
 		for i = 0, 10 do
 			local tall = i % 5 == 0
-			Skin.rule(ruler, "Tick" .. i, UDim2.fromOffset(1, if tall then 10 else 5), UDim2.fromOffset(math.min(i * 15, 149), 2), K.ink)
+			Skin.rule(ruler, "Tick" .. i, UDim2.fromOffset(1, if tall then 10 else 5), UDim2.fromOffset(math.min(math.floor(i * RIGHT / 10), RIGHT - 1), 2), K.ink)
 		end
 	end
-	refs.cardLength = styledLabel(inner, "Length", "", UDim2.fromOffset(150, 24), UDim2.new(1, -150, 0, 130), "bodyBold", "body", K.ink)
+	refs.cardLength = styledLabel(inner, "Length", "", UDim2.fromOffset(RIGHT, 24), UDim2.new(1, -RIGHT, 0, 148), "bodyBold", "body", K.ink)
 
 	-- The weight on a brass tag hanging on a string over the window's corner.
 	local tagArt = UIStyle.IMAGES.weightTag
@@ -1066,7 +1076,7 @@ function UI.buildPlate()
 	local stamp = Instance.new("Frame")
 	stamp.Name = "Stamp"
 	stamp.Size = UDim2.fromOffset(140, 42)
-	stamp.Position = UDim2.new(1, -146, 0, 166)
+	stamp.Position = UDim2.new(1, -RIGHT + (RIGHT - 140) / 2, 0, 178) -- centred under the window
 	stamp.Rotation = -7
 	stamp.BorderSizePixel = 0
 	stamp.ZIndex = 5
@@ -1086,7 +1096,7 @@ function UI.buildPlate()
 	refs.cardBadge.ZIndex = 6
 	refs.cardStamp = stamp
 	-- With the art: the seal, a mark of the tier's colour, pressed beside the written name.
-	refs.cardSeal = Skin.image(inner, "raritySeal", UDim2.fromOffset(40, 40), UDim2.new(1, -176, 0, 164))
+	refs.cardSeal = Skin.image(inner, "raritySeal", UDim2.fromOffset(40, 40), UDim2.new(1, -RIGHT + (RIGHT - 140) / 2 - 30, 0, 176))
 	if refs.cardSeal then
 		refs.cardSeal.Rotation = -12
 		refs.cardSeal.ZIndex = 4
@@ -1125,7 +1135,9 @@ function UI.fillPlate(payload: any)
 	refs.cardNote.Text = if payload.first then ("New in your journal: " .. payload.habit) else ("Caught at " .. (FishLogic.SPOT_NAMES[f.spot] or f.spot) .. " on " .. ((BaitData.byId[f.bait] and BaitData.byId[f.bait].name) or f.bait) .. ".")
 	refs.cardLength.Text = Units.length(f.cm)
 	refs.cardWeight.Text = Units.weight(f.kg)
-	Skin.tint(refs.cardRibbon, exact)
+	if refs.cardRibbon then
+		Skin.tint(refs.cardRibbon, exact)
+	end
 	local plateStroke = refs.cardStroke :: UIStroke?
 	if plateStroke then
 		plateStroke.Color = tierInk
@@ -1189,10 +1201,13 @@ function UI.dressScreen()
 		u.PaddingRight = UDim.new(0, 22)
 		local icon = Skin.image(b, icons[i], UDim2.fromOffset(34, 34), UDim2.new(0, 0, 0.5, -17))
 		if icon then
-			-- The drawn tab: text and icon from x = 22 x SliceScale.
+			-- The drawn tab: content from x = 22 x SliceScale; the icon at content x 0 and the
+			-- words left-aligned from content x 40 (N2 review 1).
+			local edge = math.floor(22 * T / 96)
 			icon.ZIndex = 3
-			u.PaddingLeft = UDim.new(0, math.floor(22 * T / 96))
-			b.TextXAlignment = Enum.TextXAlignment.Right
+			icon.Position = UDim2.new(0, -40, 0.5, -17)
+			u.PaddingLeft = UDim.new(0, edge + 40)
+			b.TextXAlignment = Enum.TextXAlignment.Left
 		else
 			local rivet = disc(b, "Rivet", 10, UDim2.new(1, -12, 0.5, 0), K.brass, K.brassDark)
 			rivet.ZIndex = 2
@@ -1219,7 +1234,7 @@ function UI.dressScreen()
 	end
 	body.Parent = goals
 	Skin.surface(goals, "paper", "card", 1)
-	Skin.pad(goals, 12, 14)
+	Skin.padPaper(goals)
 	Skin.text(refs.goalsTitle, "title", "heading", K.ink)
 	refs.goalsTitle.Size = UDim2.new(1, 0, 0, 30)
 	for _, l in refs.goalLines do
@@ -1233,17 +1248,16 @@ function UI.dressScreen()
 	status.TextStrokeTransparency = 1
 	status.AnchorPoint = Vector2.new(0.5, 0)
 	status.Position = UDim2.new(0.5, 0, 1, -150)
-	status.Size = UDim2.fromOffset(0, 0)
-	status.AutomaticSize = Enum.AutomaticSize.XY
-	local cap = Instance.new("UISizeConstraint")
-	cap.MaxSize = Vector2.new(640, 140)
-	cap.Parent = status
+	-- One line, never wrapped (it wrapped word by word inside the hugging slip): it grows
+	-- sideways only, 36 tall (N2 review 1). The copy over the paper art follows TextWrapped.
+	status.Size = UDim2.fromOffset(0, 36)
+	status.AutomaticSize = Enum.AutomaticSize.X
+	status.TextWrapped = false
 	Skin.text(status, "bodyBold", 20, K.ink)
 	Skin.surface(status, "paper", "card", 1)
-	Skin.pad(status, 8)
-	local su = status:FindFirstChildOfClass("UIPadding") :: UIPadding
-	su.PaddingLeft = UDim.new(0, 14)
-	su.PaddingRight = UDim.new(0, 14)
+	local su = Skin.padPaper(status)
+	su.PaddingTop = UDim.new(0, 0)
+	su.PaddingBottom = UDim.new(0, 0)
 	status.BackgroundTransparency = 1
 	local sst = status:FindFirstChild("SkinStroke") :: UIStroke?
 	if sst then
@@ -1314,16 +1328,17 @@ function UI.dressScreen()
 	refs.fightHelp.Text = "Hold to reel"
 	-- The cue rides beside the zone over the water: a paper chip so it reads anywhere.
 	local cue = refs.cue :: TextLabel
+	-- A fixed chip, one line, so "Nice!" reads whole (it wrapped inside the hugging chip).
 	cue.TextStrokeTransparency = 1
-	cue.Size = UDim2.fromOffset(0, 40)
-	cue.AutomaticSize = Enum.AutomaticSize.X
+	cue.Size = UDim2.fromOffset(124, 40)
+	cue.AutomaticSize = Enum.AutomaticSize.None
+	cue.TextWrapped = false
 	Skin.surface(cue, "paper", "tag", 1)
-	Skin.pad(cue, 4).PaddingLeft = UDim.new(0, 10)
-	local cuePad = cue:FindFirstChildOfClass("UIPadding") :: UIPadding
-	cuePad.PaddingRight = UDim.new(0, 10)
+	local cuePad = Skin.pad(cue, 0)
+	cuePad.PaddingLeft = UDim.new(0, 10)
+	cuePad.PaddingRight = UDim.new(0, 8)
 	-- The reel prompt: a paper slip with a brass edge.
 	Skin.surface(refs.reelPrompt, "paper", "card", 2)
-	Skin.stroke(refs.reelPrompt, K.brassDark, 2)
 	Skin.text(refs.reelTitle, "title", 30, K.brassInk)
 	Skin.text(refs.reelSub, "body", 17, K.ink)
 	-- The drag box keeps its place and grows to a thumb's height; the line rating rides inside
@@ -1339,10 +1354,12 @@ function UI.dressScreen()
 	local line = refs.dragLine :: TextLabel
 	line.TextStrokeTransparency = 1
 	line.Parent = dragBtn
+	-- 26 down from the button's top (its content starts 6 down), above the brass face's
+	-- lower edge at 51 (N2 review 1).
 	line.Size = UDim2.new(1, 0, 0, 22)
-	line.Position = UDim2.new(0, 0, 1, -22)
+	line.Position = UDim2.fromOffset(0, 26 - 6)
 	line.ZIndex = 3
-	Skin.text(line, "body", 14, K.ink)
+	Skin.text(line, "bodyBold", 14, K.ink)
 
 	-- Toasts under the taller top bar.
 	refs.toasts.Position = UDim2.new(0.5, -280, 0, 74)
@@ -1373,6 +1390,10 @@ local function sideTabs(show: boolean)
 	end
 	if not refs.card.Visible then
 		refs.status.Visible = show
+	end
+	-- On a short screen a panel takes the whole height: the top bar steps aside too.
+	if refs.top then
+		refs.top.Visible = show or not refs.phone
 	end
 end
 UI.sideTabs = sideTabs
@@ -1493,7 +1514,10 @@ local function styledShell(name: string, title: string, look: string): (Frame, S
 end
 
 -- New look: a shop row as a paper card that grows to fit its words, the button a thumb tall
--- on the right with what you own under it.
+-- on the right, and what you own under the blurb (N2 review 1: rows as short as the button
+-- allows, so about three show on a phone).
+local SHOP_ROW_MIN = Skin.TOUCH + 16
+local SHOP_FOOT = 32
 local function layoutRow(row: Frame, minH: number)
 	if not STYLED then
 		return
@@ -1514,19 +1538,36 @@ local function layoutRow(row: Frame, minH: number)
 		name.Size = UDim2.new(1, -206, 0, 30)
 		Skin.text(name, "title", 20, K.ink)
 	end
+	-- The blurb and, under it, what you own: one left column that grows with its words.
+	local column = Instance.new("Frame")
+	column.Name = "Column"
+	column.BackgroundTransparency = 1
+	column.Position = UDim2.fromOffset(20, 42)
+	column.Size = UDim2.new(1, -206, 0, 0)
+	column.AutomaticSize = Enum.AutomaticSize.Y
+	column.ZIndex = 2
+	local lines = Instance.new("UIListLayout")
+	lines.SortOrder = Enum.SortOrder.LayoutOrder
+	lines.Padding = UDim.new(0, 2)
+	lines.Parent = column
+	column.Parent = row
 	local blurb = row:FindFirstChild("Blurb") :: TextLabel?
 	if blurb then
-		blurb.Position = UDim2.fromOffset(20, 42)
-		blurb.Size = UDim2.new(1, -206, 0, 0)
+		blurb.Parent = column
+		blurb.LayoutOrder = 1
+		blurb.Size = UDim2.new(1, 0, 0, 0)
 		blurb.AutomaticSize = Enum.AutomaticSize.Y
 		blurb.TextYAlignment = Enum.TextYAlignment.Top
 		Skin.text(blurb, "body", "small", K.inkSoft)
 	end
 	local owned = row:FindFirstChild("Owned") :: TextLabel?
 	if owned then
-		owned.Position = UDim2.new(1, -176, 0, T + 12)
-		owned.Size = UDim2.fromOffset(164, 26)
-		owned.TextXAlignment = Enum.TextXAlignment.Center
+		owned.Parent = column
+		owned.LayoutOrder = 2
+		owned.Size = UDim2.new(1, 0, 0, 0)
+		owned.AutomaticSize = Enum.AutomaticSize.Y
+		owned.TextXAlignment = Enum.TextXAlignment.Left
+		Skin.text(owned, "bodyBold", "small", K.ink)
 	end
 	local buy = row:FindFirstChild("Buy") :: TextButton?
 	if buy then
@@ -1589,7 +1630,7 @@ function UI.buildShop()
 			end
 		end)
 		refs.shopRows[b.id] = { owned = owned, buy = buy }
-		layoutRow(row, Skin.TOUCH + 46)
+		layoutRow(row, SHOP_ROW_MIN)
 	end
 	-- Rods: each comes with its reel. Bought once, switch any time.
 	local rodHeader = label(scroll, "RodsHeader", "Rods", UDim2.new(1, -10, 0, 30), UDim2.new(), 20, C.gold, Enum.Font.GothamBlack)
@@ -1621,7 +1662,7 @@ function UI.buildShop()
 		end)
 		refs.rodRows[r.id] = btn
 		refs.rodBlurbs[r.id] = blurb
-		layoutRow(row, Skin.TOUCH + 20)
+		layoutRow(row, SHOP_ROW_MIN)
 	end
 	-- Braided line: one purchase, 4 lb more on every rod. UNVERIFIED in Studio (2026-11-27).
 	do
@@ -1642,7 +1683,7 @@ function UI.buildShop()
 				callbacks.buyBraid()
 			end
 		end)
-		layoutRow(row, Skin.TOUCH + 20)
+		layoutRow(row, SHOP_ROW_MIN)
 	end
 	-- Boats: bought once; the chosen one waits at your slip by the dock (L7).
 	local boatHeader = label(scroll, "BoatsHeader", "Boats", UDim2.new(1, -10, 0, 30), UDim2.new(), 20, C.gold, Enum.Font.GothamBlack)
@@ -1678,13 +1719,17 @@ function UI.buildShop()
 			end
 		end)
 		refs.boatRows[b.id] = btn
-		layoutRow(row, Skin.TOUCH + 20)
+		layoutRow(row, SHOP_ROW_MIN)
 	end
 	refs.shopHint = label(p, "Hint", "", UDim2.new(1, -24, 0, 40), UDim2.new(0, 12, 1, -48), 15, C.dim)
 	if STYLED then
-		refs.shopHint.Size = UDim2.new(1, -40, 0, PANEL_FOOT - 12)
-		refs.shopHint.Position = UDim2.new(0, 20, 1, -(PANEL_FOOT - 4))
+		-- The shop has no buttons along its foot, only this line: a short foot (N2 review 1).
+		scroll.Size = UDim2.new(1, -24, 1, -(PANEL_HEAD + 14 + SHOP_FOOT))
+		refs.shopHint.Size = UDim2.new(1, -40, 0, SHOP_FOOT - 4)
+		refs.shopHint.Position = UDim2.new(0, 20, 1, -(SHOP_FOOT - 2))
 		refs.shopHint.TextXAlignment = Enum.TextXAlignment.Left
+		refs.shopHint.TextWrapped = false
+		refs.shopHint.TextTruncate = Enum.TextTruncate.AtEnd
 		Skin.text(refs.shopHint, "hand", "note", K.ink)
 	end
 	refs.shop = p
@@ -1781,7 +1826,7 @@ function UI.buildJournal()
 			card.Size = UDim2.new(1, -14, 0, 0)
 			card.AutomaticSize = Enum.AutomaticSize.Y
 			Skin.surface(card, "paper", "card", 1)
-			Skin.pad(card, 12)
+			Skin.padPaper(card)
 			local body = Instance.new("Frame")
 			body.Name = "Body"
 			body.BackgroundTransparency = 1

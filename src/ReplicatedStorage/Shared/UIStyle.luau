@@ -97,6 +97,9 @@ UIStyle.TEXT = {
 	tiny = 14, -- marks under a track (still lifted to 14 px on a phone)
 }
 UIStyle.PHONE_MIN_PX = 14
+-- Handwriting (PatrickHand) runs small for its size: it never draws under this many real
+-- pixels (N2 review 1).
+UIStyle.HAND_MIN_PX = 17
 UIStyle.TOUCH_MIN_PX = 44
 
 -- The interface scale: the same rule the screens have always used (1280 by 720 is 1.15).
@@ -109,6 +112,9 @@ UIStyle.SCALE = { baseX = 1280, baseY = 720, factor = 1.15, min = 0.72, max = 1.
 UIStyle.RADIUS = { panel = 4, card = 3, button = 4, tag = 2, round = 999 }
 UIStyle.STROKE = { panel = 2, card = 2, button = 2, plate = 3, rule = 1 }
 UIStyle.PAD = { panel = 14, card = 10, button = 8, tight = 6 }
+-- Words on a paper card sit this far in from the drawn edge (sides, top, bottom); the paper
+-- art itself bleeds out under the padding (Skin.surface).
+UIStyle.PAPER_PAD = { side = 16, top = 12, bottom = 16 }
 
 ----------------------------------------------------------------------------------------
 -- Panel images (art/ui/README.md has the files, sizes and notes; drawn 11/27/2026; ids from
@@ -189,6 +195,23 @@ UIStyle.LOCKED = {
 	castRing = { radius = 2, inner = 1.3, beads = 10, beadSize = 0.4, label = { 190, 34 } },
 }
 
+-- The bait bench's own layout in the new look (offsets inside the locked 600 by 340 panel;
+-- { x, y, w, h } unless named). The close-up and the track above stay locked.
+UIStyle.BENCH = {
+	canvasSlice = 0.35,
+	title = { 30, 4, 316, 32 },
+	hookTitle = { 352, 6, 232, 26 },
+	hook = { 352, 232, 62 }, -- x, w, h
+	hookY = { 36, 100, 164 },
+	skip = { 352, 230, 232, 62 },
+	how = { 30, 292, 540, 20 },
+	tip = { 30, 312, 540, 24 },
+}
+
+-- Panels on a short screen (under PHONE_PANEL_H interface units tall) fill it: the top bar
+-- steps aside while one is open.
+UIStyle.PHONE_PANEL_H = 520
+
 ----------------------------------------------------------------------------------------
 -- Helpers.
 
@@ -199,10 +222,11 @@ function UIStyle.uiScale(vx: number, vy: number): number
 end
 
 -- The text size (interface units) for a role or a size, at this scale: never under
--- PHONE_MIN_PX real pixels.
-function UIStyle.textSize(roleOrSize: string | number, scale: number): number
+-- PHONE_MIN_PX real pixels (HAND_MIN_PX for the handwriting face).
+function UIStyle.textSize(roleOrSize: string | number, scale: number, face: string?): number
 	local base = if type(roleOrSize) == "number" then roleOrSize else (UIStyle.TEXT[roleOrSize] or UIStyle.TEXT.body)
-	return math.max(base, math.ceil(UIStyle.PHONE_MIN_PX / scale))
+	local floor = if face == "hand" then UIStyle.HAND_MIN_PX else UIStyle.PHONE_MIN_PX
+	return math.max(base, math.ceil(floor / scale))
 end
 
 -- The smallest button side (interface units) that is TOUCH_MIN_PX real pixels at this scale.

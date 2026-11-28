@@ -164,6 +164,7 @@ def main():
     ap.add_argument("--criteria", default="", help="what 'best' means (rank mode)")
     ap.add_argument("--question", default="", help="the open question (consult mode)")
     ap.add_argument("--note", default="", help="extra context for the critic, like what changed in this step")
+    ap.add_argument("--context", default="", help="how the captures were made (shots.py score passes this for the UI screens)")
     ap.add_argument("--json-out", default="", help="also write the full verdict as JSON to this path (used by tools/shots/shots.py score)")
     args = ap.parse_args()
 
@@ -174,6 +175,8 @@ def main():
         parts = [{"text": CONTEXT}]
         if args.note:
             parts.append({"text": "What changed in this step: " + args.note})
+        if args.context:
+            parts.append({"text": "About these captures: " + args.context})
         if args.mode == "review":
             rubric = (RUBRICS / f"{args.rubric}.md").read_text(encoding="utf-8")
             parts.append({"text": "Rubric:\n" + rubric})

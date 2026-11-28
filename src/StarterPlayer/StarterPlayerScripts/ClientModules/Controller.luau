@@ -1066,11 +1066,36 @@ function Controller.start()
 			end
 			goIdle()
 			UI.closePanels()
+			local posed = workspace:FindFirstChild("CaughtFish_" .. lp.Name)
+			if posed and posed:GetAttribute("DebugPose") then
+				posed:Destroy()
+			end
 			if which == "shop" then
 				UI.openShop()
 			elseif which == "journal" then
 				UI.toggleJournal()
 			elseif which == "card" then
+				-- Hang a real fish first, the way a catch does (FishingService.showCatch names it
+				-- CaughtFish_<player> with a Body part): the card's window copies it at once.
+				-- A local copy, far below the world, from ReplicatedStorage.FishModels.
+				local models = ReplicatedStorage:FindFirstChild("FishModels")
+				local source = models and models:FindFirstChild("LargemouthBass")
+				if source and source:IsA("BasePart") then
+					local len = Approach.shadowLength(46)
+					local m = Instance.new("Model")
+					m.Name = "CaughtFish_" .. lp.Name
+					m:SetAttribute("DebugPose", true)
+					local body = source:Clone()
+					body.Name = "Body"
+					body.Size = source.Size * (len / source.Size.X) -- the model's length runs along X
+					body.Anchored = true
+					body.CanCollide = false
+					body.CanQuery = false
+					body.CanTouch = false
+					body.CFrame = CFrame.new(0, -300, 0) -- under the ground, above FallenPartsDestroyHeight
+					body.Parent = m
+					m.Parent = workspace
+				end
 				UI.catchCard({
 					fish = { id = "LargemouthBass", name = "Largemouth Bass", cm = 46, kg = 1.5, price = 38, spot = "WeedBed", bait = "PlasticWorm" },
 					tier = "Rare",
@@ -1083,6 +1108,7 @@ function Controller.start()
 				end
 			elseif which == "fight" then
 				UI.setLocked(true)
+				UI.status("") -- no idle prompt under a fight
 				UI.showFight({ zoneSize = 0.3, zonePos = 0.55, fishPos = 0.6, progress = 0.45, strain = 0.1 }, "Big runs, then rests.", true)
 				UI.showDrag("Medium", 8)
 			elseif which == "bench" then

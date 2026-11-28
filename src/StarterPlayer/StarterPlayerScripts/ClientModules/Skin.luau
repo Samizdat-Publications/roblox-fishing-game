@@ -23,6 +23,8 @@ local started = false
 -- Every dressed text object and its base size; sizes follow the scale (weak keys: destroyed
 -- labels drop out).
 local texts: { [Instance]: number } = setmetatable({}, { __mode = "k" }) :: any
+-- The face of each dressed text object (the handwriting has a higher floor).
+local faces: { [Instance]: string } = setmetatable({}, { __mode = "k" }) :: any
 
 local function readScale(): number
 	local cam = workspace.CurrentCamera
@@ -36,7 +38,7 @@ end
 local function refresh()
 	scale = readScale()
 	for obj, base in texts do
-		(obj :: any).TextSize = UIStyle.textSize(base, scale)
+		(obj :: any).TextSize = UIStyle.textSize(base, scale, faces[obj])
 	end
 end
 
@@ -71,7 +73,8 @@ function Skin.text(obj: Instance, face: string, base: string | number, color: Co
 	o.FontFace = UIStyle.font(face)
 	o.TextScaled = false
 	texts[obj] = size
-	o.TextSize = UIStyle.textSize(size, scale)
+	faces[obj] = face
+	o.TextSize = UIStyle.textSize(size, scale, face)
 	if color then
 		o.TextColor3 = color
 	end
@@ -81,7 +84,7 @@ end
 function Skin.resize(obj: Instance, base: string | number)
 	local size = if type(base) == "number" then base else (UIStyle.TEXT[base] or UIStyle.TEXT.body)
 	texts[obj] = size;
-	(obj :: any).TextSize = UIStyle.textSize(size, Skin.scale())
+	(obj :: any).TextSize = UIStyle.textSize(size, Skin.scale(), faces[obj])
 end
 
 function Skin.corner(obj: Instance, kind: string?)
@@ -119,6 +122,55 @@ function Skin.pad(obj: Instance, p: number, bottom: number?)
 	return u
 end
 
+-- Paper padding (UIStyle.PAPER_PAD): words sit in from the drawn edge of a paper card.
+function Skin.padPaper(obj: Instance): UIPadding
+	local P = UIStyle.PAPER_PAD
+	local u = Skin.pad(obj, P.side, P.bottom)
+	u.PaddingTop = UDim.new(0, P.top)
+	return u
+end
+
+-- The surface image fills the whole object even when a UIPadding insets its children: it
+-- bleeds out by the padding (else the art shrinks and the words land on its edge).
+local function bleed(obj: GuiObject, img: GuiObject)
+	local conns: { RBXScriptConnection } = {}
+	local function fit()
+		local u = obj:FindFirstChildOfClass("UIPadding")
+		local l = if u then u.PaddingLeft.Offset else 0
+		local r = if u then u.PaddingRight.Offset else 0
+		local t = if u then u.PaddingTop.Offset else 0
+		local b = if u then u.PaddingBottom.Offset else 0
+		img.Position = UDim2.fromOffset(-l, -t)
+		img.Size = UDim2.new(1, l + r, 1, t + b)
+	end
+	local watched: UIPadding? = nil
+	local function watch()
+		local u = obj:FindFirstChildOfClass("UIPadding")
+		if u and u ~= watched then
+			watched = u
+			table.insert(conns, u.Changed:Connect(fit))
+		end
+		fit()
+	end
+	table.insert(conns, obj.ChildAdded:Connect(function(c)
+		if c:IsA("UIPadding") then
+			watch()
+		end
+	end))
+	table.insert(conns, obj.ChildRemoved:Connect(function(c)
+		if c == watched then
+			watched = nil
+			fit()
+		end
+	end))
+	img.Destroying:Connect(function()
+		for _, c in conns do
+			c:Disconnect()
+		end
+	end)
+	watch()
+end
+
 -- A surface from UIStyle.IMAGES: the sliced image under the object's children when the art is
 -- uploaded, else its flat colour with a stroke. Returns the image (or nil).
 -- sliceScale: the image's SliceScale in interface units (default: the phone mockups' value
@@ -153,6 +205,7 @@ function Skin.surface(obj: GuiObject, imageKey: string, cornerKind: string?, str
 			img.ImageColor3 = Skin.C[spec.fill]
 		end
 		img.Parent = obj
+		bleed(obj, img)
 		obj.BackgroundTransparency = 1
 		local st = obj:FindFirstChild("SkinStroke")
 		if st then
@@ -175,9 +228,11 @@ function Skin.surface(obj: GuiObject, imageKey: string, cornerKind: string?, str
 				copy.FontFace = src.FontFace
 				copy.TextXAlignment = src.TextXAlignment
 				copy.TextYAlignment = src.TextYAlignment
+				copy.TextWrapped = src.TextWrapped
+				copy.TextTruncate = src.TextTruncate
 			end
 			sync()
-			for _, prop in { "Text", "TextColor3", "TextSize", "FontFace", "TextXAlignment", "TextYAlignment" } do
+			for _, prop in { "Text", "TextColor3", "TextSize", "FontFace", "TextXAlignment", "TextYAlignment", "TextWrapped", "TextTruncate" } do
 				obj:GetPropertyChangedSignal(prop):Connect(sync)
 			end
 			src.TextTransparency = 1

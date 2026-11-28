@@ -26,9 +26,35 @@ A home lake and creek, B the Big Lake, C the boats (N4), D the island (N6), U th
    powershell -ExecutionPolicy Bypass -File tools/capture-studio.ps1 -ViewportOnly -Out <run>/<id>.jpg
    capture-studio.ps1 picks the window titled "Fishing Game" when several Studios are open)
   Screens (set U, kind "screen"): run pin first, then each screen's snippet; it turns the HUD back
-  on over the dock-end noon view and puts the UI in that state. Capture each screen at every size
-  in shots.json "screen_sizes" (1280x720 and 667x375; set the viewport with the Device Simulator)
-  as <run>/<id>-1280.jpg and <run>/<id>-667.jpg. Run the snippet again right before each capture.
+  on over the dock-end noon view and puts the UI in that state, and returns the viewport and the
+  weather it sees, like "screen u02-shop set viewport 1600x900 weather Clear". Two sizes per screen
+  (N2 review 1, 11/27/2026), the file names kept from shots.json "screen_sizes":
+    desktop <run>/<id>-1280.jpg: NO Device Simulator. The Studio viewport as it is, at least 1280 by
+      720 (make the Studio window big), captured unscaled: capture-studio.ps1 ... -Width 4000.
+    phone <run>/<id>-667-raw.jpg: the Device Simulator at 667 by 375, the whole letterboxed viewport,
+      also with -Width 4000. Then "phonecrop" cuts the device out to exactly 667 by 375 and saves
+      it at 2x (Lanczos) as <run>/<id>-667.jpg, the file the sheet and the critic use.
+  The capture loop for set U, per screen and per size (all desktop files first, then the phone):
+    1. execute_luau (Client) "snippet <id> --set U"; it returns "... viewport WxH weather K"
+    2. execute_luau (Client) "snippet uicheck"; save the JSON line it returns as
+       <run>/<stem>-uicheck.json (<stem> is <id>-1280 or <id>-667)
+    3. python tools/shots/shots.py uicheck <run> <stem> <run>/<stem>-uicheck.json
+       records it in run.json "uicheck" and its viewport in "viewport". If anything is outside the
+       viewport it says so: fix the UI or move on; score leaves that file out either way.
+    4. run the screen snippet again, then capture-studio.ps1 -ViewportOnly -Width 4000
+       -Out <run>/<id>-1280.jpg (desktop) or -Out <run>/<id>-667-raw.jpg (phone)
+    5. python tools/shots/shots.py weather <run> <id> <kind>  (once per screen, from step 1)
+  Then: python tools/shots/shots.py phonecrop <run>   (every *-667-raw.jpg to its 2x *-667.jpg;
+        --rect x,y,w,h for one raw if the automatic find fails, --only <stem> to redo one)
+  python tools/shots/shots.py viewport <run> <stem> <w> <h>   records a ViewportSize by hand
+                                                       (<stem> may be a bare screen id: the desktop file)
+  python tools/shots/shots.py snippet uicheck          Luau (Client): JSON of every visible GuiObject of
+                                                       our ScreenGuis partly outside the viewport, any
+                                                       visible text under 14 px and button under 44 px
+  Runs that newrun makes for set U now carry "protocol": 2; score then needs, for every screen
+  file, a recorded viewport (desktop at least 1280x720, phone exactly 667x375) and a uicheck, and
+  leaves out any file whose uicheck found something outside the viewport. --skip-ui-checks scores
+  without them. Older runs (no protocol) score as before.
   Frame cost at a shot: run tools/shots/probe.luau the same way; budget in docs/PERF.md.
   Default-look counts: run tools/shots/audit.luau the same way and save its JSON line as
   <run>/audit.json; score stores it beside the scores.
@@ -43,6 +69,7 @@ A home lake and creek, B the Big Lake, C the boats (N4), D the island (N6), U th
                                                        look for A, B, C, D and ui for U (--rubric
                                                        overrides); --also adds more rubrics in the
                                                        same call, one history entry each.
+                                                       [--skip-ui-checks]  (set U, see above)
   sheet and score read the set from the run's run.json when --set is not given.
 
 The UI screens ask a small Studio-only hook in the Controller first and fall back to posing the
@@ -165,6 +192,11 @@ for _, n in { "BaitButton", "JournalButton" } do
 \tlocal b = ui:FindFirstChild(n)
 \tif b and b:IsA("GuiObject") then b.Visible = true end
 end
+-- What every screen snippet returns at the end: the viewport size (record it) and the weather.
+local function tag(): string
+\tlocal v = workspace.CurrentCamera.ViewportSize
+\treturn string.format(" viewport %dx%d weather %s", math.round(v.X), math.round(v.Y), tostring(workspace:GetAttribute("Weather")))
+end
 -- Ask the Studio-only DebugScreen hook in the Controller (see shots.py) when it is there.
 local function viaHook(name: string): boolean
 \tif P:GetAttribute("DebugScreenHook") ~= true then return false end
@@ -186,6 +218,109 @@ return "weather " .. tostring(workspace:GetAttribute("Weather"))
 """
 
 SCORED_WEATHER = "Clear"
+
+# Run on the Client right after a screen's snippet (set U preflight): returns one JSON line.
+UICHECK = """-- Client, during Play, after a screen snippet: what of our UI would not show or read well.
+-- outside: visible GuiObjects that draw something and lie partly outside their ScreenGui's area
+-- (after clipping by ancestors with ClipsDescendants); small_text: visible TextLabel/TextButton
+-- under 14 px (TextSize times UIScale, or estimated from TextBounds when TextScaled);
+-- small_buttons: visible GuiButtons under 44 px on their short side.
+local HS = game:GetService("HttpService")
+local TS = game:GetService("TextService")
+local PG = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+local vp = workspace.CurrentCamera.ViewportSize
+local function r(x: number): number return math.round(x * 10) / 10 end
+local out = { viewport = { math.round(vp.X), math.round(vp.Y) }, guis = {}, outside = {}, small_text = {}, small_buttons = {} }
+local function name(o: Instance): string return (o:GetFullName():gsub("^.-PlayerGui%.", "")) end
+local function shown(o: Instance, sg: Instance): boolean
+\tlocal x = o
+\twhile x and x ~= sg do
+\t\tif x:IsA("GuiObject") and not x.Visible then return false end
+\t\tx = x.Parent
+\tend
+\treturn true
+end
+local function uiScale(o: Instance, sg: Instance): number
+\tlocal s, x = 1, o
+\twhile x and x ~= sg.Parent do
+\t\tfor _, c in x:GetChildren() do
+\t\t\tif c:IsA("UIScale") then s *= c.Scale end
+\t\tend
+\t\tx = x.Parent
+\tend
+\treturn s
+end
+local function isText(o: Instance): boolean
+\treturn (o:IsA("TextLabel") or o:IsA("TextButton")) and o.Text ~= "" and o.TextTransparency < 1
+end
+local function draws(o: GuiObject): boolean
+\tif o.BackgroundTransparency < 1 or isText(o) then return true end
+\treturn (o:IsA("ImageLabel") or o:IsA("ImageButton")) and o.Image ~= "" and o.ImageTransparency < 1
+end
+local function textPx(o: any, sg: Instance): (number, string)
+\tif not o.TextScaled then return o.TextSize * uiScale(o, sg), "TextSize" end
+\tlocal lines = 1
+\tfor _ in string.gmatch(o.ContentText, "\\n") do lines += 1 end
+\tlocal est = o.TextBounds.Y / lines
+\tif o.TextWrapped and o.Font ~= Enum.Font.Unknown then
+\t\t-- the largest size whose wrapped height still fits the rendered height
+\t\tlocal ok = pcall(function()
+\t\t\tlocal lo, hi = 1, 100
+\t\t\twhile lo < hi do
+\t\t\t\tlocal mid = math.ceil((lo + hi) / 2)
+\t\t\t\tlocal h = TS:GetTextSize(o.ContentText, mid, o.Font, Vector2.new(o.AbsoluteSize.X, 1e5)).Y
+\t\t\t\tif h <= o.TextBounds.Y + 1 then lo = mid else hi = mid - 1 end
+\t\t\tend
+\t\t\test = lo
+\t\tend)
+\t\tif ok then return est, "TextBounds wrapped (estimate)" end
+\tend
+\treturn est, "TextBounds"
+end
+for _, sg in PG:GetChildren() do
+\tif sg:IsA("ScreenGui") and sg.Enabled then
+\t\tlocal p0, sz = sg.AbsolutePosition, sg.AbsoluteSize
+\t\ttable.insert(out.guis, { name = sg.Name, area = { r(p0.X), r(p0.Y), r(sz.X), r(sz.Y) } })
+\t\tfor _, o in sg:GetDescendants() do
+\t\t\tif o:IsA("GuiObject") and shown(o, sg) and o.AbsoluteSize.X > 0 and o.AbsoluteSize.Y > 0 then
+\t\t\t\tlocal a, s = o.AbsolutePosition, o.AbsoluteSize
+\t\t\t\tlocal x0, y0, x1, y1 = a.X, a.Y, a.X + s.X, a.Y + s.Y
+\t\t\t\tlocal anc = o.Parent
+\t\t\t\twhile anc and anc ~= sg do
+\t\t\t\t\tif anc:IsA("GuiObject") and anc.ClipsDescendants then
+\t\t\t\t\t\tlocal ca, cs = anc.AbsolutePosition, anc.AbsoluteSize
+\t\t\t\t\t\tx0, y0 = math.max(x0, ca.X), math.max(y0, ca.Y)
+\t\t\t\t\t\tx1, y1 = math.min(x1, ca.X + cs.X), math.min(y1, ca.Y + cs.Y)
+\t\t\t\t\tend
+\t\t\t\t\tanc = anc.Parent
+\t\t\t\tend
+\t\t\t\tlocal seen = x1 > x0 and y1 > y0
+\t\t\t\tif seen and draws(o) and (x0 < p0.X - 1 or y0 < p0.Y - 1 or x1 > p0.X + sz.X + 1 or y1 > p0.Y + sz.Y + 1) then
+\t\t\t\t\ttable.insert(out.outside, { path = name(o), rect = { r(x0 - p0.X), r(y0 - p0.Y), r(x1 - x0), r(y1 - y0) } })
+\t\t\t\tend
+\t\t\t\tif seen and isText(o) then
+\t\t\t\t\tlocal px, how = textPx(o, sg)
+\t\t\t\t\tif px < 14 then
+\t\t\t\t\t\ttable.insert(out.small_text, { path = name(o), px = r(px), from = how, text = string.sub(o.ContentText, 1, 40) })
+\t\t\t\t\tend
+\t\t\t\tend
+\t\t\t\tif seen and o:IsA("GuiButton") and math.min(s.X, s.Y) < 44 then
+\t\t\t\t\ttable.insert(out.small_buttons, { path = name(o), size = { r(s.X), r(s.Y) } })
+\t\t\t\tend
+\t\t\tend
+\t\tend
+\tend
+end
+return HS:JSONEncode(out)
+"""
+
+DESKTOP_MIN = (1280, 720)
+PHONE = (667, 375)
+UI_CONTEXT = ("Files ending -1280 are the desktop: the Studio viewport as it is, at least 1280 by 720, "
+              "no Device Simulator (recorded viewport sizes: {sizes}). Files ending -667 are a 667 by 375 "
+              "phone screen cut out of the Device Simulator and shown at 2x (1334 by 750), so halve what you "
+              "measure on them. The round buttons at the top left (Roblox logo, menu, chat) are Roblox's own "
+              "top bar, not ours: do not judge their look, but our layout must clear them.")
 
 
 def shot_line(s: dict) -> str:
@@ -233,6 +368,8 @@ def cmd_list(a):
 def cmd_snippet(a):
     if a.id == "pin":
         print(PIN)
+    elif a.id == "uicheck":
+        print(UICHECK)
     elif a.id == "weather":
         print(WEATHER)
     elif a.id == "all":
@@ -251,6 +388,7 @@ def cmd_newrun(a):
             "files": [f + ".jpg" for s in shots for f in file_stems(s)], "fov": SHOTS["fov"]}
     if a.set == "U":
         meta["screen_sizes"] = [list(x) for x in SCREEN_SIZES]
+        meta["protocol"] = 2  # desktop viewport as is, phone cut to 667x375 at 2x, a uicheck per file
     (run / "run.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
     print(run)
 
@@ -290,6 +428,206 @@ def weather_problems(run: Path, shots: list[dict]) -> list[str]:
         if w != SCORED_WEATHER:
             bad.append(f"{s['id']} ({w if w else 'not recorded'})")
     return bad
+
+
+DESKTOP_TAG = f"-{SCREEN_SIZES[0][0]}"
+PHONE_TAG = f"-{PHONE[0]}"
+
+
+def screen_stem(meta: dict, arg: str, size: str | None) -> str:
+    """The file stem a record is for: <id>-1280 or <id>-667. A bare screen id means the desktop file
+    unless --size says otherwise."""
+    ids = meta.get("shots") or [s["id"] for s in need_set(meta.get("set", "U"))]
+    tags = [f"-{w}" for w, _ in SCREEN_SIZES]
+    if any(arg.endswith(tg) for tg in tags) and arg.rsplit("-", 1)[0] in ids:
+        return arg
+    if arg in ids:
+        return f"{arg}-{size}" if size else arg + DESKTOP_TAG
+    sys.exit(f"{arg} is not a screen of this run. Its screens: {', '.join(ids)} (add -1280 or -667 for one size)")
+
+
+def write_meta(run: Path, meta: dict) -> None:
+    (run / "run.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
+
+
+def need_meta(run: Path) -> dict:
+    if not (run / "run.json").exists():
+        sys.exit(f"No run.json in {run}. Make the run with: python tools/shots/shots.py newrun --set U")
+    return read_meta(run)
+
+
+def viewport_problem(stem: str, size) -> str | None:
+    """Why a recorded viewport is wrong for its file, or None when it is fine."""
+    if not size:
+        return "no viewport recorded"
+    w, h = int(size[0]), int(size[1])
+    if stem.endswith(PHONE_TAG) and (w, h) != PHONE:
+        return f"phone viewport {w}x{h}, not {PHONE[0]}x{PHONE[1]} (set the Device Simulator)"
+    if stem.endswith(DESKTOP_TAG) and (w < DESKTOP_MIN[0] or h < DESKTOP_MIN[1]):
+        return f"desktop viewport {w}x{h}, under {DESKTOP_MIN[0]}x{DESKTOP_MIN[1]} (make the Studio window bigger)"
+    return None
+
+
+def cmd_viewport(a):
+    run = Path(a.run)
+    meta = need_meta(run)
+    stem = screen_stem(meta, a.id, a.size)
+    meta.setdefault("viewport", {})[stem] = [a.w, a.h]
+    write_meta(run, meta)
+    bad = viewport_problem(stem, [a.w, a.h])
+    print(f"{run.name}: {stem} viewport {a.w}x{a.h}" + (f"  (WRONG: {bad}; score will refuse it)" if bad else ""))
+
+
+def load_json_arg(arg: str) -> dict:
+    """A JSON object from a file path, "-" (stdin) or the literal text; text before the first { is skipped."""
+    if arg == "-":
+        text = sys.stdin.read()
+    elif Path(arg).exists():
+        text = Path(arg).read_text(encoding="utf-8")
+    else:
+        text = arg
+    text = text.strip()
+    if "{" not in text:
+        sys.exit("No JSON object in the uicheck input. Paste what snippet uicheck returned, or a file holding it.")
+    try:
+        return json.loads(text[text.index("{"):text.rindex("}") + 1])
+    except ValueError as e:
+        sys.exit(f"The uicheck input is not valid JSON: {e}")
+
+
+def cmd_uicheck(a):
+    run = Path(a.run)
+    meta = need_meta(run)
+    stem = screen_stem(meta, a.id, a.size)
+    data = load_json_arg(a.result)
+    for k in ("outside", "small_text", "small_buttons"):
+        data[k] = data.get(k) or []  # JSONEncode turns an empty table into {} or []
+    meta.setdefault("uicheck", {})[stem] = data
+    if data.get("viewport"):
+        meta.setdefault("viewport", {})[stem] = data["viewport"]
+    write_meta(run, meta)
+    vp = data.get("viewport")
+    print(f"{run.name}: {stem} uicheck recorded" + (f", viewport {vp[0]}x{vp[1]}" if vp else ", no viewport in it"))
+    bad = viewport_problem(stem, vp)
+    if bad:
+        print(f"  viewport: {bad}")
+    for x in data["small_text"]:
+        print(f"  small text {x.get('px')} px ({x.get('from', '')}): {x.get('path')}  \"{x.get('text', '')}\"")
+    for x in data["small_buttons"]:
+        print(f"  small button {x.get('size')}: {x.get('path')}")
+    if data["outside"]:
+        for x in data["outside"]:
+            print(f"  OUTSIDE the viewport {x.get('rect')}: {x.get('path')}")
+        print(f"ABORT {stem}: {len(data['outside'])} visible element(s) lie partly outside the viewport. "
+              "score leaves this file out; fix the layout and capture it again.")
+        sys.exit(1)
+
+
+def find_device_rect(im, tol: int = 12) -> tuple[int, int, int, int] | None:
+    """The phone screen inside a Device Simulator capture: the largest block that is not the flat
+    letterbox colour (the most common exact colour on the image border; tol is kept low because the
+    dark lake water is close to it). Returns (x, y, w, h) or None."""
+    from collections import Counter
+    from PIL import Image, ImageChops
+
+    rgb = im.convert("RGB")
+    W, H = rgb.size
+    px = rgb.load()
+    border = [px[x, y] for x in range(0, W, 2) for y in (1, H - 2)] + [px[W - 2, y] for y in range(0, H, 2)]
+    bg = Counter(border).most_common(1)[0][0]
+    diff = ImageChops.difference(rgb, Image.new("RGB", rgb.size, bg)).split()
+    mask = ImageChops.lighter(ImageChops.lighter(diff[0], diff[1]), diff[2]).point(lambda v: 255 if v > tol else 0)
+
+    def longest_run(values: list[float], thresh: float) -> tuple[int, int] | None:
+        best, start = None, None
+        for i, v in enumerate(values + [0.0]):
+            if v >= thresh and start is None:
+                start = i
+            elif v < thresh and start is not None:
+                if best is None or i - start > best[1] - best[0]:
+                    best = (start, i)
+                start = None
+        return best
+
+    rows = list(mask.resize((1, H), Image.BOX).tobytes())
+    ry = longest_run([v / 255 for v in rows], 0.5 * max(rows) / 255) if max(rows) else None
+    if not ry:
+        return None
+    band = mask.crop((0, ry[0], W, ry[1]))
+    cols = list(band.resize((W, 1), Image.BOX).tobytes())
+    rx = longest_run([v / 255 for v in cols], 0.5)
+    if not rx:
+        return None
+    return rx[0], ry[0], rx[1] - rx[0], ry[1] - ry[0]  # JPEG blur may add a pixel a side
+
+
+def cmd_phonecrop(a):
+    from PIL import Image
+
+    run = Path(a.run)
+    meta = read_meta(run)
+    raws = sorted(list(run.glob(f"*{PHONE_TAG}-raw.jpg")) + list(run.glob(f"*{PHONE_TAG}-raw.png")))
+    if a.only:
+        raws = [r for r in raws if r.stem[: -len("-raw")] == a.only]
+    if not raws:
+        sys.exit(f"No *{PHONE_TAG}-raw.jpg in {run}" + (f" for {a.only}" if a.only else ""))
+    if a.rect and len(raws) != 1:
+        sys.exit("--rect is for one raw at a time: add --only <stem>")
+    want = PHONE[0] / PHONE[1]
+    failed = []
+    for raw in raws:
+        stem = raw.stem[: -len("-raw")]
+        im = Image.open(raw).convert("RGB")
+        rect = tuple(int(v) for v in a.rect.split(",")) if a.rect else find_device_rect(im)
+        if not rect:
+            print(f"{raw.name}: no device found (all letterbox?); pass --only {stem} --rect x,y,w,h")
+            failed.append(stem)
+            continue
+        x, y, w, h = rect
+        aspect = w / h
+        if abs(aspect / want - 1) > a.tolerance:
+            print(f"{raw.name}: found {w}x{h} at ({x}, {y}), aspect {aspect:.3f}, not {want:.3f}. The device is "
+                  "cut off or the find failed: capture the whole viewport (-Width 4000) or pass --rect x,y,w,h")
+            failed.append(stem)
+            continue
+        if x == 0 or y == 0 or x + w == im.width or y + h == im.height:
+            print(f"{raw.name}: warning, the device touches the image edge; check it is not cut off")
+        phone = im.crop((x, y, x + w, y + h)).resize(PHONE, Image.LANCZOS)
+        out = phone.resize((PHONE[0] * 2, PHONE[1] * 2), Image.LANCZOS)
+        dest = run / f"{stem}.jpg"
+        out.save(dest, quality=92)
+        meta.setdefault("phonecrop", {})[stem] = {"raw": raw.name, "rect": [x, y, w, h], "scale": round(h / PHONE[1], 3)}
+        print(f"{raw.name}: device {w}x{h} at ({x}, {y}), scale {h / PHONE[1]:.3f} -> {dest.name} {out.width}x{out.height}")
+    if meta:
+        write_meta(run, meta)
+    if failed:
+        sys.exit(f"Not cropped: {', '.join(failed)}")
+
+
+def ui_gate(run: Path, found: list[tuple[str, Path | None]]) -> tuple[list[str], list[str], dict]:
+    """Set U, protocol 2: (problems that refuse the score, files left out, viewports by file)."""
+    meta = read_meta(run)
+    vps, checks = meta.get("viewport", {}) or {}, meta.get("uicheck", {}) or {}
+    problems, left_out = [], []
+    for stem, p in found:
+        if not p:
+            raw = run / f"{stem}-raw.jpg"
+            if raw.exists():
+                problems.append(f"{stem}: only the raw capture is there; run: python tools/shots/shots.py phonecrop {run}")
+            continue
+        bad = viewport_problem(stem, vps.get(stem))
+        if bad:
+            problems.append(f"{stem}: {bad}")
+        if stem not in checks:
+            problems.append(f"{stem}: no uicheck recorded")
+        elif checks[stem].get("outside"):
+            left_out.append(stem)
+        if stem.endswith(PHONE_TAG):
+            from PIL import Image
+            with Image.open(p) as im:
+                if im.size != (PHONE[0] * 2, PHONE[1] * 2):
+                    problems.append(f"{stem}: {im.width}x{im.height}, not the 2x phone crop; run phonecrop")
+    return problems, left_out, {s: vps.get(s) for s, p in found if p}
 
 
 def images(run: Path, shots: list[dict]) -> list[tuple[str, Path | None]]:
@@ -360,7 +698,7 @@ def merge_stock_items(verdicts: list[dict]) -> list[dict]:
     return sorted(seen.values(), key=lambda x: -x["runs"])
 
 
-def score_one(a, run: Path, set_name: str, files: list[str], rubric: str, audit: dict | None) -> dict:
+def score_one(a, run: Path, set_name: str, files: list[str], rubric: str, audit: dict | None, context: str = "") -> dict:
     verdicts = []
     step = a.step if rubric == "look" else f"{a.step}-{rubric}"
     for i in range(a.runs):
@@ -369,6 +707,8 @@ def score_one(a, run: Path, set_name: str, files: list[str], rubric: str, audit:
                "--step", step, "--rubric", rubric, "--json-out", str(out)]
         if a.note:
             cmd += ["--note", a.note]
+        if context:
+            cmd += ["--context", context]
         subprocess.run(cmd, cwd=ROOT, check=True, stdout=subprocess.DEVNULL)
         verdicts.append(json.loads(out.read_text(encoding="utf-8")))
         print(f"{rubric} run {i + 1}: {verdicts[-1]['score']}/10  ({verdicts[-1]['report']})")
@@ -405,6 +745,22 @@ def cmd_score(a):
         # Score one group of a set (set A holds the home lake and the creek; N1 is judged on the lake).
         shots = [s for s in shots if s.get("group", s.get("place")) == a.group]
     found = images(run, shots)
+    ui_meta = {}
+    context = ""
+    if set_name == "U" and read_meta(run).get("protocol", 0) >= 2:
+        if a.skip_ui_checks:
+            print("Warning (--skip-ui-checks): viewports and uichecks not checked")
+        else:
+            problems, left_out, vps = ui_gate(run, found)
+            if problems:
+                sys.exit(f"Refusing to score {run.name}:\n  " + "\n  ".join(problems)
+                         + "\n(see the set U capture loop in tools/shots/shots.py, or pass --skip-ui-checks)")
+            if left_out:
+                print("Left out, something lies outside the viewport (run.json uicheck): " + ", ".join(left_out))
+                found = [(stem, p) for stem, p in found if stem not in left_out]
+            ui_meta = {"viewport": vps, "left_out": left_out}
+            sizes = ", ".join(f"{s} {v[0]}x{v[1]}" for s, v in vps.items() if v and s.endswith(DESKTOP_TAG) and s not in left_out)
+            context = UI_CONTEXT.format(sizes=sizes or "none")
     files = [str(p) for _, p in found if p]
     if not files:
         sys.exit(f"No images for set {set_name} in {run}")
@@ -431,8 +787,9 @@ def cmd_score(a):
     rubrics = [a.rubric or DEFAULT_RUBRIC[set_name]] + [r for r in (a.also or []) if r != (a.rubric or DEFAULT_RUBRIC[set_name])]
     hist = json.loads(HISTORY.read_text(encoding="utf-8")) if HISTORY.exists() else []
     for rubric in rubrics:
-        entry = score_one(a, run, set_name, files, rubric, audit)
+        entry = score_one(a, run, set_name, files, rubric, audit, context)
         entry["weather"] = weather
+        entry.update(ui_meta)
         if bad:
             entry["any_weather"] = True
         hist.append(entry)
@@ -452,6 +809,21 @@ def main():
     p.add_argument("run"); p.add_argument("id", help='a shot id of the run, or "all"')
     p.add_argument("kind", help="the Weather attribute the shot snippet returned, like Clear")
     p.set_defaults(fn=cmd_weather)
+    p = sub.add_parser("viewport", help="record a screen file's ViewportSize in run.json (set U)")
+    p.add_argument("run"); p.add_argument("id", help="<id>-1280 or <id>-667, or a bare screen id for the desktop file")
+    p.add_argument("w", type=int); p.add_argument("h", type=int)
+    p.add_argument("--size", default=None, help="1280 or 667 when id is a bare screen id")
+    p.set_defaults(fn=cmd_viewport)
+    p = sub.add_parser("uicheck", help="record what snippet uicheck returned for a screen file (set U)")
+    p.add_argument("run"); p.add_argument("id", help="<id>-1280 or <id>-667, or a bare screen id for the desktop file")
+    p.add_argument("result", help="a file holding the JSON, - for stdin, or the JSON itself")
+    p.add_argument("--size", default=None, help="1280 or 667 when id is a bare screen id")
+    p.set_defaults(fn=cmd_uicheck)
+    p = sub.add_parser("phonecrop", help="cut the 667x375 phone out of every *-667-raw.jpg and save it at 2x as *-667.jpg")
+    p.add_argument("run"); p.add_argument("--only", default=None, help="one stem, like u02-shop-667")
+    p.add_argument("--rect", default=None, help="x,y,w,h of the device in the raw, when the automatic find fails")
+    p.add_argument("--tolerance", type=float, default=0.025, help="allowed aspect error (default 0.025)")
+    p.set_defaults(fn=cmd_phonecrop)
     p = sub.add_parser("sheet"); p.add_argument("run"); p.add_argument("--before"); p.add_argument("--out")
     p.add_argument("--set", choices=SETS, default=None, help="default: the run's own set (run.json), else A")
     p.set_defaults(fn=cmd_sheet)
@@ -464,6 +836,7 @@ def main():
     p.add_argument("--note", default="")
     p.add_argument("--group", default=None, help="score only this group of the set, like lake or creek")
     p.add_argument("--any-weather", action="store_true", help="score even if a shot's recorded weather is not Clear (old runs)")
+    p.add_argument("--skip-ui-checks", action="store_true", help="set U: score without the recorded viewports and uichecks")
     p.set_defaults(fn=cmd_score)
     a = ap.parse_args()
     a.fn(a)

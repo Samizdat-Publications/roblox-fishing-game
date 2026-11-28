@@ -1,5 +1,5 @@
 {
-  "about": "The fixed views every look step is judged on. Camera at eye, aimed at look, field of view fov, game clock in hours. Same shots, same order, every time. World coordinates as WorldBuilder builds them: lake water spans x -110..110 and z -80..80 at y 0, ground top is y 1, the dock runs from the south shore north at x 0 (z 80 to 34), the stands and home pond sit south of the dock (z 96 to 106). Cedar Creek runs north to south along x -230 (riffle z 30..75, deep pool z -70..-10), entered through the gate at x -158. (The first baseline on 11/26/2026 was shot while the whole Lake model sat 6 west, 10 up and 55 north of these; the shots were moved by the same amount on 11/26/2026 so they frame the same places.) Golden-hour shots are at 17.4 since 11/27/2026: in Roblox the sun sets at 18.0, so 18.4 showed dusk. Sets (11/27/2026, leg 3 N0): A is the home lake and the creek (group lake or creek), B the Big Lake (x -200..200, z -440..-140; the channel x -15..15 from z -78 to -142 with its footbridge at z -85; the island round (-90, -240) with the lighthouse at (-72, -239); the buoy line at z -290, blue water north of it), C the boats (N4) and D the island (N6). Set U is six UI screens (kind screen), each captured at every size in screen_sizes over the dock-end noon view; their luau runs after a shared prelude in shots.py and asks the Studio-only DebugScreen hook in the Controller first.",
+  "about": "The fixed views every look step is judged on. Camera at eye, aimed at look, field of view fov, game clock in hours. Same shots, same order, every time. World coordinates as WorldBuilder builds them: lake water spans x -110..110 and z -80..80 at y 0, ground top is y 1, the dock runs from the south shore north at x 0 (z 80 to 34), the stands and home pond sit south of the dock (z 96 to 106). Cedar Creek runs north to south along x -230 (riffle z 30..75, deep pool z -70..-10), entered through the gate at x -158. (The first baseline on 11/26/2026 was shot while the whole Lake model sat 6 west, 10 up and 55 north of these; the shots were moved by the same amount on 11/26/2026 so they frame the same places.) Golden-hour shots are at 17.4 since 11/27/2026: in Roblox the sun sets at 18.0, so 18.4 showed dusk. Sets (11/27/2026, leg 3 N0): A is the home lake and the creek (group lake or creek), B the Big Lake (x -200..200, z -440..-140; the channel x -15..15 from z -78 to -142 with its footbridge at z -85; the island round (-90, -240) with the lighthouse at (-72, -239); the buoy line at z -290, blue water north of it), C the boats (N4) and D the island (N6). Set U is six UI screens (kind screen), each captured at every size in screen_sizes over the dock-end noon view; their luau runs after a shared prelude in shots.py and asks the Studio-only DebugScreen hook in the Controller first. Since 11/27/2026 (N2 review 1): the desktop size is the Studio viewport as it is, at least 1280 by 720, no Device Simulator, with its ViewportSize recorded in run.json; the phone size is the Device Simulator at 667 by 375, cut out of the letterbox to exactly 667 by 375 and shown at 2x (shots.py phonecrop). Every screen's luau ends by returning tag(), the viewport size and the weather, and snippet uicheck is run before each capture (see shots.py).",
   "fov": 70,
   "shots": [
     {
@@ -346,7 +346,7 @@
       "what": "The plain HUD while idle on the dock",
       "luau": [
         "viaHook(\"hud\")",
-        "return \"screen u01-hud set\""
+        "return \"screen u01-hud set\" .. tag()"
       ]
     },
     {
@@ -370,9 +370,9 @@
       "luau": [
         "if not viaHook(\"shop\") or not ui.Shop.Visible then",
         "\tui.Shop.Visible = true -- fallback: rows as built, without a refresh from the player state",
-        "\treturn \"screen u02-shop set (fallback: shown without a refresh; the DebugScreen hook is missing)\"",
+        "\treturn \"screen u02-shop set (fallback: shown without a refresh; the DebugScreen hook is missing)\" .. tag()",
         "end",
-        "return \"screen u02-shop set\""
+        "return \"screen u02-shop set\" .. tag()"
       ]
     },
     {
@@ -395,9 +395,9 @@
       "what": "The fish journal",
       "luau": [
         "if not viaHook(\"journal\") or not ui.Journal.Visible then",
-        "\treturn \"screen u03-journal: no DebugScreen hook. Press J now (user_keyboard_input) so the journal opens filled in, then capture\"",
+        "\treturn \"screen u03-journal: no DebugScreen hook. Press J now (user_keyboard_input) so the journal opens filled in, then capture\" .. tag()",
         "end",
-        "return \"screen u03-journal set\""
+        "return \"screen u03-journal set\" .. tag()"
       ]
     },
     {
@@ -440,9 +440,9 @@
         "\tif sc then sc.Scale = 1 end",
         "\tcard:SetAttribute(\"Token\", -1) -- so no pending auto-close matches",
         "\tcard.Visible = true",
-        "\treturn \"screen u04-card-rare set (fallback: filled by hand, no fish in the window; the DebugScreen hook is missing)\"",
+        "\treturn \"screen u04-card-rare set (fallback: filled by hand, no fish in the window; the DebugScreen hook is missing)\" .. tag()",
         "end",
-        "return \"screen u04-card-rare set\""
+        "return \"screen u04-card-rare set\" .. tag()"
       ]
     },
     {
@@ -487,9 +487,9 @@
         "\t\tif b then b.Visible = false end -- side buttons hide in a fight (UI.setLocked)",
         "\tend",
         "\tf.Visible, ui.ReelPrompt.Visible, ui.DragBox.Visible = true, true, true",
-        "\treturn \"screen u05-fight set (fallback: posed by hand; the DebugScreen hook is missing)\"",
+        "\treturn \"screen u05-fight set (fallback: posed by hand; the DebugScreen hook is missing)\" .. tag()",
         "end",
-        "return \"screen u05-fight set\""
+        "return \"screen u05-fight set\" .. tag()"
       ]
     },
     {
@@ -519,9 +519,9 @@
         "\tBB.open({ bait = \"Worm\", hook = \"Small\", firstTime = false, auto = false, onDone = function() end })",
         "\t_G.__benchStep = game:GetService(\"RunService\").RenderStepped:Connect(function() BB.step() end)",
         "\ttask.wait(1)",
-        "\treturn \"screen u06-bench set (fallback: module opened directly; it times out after 20 s, so capture now)\"",
+        "\treturn \"screen u06-bench set (fallback: module opened directly; it times out after 20 s, so capture now)\" .. tag()",
         "end",
-        "return \"screen u06-bench set (the bench times out after 20 s: capture now)\""
+        "return \"screen u06-bench set (the bench times out after 20 s: capture now)\" .. tag()"
       ]
     }
   ],

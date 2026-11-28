@@ -74,6 +74,67 @@ return function(t, Shared)
 		end
 	end)
 
+	t.test("handwriting never draws under 17 px on the smallest phone", function()
+		t.eq(UIStyle.HAND_MIN_PX, 17, "HAND_MIN_PX")
+		local s = UIStyle.uiScale(667, 375)
+		for role in UIStyle.TEXT do
+			t.ok(UIStyle.textSize(role, s, "hand") * s >= UIStyle.HAND_MIN_PX, role .. " handwriting under 17 px at 667 by 375")
+		end
+		for size = 8, 30 do
+			t.ok(UIStyle.textSize(size, UIStyle.SCALE.min, "hand") * UIStyle.SCALE.min >= 17, "hand size " .. size .. " at the smallest scale")
+		end
+		-- Other faces keep the 14 px floor (the hand floor is not applied to them).
+		t.eq(UIStyle.textSize(14, UIStyle.SCALE.min, "body"), math.ceil(14 / UIStyle.SCALE.min), "body floor")
+		t.eq(UIStyle.textSize(30, 1.15, "hand"), 30, "hand on the desktop")
+	end)
+
+	t.test("the bait bench layout (N2 review 1) fits the locked panel beside the locked parts", function()
+		local B = UIStyle.BENCH
+		local L = UIStyle.LOCKED.bench
+		local function same(got: { number }, want: { number }, what: string)
+			t.eq(#got, #want, what .. " length")
+			for i, v in want do
+				t.eq(got[i], v, what .. " [" .. i .. "]")
+			end
+		end
+		t.eq(B.canvasSlice, 0.35, "canvas slice")
+		same({ B.title[1], B.title[2] }, { 30, 4 }, "title place")
+		same(B.hookTitle, { 352, 6, 232, 26 }, "hook title")
+		same(B.hook, { 352, 232, 62 }, "hook buttons")
+		same(B.hookY, { 36, 100, 164 }, "hook rows")
+		same(B.skip, { 352, 230, 232, 62 }, "skip")
+		same({ B.how[1], B.how[2], B.how[4] }, { 30, 292, 20 }, "how")
+		same({ B.tip[1], B.tip[2], B.tip[4] }, { 30, 312, 24 }, "tip")
+		local rects: { [string]: { number } } = {
+			title = B.title,
+			hookTitle = B.hookTitle,
+			skip = B.skip,
+			how = B.how,
+			tip = B.tip,
+		}
+		for i, y in B.hookY do
+			rects["hook" .. i] = { B.hook[1], y, B.hook[2], B.hook[3] }
+		end
+		local closeUp = { L.closeUp[3], L.closeUp[4], L.closeUp[1], L.closeUp[2] }
+		local track = { L.track[3], L.track[4], L.track[1], L.track[2] }
+		local function overlaps(a: { number }, b: { number }): boolean
+			return a[1] < b[1] + b[3] and b[1] < a[1] + a[3] and a[2] < b[2] + b[4] and b[2] < a[2] + a[4]
+		end
+		for name, r in rects do
+			t.ok(r[1] >= 0 and r[2] >= 0 and r[1] + r[3] <= L.size[1] and r[2] + r[4] <= L.size[2], name .. " leaves the 600 by 340 panel")
+			t.ok(not overlaps(r, closeUp), name .. " covers the close-up")
+			t.ok(not overlaps(r, track), name .. " covers the track")
+			for other, q in rects do
+				if other ~= name then
+					t.ok(not overlaps(r, q), name .. " overlaps " .. other)
+				end
+			end
+		end
+		-- Every button a thumb tall at the smallest scale.
+		t.ok(B.hook[3] >= UIStyle.touchSize(UIStyle.SCALE.min), "hook buttons under a thumb")
+		t.ok(B.skip[4] >= UIStyle.touchSize(UIStyle.SCALE.min), "skip under a thumb")
+	end)
+
 	t.test("touch targets are 44 px at the smallest scale", function()
 		local s = UIStyle.SCALE.min
 		t.ok(UIStyle.touchSize(s) * s >= UIStyle.TOUCH_MIN_PX, "touch size")

@@ -23,6 +23,7 @@ local Skin = require(script.Parent.Skin)
 
 local BaitBench = {}
 local LOCK = UIStyle.LOCKED.bench
+local LAY = UIStyle.BENCH -- the new look's layout around the locked parts
 local K = UIStyle.COLORS
 
 export type Result = {
@@ -161,10 +162,16 @@ end
 
 -- The new look (Config.UI_STYLE_ON): a canvas bench with paper, ink and brass. The panel, the
 -- close-up and the timing track keep their sizes and places (UIStyle.LOCKED.bench).
+local function at(obj: GuiObject, r: { number })
+	obj.Position = UDim2.fromOffset(r[1], r[2])
+	obj.Size = UDim2.fromOffset(r[3], r[4])
+end
+
 local function dress()
 	local p = refs.panel :: Frame
-	Skin.surface(p, "canvas", "panel", 3)
+	Skin.surface(p, "canvas", "panel", 3, LAY.canvasSlice)
 	Skin.text(refs.title, "title", 22, K.ink)
+	at(refs.title, LAY.title)
 	refs.vp.BackgroundColor3 = K.water
 	Skin.corner(refs.vp, "tag")
 	Skin.stroke(refs.vp, K.leather, 2)
@@ -176,22 +183,28 @@ local function dress()
 	refs.marker.BackgroundColor3 = K.ink
 	Skin.stroke(refs.marker, K.paper, 1)
 	Skin.text(refs.hookTitle, "title", 17, K.ink)
+	at(refs.hookTitle, LAY.hookTitle)
 	Skin.text(refs.lureNote, "hand", "note", K.ink)
-	for _, b in refs.hookButtons do
+	refs.lureNote.Position = UDim2.fromOffset(LAY.hook[1], LAY.hookY[1])
+	for i, name in BaitRig.HOOKS do
+		local b = refs.hookButtons[name]
 		Skin.text(b, "bodyBold", 15)
+		at(b, { LAY.hook[1], LAY.hookY[i] or LAY.hookY[#LAY.hookY], LAY.hook[2], LAY.hook[3] })
 		local old = b:FindFirstChild("Stroke")
 		if old then
 			old:Destroy()
 		end
 	end
-	Skin.text(refs.hookHint, "body", 13, K.inkSoft)
+	-- The hint lines under the hooks and beside Skip never got words: Skip says it all.
+	refs.hookHint.Visible = false
+	refs.skipHint.Visible = false
 	Skin.text(refs.how, "bodyBold", 16, K.ink)
+	at(refs.how, LAY.how)
 	Skin.text(refs.tip, "hand", 15, K.ink)
-	-- Skip: as tall as the space beside the hooks allows (the panel is locked at 340).
-	refs.skip.Size = UDim2.fromOffset(110, 40)
-	refs.skip.Position = UDim2.fromOffset(352, 252)
+	at(refs.tip, LAY.tip)
+	-- Skip: a thumb-tall brass button under the hooks, the hold time in its words.
+	at(refs.skip, LAY.skip)
 	Skin.button(refs.skip, "brass", 15)
-	Skin.text(refs.skipHint, "body", 13, K.inkSoft)
 end
 
 local function build()
@@ -201,6 +214,8 @@ local function build()
 	g.ResetOnSpawn = false
 	g.DisplayOrder = 5 -- over the fishing HUD
 	g.Enabled = false
+	-- Siblings draw by ZIndex (as the fishing HUD does), so the canvas never covers Skip's brass.
+	g.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	g.Parent = player:WaitForChild("PlayerGui")
 
 	local scale = Instance.new("UIScale")
@@ -756,7 +771,7 @@ function BaitBench.open(o: Opts)
 	refs.title.Text = (if isLure then "Rig the lure: " else "Bait the hook: ") .. (if b then b.name else o.bait)
 	-- Lures carry their own hook: no hook picker (L3b).
 	refs.hookTitle.Visible = not isLure
-	refs.hookHint.Visible = not isLure
+	refs.hookHint.Visible = not isLure and not Skin.on
 	refs.lureNote.Visible = isLure
 	for _, hb in refs.hookButtons do
 		hb.Visible = not isLure
@@ -774,7 +789,11 @@ function BaitBench.open(o: Opts)
 	end
 	refs.result.Text = ""
 	refs.feedback.Text = if o.firstTime then "First time: slow and steady" else ""
-	refs.skipHint.Text = string.format("or hold %d s", math.floor(BaitRig.skipHold(r, o.firstTime) + 0.5))
+	local holdS = math.floor(BaitRig.skipHold(r, o.firstTime) + 0.5)
+	refs.skipHint.Text = string.format("or hold %d s", holdS)
+	if Skin.on then
+		refs.skip.Text = string.format("Skip (or hold %d s)", holdS)
+	end
 	buildScene(o.bait)
 	buildTrack(r, 1)
 	refreshHooks()
