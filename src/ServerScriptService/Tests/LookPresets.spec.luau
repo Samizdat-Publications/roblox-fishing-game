@@ -672,9 +672,11 @@ return function(t, Shared)
 		-- With a clock, home's share follows the time of day; other areas keep theirs.
 		local d = LookPresets.areaWater({ home = 1 }, 6)
 		t.ok(math.abs(d.WaterWaveSize - LookPresets.homeWaterAt(6).WaterWaveSize) < 1e-9, "home at dawn")
-		t.eq(LookPresets.areaWater({ creek = 1 }, 6).WaterWaveSize, LookPresets.AREAS.creek.water.WaterWaveSize, "creek ignores the clock")
+		-- Neon Pass 1 (11/28/2026): the creek follows its own water by time (CREEK_WATER_BY_TIME).
+		t.ok(math.abs(LookPresets.areaWater({ creek = 1 }, 6).WaterWaveSize - LookPresets.creekWaterAt(6).WaterWaveSize) < 1e-9, "creek at dawn")
+		t.eq(LookPresets.areaWater({ creek = 1 }).WaterWaveSize, LookPresets.AREAS.creek.water.WaterWaveSize, "creek without a clock: its fixed water")
 		local half = LookPresets.areaWater({ home = 0.5, creek = 0.5 }, 6)
-		local want = (LookPresets.homeWaterAt(6).WaterReflectance + LookPresets.AREAS.creek.water.WaterReflectance) / 2
+		local want = (LookPresets.homeWaterAt(6).WaterReflectance + LookPresets.creekWaterAt(6).WaterReflectance) / 2
 		t.ok(math.abs(half.WaterReflectance - want) < 1e-9, "half home at dawn, half creek")
 		t.ok(math.abs(LookPresets.areaWater({}, 6).WaterWaveSize - LookPresets.homeWaterAt(6).WaterWaveSize) < 1e-9, "no area weighted: home at that time")
 	end)
@@ -746,7 +748,13 @@ return function(t, Shared)
 		t.eq(r2.WaterWaveSize, 0.06, "wave 0.06")
 		t.ok(math.abs(r2.WaterColor.G * 255 - 70) < 1, "colour 52, 70, 48")
 		local creek = LookPresets.AREAS.creek :: any
-		if LookPresets.REVIEW1_CREEK then
+		if LookPresets.NEON_CREEK_PASS1 then
+			-- Neon Pass 1 comes last, so its numbers win.
+			t.eq(creek.exposure, -0.1, "Neon Pass 1: exposure")
+			t.eq(creek.dawnMist.density, 0.12, "Neon Pass 1: mist")
+			t.eq(creek.dawnMist.haze, 1.2, "Neon Pass 1: haze")
+			t.eq(creek.saturation, -0.06, "Neon Pass 1: saturation")
+		elseif LookPresets.REVIEW1_CREEK then
 			t.eq(creek.exposure, 0, "switched on: exposure")
 			t.eq(creek.dawnMist.density, 0.14, "switched on: mist")
 		else
@@ -853,7 +861,7 @@ return function(t, Shared)
 		{ "the dock", Vector3.new(0, 2, 57), 6.6 },
 		{ "the stands", Vector3.new(11, 4, 100), 12 },
 		{ "the pond", Vector3.new(50, 1, 106), 6.6 },
-		{ "home 11 studs in from its west edge, 21 short of the creek", Vector3.new(-139, 3, 15), 6.6 },
+		{ "home 11 studs in from its west edge, 21 short of the creek", Vector3.new(-124, 3, 15), 6.6 },
 		{ "21 studs south of home, nothing else near", Vector3.new(0, 3, 161), 6.6 },
 	}
 
@@ -939,11 +947,61 @@ return function(t, Shared)
 
 	t.test("other areas only start inside their own band", function()
 		local half = LookPresets.AREA_BAND / 2
-		-- Walking west from home toward the creek (creek's east edge x -160): nothing until 20 studs out.
-		t.eq(LookPresets.areaWeights(Vector3.new(-160 + half + 0.5, 0, 15)).home, 1, "creek 20.5 studs away: home only")
-		t.ok(LookPresets.areaWeights(Vector3.new(-160 + half - 1, 0, 15)).creek > 0, "creek 19 studs away: creek starts")
+		-- Walking west from home toward the creek (creek's east edge x -145 since Neon Pass 1): nothing until 20 studs out.
+		t.eq(LookPresets.areaWeights(Vector3.new(-145 + half + 0.5, 0, 15)).home, 1, "creek 20.5 studs away: home only")
+		t.ok(LookPresets.areaWeights(Vector3.new(-145 + half - 1, 0, 15)).creek > 0, "creek 19 studs away: creek starts")
+		-- Shot 11's eye (x -140) and the gate (x -162) sit in the creek's blend.
+		t.ok(LookPresets.areaWeights(Vector3.new(-140, 5.5, 8)).creek > 0.15, "shot 11's eye in the creek's blend")
+		t.ok(LookPresets.areaWeights(Vector3.new(-162, 5, 0)).creek > 0.8, "the gate mostly creek")
 		-- Walking north up the channel toward the basin (south edge z -140).
 		t.eq(LookPresets.areaWeights(Vector3.new(0, 0, -140 + half + 0.5)).home, 1, "basin 20.5 studs away: home only")
 		t.ok(LookPresets.areaWeights(Vector3.new(0, 0, -140 + half - 1)).basin > 0, "basin 19 studs away: basin starts")
+	end)
+	-- Neon's N3 review, Pass 1 (11/28/2026): the creek's water by time of day, and the low sun
+	-- damped through the crowns inside the creek only.
+	t.test("Neon Pass 1: the creek's water by time of day", function()
+		local W = LookPresets.CREEK_WATER_BY_TIME :: any
+		local want = {
+			dawn = { 54, 76, 56, 0.62, 0.18, 0.07, 9 },
+			day = { 56, 78, 56, 0.58, 0.2, 0.08, 9 },
+			golden = { 44, 68, 54, 0.48, 0.3, 0.05, 5 },
+			dusk = { 38, 60, 56, 0.45, 0.3, 0.05, 5 },
+			night = { 24, 44, 48, 0.42, 0.18, 0.04, 3 },
+		}
+		for id, v in want do
+			local w = W[id]
+			t.ok(w ~= nil, id)
+			t.ok(math.abs(w.WaterColor.R * 255 - v[1]) < 0.6 and math.abs(w.WaterColor.G * 255 - v[2]) < 0.6 and math.abs(w.WaterColor.B * 255 - v[3]) < 0.6, id .. " colour")
+			t.eq(w.WaterTransparency, v[4], id .. " transparency")
+			t.eq(w.WaterReflectance, v[5], id .. " reflectance")
+			t.eq(w.WaterWaveSize, v[6], id .. " wave size")
+			t.eq(w.WaterWaveSpeed, v[7], id .. " wave speed")
+			t.ok(w.WaterTransparency <= 0.65, id .. " never above 0.65")
+		end
+		-- At each shot's clock the creek's water is that time's (golden 17.4, night 22).
+		local g = LookPresets.creekWaterAt(17.4)
+		local wt = LookPresets.weights(17.4)
+		if (wt.golden or 0) > 0.99 then
+			t.ok(math.abs(g.WaterTransparency - 0.48) < 1e-6, "golden water at 17.4")
+		end
+		local n = LookPresets.creekWaterAt(22)
+		t.ok(math.abs(n.WaterWaveSpeed - 3) < 1e-6 and math.abs(n.WaterTransparency - 0.42) < 1e-6, "night water at 22")
+		-- The home lake's water is untouched by the creek's.
+		t.eq(LookPresets.areaWater({ home = 1 }, 22).WaterWaveSpeed, LookPresets.homeWaterAt(22).WaterWaveSpeed, "home's own at night")
+	end)
+
+	t.test("Neon Pass 1: sun rays and bloom damped in the creek, home untouched", function()
+		local creek = LookPresets.AREAS.creek :: any
+		t.eq(creek.sunRaysMult, 0.45, "sun rays x0.45")
+		t.eq(creek.bloomThresholdOffset, 0.3, "bloom threshold +0.3")
+		local raw = LookPresets.at(17.4)
+		local inside = LookPresets.blendAreas(raw, { creek = 1 }, 17.4)
+		t.ok(math.abs(inside.SunRaysEffect.Intensity - raw.SunRaysEffect.Intensity * 0.45) < 1e-9, "rays inside")
+		t.ok(math.abs(inside.BloomEffect.Threshold - (raw.BloomEffect.Threshold + 0.3)) < 1e-9, "bloom inside")
+		local half = LookPresets.blendAreas(raw, { home = 0.5, creek = 0.5 }, 17.4)
+		t.ok(math.abs(half.SunRaysEffect.Intensity - raw.SunRaysEffect.Intensity * 0.725) < 1e-9, "rays at half weight")
+		local home = LookPresets.blendAreas(raw, { home = 1 }, 17.4)
+		t.eq(home.SunRaysEffect.Intensity, raw.SunRaysEffect.Intensity, "home rays")
+		t.eq(home.BloomEffect.Threshold, raw.BloomEffect.Threshold, "home bloom")
 	end)
 end

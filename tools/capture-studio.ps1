@@ -1,13 +1,17 @@
 # Grabs a still of the Roblox Studio window into a JPG, without moving or focusing it.
-# Usage: powershell -ExecutionPolicy Bypass -File tools\capture-studio.ps1 -Out docs\making-of\stills\name.jpg [-Width 1280] [-ViewportOnly]
+# Usage: powershell -ExecutionPolicy Bypass -File tools\capture-studio.ps1 -Out docs\making-of\stills\name.jpg [-Width 1280] [-Quality 85] [-ViewportOnly] [-Prime]
+# -Prime (set P, docs/looks/prime-shots.md): unscaled and JPEG quality 95, whatever -Width and -Quality say.
 # -ViewportOnly crops off Studio's ribbon and side panels using the largest child pane, best effort.
 param(
   [Parameter(Mandatory = $true)][string]$Out,
   [int]$Width = 1280,
+  [int]$Quality = 85,
   [switch]$ViewportOnly,
+  [switch]$Prime,
   [string]$Title = "Fishing Game"
 )
 $ErrorActionPreference = "Stop"
+if ($Prime) { $Width = 100000; $Quality = 95 }
 Add-Type -AssemblyName System.Drawing
 Add-Type @"
 using System;
@@ -87,7 +91,7 @@ $dir = Split-Path -Parent $Out
 if ($dir -and -not (Test-Path $dir)) { New-Item -ItemType Directory -Force $dir | Out-Null }
 $codec = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() | Where-Object { $_.MimeType -eq "image/jpeg" }
 $ep = New-Object System.Drawing.Imaging.EncoderParameters 1
-$ep.Param[0] = New-Object System.Drawing.Imaging.EncoderParameter ([System.Drawing.Imaging.Encoder]::Quality), 85L
+$ep.Param[0] = New-Object System.Drawing.Imaging.EncoderParameter ([System.Drawing.Imaging.Encoder]::Quality), [long]$Quality
 $full = [System.IO.Path]::GetFullPath($Out)
 $outBmp.Save($full, $codec, $ep)
 $outBmp.Dispose(); if ($src -ne $bmp) { $src.Dispose() }; $bmp.Dispose()

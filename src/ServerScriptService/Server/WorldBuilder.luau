@@ -73,7 +73,9 @@ WorldBuilder.LANTERN = {
 	SHADOW_ATTR = "LanternShadows", -- true on a lantern light that may cast shadows
 	-- N3 review 2 (11/28/2026): the creek pool's lantern lit nothing in shot 12. It burns brighter
 	-- and wider than the rest and may cast shadows (WorldBuilder.poolLantern).
-	pool = { brightness = 3, range = 24 },
+	-- Neon's N3 review, Pass 1 (11/28/2026): warmer and a touch smaller, so it pools on the bank
+	-- and the water instead of washing the gravel (was brightness 3, range 24, the lantern colour).
+	pool = { brightness = 2.6, range = 22, color = Color3.fromRGB(255, 186, 108) },
 }
 
 -- Makes one globe a lantern, in place: safe to run again.
@@ -797,9 +799,24 @@ function WorldBuilder.poolLantern(lake: Instance): number
 		if l:IsA("PointLight") then
 			l.Brightness = L.pool.brightness
 			l.Range = L.pool.range
+			l.Color = L.pool.color
 		end
 		l.Shadows = true
 		l:SetAttribute(L.SHADOW_ATTR, true)
+		-- Neon Pass 1: the lantern stands straight. CreekSwap builds it upright (a turn about Y
+		-- only); if the saved copy leans, take the lean out about its pivot, keeping its turn.
+		local post = l.Parent and l.Parent.Parent
+		if post and post:IsA("Model") and post.Name == "CreekLantern" then
+			local cf = post:GetPivot()
+			if cf.UpVector.Y < 0.9999 then
+				local look = cf.LookVector
+				local flat = Vector3.new(look.X, 0, look.Z)
+				if flat.Magnitude < 1e-3 then
+					flat = Vector3.new(0, 0, -1)
+				end
+				post:PivotTo(CFrame.lookAt(cf.Position, cf.Position + flat.Unit))
+			end
+		end
 	end
 	return #lights
 end

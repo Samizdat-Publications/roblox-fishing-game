@@ -635,9 +635,10 @@ function Scenery.apply(lake: Model): Result
 	local light = Instance.new("PointLight")
 	-- N3 review 2 (11/28/2026): it lit nothing in shot 12. Brighter and wider, and it may cast
 	-- shadows (the LanternShadows attribute; WorldBuilder.LANTERN.pool and poolLantern match).
-	light.Range = 24
-	light.Brightness = 3
-	light.Color = lanternColor
+	-- Neon Pass 1 (11/28/2026): 2.6, range 22, warmer (WorldBuilder.LANTERN.pool matches).
+	light.Range = 22
+	light.Brightness = 2.6
+	light.Color = Color3.fromRGB(255, 186, 108)
 	light.Shadows = true
 	light:SetAttribute("LanternShadows", true)
 	light.Parent = bulb

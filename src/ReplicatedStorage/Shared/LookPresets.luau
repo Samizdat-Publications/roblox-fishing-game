@@ -643,6 +643,11 @@ export type Area = {
 	-- at the dawn preset's weight (and the area's share).
 	exposureFloor: number?,
 	dawnMist: { density: number, haze: number }?,
+	-- (Neon's N3 review, Pass 1) Optional. sunRaysMult: SunRays intensity multiplied by this
+	-- inside the area (eased by its share); bloomThresholdOffset: added to Bloom's threshold
+	-- (higher: less of the low sun blooms through the crowns).
+	sunRaysMult: number?,
+	bloomThresholdOffset: number?,
 }
 
 local WHITE = rgb(255, 255, 255)
@@ -753,6 +758,40 @@ if LookPresets.REVIEW2_CREEK_WATER then
 	creek.water = water
 end
 
+-- Neon's N3 review, Pass 1 (11/28/2026), last so its numbers win over reviews 1 and 2: the
+-- exposure lowered (-0.10, was review 1's 0; the floor stays -0.25), a green-neutral ambient and
+-- tint in place of the blue cast that turned golden water purple, less saturation, a lighter dawn
+-- mist, and the low golden sun damped through the crowns (sunRaysMult, bloomThresholdOffset).
+LookPresets.NEON_CREEK_PASS1 = true
+LookPresets.CREEK_NEON_PASS1 = {
+	exposure = -0.1,
+	ambient = rgb(242, 246, 244),
+	tint = rgb(248, 252, 248),
+	saturation = -0.06,
+	dawnMist = { density = 0.12, haze = 1.2 },
+	sunRaysMult = 0.45,
+	bloomThresholdOffset = 0.3,
+}
+if LookPresets.NEON_CREEK_PASS1 then
+	local creek = LookPresets.AREAS.creek :: any
+	for k, v in LookPresets.CREEK_NEON_PASS1 do
+		creek[k] = if type(v) == "table" then table.clone(v) else v
+	end
+end
+
+-- Neon Pass 1: the creek's water by time of day (the home lake has had WATER_BY_TIME since N1).
+-- With a clock (Config.WATER_BY_TIME_ON), areaMix gives the creek this, blended by the preset
+-- weights, colour included; without one, AREAS.creek.water (review 2's water) stays the
+-- fallback. Transparency never above 0.65 (Neon: higher strips the colour over the dark pool).
+-- stylua: ignore
+LookPresets.CREEK_WATER_BY_TIME = {
+	dawn =   { WaterColor = rgb(54, 76, 56), WaterTransparency = 0.62, WaterReflectance = 0.18, WaterWaveSize = 0.07, WaterWaveSpeed = 9 },
+	day =    { WaterColor = rgb(56, 78, 56), WaterTransparency = 0.58, WaterReflectance = 0.2,  WaterWaveSize = 0.08, WaterWaveSpeed = 9 },
+	golden = { WaterColor = rgb(44, 68, 54), WaterTransparency = 0.48, WaterReflectance = 0.3,  WaterWaveSize = 0.05, WaterWaveSpeed = 5 },
+	dusk =   { WaterColor = rgb(38, 60, 56), WaterTransparency = 0.45, WaterReflectance = 0.3,  WaterWaveSize = 0.05, WaterWaveSpeed = 5 },
+	night =  { WaterColor = rgb(24, 44, 48), WaterTransparency = 0.42, WaterReflectance = 0.18, WaterWaveSize = 0.04, WaterWaveSpeed = 3 },
+} :: { [string]: Water }
+
 -- Where each area is, in world studs (x, z), checked against the code on 11/27/2026: the home
 -- lake is Shore.LAKE (x -110..110, z -80..80) plus its shore; Cedar Creek's stretches are
 -- x -252..-208, z -70..75 (Shore.AREAS); the basin is BoatRules' Basin zone (z -290..-140,
@@ -775,8 +814,10 @@ export type Zone = {
 LookPresets.AREA_BAND = 40 -- studs over which one area blends into the next, centred on the edge
 
 LookPresets.ZONES = {
-	{ id = "home", x1 = -150, x2 = 150, z1 = -110, z2 = 140, over = { "creek", "basin" } },
-	{ id = "creek", x1 = -260, x2 = -160, z1 = -120, z2 = 120 },
+	-- Neon Pass 1 (11/28/2026): home starts at x -135 (was -150) and the creek reaches -145 (was
+	-- -160), so the gate (x -162) and shot 11's eye (x -140) sit in the forest's shade blend.
+	{ id = "home", x1 = -135, x2 = 150, z1 = -110, z2 = 140, over = { "creek", "basin" } },
+	{ id = "creek", x1 = -260, x2 = -145, z1 = -120, z2 = 120 },
 	{ id = "basin", x1 = -200, x2 = 200, z1 = -290, z2 = -140 },
 	{ id = "bluewater", x1 = -450, x2 = 450, z1 = -1150, z2 = -290 },
 	{ id = "island", x = 100, z = -950, r = 120, over = { "bluewater" } },
@@ -884,8 +925,27 @@ function LookPresets.homeWaterAt(clock: number): Water
 	return out :: Water
 end
 
+-- The creek's water at this clock (Neon Pass 1; a fresh table, colour blended too).
+function LookPresets.creekWaterAt(clock: number): Water
+	local out = { WaterTransparency = 0, WaterReflectance = 0, WaterWaveSize = 0, WaterWaveSpeed = 0 } :: any
+	for id, w in LookPresets.weights(clock) do
+		local tw = LookPresets.CREEK_WATER_BY_TIME[id]
+		if tw and w > 0 then
+			out.WaterColor = mixColor(out.WaterColor, tw.WaterColor, w)
+			for _, k in WATER_KEYS do
+				out[k] += (tw :: any)[k] * w
+			end
+		end
+	end
+	if out.WaterColor == nil then
+		return LookPresets.AREAS.creek.water
+	end
+	return out :: Water
+end
+
 -- The area settings for these weights, each field the weighted mean of the areas'. With a
--- clock (Config.WATER_BY_TIME_ON), home's water is its water at that time (homeWaterAt).
+-- clock (Config.WATER_BY_TIME_ON), home's water is its water at that time (homeWaterAt), and
+-- (Neon Pass 1) the creek's is its own (creekWaterAt); without one, each area's fixed water.
 function LookPresets.areaMix(weights: { [string]: number }, clock: number?): Area
 	local out = {
 		exposure = 0,
@@ -895,10 +955,11 @@ function LookPresets.areaMix(weights: { [string]: number }, clock: number?): Are
 		water = { WaterTransparency = 0, WaterReflectance = 0, WaterWaveSize = 0, WaterWaveSpeed = 0 },
 	} :: any
 	local homeWater = if clock ~= nil then LookPresets.homeWaterAt(clock) else nil
+	local creekWater = if clock ~= nil and (weights.creek or 0) > 0 then LookPresets.creekWaterAt(clock) else nil
 	for id, w in weights do
 		local a = LookPresets.AREAS[id]
 		if a and w > 0 then
-			local aw = if id == "home" and homeWater then homeWater else a.water
+			local aw = if id == "home" and homeWater then homeWater elseif id == "creek" and creekWater then creekWater else a.water
 			out.exposure += a.exposure * w
 			out.density += a.density * w
 			out.haze += a.haze * w
@@ -954,7 +1015,7 @@ function LookPresets.blendAreas(look: Look, weights: { [string]: number }, clock
 	local extras = false
 	for id, w in weights do
 		local ar = LookPresets.AREAS[id]
-		if ar and w > 0 and (ar.exposureFloor ~= nil or ar.dawnMist ~= nil) then
+		if ar and w > 0 and (ar.exposureFloor ~= nil or ar.dawnMist ~= nil or ar.sunRaysMult ~= nil or ar.bloomThresholdOffset ~= nil) then
 			extras = true
 		end
 	end
@@ -999,6 +1060,20 @@ function LookPresets.blendAreas(look: Look, weights: { [string]: number }, clock
 	if cc then
 		cc.TintColor = tinted(cc.TintColor :: Color3, a.tint)
 		cc.Saturation = math.clamp((cc.Saturation :: number) + a.saturation, -1, 1)
+	end
+	-- Neon Pass 1: an area's sun rays multiplier and bloom threshold offset, by its share.
+	local rays, bloom = out.SunRaysEffect, out.BloomEffect
+	for id, w in weights do
+		local ar = LookPresets.AREAS[id]
+		if ar and w > 0 then
+			local share = math.min(w, 1)
+			if rays and ar.sunRaysMult and rays.Intensity ~= nil then
+				rays.Intensity = math.clamp((rays.Intensity :: number) * (1 + (ar.sunRaysMult - 1) * share), 0, 1)
+			end
+			if bloom and ar.bloomThresholdOffset and bloom.Threshold ~= nil then
+				bloom.Threshold = math.clamp((bloom.Threshold :: number) + ar.bloomThresholdOffset * share, 0, 4)
+			end
+		end
 	end
 	return out
 end

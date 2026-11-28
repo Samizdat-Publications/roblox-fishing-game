@@ -34,6 +34,12 @@
 --     lawn band along the walk (CreekPlan.approachSlot); backing trees at D 20 on are far pines
 --     (tagged FoliageFar like CreekSwap's); ten wet-slate stones along the pool's east edge.
 --     Each repaint is recorded in SlotRecords like the others.
+--  6. Neon's N3 review, Pass 1 (11/28/2026): the drawn water is at least CreekPlan.WATER_MIN deep
+--     (the riffle had too little water in its top terrain cell to draw a surface); the moss to D
+--     52 over Neon's box, the gate foreground off meadow grass; the pool's east lip (ferns, reeds,
+--     bigger edge stones), bushes under the backing trunks, and ferns, bushes and shore stones by
+--     the gate walk. Rocks set at the waterline are stretched down to the deeper bed, and the log
+--     tips from bank to bank so neither end floats.
 -- Slots 28 to 32 get MaterialKit's variant when it is in MaterialService, else the plain base
 -- material with a palette tint (FALLBACK), so the creek reads right before the maps are uploaded.
 -- Everything new is in Lake.CreekDress: anchored, no collision, queries or touches.
@@ -71,7 +77,17 @@ local VARIANT_BY_SUFFIX = {
 }
 
 -- Which CollectionService tag the phone tier (ClientModules/FoliageTier) reads for a group.
-local TAGS = { Trees = "FoliageTree", Ferns = "FoliageUnder", Roots = "FoliageUnder" } :: { [string]: string }
+-- Neon Pass 1: the lip's ferns, the bushes under the backing trunks and the gate walk's ferns and
+-- bushes are undergrowth; reeds and shore stones get the bank's reed and stone tags.
+local TAGS = { Trees = "FoliageTree", Ferns = "FoliageUnder", Roots = "FoliageUnder", Lip = "FoliageUnder", Under = "FoliageUnder", Gate = "FoliageUnder" } :: { [string]: string }
+local function tagFor(model: string, group: string): string?
+	if string.sub(model, 1, 9) == "ReedClump" then
+		return "FoliageReed"
+	elseif string.sub(model, 1, 11) == "ShoreStones" then
+		return "FoliageStone"
+	end
+	return TAGS[group]
+end
 
 local function artModel(name: string): Model?
 	local art = ServerStorage:FindFirstChild("Art")
@@ -384,8 +400,11 @@ end
 -- N3 review 2: the moss and grass repaint covers the whole fence (CreekPlan.fenceSlot), the paths
 -- go on CreekPlan.PATH_SLOT, and the gate approach outside the fence is repainted too.
 local function paintBands(folder: Folder): (number, number, number)
-	local M = CreekPlan.MOSS_REGION
-	local moss = repaint(folder, "Moss", Vector3.new(M.x1, -16, M.z1), Vector3.new(M.x2, 40, M.z2), 5, function(x: number, z: number, slot: number): number?
+	-- Neon Pass 1: Neon's moss box joined with the fence (the fence reaches z 126, past the box's
+	-- 115, and round 3 left no meadow grass inside it).
+	local M, F = CreekPlan.MOSS_REGION, CreekPlan.FENCE
+	local lo, hi = Vector3.new(math.min(M.x1, F.x1), -16, math.min(M.z1, F.z1)), Vector3.new(math.max(M.x2, F.x2), 40, math.max(M.z2, F.z2))
+	local moss = repaint(folder, "Moss", lo, hi, 5, function(x: number, z: number, slot: number): number?
 		return CreekPlan.fenceSlot(x, z, CreekPlan.D(x, z), slot)
 	end)
 	local x1, x2, z1, z2 = math.huge, -math.huge, math.huge, -math.huge
@@ -495,6 +514,53 @@ local function wetSlate(root: Instance): number
 	return #parts
 end
 
+-- Neon Pass 1: the water is deeper now (CreekPlan.WATER_MIN), so a small rock set with its top
+-- just out of the water no longer reaches the bed and would hang in clear water. Stretch it
+-- down (Y only, about its top) until its foot is SINK under the ground at `g`. Only upright parts
+-- (a rock turned about Y alone); at most STRETCH_MAX times. True when it stretched.
+local SINK = 0.3
+local STRETCH_MAX = 3
+local function reachGround(m: Model, g: number): boolean
+	local cf, size = m:GetBoundingBox()
+	local top, bottom = cf.Position.Y + size.Y / 2, cf.Position.Y - size.Y / 2
+	local want = g - SINK
+	if bottom <= want or top - bottom < 0.05 then
+		return false
+	end
+	local f = math.min(STRETCH_MAX, (top - want) / (top - bottom))
+	for _, d in m:GetDescendants() do
+		if d:IsA("BasePart") and d.CFrame.UpVector.Y < 0.999 then
+			return false
+		end
+	end
+	for _, d in m:GetDescendants() do
+		if d:IsA("BasePart") then
+			local p = d.Position
+			d.Size = Vector3.new(d.Size.X, d.Size.Y * f, d.Size.Z)
+			d.CFrame = d.CFrame.Rotation + Vector3.new(p.X, top - (top - p.Y) * f, p.Z)
+		end
+	end
+	return true
+end
+
+-- Neon Pass 1, HELD behind CreekPlan.LOG_TINT_ON: the log's bark and moss as part colours. A
+-- MeshPart's colour multiplies its vertex colours, so this darkens rather than lightens; see
+-- CreekPlan.LOG_TINT. The log lives in our folder, so revert takes it away with the rest.
+local function tintLog(m: Model): number
+	local n = 0
+	for _, d in m:GetDescendants() do
+		if d:IsA("BasePart") then
+			local suffix = string.lower(string.match(d.Name, "_(%a+)$") or "")
+			local c = (CreekPlan.LOG_TINT :: any)[suffix]
+			if c then
+				d.Color = Color3.fromRGB(c[1], c[2], c[3])
+				n += 1
+			end
+		end
+	end
+	return n
+end
+
 export type Result = {
 	slots: number,
 	columns: number, -- terrain columns reshaped
@@ -517,6 +583,9 @@ export type Result = {
 	pathParts: number, -- old path parts given the FootpathGravel variant
 	boughs: number, -- CedarBough sprays hung
 	emergent: number, -- wet-slate rocks placed on the riffle
+	rocksStretched: number, -- Neon Pass 1: rocks stretched down to the deeper bed (reachGround)
+	logPitch: number, -- Neon Pass 1: degrees the log tips from its east end to its west end
+	logTinted: number, -- Neon Pass 1: log parts tinted (0 while CreekPlan.LOG_TINT_ON is false)
 }
 
 export type RevertResult = { terrain: boolean, rocks: number, slots: number }
@@ -633,6 +702,9 @@ function CreekDress.apply(lake: Instance, seed: number?): Result
 		pathParts = skinPaths(lake),
 		boughs = 0,
 		emergent = 0,
+		rocksStretched = 0,
+		logPitch = 0,
+		logTinted = 0,
 	}
 	local missingSet: { [string]: boolean } = {}
 	local alt: { [string]: number } = {}
@@ -652,7 +724,7 @@ function CreekDress.apply(lake: Instance, seed: number?): Result
 		m:ScaleTo(scale)
 		m:PivotTo(cf)
 		dressParts(m, shadow)
-		local tag = TAGS[group]
+		local tag = tagFor(model, group)
 		if tag then
 			CollectionService:AddTag(m, tag)
 			-- Far pines (N3 review 2) are marked like CreekSwap's, and alternate among themselves.
@@ -697,6 +769,10 @@ function CreekDress.apply(lake: Instance, seed: number?): Result
 				local cf, size = m:GetBoundingBox()
 				local top = if it.group == "EdgeStones" then 0.35 + 0.35 * (it.r or 1) else 0.3 + 0.2 * (it.r or 1)
 				m:PivotTo(m:GetPivot() + Vector3.new(0, top - (cf.Position.Y + size.Y / 2), 0))
+				local g = groundY(params, it.x, it.z)
+				if g and reachGround(m, g) then
+					res.rocksStretched += 1
+				end
 				wetSlate(m)
 				if it.group == "EdgeStones" then
 					res.edgeStones += 1
@@ -706,9 +782,30 @@ function CreekDress.apply(lake: Instance, seed: number?): Result
 			end
 			continue
 		elseif it.ends then
+			-- Neon Pass 1: round 3's capture had the log 2.9 studs over the ground at (-246, -68):
+			-- it lay level at the mean of its two ends' heights, so where one bank is lower that
+			-- end floated. It now tips from end to end (about its middle, along its length) so both
+			-- ends sit on their banks.
 			local e = it.ends
 			local g1, g2 = groundY(params, e[1], e[2]), groundY(params, e[3], e[4])
-			y = if g1 and g2 then (g1 + g2) / 2 - bury else nil
+			if g1 and g2 then
+				local run = math.sqrt((e[3] - e[1]) ^ 2 + (e[4] - e[2]) ^ 2)
+				local pitch = if run > 0 then math.atan2(g2 - g1, run) else 0
+				res.logPitch = math.deg(pitch)
+				-- +X (the root plate) points at the west end (e[3], e[4]); turning about local Z by
+				-- `pitch` raises +X by sin(pitch) per stud.
+				local cf = CFrame.new(it.x, (g1 + g2) / 2 - bury, it.z) * CFrame.Angles(0, it.yaw, 0) * CFrame.Angles(0, 0, pitch)
+				local m = place(it.model, it.group, cf, it.scale, it.shadow)
+				if m then
+					placedAt[i] = m
+					if CreekPlan.LOG_TINT_ON then
+						res.logTinted = tintLog(m)
+					end
+				end
+			else
+				res.noGround += 1
+			end
+			continue
 		elseif it.lipX and it.lipZ then
 			local g = groundY(params, it.lipX, it.lipZ)
 			y = if g then g - bury else nil

@@ -2,7 +2,22 @@
 
 Studio cannot run headless, so a session drives Studio and this script does the rest. Every
 command takes --set A|B|U|C|D (default A, the home lake and the creek, so old commands still work):
-A home lake and creek, B the Big Lake, C the boats (N4), D the island (N6), U the UI screens.
+A home lake and creek, B the Big Lake, C the boats (N4), D the island (N6), U the UI screens,
+P the prime shots for the making-of (docs/looks/prime-shots.md; score refuses set P).
+
+  The pin (11/28/2026, run.json "pin": 2) holds the clock and the camera only and sets the player
+  attribute DebugClock; LookDirector (Studio only) treats that as the pinned hour and writes the
+  graded, area-aware look itself. The old pin re-applied the plain LookPresets.apply(clock) every
+  Heartbeat over LookDirector, so frames before this were mostly ungraded (rebaseline A and B).
+  It also hides the cursor, retries hiding the top bar for 10 s (its result is in the pin's
+  line: "topbar hidden" or "topbar failed"), and hides the avatar unless a shot has "avatar": true.
+  Each shot uses its own "fov" when it has one (set P's lenses), else the global one.
+  Set P, per shot (pending ones are skipped unless --include-pending):
+    1. execute_luau (Client) "snippet <id> --set P"; record its line as for set A
+    2. powershell -ExecutionPolicy Bypass -File tools/capture-studio.ps1 -ViewportOnly -Prime -Out <run>/<id>-raw.jpg
+       (-Prime: unscaled, JPEG quality 95)
+    3. python tools/shots/shots.py primecrop <run>   (centre 16:9 crop, Lanczos to 1280x720 as <id>.jpg;
+       the raw is kept; --topbar when the pin said "topbar failed")
 
   python tools/shots/shots.py list [--set B]
   Shots are taken during Play on the Client data model: Edit mode does not have the whole world
@@ -109,9 +124,23 @@ ROOT = Path(__file__).resolve().parents[2]
 SHOTS = json.loads((Path(__file__).parent / "shots.json").read_text(encoding="utf-8"))
 HISTORY = ROOT / "docs" / "critic" / "score_history.json"
 RUNS = ROOT / "artifacts" / "shots"
-SETS = ("A", "B", "U", "C", "D")
-SET_NAMES = {"A": "home lake and creek", "B": "the Big Lake", "U": "UI screens", "C": "boats (added in N4)", "D": "the island (added in N6)"}
+SETS = ("A", "B", "U", "C", "D", "P")
+SET_NAMES = {"A": "home lake and creek", "B": "the Big Lake", "U": "UI screens", "C": "boats (added in N4)",
+             "D": "the island (added in N6)", "P": "prime shots for the making-of (docs/looks/prime-shots.md, never scored)"}
 DEFAULT_RUBRIC = {"A": "look", "B": "look", "C": "look", "D": "look", "U": "ui"}
+PRIME = "P"
+PRIME_OUT = (1280, 720)  # primecrop's delivered frame
+TOPBAR_PX = 120  # prime-shots.md: cropH shrinks by this when the top bar could not be hidden
+
+
+def fov_of(s: dict) -> float:
+    """The shot's own vertical field of view (set P's lenses), else the global one."""
+    return s.get("fov", SHOTS["fov"])
+
+
+def is_pending(s: dict) -> bool:
+    """A set P placeholder whose area is not built yet (prime-shots.md)."""
+    return bool(s.get("pending"))
 SCREEN_SIZES = [tuple(x) for x in SHOTS.get("screen_sizes", [[1280, 720], [667, 375]])]
 
 
@@ -119,12 +148,12 @@ def set_of(s: dict) -> str:
     return s.get("set", "A")
 
 
-def in_set(name: str) -> list[dict]:
-    return [s for s in SHOTS["shots"] if set_of(s) == name]
+def in_set(name: str, include_pending: bool = False) -> list[dict]:
+    return [s for s in SHOTS["shots"] if set_of(s) == name and (include_pending or not is_pending(s))]
 
 
-def need_set(name: str) -> list[dict]:
-    shots = in_set(name)
+def need_set(name: str, include_pending: bool = False) -> list[dict]:
+    shots = in_set(name, include_pending)
     if not shots:
         sys.exit(f"Set {name} ({SET_NAMES.get(name, name)}) has no shots yet. Add them to tools/shots/shots.json.")
     return shots
@@ -148,40 +177,90 @@ def file_stems(s: dict) -> list[str]:
     return [s["id"]]
 
 
-PIN = """-- One-time setup on the Client during Play: hide the HUD and pin clock and camera every frame
--- to _G.__shot, so the game's own camera and day cycle cannot move them.
+PIN = """-- One-time setup on the Client during Play: hide the HUD, the top bar, the cursor and the avatar,
+-- and pin the clock and the camera every frame to _G.__shot, so the game's own camera and day
+-- cycle cannot move them.
+-- 11/28/2026: the pin holds the CLOCK only. LookDirector (Studio only) reads the player attribute
+-- DebugClock as the pinned hour and writes the graded look, the area presets and the water for
+-- it, exactly as in play. (Before, the pin re-applied LookPresets.apply(clock) every Heartbeat: the
+-- plain time-of-day preset with no Realistic grade, no area preset and no area water, over
+-- LookDirector's 10 Hz writes, so most rendered frames were ungraded.)
 local RS = game:GetService("RunService")
 local L = game:GetService("Lighting")
 local SG = game:GetService("StarterGui")
-for _, g in game.Players.LocalPlayer.PlayerGui:GetChildren() do
+local UIS = game:GetService("UserInputService")
+local P = game:GetService("Players").LocalPlayer
+for _, g in P.PlayerGui:GetChildren() do
 \tif g:IsA("ScreenGui") then g.Enabled = false end
 end
 pcall(function() SG:SetCoreGuiEnabled(Enum.CoreGuiType.All, false) end)
--- The Roblox top bar (menu and chat buttons) is not covered by CoreGuiType.All.
-pcall(function() SG:SetCore("TopbarEnabled", false) end)
+-- The mouse cursor was in every frame of round 3.
+UIS.MouseIconEnabled = false
+-- The Roblox top bar (menu and chat buttons) is not covered by CoreGuiType.All; SetCore can fail
+-- until the core scripts have registered it, so retry for up to 10 s.
+local topbar = "failed"
+local t0 = os.clock()
+while os.clock() - t0 < 10 do
+\tif pcall(function() SG:SetCore("TopbarEnabled", false) end) then
+\t\ttopbar = "hidden"
+\t\tbreak
+\tend
+\ttask.wait(0.25)
+end
+_G.__shotTopbarHidden = (topbar == "hidden")
 -- Studio's Automatic quality drops low when its window is not in front (no lantern light, no
 -- Soft vs Realistic difference), so pin the desktop tier's top level for every shot.
 pcall(function() settings().Rendering.QualityLevel = Enum.QualityLevel.Level21 end)
-local shared = game:GetService("ReplicatedStorage"):FindFirstChild("Shared")
-local looks = shared and shared:FindFirstChild("LookPresets")
-local lookMod = looks and select(2, pcall(require, looks))
-if _G.__shotHB then _G.__shotHB:Disconnect() end
-_G.__shotHB = RS.Heartbeat:Connect(function()
+-- The avatar: hidden (and casting no shadow) unless the shot has "avatar": true.
+local function avatar(show: boolean)
+\tlocal ch = P.Character
+\tif not ch then return end
+\tfor _, d in ch:GetDescendants() do
+\t\tif d:IsA("BasePart") then
+\t\t\tif d:GetAttribute("ShotCastShadow") == nil then d:SetAttribute("ShotCastShadow", d.CastShadow) end
+\t\t\td.LocalTransparencyModifier = if show then 0 else 1
+\t\t\td.CastShadow = if show then d:GetAttribute("ShotCastShadow") == true else false
+\t\telseif d:IsA("Decal") then
+\t\t\td.LocalTransparencyModifier = if show then 0 else 1
+\t\tend
+\tend
+end
+-- The camera: the shot's own lens. Set P (crop = true): fov is the vertical angle of the centre
+-- 16:9 crop (prime-shots.md): cropH = min(H, W * 9 / 16), less TOPBAR_PX when the top bar shows,
+-- FieldOfView = 2 * atan(tan(fov / 2) * H / cropH).
+local function lens(s: any, cam: Camera): number
+\tif not s.crop then return s.fov end
+\tlocal v = cam.ViewportSize
+\tif v.X < 1 or v.Y < 1 then return s.fov end
+\tlocal cropH = math.min(v.Y, v.X * 9 / 16)
+\tif not _G.__shotTopbarHidden then cropH -= {topbar_px} end
+\treturn math.deg(2 * math.atan(math.tan(math.rad(s.fov) / 2) * v.Y / math.max(1, cropH)))
+end
+local function pin()
 \tlocal s = _G.__shot
 \tif not s then return end
 \tL.ClockTime = s.clock
-\t-- If a look module exists (beauty pass), let it set the light for this hour the same way the game does.
-\tif type(lookMod) == "table" and lookMod.apply then lookMod.apply(s.clock) end
+\tif P:GetAttribute("DebugClock") ~= s.clock then P:SetAttribute("DebugClock", s.clock) end
 \tlocal cam = workspace.CurrentCamera
 \tcam.CameraType = Enum.CameraType.Scriptable
-\tcam.FieldOfView = s.fov
+\tcam.FieldOfView = lens(s, cam)
 \tcam.CFrame = CFrame.lookAt(s.eye, s.look)
+end
+if _G.__shotHB then _G.__shotHB:Disconnect() end
+_G.__shotHB = RS.Heartbeat:Connect(function()
+\tpin()
+\tlocal s = _G.__shot
+\tif s then avatar(s.avatar == true) end
 end)
-local P = game:GetService("Players").LocalPlayer
+-- Before anything renders (and before LookDirector's RenderStepped), so a clock replicated from
+-- the server never reaches a frame.
+pcall(function() RS:UnbindFromRenderStep("ShotPin") end)
+RS:BindToRenderStep("ShotPin", Enum.RenderPriority.First.Value, pin)
 local v = workspace.CurrentCamera.ViewportSize
-return string.format("pin ready tier %s touch %s viewport %dx%d", tostring(P:GetAttribute("LookTierActive")),
-\ttostring(game:GetService("UserInputService").TouchEnabled), math.round(v.X), math.round(v.Y))
-"""
+return string.format("pin ready tier %s touch %s viewport %dx%d topbar %s cursor %s clock via DebugClock",
+\ttostring(P:GetAttribute("LookTierActive")), tostring(UIS.TouchEnabled), math.round(v.X), math.round(v.Y),
+\ttopbar, if UIS.MouseIconEnabled then "shown" else "hidden")
+""".replace("{topbar_px}", str(TOPBAR_PX))
 
 # Runs before every screen's own luau (set U): the background view, the HUD back on, and the
 # interface reset to the plain HUD so screens never stack.
@@ -346,7 +425,9 @@ UI_CONTEXT = ("Files ending -1280 are the desktop: the Studio viewport as it is,
 
 def shot_line(s: dict) -> str:
     e, l = s["eye"], s["look"]
-    return (f"_G.__shot = {{clock = {s['clock']}, fov = {SHOTS['fov']}, "
+    crop = "true" if set_of(s) == PRIME else "false"
+    av = "true" if s.get("avatar") else "false"
+    return (f"_G.__shot = {{clock = {s['clock']}, fov = {fov_of(s)}, crop = {crop}, avatar = {av}, "
             f"eye = Vector3.new({e[0]}, {e[1]}, {e[2]}), look = Vector3.new({l[0]}, {l[1]}, {l[2]})}}\n")
 
 
@@ -376,13 +457,15 @@ def run_set(run: Path, given: str | None) -> str:
 
 
 def cmd_list(a):
-    shots = in_set(a.set)
+    shots = in_set(a.set, a.include_pending)
     if not shots:
         print(f"Set {a.set} ({SET_NAMES[a.set]}) has no shots yet.")
         return
     for s in shots:
         files = ", ".join(f + ".jpg" for f in file_stems(s)) if is_screen(s) else ""
-        print(f"{s['id']:<22} {s.get('group', s['place']):<8} {s['clock']:>5}  {s['what']}" + (f"  [{files}]" if files else ""))
+        lens = f"  fov {fov_of(s)}" + (f" ({s['lens_mm']} mm)" if s.get("lens_mm") else "") if set_of(s) == PRIME else ""
+        pend = f"  [pending {s['pending']}]" if is_pending(s) else ""
+        print(f"{s['id']:<26} {s.get('group', s['place']):<8} {s['clock']:>5}  {s['what']}" + lens + pend + (f"  [{files}]" if files else ""))
 
 
 def cmd_snippet(a):
@@ -393,19 +476,22 @@ def cmd_snippet(a):
     elif a.id == "weather":
         print(WEATHER)
     elif a.id == "all":
-        for s in need_set(a.set):
+        for s in need_set(a.set, a.include_pending):
             print(luau_for(s))
     else:
         print(luau_for(shot(a.id)))
 
 
 def cmd_newrun(a):
-    shots = need_set(a.set)
+    shots = need_set(a.set, a.include_pending)
     stamp = dt.datetime.now().strftime("%Y-%m-%d-%H%M")
     run = RUNS / (stamp if a.set == "A" else f"{stamp}-{a.set}")
     run.mkdir(parents=True, exist_ok=True)
     meta = {"stamp": stamp, "set": a.set, "commit": git_commit(), "shots": [s["id"] for s in shots],
-            "files": [f + ".jpg" for s in shots for f in file_stems(s)], "fov": SHOTS["fov"]}
+            "files": [f + ".jpg" for s in shots for f in file_stems(s)], "fov": SHOTS["fov"],
+            "fovs": {s["id"]: fov_of(s) for s in shots}, "pin": 2}  # pin 2: clock-only pin, LookDirector's graded look
+    if a.set == PRIME:
+        meta["prime"] = {"out": list(PRIME_OUT), "raw": "<id>-raw.jpg (capture-studio.ps1 -Prime)", "crop": "centre 16:9, Lanczos"}
     if a.set == "U":
         meta["screen_sizes"] = [list(x) for x in SCREEN_SIZES]
         meta["protocol"] = 2  # desktop viewport as is, phone cut to 667x375 at 2x, a uicheck per file
@@ -698,6 +784,39 @@ def cmd_phonecrop(a):
         sys.exit(f"Not cropped: {', '.join(failed)}")
 
 
+def prime_rect(w: int, h: int, topbar: bool = False) -> tuple[int, int, int, int]:
+    """The centre 16:9 crop of a w x h raw (prime-shots.md): cropH = min(H, W * 9 / 16), less
+    TOPBAR_PX when the top bar showed. Returns (x, y, cw, ch)."""
+    ch = min(h, w * 9 / 16) - (TOPBAR_PX if topbar else 0)
+    cw = ch * 16 / 9
+    x, y = (w - cw) / 2, (h - ch) / 2
+    return round(x), round(y), round(cw), round(ch)
+
+
+def cmd_primecrop(a):
+    from PIL import Image
+
+    run = Path(a.run)
+    meta = read_meta(run)
+    raws = sorted(list(run.glob("*-raw.jpg")) + list(run.glob("*-raw.png")))
+    if a.only:
+        raws = [r for r in raws if r.stem[: -len("-raw")] == a.only]
+    if not raws:
+        sys.exit(f"No *-raw.jpg or *-raw.png in {run}" + (f" for {a.only}" if a.only else "")
+                 + ". Capture set P with: powershell -ExecutionPolicy Bypass -File tools/capture-studio.ps1 -ViewportOnly -Prime -Out <run>/<id>-raw.jpg")
+    for raw in raws:
+        stem = raw.stem[: -len("-raw")]
+        im = Image.open(raw).convert("RGB")
+        x, y, w, h = prime_rect(im.width, im.height, a.topbar)
+        out = im.crop((x, y, x + w, y + h)).resize(PRIME_OUT, Image.LANCZOS)
+        dest = run / f"{stem}.jpg"
+        out.save(dest, quality=95)
+        meta.setdefault("primecrop", {})[stem] = {"raw": raw.name, "raw_size": [im.width, im.height], "rect": [x, y, w, h], "topbar": a.topbar}
+        print(f"{raw.name}: {im.width}x{im.height}, crop {w}x{h} at ({x}, {y}) -> {dest.name} {PRIME_OUT[0]}x{PRIME_OUT[1]} (raw kept)")
+    if meta:
+        write_meta(run, meta)
+
+
 def ui_gate(run: Path, found: list[tuple[str, Path | None]]) -> tuple[list[str], list[str], dict]:
     """Set U, protocol 2: (problems that refuse the score, files left out, viewports by file)."""
     meta = read_meta(run)
@@ -834,6 +953,8 @@ def score_one(a, run: Path, set_name: str, files: list[str], rubric: str, audit:
 def cmd_score(a):
     run = Path(a.run)
     set_name = run_set(run, a.set)
+    if set_name == PRIME:
+        sys.exit("Set P is the making-of's prime shots, not critic test shots: score refuses it (docs/looks/prime-shots.md).")
     shots = need_set(set_name)
     if a.group:
         # Score one group of a set (set A holds the home lake and the creek; N1 is judged on the lake).
@@ -908,9 +1029,17 @@ def cmd_score(a):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
-    p = sub.add_parser("list"); p.add_argument("--set", choices=SETS, default="A"); p.set_defaults(fn=cmd_list)
-    p = sub.add_parser("snippet"); p.add_argument("id"); p.add_argument("--set", choices=SETS, default="A"); p.set_defaults(fn=cmd_snippet)
-    p = sub.add_parser("newrun"); p.add_argument("--set", choices=SETS, default="A"); p.set_defaults(fn=cmd_newrun)
+    pend = "set P: include the shots marked pending (placeholders until their area is built)"
+    p = sub.add_parser("list"); p.add_argument("--set", choices=SETS, default="A")
+    p.add_argument("--include-pending", action="store_true", help=pend); p.set_defaults(fn=cmd_list)
+    p = sub.add_parser("snippet"); p.add_argument("id"); p.add_argument("--set", choices=SETS, default="A")
+    p.add_argument("--include-pending", action="store_true", help=pend); p.set_defaults(fn=cmd_snippet)
+    p = sub.add_parser("newrun"); p.add_argument("--set", choices=SETS, default="A")
+    p.add_argument("--include-pending", action="store_true", help=pend); p.set_defaults(fn=cmd_newrun)
+    p = sub.add_parser("primecrop", help="set P: centre-crop every <id>-raw.jpg/png to 16:9, Lanczos to 1280x720 as <id>.jpg (raw kept)")
+    p.add_argument("run"); p.add_argument("--only", default=None, help="one shot id")
+    p.add_argument("--topbar", action="store_true", help=f"the top bar showed: crop {TOPBAR_PX} px less height")
+    p.set_defaults(fn=cmd_primecrop)
     p = sub.add_parser("weather", help="record the weather a shot was taken under in run.json")
     p.add_argument("run"); p.add_argument("id", help='a shot id of the run, or "all"')
     p.add_argument("kind", help="the Weather attribute the shot snippet returned, like Clear")

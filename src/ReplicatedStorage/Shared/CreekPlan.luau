@@ -30,6 +30,10 @@
 --    hill, behind the gate); no meadow grass inside the creek fence (moss to D 30, the hill
 --    forest floor beyond); the creek paths on their own gravel slot (PATH_SLOT); the gate
 --    approach's ground; ten wet-slate stones along the pool's east edge.
+--  * Neon's N3 review, Pass 1 (11/28/2026): the water deep enough to show over the whole drawn
+--    creek (WATER_MIN), the moss to D 52 over a wider box, the gate foreground off meadow grass,
+--    the pool's east lip dressed (bigger edge stones, ferns, reeds), bushes under the backing
+--    trunks, ferns, bushes and stones along the gate walk and the fence foot, the log moved.
 local Shore = require(script.Parent.Shore)
 local WaterMap = require(script.Parent.WaterMap)
 local Scatter = require(script.Parent.Scatter)
@@ -42,13 +46,16 @@ CreekPlan.CELL = 4
 -- The terrain CreekDress may rewrite (whole 4 stud cells): the creek's water and banks, short of
 -- the bank path (x -206..-200, wandering to about -208), the creek head's rocks (z 76 on) and
 -- anything past them. Columns more than TOUCH studs from the drawn water are left alone inside it.
-CreekPlan.REGION = { x1 = -268, x2 = -208, y1 = -16, y2 = 8, z1 = -84, z2 = 72 }
+-- Neon Pass 1: z2 72 to 76, so the riffle's last cell before the head rocks (z 76 on) is redrawn too.
+CreekPlan.REGION = { x1 = -268, x2 = -208, y1 = -16, y2 = 8, z1 = -84, z2 = 76 }
 CreekPlan.TOUCH = 11
 CreekPlan.BLEND = { 7, 11 } -- studs from the water over which the new ground eases into the old
 
 -- Where props may stand at all (round the creek look zone, LookPresets creek x -260..-160). N3
 -- review 1 (the advisor): out to x -300 on the west and -172 on the east for the backing forest.
-CreekPlan.PROPS = { x1 = -300, x2 = -172, z1 = -82, z2 = 76 }
+-- Neon Pass 1: out to x -138 for the gate walk's undergrowth and stones only (no tree row reaches
+-- past -168: backEastX and rowGate keep the trees inside the fence).
+CreekPlan.PROPS = { x1 = -300, x2 = -138, z1 = -82, z2 = 76 }
 -- N3 review 2: inside the creek fence (WorldBuilder's fence at x -162, the creek's walls round the
 -- rest). The new tree rows stand in it and no meadow grass slot stays inside it.
 CreekPlan.FENCE = { name = "CreekFence", x1 = -300, x2 = -164, z1 = -112, z2 = 126 }
@@ -212,14 +219,23 @@ function CreekPlan.cut(x: number, z: number): number
 end
 
 -- The planned ground height at (x, z), before it eases into the old ground (CreekPlan.blend).
--- Over the drawn water it is always at least 0.6 under the surface (y 0).
+-- Over the drawn water it is always at least WATER_MIN under the surface (y 0).
+-- Neon Pass 1 (11/28/2026): terrain works in 4 stud cells and the surface is the top of the cell
+-- y -4..0. Where the ground filled more than half that cell (ground above y -2) the cell held
+-- less than half water and Roblox drew no water surface: the riffle (bed -1.6) and every shallow
+-- edge read as dry stones, and only the deeper water where the riffle drops into the rocky run
+-- (z under about 31) showed, as a hard-edged rectangle (round 3's shot 09). The same lesson as
+-- WorldBuilder's "a 1.5 stud fill was too thin to show up at all". So every drawn-water column
+-- is at least WATER_MIN deep (the top cell at most 0.4 ground), and the riffle's bed is -2.6.
+CreekPlan.WATER_MIN = 2.4
+CreekPlan.RIFFLE_BED = -2.6
 function CreekPlan.height(x: number, z: number, dIn: number?): number
 	local D = dIn or CreekPlan.D(x, z)
 	local riffle, rocks, pool = CreekPlan.weights(z)
 	if D < 0 then
-		local bed = riffle * -1.6 + rocks * -4.2 + pool * (-9.6 + 2.8 * smooth(-250, -212, x))
+		local bed = riffle * CreekPlan.RIFFLE_BED + rocks * -4.2 + pool * (-9.6 + 2.8 * smooth(-250, -212, x))
 		local slope = riffle * 0.9 + rocks * 1.1 + pool * (0.5 + 1.3 * (1 - smooth(-248, -216, x)))
-		return math.max(bed, -(0.6 + slope * -D))
+		return math.min(-CreekPlan.WATER_MIN, math.max(bed, -(0.6 + slope * -D)))
 	end
 	local g = CreekPlan.gravelWidth(x, z)
 	local c = CreekPlan.cut(x, z)
@@ -272,12 +288,15 @@ end
 -- N3 review 1: the moss (slot 31) reaches into the backing forest, out to MOSS_D studs from the
 -- drawn water, everywhere but the bank path, the walk to the gate and the gate. CreekDress paints
 -- it over grass-like slots only (MOSS_OVER), never over the path's gravel.
-CreekPlan.MOSS_D = 30
--- N3 review 2: the whole creek fence (was x -300..-172, z -84..80).
-CreekPlan.MOSS_REGION = CreekPlan.FENCE
+-- Neon Pass 1 (11/28/2026): to D 52 (was 30) over Neon's box (round 3 used the fence, x -300..-164,
+-- z -112..126): behind the pool, behind the riffle head and up to the gate. The keep-clears no
+-- longer stop it: MOSS_OVER never holds a gravel slot (14, 24, 32), so the paths stay gravel and
+-- the grass beside them (shot 09's foreground) becomes moss.
+CreekPlan.MOSS_D = 52
+CreekPlan.MOSS_REGION = { name = "MossRegion", x1 = -320, x2 = -152, z1 = -125, z2 = 115 }
 CreekPlan.MOSS_OVER = { [2] = true, [19] = true, [25] = true, [26] = true, [27] = true } :: { [number]: boolean }
-function CreekPlan.mossBand(x: number, z: number, D: number): boolean
-	return D >= 7 and D < CreekPlan.MOSS_D and not CreekPlan.kept(x, z, 1)
+function CreekPlan.mossBand(_x: number, _z: number, D: number): boolean
+	return D >= 7 and D < CreekPlan.MOSS_D
 end
 
 -- N3 review 2: no meadow grass slot inside the creek fence. The moss band as before; past it (D 30
@@ -289,6 +308,11 @@ function CreekPlan.inFence(x: number, z: number): boolean
 end
 function CreekPlan.fenceSlot(x: number, z: number, D: number, slot: number): number?
 	if not CreekPlan.inFence(x, z) then
+		-- Neon Pass 1: MOSS_REGION reaches past the fence (west to x -320, east to -152 by the
+		-- gate): there the moss band only, nothing else.
+		if Scatter.inBox(CreekPlan.MOSS_REGION :: any, x, z) and CreekPlan.MOSS_OVER[slot] and CreekPlan.mossBand(x, z, D) then
+			return CreekPlan.SLOT.MOSS
+		end
 		return nil
 	end
 	if CreekPlan.MOSS_OVER[slot] and CreekPlan.mossBand(x, z, D) then
@@ -308,6 +332,10 @@ CreekPlan.WALK = { z1 = -3, z2 = 3 }
 CreekPlan.WALK_BAND = 5
 CreekPlan.LAWN_SLOT = 26
 local APPROACH_LAWN_OVER = { [2] = true, [19] = true, [25] = true, [27] = true } :: { [number]: boolean }
+-- Neon Pass 1 (11/28/2026): in the gate's foreground (shot 11's ground) no meadow grass is left:
+-- past the lawn band, grass (slot 2) becomes the hill forest floor too. Beside the walk it is
+-- round 3's lawn band (slot 26), as before.
+CreekPlan.GATE_FOREGROUND = { name = "GateForeground", x1 = -155, x2 = -120, z1 = -25, z2 = 25 }
 function CreekPlan.approachSlot(x: number, z: number, slot: number): number?
 	if not Scatter.inBox(CreekPlan.APPROACH :: any, x, z) then
 		return nil
@@ -317,6 +345,8 @@ function CreekPlan.approachSlot(x: number, z: number, slot: number): number?
 	if nearWalk and APPROACH_LAWN_OVER[slot] then
 		return CreekPlan.LAWN_SLOT
 	elseif not nearWalk and slot == 25 then
+		return CreekPlan.FOREST_SLOT
+	elseif not nearWalk and slot == CreekPlan.GRASS_SLOT and Scatter.inBox(CreekPlan.GATE_FOREGROUND :: any, x, z) then
 		return CreekPlan.FOREST_SLOT
 	end
 	return nil
@@ -356,8 +386,11 @@ CreekPlan.LANES = {
 
 -- Boxes nothing new stands in: the bank path (x -203, wandering 2 studs and up to 6.5 wide), the
 -- walk from the gate to the path, the gate itself and the pool lantern.
+-- Neon Pass 1 (11/28/2026): along the pool (z -76..-10) the bank path's box stops at x -207 (was
+-- -209.5), and the pool's east lip pass (CreekPlan.plan, step 1f) dresses its water edge.
 CreekPlan.KEEP_BOXES = {
-	{ name = "BankPath", x1 = -209.5, x2 = -196.5, z1 = -76, z2 = 76 },
+	{ name = "BankPathPool", x1 = -207, x2 = -196.5, z1 = -76, z2 = -10 },
+	{ name = "BankPath", x1 = -209.5, x2 = -196.5, z1 = -10, z2 = 76 },
 	{ name = "GateWalk", x1 = -210, x2 = -150, z1 = -7, z2 = 7 },
 	{ name = "CreekGate", x1 = -172, x2 = -150, z1 = -12, z2 = 12 },
 } :: { Scatter.Box }
@@ -432,6 +465,8 @@ end
 -- only. Every other shot, and every other tree, keeps Scatter's (Scatter.SHOT_EYE_R_TREE,
 -- SHOT_LINE_R). The same test as Scatter.shotClear, per camera.
 -- N3 review 2: 09's eye moved down into the rocky run (Scatter.SHOT_CAMS); the same radii.
+-- Neon Pass 1: 09's eye stands on the run's east bank at the riffle mouth (-223.5, 25), looking
+-- up the chute; the same radii (its line runs out over the water).
 CreekPlan.SHOT09 = { id = "09-riffle-dawn", eyeR = 10, lineR = 5 }
 
 local function camClear(c: Scatter.ShotCam, x: number, z: number, H: number, R: number, lineR: number): boolean
@@ -501,6 +536,14 @@ CreekPlan.KIT = {
 	CedarBough = 0, -- hangs from its trunk (pivot at the bough's base, assumed; CreekDress sets the height)
 	FarPine1 = 1.01, -- N3 review 2: the far backing trees (manifest bury 1.01 and 1.05)
 	FarPine2 = 1.05,
+	-- Neon Pass 1: the bank kit's undergrowth, reeds and stones (manifest bury)
+	Fern1 = 0.2,
+	Fern2 = 0.2,
+	Bush1 = 0.13,
+	Bush2 = 0.17,
+	ReedClump1 = 1.01,
+	ShoreStones1 = 0.4,
+	ShoreStones2 = 0.4,
 } :: { [string]: number }
 
 -- Triangles per copy (manifest model_triangles; ShorePine2 places its lite copy, as CreekSwap does).
@@ -517,6 +560,14 @@ CreekPlan.TRIS = {
 	RockMedium = 100,
 	FarPine1 = 158,
 	FarPine2 = 158,
+	-- Neon Pass 1: CreekDress places the `_lite` copies where they exist (manifest)
+	Fern1 = 155,
+	Fern2 = 137,
+	Bush1 = 286,
+	Bush2 = 304,
+	ReedClump1 = 410,
+	ShoreStones1 = 668,
+	ShoreStones2 = 588,
 } :: { [string]: number }
 CreekPlan.ROCK_MATS = 9 -- moss mats CreekDress lays on the creek's boulders (5 in the run, 4 at the head)
 -- Triangles added in the creek's views. N3 review 1 ruled 120k (BUDGET_RULED), but the ruled
@@ -577,17 +628,35 @@ CreekPlan.TUNING = {
 	-- sprays from the bank cedars along the riffle. Boughs are OFF (0) until real foliage shadows
 	-- are seen on the desktop; BOUGHS_ON is the advisor's count.
 	boughsPer = 2, -- N3 review 2 (11/28/2026): on, at the advisor's count (BOUGHS_ON)
-	boughHeight = { 0.55, 0.85 }, -- share of the cedar's height the bough hangs from
+	boughHeight = { 0.58, 0.85 }, -- share of the cedar's height the bough hangs from (Neon Pass 1: was 0.55)
 	boughSpread = 0.6, -- radians between a cedar's two boughs, about its turn toward the water
 	-- N3 review 1: emergent wet-slate rocks on the riffle, each trailing foam.
 	rocks = 10,
 	rockR = { 1, 2 },
 	rockZ = { 36, 70 },
 	-- N3 review 2: wet-slate stones along the pool's east edge, half in the water.
+	-- Neon Pass 1: they are the rocks of the pool's east lip pass, scale 0.45 to 0.85 (radius 1.06
+	-- to 2.0; RockMedium is 4.7 wide; round 3: radius 0.8 to 1.4), up to 10. Their stretch runs to
+	-- Neon's north end (z -16, was -8) but keeps round 3's south-east corner (z -72, Neon -66):
+	-- between the cast lanes, the lantern and shot 10's eye only about 17 studs of the east
+	-- waterline are free, too little for 8 stones in Neon's -66..-16 alone. Gap 3.2 (was 3.5):
+	-- the bigger stones sit in small clusters.
 	edgeStones = 10,
-	edgeStoneR = { 0.8, 1.4 },
-	edgeStoneZ = { -72, -8 },
-	edgeStoneGap = 3.5,
+	edgeStoneR = { 1.06, 2.0 },
+	edgeStoneZ = { -72, -16 },
+	edgeStoneGap = 3.2,
+	-- Neon Pass 1: the pool's east lip (x -210..-206, z -66..-16): ferns on its land side, reeds
+	-- at the water's edge (the edge stones above are its rocks).
+	lipFernsEast = 6,
+	lipReeds = 3,
+	lipX = { -210, -206 },
+	lipZ = { -66, -16 },
+	-- Neon Pass 1: bushes under the backing trunks (D 6 to 24), and the gate walk's undergrowth
+	-- and stones (its gravel seams and the fence foot; the walk's middle, z -4.5..4.5, stays clear).
+	underBushes = 16,
+	underD = { 6, 24 },
+	gateItems = 14,
+	gateStones = 3,
 }
 CreekPlan.BOUGHS_ON = 2 -- the advisor's boughs per bank cedar along the riffle (TUNING.boughsPer)
 CreekPlan.BOUGH_REACH = 10 -- studs a bough's spray reaches out over the water (12 long, drooping)
@@ -597,9 +666,10 @@ CreekPlan.ROCK_EXTENT = 4.7 -- RockMedium's mean width at scale 1 (manifest 5.27
 -- Two cedars placed by hand (N3 review 1) whose trunks frame shot 09 on its thirds. Their
 -- foliage must stay in the top quarter of 09's frame (the spec projects it).
 -- N3 review 2 (the advisor, 11/28/2026): moved for 09's new eye, scale 1.4.
+-- Neon Pass 1 (11/28/2026): flanking the riffle's banks for 09's eye at the riffle mouth, scale 1.3.
 CreekPlan.FRAME_CEDARS = {
-	{ x = -221, z = 41, scale = 1.4 },
-	{ x = -239.3, z = 46, scale = 1.4 },
+	{ x = -238.5, z = 42, scale = 1.3 },
+	{ x = -220.5, z = 40, scale = 1.3 },
 }
 
 -- N3 review 2: the creek head's three old pines (Scenery's, swapped to far pines by CreekSwap):
@@ -883,10 +953,16 @@ function CreekPlan.plan(seed: number?, tuning: { [string]: any }?): Plan
 					local h = H * Scatter.range(rbo, T.boughHeight[1], T.boughHeight[2])
 					local off = (k - (T.boughsPer + 1) / 2) * T.boughSpread + Scatter.range(rbo, -0.12, 0.12)
 					local bx, bz = tree.x + lx * math.sin(lean) * h, tree.z + lz * math.sin(lean) * h
-					local b = add("CedarBough", "Boughs", bx, bz, tree.yaw + off, 1, tree.shadow)
-					b.parent = i
-					b.footX, b.footZ = tree.x, tree.z
-					b.lift = math.cos(lean) * h
+					-- Neon Pass 1: a bough that would not reach out over the water is left off (a
+					-- frame cedar on a meander's nose, where the water lies on two sides).
+					local yaw = tree.yaw + off
+					local reach = CreekPlan.D(bx - math.cos(yaw) * 6, bz + math.sin(yaw) * 6) < CreekPlan.D(bx, bz)
+					if reach then
+						local b = add("CedarBough", "Boughs", bx, bz, yaw, 1, tree.shadow)
+						b.parent = i
+						b.footX, b.footZ = tree.x, tree.z
+						b.lift = math.cos(lean) * h
+					end
 				end
 			end
 		end
@@ -902,6 +978,44 @@ function CreekPlan.plan(seed: number?, tuning: { [string]: any }?): Plan
 	for _, st in CreekPlan.edgeStones(s, T) do
 		local it = add("RockMedium", "EdgeStones", st.x, st.z, st.yaw, st.r * 2 / CreekPlan.ROCK_EXTENT, true)
 		it.r = st.r
+	end
+
+	-- 1f. Neon Pass 1: the pool's east lip. Ferns on its land side, reeds at the water's edge,
+	-- clear of the cast lanes and their feet, the lantern, the shot cameras and the edge stones.
+	-- The bank path's keep-clear does not count here (this pass dresses its water edge).
+	for _, p in CreekPlan.lipSpots(s, T) do
+		local it = add(p.model, "Lip", p.x, p.z, p.yaw, p.scale, false)
+		it.row = p.kind
+	end
+
+	-- 1g. Neon Pass 1: bushes under the backing trunks (D underD), 2 to 4.5 studs from a trunk.
+	local ru = Scatter.rng(s + 16)
+	local backTrunks = {}
+	for _, it in items do
+		if it.group == "Trees" and (it.row == "back" or it.row == "south" or it.row == "head" or it.row == "gate") then
+			table.insert(backTrunks, it)
+		end
+	end
+	local bushes: { { x: number, z: number } } = {}
+	local tb = 0
+	while #bushes < T.underBushes and tb < 6000 and #backTrunks > 0 do
+		tb += 1
+		local tr = backTrunks[1 + math.floor(Scatter.next(ru) * #backTrunks)]
+		local a = Scatter.range(ru, 0, TAU)
+		local d = Scatter.range(ru, 2, 4.5)
+		local x, z = tr.x + math.cos(a) * d, tr.z + math.sin(a) * d
+		local D = CreekPlan.D(x, z)
+		if D >= T.underD[1] and D <= T.underD[2] and CreekPlan.clear(x, z, false) and Scatter.farEnough(trunks, x, z, 1.8) and Scatter.farEnough(bushes, x, z, 4) then
+			table.insert(bushes, { x = x, z = z })
+			add(if Scatter.next(ru) < 0.5 then "Bush1" else "Bush2", "Under", x, z, Scatter.range(ru, 0, TAU), Scatter.range(ru, 0.9, 1.3), false)
+		end
+	end
+
+	-- 1h. Neon Pass 1: the gate walk's undergrowth and stones, along its gravel seams outside the
+	-- gate (x -150..-138, 4.5 to 9.5 studs off its middle) and the fence foot on the lake side
+	-- (x -160.5..-156.5, 12.5 to 35 studs off the walk): ferns, bushes and a few shore stones.
+	for _, g in CreekPlan.gateSpots(s, T) do
+		add(g.model, "Gate", g.x, g.z, g.yaw, g.scale, false)
 	end
 
 	-- 2. Fern clumps on the bank tops.
@@ -1054,16 +1168,123 @@ function CreekPlan.edgeStones(seed: number?, tuning: { [string]: any }?): { Rock
 	return out
 end
 
+-- Neon Pass 1 (11/28/2026): the pool's east lip (TUNING lipX, lipZ). lipFernsEast fern clumps on
+-- the land side (D 0.3 to 1.4, fronds toward the water) and lipReeds reed clumps at the water's
+-- edge (D -1.2 to 0), each out of every cast lane and its foot, clear of the pool lantern and the
+-- shot cameras, and apart from the edge stones and each other. Same seed, same spots.
+export type Spot = { model: string, kind: string, x: number, z: number, yaw: number, scale: number }
+function CreekPlan.lipSpots(seed: number?, tuning: { [string]: any }?): { Spot }
+	local T = tuning or CreekPlan.TUNING :: any
+	local s = seed or CreekPlan.SEED
+	local r = Scatter.rng(s + 15)
+	local stones = CreekPlan.edgeStones(s, T)
+	local out: { Spot } = {}
+	local function ok(x: number, z: number, gap: number): boolean
+		if CreekPlan.inLane(x, z) or not Scatter.shotClear(x, z, false) then
+			return false
+		end
+		for _, c in CreekPlan.KEEP_CIRCLES do
+			if (x - c.x) ^ 2 + (z - c.z) ^ 2 <= (c.r + 1) ^ 2 then
+				return false
+			end
+		end
+		for _, st in stones do
+			-- tucked against a stone is fine (most of the free lip is beside them), not inside one
+			if (x - st.x) ^ 2 + (z - st.z) ^ 2 < (st.r * 0.75) ^ 2 then
+				return false
+			end
+		end
+		for _, o in out do
+			if (x - o.x) ^ 2 + (z - o.z) ^ 2 < gap * gap then
+				return false
+			end
+		end
+		return true
+	end
+	for _, want in { { kind = "fern", n = T.lipFernsEast, D = { 0.2, 1.6 }, gap = 2.5 }, { kind = "reed", n = T.lipReeds, D = { -1.2, 0 }, gap = 3 } } do
+		local n, tries = 0, 0
+		while n < want.n and tries < 4000 do
+			tries += 1
+			local x = Scatter.range(r, T.lipX[1], T.lipX[2])
+			local z = Scatter.range(r, T.lipZ[1], T.lipZ[2])
+			local D = CreekPlan.D(x, z)
+			if D >= want.D[1] and D <= want.D[2] and ok(x, z, want.gap) then
+				n += 1
+				local dx, dz = CreekPlan.toWater(x, z)
+				local yaw = Scatter.yawMinusX(dx, dz) + Scatter.range(r, -0.3, 0.3)
+				if want.kind == "fern" then
+					table.insert(out, { model = if n % 2 == 1 then "CreekFern1" else "CreekFern2", kind = "fern", x = x, z = z, yaw = yaw, scale = Scatter.range(r, 0.9, 1.2) })
+				else
+					table.insert(out, { model = "ReedClump1", kind = "reed", x = x, z = z, yaw = Scatter.range(r, 0, TAU), scale = Scatter.range(r, 0.7, 0.95) })
+				end
+			end
+		end
+	end
+	return out
+end
+
+-- Neon Pass 1 (11/28/2026): the gate walk's dressing (TUNING gateItems, gateStones). Half along
+-- the walk's gravel seams outside the gate (x -150..-138, 4.5 to 9.5 studs off its middle, which
+-- stays clear), half along the fence foot on the lake side (x -160.5..-156.5, 12.5 to 35 studs
+-- off the walk, clear of the gate). Ferns (60 percent) and bushes, and gateStones shore stones;
+-- each clear of the keep-clears, the lanes and the shot cameras (CreekPlan.clear) and 2.5 studs
+-- from the rest. Same seed, same spots.
+CreekPlan.GATE_SEAMS = { x = { -150, -138 }, off = { 4.5, 9.5 } }
+CreekPlan.FENCE_FOOT = { x = { -160.5, -156.5 }, off = { 12.5, 35 } }
+function CreekPlan.gateSpots(seed: number?, tuning: { [string]: any }?): { Spot }
+	local T = tuning or CreekPlan.TUNING :: any
+	local r = Scatter.rng((seed or CreekPlan.SEED) + 17)
+	local out: { Spot } = {}
+	local tries = 0
+	while #out < T.gateItems and tries < 6000 do
+		tries += 1
+		local zone = if #out % 2 == 0 then CreekPlan.GATE_SEAMS else CreekPlan.FENCE_FOOT
+		local x = Scatter.range(r, zone.x[1], zone.x[2])
+		local off = Scatter.range(r, zone.off[1], zone.off[2])
+		local z = if Scatter.next(r) < 0.5 then -off else off
+		local ok = CreekPlan.clear(x, z, false)
+		for _, o in out do
+			if (x - o.x) ^ 2 + (z - o.z) ^ 2 < 2.5 * 2.5 then
+				ok = false
+			end
+		end
+		if ok then
+			local k = #out + 1
+			local u = Scatter.next(r)
+			local model: string
+			if k % math.max(1, math.floor(T.gateItems / T.gateStones)) == 0 and k <= T.gateItems then
+				model = if u < 0.5 then "ShoreStones1" else "ShoreStones2"
+			elseif u < 0.6 then
+				model = if Scatter.next(r) < 0.5 then "Fern1" else "Fern2"
+			else
+				model = if Scatter.next(r) < 0.5 then "Bush1" else "Bush2"
+			end
+			table.insert(out, { model = model, kind = "gate", x = x, z = z, yaw = Scatter.range(r, 0, TAU), scale = Scatter.range(r, 0.85, 1.25) })
+		end
+	end
+	return out
+end
+
 -- The log: centre, yaw and its two ends. Searches centres round the pool's south-west corner and
 -- every 7.5 degrees, and keeps the one whose middle is deepest over the water (ties: the seed).
 CreekPlan.LOG_HALF = 13.15 -- half its length at scale 1 (manifest: 26.3 studs)
 CreekPlan.LOG_HALF_WIDTH = 3.3
+-- Where its middle is searched for. Neon Pass 1 (11/28/2026): x -250..-234, z -62..-42, so it
+-- reads from shots 10 and 12 (round 3: x -254..-238, z -72..-56).
+CreekPlan.LOG_SEARCH = { x = { -250, -234 }, z = { -62, -42 } }
+-- Neon Pass 1: a lighter bark (138, 122, 104) and moss top (88, 118, 60) for the log, as part
+-- colours. HELD (false): a MeshPart's colour multiplies its vertex colours, so these numbers
+-- would darken the log (bark about 0.54 of its baked colour), not lighten it. Lightening needs a
+-- vertex colour re-bake in art/. CreekDress applies them only when this is true.
+CreekPlan.LOG_TINT_ON = false
+CreekPlan.LOG_TINT = { bark = { 138, 122, 104 }, leaf = { 88, 118, 60 } }
 function CreekPlan.logPlacement(seed: number): { x: number, z: number, yaw: number, x1: number, z1: number, x2: number, z2: number }?
 	local r = Scatter.rng(seed + 5)
 	local best, bestScore = nil, math.huge
 	local L = CreekPlan.LOG_HALF
-	for cx = -254, -238, 2 do
-		for cz = -72, -56, 2 do
+	local B = CreekPlan.LOG_SEARCH
+	for cx = B.x[1], B.x[2], 2 do
+		for cz = B.z[1], B.z[2], 2 do
 			local jitter = Scatter.next(r) * 0.01
 			for k = 0, 23 do
 				local a = k * math.pi / 24

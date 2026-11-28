@@ -373,7 +373,7 @@ MaterialKit.SLOTS = {
 	{ slot = 28, base = Enum.Material.Ground, variant = "CreekPebble", tint = Color3.fromRGB(156, 148, 130) }, -- N3 review 2 (was white): the dry bars, duller
 	{ slot = 29, base = Enum.Material.Ground, variant = "CreekPebble", tint = Color3.fromRGB(118, 112, 96) }, -- N3 review 1 (was 170,160,140): the wet bed, darker
 	{ slot = 30, base = Enum.Material.Slate, variant = "WetSlate", tint = Color3.new(1, 1, 1) },
-	{ slot = 31, base = Enum.Material.LeafyGrass, variant = "Moss", tint = Color3.new(1, 1, 1) },
+	{ slot = 31, base = Enum.Material.LeafyGrass, variant = "Moss", tint = Color3.fromRGB(200, 210, 195) }, -- Neon Pass 1 (11/28/2026, was white): deeper woodland shade
 	-- N3 review 2 (11/28/2026): the creek's paths on their own slot (CreekPlan.PATH_SLOT), the
 	-- path gravel tinted warmer and darker than the lake's; the old path parts take the same colour.
 	{ slot = 32, base = Enum.Material.Ground, variant = "FootpathGravel", tint = Color3.fromRGB(150, 140, 120) },

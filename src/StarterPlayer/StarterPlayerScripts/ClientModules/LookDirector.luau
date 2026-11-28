@@ -19,7 +19,8 @@
 -- "auto") overrides both; a journal setting will write it later.
 --
 -- For tests and the harness: debugState(), and the player attributes LookArea (the strongest
--- area) and LookTierActive.
+-- area) and LookTierActive. In Studio the harness's player attribute DebugClock (a number) is
+-- the hour the look is written for (tools/shots/shots.py pin).
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -204,6 +205,18 @@ local function fullWrite(dt: number)
 	end
 	local areas = if Config.LOOK_AREAS_ON then weights else nil
 	local clock = Lighting.ClockTime
+	-- The shot harness (tools/shots/shots.py pin, 11/28/2026), Studio only: the player attribute
+	-- DebugClock is the pinned hour. Use it (and hold Lighting.ClockTime to it, so a clock
+	-- replicated from the server never sets the grade), so captures show the same graded look as
+	-- play at that hour.
+	local player = Players.LocalPlayer
+	local pinned = if RunService:IsStudio() and player then player:GetAttribute("DebugClock") else nil
+	if type(pinned) == "number" then
+		clock = pinned
+		if Lighting.ClockTime ~= pinned then
+			Lighting.ClockTime = pinned
+		end
+	end
 	local id = chooseTier()
 	local tier = LookPresets.TIERS[id] or LookPresets.TIERS.desktop
 	-- The Realistic grade: whenever the place runs Realistic and REALISTIC_DESKTOP allows it.

@@ -28,12 +28,14 @@ WhiteWater.SURFACE = 0.06 -- the strips' height over the water (y 0) so the smal
 WhiteWater.TEXTURE_TRANSPARENCY = 0.25 -- the foam map's transparency
 -- N3 review 1, HELD: the advisor's numbers (wider riffle strips in CreekPlan.FOAM_REVIEW1, a
 -- denser map, higher off the chop). They go live with CreekPlan.REVIEW1_FOAM (one edit).
-WhiteWater.REVIEW1 = { SURFACE = 0.12, TEXTURE_TRANSPARENCY = 0.1 }
+-- Neon's N3 review, Pass 1 (11/28/2026): higher off the chop and denser still (was 0.12, 0.1),
+-- and a cooler white, so the streaks read over the dawn ripples.
+WhiteWater.REVIEW1 = { SURFACE = 0.14, TEXTURE_TRANSPARENCY = 0.08 }
 if CreekPlan.REVIEW1_FOAM then
 	WhiteWater.SURFACE = WhiteWater.REVIEW1.SURFACE
 	WhiteWater.TEXTURE_TRANSPARENCY = WhiteWater.REVIEW1.TEXTURE_TRANSPARENCY
 end
-WhiteWater.FOAM_COLOR = Color3.fromRGB(236, 240, 230)
+WhiteWater.FOAM_COLOR = Color3.fromRGB(242, 246, 240) -- Neon Pass 1 (was 236, 240, 230)
 WhiteWater.EVERY = 0.5 -- seconds between distance and tier checks
 
 type Strip = { part: BasePart, tex: Texture?, speed: number, phase: number }

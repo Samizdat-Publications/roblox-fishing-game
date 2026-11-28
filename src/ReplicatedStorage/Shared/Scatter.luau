@@ -843,17 +843,23 @@ Scatter.SHOT_CAMS = {
 	{ id = "06-logs-dawn", eye = { 126, 7, 65 }, look = { 76, -1, 46 } },
 	{ id = "07-overview-golden", eye = { 86, 80, 165 }, look = { 0, 0, 0 } },
 	{ id = "08-stands-noon", eye = { 0, 6, 50 }, look = { 11, 4, 100 } },
-	-- N3 review 2 (the advisor, 11/28/2026): 09 low in the run looking up the riffle, 10 and 12
-	-- from the pool's head bank, 11 square on to the gate.
-	{ id = "09-riffle-dawn", eye = { -230.5, 3.4, 19 }, look = { -230, 1.5, 70 } },
-	{ id = "10-pool-golden, 12-pool-night", eye = { -213, 5, -5 }, look = { -236, 0.5, -50 } },
-	{ id = "11-gate-noon", eye = { -141, 5.5, 1.5 }, look = { -162, 6.5, -0.5 } },
+	-- Neon's N3 review, Pass 1 (11/28/2026): 09 low at the riffle mouth looking up the chute, 10
+	-- and 12 from the pool's east bank edge, 11 down the gravel walk toward the gate.
+	{ id = "09-riffle-dawn", eye = { -223.5, 4.5, 25 }, look = { -231, 1.5, 68 } },
+	{ id = "10-pool-golden, 12-pool-night", eye = { -210, 5.2, -16 }, look = { -236, 0.5, -54 } },
+	{ id = "11-gate-noon", eye = { -140, 5.5, 8 }, look = { -166, 3.8, -1 } },
 	{ id = "b01-bridge-dawn", eye = { 12, 5, -48 }, look = { 0, 5, -95 } },
 	{ id = "b02-basin-boat-noon", eye = { -20, 4, -180 }, look = { -90, 3, -245 } },
 	{ id = "b03-lighthouse-golden", eye = { -32, 5, -224 }, look = { -72, 2, -239 } },
 	{ id = "b04-buoys-dusk", eye = { 52, 4, -282 }, look = { -80, 0, -292 } },
 	{ id = "b05-bluewater-noon", eye = { 24, 5, -280 }, look = { 50, 0, -420 } },
 	{ id = "b06-marina-night", eye = { 80, 7, -205 }, look = { 40, 2, -140 } },
+	-- Set P, the making-of's prime shots (docs/looks/prime-shots.md, 11/28/2026): the three with
+	-- eyes of their own (the others reuse set A eyes: p03 is 05's bank, p04 03's, p06 08's, p07
+	-- 09's and p08 10's since Neon's N3 review, Pass 1).
+	{ id = "p01-lake-high-golden", eye = { 78, 46, 172 }, look = { 7, 0, 13 } },
+	{ id = "p02-dock-dawn", eye = { -2.4, 6, 76 }, look = { 2, 3.4, 30 } },
+	{ id = "p05-sellstand-morning", eye = { -3, 6, 66 }, look = { -18, 6.2, 96 } },
 } :: { ShotCam }
 Scatter.SHOT_EYE_R = 8
 -- N1 round 4 (the advisor, review 2): a tree's keep-clear counts its canopy, not just its trunk

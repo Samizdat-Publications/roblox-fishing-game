@@ -55,6 +55,8 @@ return function(t, Shared)
 					worst = math.max(worst, D)
 					t.ok(D <= -0.25, string.format("drawn water at %.1f, %.1f (D %.2f)", x, z, D))
 					t.ok(CreekPlan.height(x, z, D) <= -0.6, string.format("ground under the water at %.1f, %.1f", x, z))
+					-- Neon Pass 1: deep enough for terrain to draw a water surface (top cell under half ground).
+					t.ok(CreekPlan.height(x, z, D) <= -CreekPlan.WATER_MIN, string.format("water deep enough to show at %.1f, %.1f", x, z))
 				end
 			end
 		end
@@ -105,7 +107,7 @@ return function(t, Shared)
 	end)
 
 	t.test("the terrain region stays in the creek", function()
-		t.ok(R.x2 <= -208 and R.z2 <= 72, "short of the bank path and the creek head")
+		t.ok(R.x2 <= -208 and R.z2 <= 76, "short of the bank path and the creek head's rocks (z 76 on)")
 		t.ok(R.x1 >= -270 and R.z1 >= -84, "inside the creek's look zone")
 		for _, v in { R.x1, R.x2, R.y1, R.y2, R.z1, R.z2 } do
 			t.eq(v % 4, 0, "whole cells")
@@ -137,11 +139,21 @@ return function(t, Shared)
 		-- N3 review 1: the riffle's bed under the water is the BED slot, not the dry bar's pebble.
 		t.eq(CreekPlan.slotAt(-230, 50, -1.2, -2), S.BED, "riffle bed under the water")
 		t.eq(CreekPlan.slotAt(-230, 50, -0.3, -0.2), S.PEBBLE, "riffle's very edge")
-		-- The moss reaches into the backing forest, out to MOSS_D, but not onto the paths or the gate.
+		-- The moss reaches into the backing forest, out to MOSS_D (Neon Pass 1: 52), over the grass
+		-- beside the paths but never onto their gravel (slots 14, 24, 32 are not in MOSS_OVER).
+		t.eq(CreekPlan.MOSS_D, 52, "moss to D 52")
 		t.ok(CreekPlan.mossBand(-262, 40, CreekPlan.D(-262, 40)), "moss 25 studs west of the riffle")
-		t.ok(not CreekPlan.mossBand(-203, 40, CreekPlan.D(-203, 40)), "no moss on the bank path")
-		t.ok(not CreekPlan.mossBand(-180, 0, CreekPlan.D(-180, 0)), "no moss on the walk to the gate")
-		t.ok(not CreekPlan.mossBand(-290, 40, CreekPlan.D(-290, 40)), "none past MOSS_D")
+		t.ok(CreekPlan.mossBand(-203, 40, CreekPlan.D(-203, 40)), "moss beside the bank path")
+		for _, gravel in { 14, 24, 32 } do
+			t.ok(not CreekPlan.MOSS_OVER[gravel], "never over gravel slot " .. gravel)
+			t.eq(CreekPlan.fenceSlot(-203, 40, CreekPlan.D(-203, 40), gravel), nil, "the bank path's gravel stays (" .. gravel .. ")")
+			t.eq(CreekPlan.fenceSlot(-180, 0, CreekPlan.D(-180, 0), gravel), nil, "the gate walk's gravel stays (" .. gravel .. ")")
+		end
+		t.ok(not CreekPlan.mossBand(-296, 40, CreekPlan.D(-296, 40)), "none past MOSS_D")
+		-- Past the fence but inside Neon's box (behind the pool, by the gate): moss band only.
+		t.eq(CreekPlan.fenceSlot(-158, -20, 40, 2), CreekPlan.SLOT.MOSS, "moss by the gate within D 52")
+		t.eq(CreekPlan.fenceSlot(-158, -20, 60, 2), nil, "outside the fence past D 52: left alone")
+		t.eq(CreekPlan.fenceSlot(-150, -20, 40, 2), nil, "past Neon's box (x -152): left alone")
 		-- The riffle's meander noses (Shore points) are dry gravel, not water.
 		t.ok(CreekPlan.D(-239, 41) > 0 and CreekPlan.height(-239, 41) > 0, "RiffleWestA nose is a gravel bar")
 	end)
@@ -157,7 +169,8 @@ return function(t, Shared)
 				t.ok(not CreekPlan.inLane(it.x, it.z), bad(it, "in a cast lane"))
 				-- N3 review 2: the pool's edge stones sit on the waterline, where the bank path's
 				-- keep-clear reaches the water (they keep off the lanes and the lantern).
-				if it.group ~= "EdgeStones" then
+				-- Neon Pass 1: the pool's east lip pass dresses the bank path's water edge too.
+				if it.group ~= "EdgeStones" and it.group ~= "Lip" then
 					t.ok(not CreekPlan.kept(it.x, it.z), bad(it, "in a keep-clear"))
 				end
 				if it.group == "Trees" then
@@ -166,20 +179,28 @@ return function(t, Shared)
 					t.ok(Scatter.shotClear(it.x, it.z, false), bad(it, "in a shot"))
 				end
 			end
-			if it.group ~= "Boughs" then
+			if it.group == "Gate" then
+				-- Neon Pass 1: the gate walk's dressing stands in the home lake's gate keep-clear
+				-- (Scatter's), off the walk's middle and out of the gate itself.
+				t.ok(math.abs(it.z) >= 4.5, bad(it, "on the walk's middle"))
+				t.ok(not CreekPlan.kept(it.x, it.z), bad(it, "at the gate"))
+			elseif it.group ~= "Boughs" then
 				t.ok(not Scatter.inBox(Scatter.KEEP_BOXES[7], it.x, it.z), bad(it, "at the gate"))
 			end
 		end
-		-- Shot 09's looser clearance is for cedars only: a pine there still keeps Scatter's (N3
-		-- review 2: 09's eye at -230.5, 19).
-		t.ok(CreekPlan.treeShotClear(-219, 27, "Cedar") and not CreekPlan.treeShotClear(-219, 27, "ShorePine1"), "09's loose clearance is cedars only")
+		-- Shot 09's looser clearance is for cedars only: a pine there still keeps Scatter's (Neon
+		-- Pass 1: 09's eye at -223.5, 25).
+		t.ok(CreekPlan.treeShotClear(-212, 30, "Cedar") and not CreekPlan.treeShotClear(-212, 30, "ShorePine1"), "09's loose clearance is cedars only")
 		t.ok(not CreekPlan.treeShotClear(-225, 19, "Cedar"), "nothing within 10 of 09's eye")
 	end)
 
 	-- N3 review 2: the advisor moved them for 09's new eye (low in the run) at scale 1.4. From there
 	-- their crowns' lowest foliage sits about a third of the way down the frame, not in the top
 	-- quarter as review 1 asked: the frame is judged on the new captures.
-	t.test("shot 09's two frame cedars: on the thirds, crowns in the top half", function()
+	-- Neon Pass 1 (11/28/2026): Neon's two at scale 1.3, flanking the riffle from 09's eye at the
+	-- riffle mouth: the east one near the left third (0.35), the west one at 0.74, outside the
+	-- right third, so the test asks for one trunk in each outer band rather than on the thirds.
+	t.test("shot 09's two frame cedars: one each side of the chute, crowns in the top half", function()
 		local c = CreekPlan.shotCam("09") :: any
 		local eye = Vector3.new(c.eye[1], c.eye[2], c.eye[3])
 		local cf = CFrame.lookAt(eye, Vector3.new(c.look[1], c.look[2], c.look[3]))
@@ -193,13 +214,13 @@ return function(t, Shared)
 		for _, it in plan.items do
 			if it.row == "frame" then
 				found += 1
-				t.ok(it.model == "Cedar" and it.scale == 1.4 and it.tilt == nil, bad(it, "an upright cedar at 1.4"))
+				t.ok(it.model == "Cedar" and it.scale == 1.3 and it.tilt == nil, bad(it, "an upright cedar at 1.3"))
 				t.ok(not CreekPlan.inLane(it.x, it.z) and not CreekPlan.kept(it.x, it.z), bad(it, "out of the lanes and paths"))
 				t.ok(CreekPlan.D(it.x, it.z) > 1, bad(it, "on the bank"))
 				t.ok(math.sqrt((it.x - eye.X) ^ 2 + (it.z - eye.Z) ^ 2) >= CreekPlan.SHOT09.eyeR, bad(it, "clear of 09's eye"))
 				local g = CreekPlan.height(it.x, it.z)
 				local sx = screen(it.x, g, it.z)
-				t.ok(math.abs(sx - 1 / 3) < 0.05 or math.abs(sx - 2 / 3) < 0.05, bad(it, string.format("trunk at %.2f of the frame", sx)))
+				t.ok((sx >= 0.25 and sx <= 0.42) or (sx >= 0.58 and sx <= 0.8), bad(it, string.format("trunk at %.2f of the frame", sx)))
 				-- The crown's lowest foliage (CROWN: middle minus radius) stays in the top half, under 0.4.
 				local _, sy = screen(it.x, g + (crown.h - crown.r) * it.scale, it.z)
 				t.ok(sy < 0.4, bad(it, string.format("crown bottom at %.3f of the frame height", sy)))
@@ -313,7 +334,9 @@ return function(t, Shared)
 				cedars += 1
 			end
 		end
-		t.eq(on.counts.CedarBough or 0, cedars * CreekPlan.BOUGHS_ON, "two per riffle cedar")
+		-- Neon Pass 1: a bough that would not reach over the water is left off (at most a few).
+		local nb = on.counts.CedarBough or 0
+		t.ok(nb <= cedars * CreekPlan.BOUGHS_ON and nb >= cedars * CreekPlan.BOUGHS_ON - 4, string.format("about two per riffle cedar: %d for %d cedars", nb, cedars))
 	end)
 
 	t.test("ten emergent rocks on the riffle, off the lanes, each trailing foam", function()
@@ -341,8 +364,12 @@ return function(t, Shared)
 
 	t.test("N3 review 2: ten wet-slate stones along the pool's east edge", function()
 		local st = CreekPlan.edgeStones(CreekPlan.SEED)
-		t.eq(#st, CreekPlan.TUNING.edgeStones, "stones")
+		-- Neon Pass 1: 8 to 10, bigger (scale 0.45 to 0.85), merged with the east lip pass.
+		t.ok(#st >= 8 and #st <= CreekPlan.TUNING.edgeStones, "stones: " .. #st)
 		for _, k in st do
+			local sc = k.r * 2 / CreekPlan.ROCK_EXTENT
+			t.ok(sc >= 0.45 - 1e-6 and sc <= 0.86, string.format("stone scale %.2f", sc))
+			t.ok(k.z >= -72 and k.z <= -16, "on the pool's east edge stretch")
 			t.ok(math.abs(CreekPlan.D(k.x, k.z)) <= 0.4, string.format("stone at %.1f, %.1f on the waterline", k.x, k.z))
 			t.ok(k.x > -216, string.format("stone at %.1f, %.1f on the east side", k.x, k.z))
 			t.ok(not CreekPlan.inLane(k.x, k.z), string.format("stone at %.1f, %.1f off the lanes", k.x, k.z))
@@ -371,7 +398,15 @@ return function(t, Shared)
 		-- The gate approach: lawn five studs each side of the walk, forest floor beyond.
 		t.eq(CreekPlan.approachSlot(-140, 7, 25), CreekPlan.LAWN_SLOT, "lawn beside the walk")
 		t.eq(CreekPlan.approachSlot(-140, 9, 25), CreekPlan.FOREST_SLOT, "forest floor past the band")
-		t.eq(CreekPlan.approachSlot(-140, 20, 2), nil, "meadow out in the approach stays")
+		-- Neon Pass 1: no meadow grass left in the gate's foreground; out past it, meadow stays.
+		t.eq(CreekPlan.approachSlot(-140, 20, 2), CreekPlan.FOREST_SLOT, "meadow in the gate's foreground is forest floor")
+		t.eq(CreekPlan.approachSlot(-140, 5, 2), CreekPlan.LAWN_SLOT, "meadow beside the walk is lawn")
+		t.eq(CreekPlan.approachSlot(-125, 32, 2), nil, "meadow out past the foreground stays")
+		for x = -154, -121, 4 do
+			for z = -24, 24, 4 do
+				t.ok(CreekPlan.approachSlot(x, z, 2) ~= nil, string.format("no meadow grass at %d, %d", x, z))
+			end
+		end
 		t.eq(CreekPlan.approachSlot(-170, 0, 25), nil, "inside the fence is not the approach")
 		t.eq(CreekPlan.PATH_SLOT, 32, "the creek paths on their own slot")
 	end)
@@ -452,7 +487,79 @@ return function(t, Shared)
 		end
 		t.ok(c.ambient.B >= c.ambient.R, "cooler shade")
 		t.ok(type(c.exposureFloor) == "number" and c.exposureFloor > -1, "an exposure floor")
-		t.ok(c.exposure >= 0, "the canopy's shade is lifted, not deepened")
+		-- Neon Pass 1 (11/28/2026): the exposure is lowered a little (-0.10; round 3's 0 blew out the
+		-- noon grass and the night gravel); the floor stays -0.25 so the bobber reads.
+		t.ok(c.exposure >= c.exposureFloor, "the exposure above the floor")
+		t.eq(c.exposureFloor, -0.25, "the floor stays -0.25")
 		t.ok(type(c.dawnMist) == "table" and c.dawnMist.density > 0, "a little mist at dawn")
+		-- With a clock the creek's water is its time-of-day water (CREEK_WATER_BY_TIME); review 2's
+		-- water above is the fallback without one.
+		t.ok(LookPresets.creekWaterAt(12).WaterTransparency <= 0.65, "noon water not above 0.65")
+	end)
+
+	-- Neon Pass 1 (11/28/2026): the pool's east lip, the bushes under the backing trunks, the gate
+	-- walk's dressing, and the log moved where shots 10 and 12 see it.
+	t.test("Neon Pass 1: the pool's east lip: ferns on land, reeds at the edge", function()
+		local T = CreekPlan.TUNING
+		local spots = CreekPlan.lipSpots(CreekPlan.SEED)
+		local ferns, reeds = 0, 0
+		for _, p in spots do
+			t.ok(p.x >= T.lipX[1] and p.x <= T.lipX[2] and p.z >= T.lipZ[1] and p.z <= T.lipZ[2], string.format("%s at %.1f, %.1f on the lip", p.model, p.x, p.z))
+			t.ok(not CreekPlan.inLane(p.x, p.z), string.format("%s at %.1f, %.1f off the lanes", p.model, p.x, p.z))
+			t.ok(Scatter.shotClear(p.x, p.z, false), "out of the shots")
+			local D = CreekPlan.D(p.x, p.z)
+			if p.kind == "fern" then
+				ferns += 1
+				t.ok(D > 0, "fern on land")
+			else
+				reeds += 1
+				t.ok(p.model == "ReedClump1" and D <= 0, "reed at the water's edge")
+			end
+		end
+		t.ok(ferns >= 4 and ferns <= T.lipFernsEast, "lip ferns: " .. ferns)
+		t.ok(reeds >= 2 and reeds <= T.lipReeds, "lip reeds: " .. reeds)
+	end)
+
+	t.test("Neon Pass 1: bushes under the backing trunks, the gate walk dressed", function()
+		local T = CreekPlan.TUNING
+		local under, gate, stones = 0, 0, 0
+		for _, it in plan.items do
+			if it.group == "Under" then
+				under += 1
+				local D = CreekPlan.D(it.x, it.z)
+				t.ok(D >= T.underD[1] and D <= T.underD[2], bad(it, string.format("under the backing trees (D %.1f)", D)))
+				t.ok(it.model == "Bush1" or it.model == "Bush2", bad(it, "a bush"))
+			elseif it.group == "Gate" then
+				gate += 1
+				t.ok(it.x >= -160.5 and it.x <= -138, bad(it, "by the gate walk"))
+				t.ok(math.abs(it.z) >= 4.5 and math.abs(it.z) <= 35, bad(it, "off the walk's middle"))
+				if string.sub(it.model, 1, 11) == "ShoreStones" then
+					stones += 1
+				end
+			end
+		end
+		t.eq(under, T.underBushes, "bushes under the trunks")
+		t.ok(gate >= 12 and gate <= 16, "gate walk items: " .. gate)
+		t.eq(stones, T.gateStones, "shore stones by the gate")
+	end)
+
+	t.test("Neon Pass 1: the log searched for in x -250..-234, z -62..-42", function()
+		for _, it in plan.items do
+			if it.model == "MossyLog" then
+				t.ok(it.x >= -250 and it.x <= -234 and it.z >= -62 and it.z <= -42, string.format("log middle at %.1f, %.1f", it.x, it.z))
+			end
+		end
+		t.ok(CreekPlan.LOG_TINT_ON == false, "the log tint is held (part colour multiplies vertex colours)")
+	end)
+
+	t.test("Neon Pass 1: the riffle's water is deep enough to draw", function()
+		-- Down the riffle's middle (z 28 to 75) the planned ground sits at least WATER_MIN under
+		-- the surface, so the top terrain cell (y -4..0) is mostly water.
+		for z = 28, 75 do
+			local h = CreekPlan.height(-230, z)
+			t.ok(h <= -CreekPlan.WATER_MIN, string.format("riffle bed at z %d: %.2f", z, h))
+			t.ok((h + 4) / 4 < 0.5, string.format("top cell under half ground at z %d", z))
+		end
+		t.ok(CreekPlan.REGION.z2 >= 76, "the riffle's last cell redrawn")
 	end)
 end

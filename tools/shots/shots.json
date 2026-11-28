@@ -153,16 +153,16 @@
       "place": "creek",
       "clock": 6.6,
       "eye": [
-        -230.5,
-        3.4,
-        19
+        -223.5,
+        4.5,
+        25
       ],
       "look": [
-        -230,
+        -231,
         1.5,
-        70
+        68
       ],
-      "what": "Up the riffle from low in the rocky run at dawn (N3 review 2, 11/28/2026: moved down into the run, framed by two cedars)"
+      "what": "Low angler view from the riffle mouth up the white-water chute and emergent rocks under the cedar canopy at dawn (Neon's N3 review, Pass 1, 11/28/2026)"
     },
     {
       "id": "10-pool-golden",
@@ -171,16 +171,16 @@
       "place": "creek",
       "clock": 17.4,
       "eye": [
-        -213,
-        5,
-        -5
+        -210,
+        5.2,
+        -16
       ],
       "look": [
         -236,
         0.5,
-        -50
+        -54
       ],
-      "what": "Over the deep pool at golden hour (from the pool's head bank since N3 review 2, 11/28/2026)"
+      "what": "From the pool's east bank edge across the deep pool toward the mossy log and cut-bank roots at golden hour (Neon's N3 review, Pass 1, 11/28/2026)"
     },
     {
       "id": "11-gate-noon",
@@ -189,16 +189,16 @@
       "place": "creek",
       "clock": 12.0,
       "eye": [
-        -141,
+        -140,
         5.5,
-        1.5
+        8
       ],
       "look": [
-        -162,
-        6.5,
-        -0.5
+        -166,
+        3.8,
+        -1
       ],
-      "what": "The creek gate and fence from the lake path at noon, square on (N3 review 2, 11/28/2026)"
+      "what": "Down the gravel walk toward the Cedar Creek gate and fence at noon, into the shaded forest beyond (Neon's N3 review, Pass 1, 11/28/2026)"
     },
     {
       "id": "12-pool-night",
@@ -207,16 +207,16 @@
       "place": "creek",
       "clock": 22.0,
       "eye": [
-        -213,
-        5,
-        -5
+        -210,
+        5.2,
+        -16
       ],
       "look": [
         -236,
         0.5,
-        -50
+        -54
       ],
-      "what": "The deep pool at night (from the pool's head bank since N3 review 2, 11/28/2026)"
+      "what": "The deep pool at night with the pool lantern lit on the east bank (Neon's N3 review, Pass 1, 11/28/2026)"
     },
     {
       "id": "b01-bridge-dawn",
@@ -523,6 +523,262 @@
         "end",
         "return \"screen u06-bench set (the bench times out after 20 s: capture now)\" .. tag()"
       ]
+    },
+    {
+      "id": "p01-lake-high-golden",
+      "set": "P",
+      "group": "lake",
+      "place": "lake",
+      "clock": 17.4,
+      "eye": [
+        78,
+        46,
+        172
+      ],
+      "look": [
+        7,
+        0,
+        13
+      ],
+      "fov": 45.7,
+      "lens_mm": 24,
+      "what": "The only high view: pond bottom right, stands lower left, dock to centre, Big Lake band under a 19 percent sky",
+      "why": "One frame where N1 ground and trees, N4 boathouse, N5 Big Lake and the N6 island silhouette all appear. Sun 48 degrees left, out of frame."
+    },
+    {
+      "id": "p02-dock-dawn",
+      "set": "P",
+      "group": "lake",
+      "place": "lake",
+      "clock": 6.4,
+      "eye": [
+        -2.4,
+        6,
+        76
+      ],
+      "look": [
+        2,
+        3.4,
+        30
+      ],
+      "fov": 39.8,
+      "lens_mm": 28,
+      "what": "Down the planks to the lit dock-end lanterns in dawn mist, slips on the right",
+      "why": "Plank and nail detail under raking light, mirror water, mist; canoe and dinghy arrive on the right in N4. Lanterns are on before 6.5."
+    },
+    {
+      "id": "p03-weedbed-golden",
+      "set": "P",
+      "group": "lake",
+      "place": "lake",
+      "clock": 17.4,
+      "eye": [
+        -94,
+        4.6,
+        87
+      ],
+      "look": [
+        -88,
+        1.5,
+        27
+      ],
+      "fov": 32.3,
+      "lens_mm": 35,
+      "what": "Low among the cattails, north across the weed bed",
+      "why": "Shot 05's bank at kneeling height: bank kit, wet band, reeds, lilies, far treeline and haze. Side-back light from the left."
+    },
+    {
+      "id": "p04-channel-golden-tele",
+      "set": "P",
+      "group": "lake",
+      "place": "lake",
+      "clock": 17.4,
+      "eye": [
+        0,
+        6,
+        37
+      ],
+      "look": [
+        0,
+        3.5,
+        -85
+      ],
+      "fov": 13.6,
+      "lens_mm": 85,
+      "what": "From the dock end: the red buoy, the footbridge, the Big Lake and ridges through the gap",
+      "why": "Compressed layers; today's bare dome behind the bridge becomes headlands and hazed ridgelines in N5. Shot 03's eye and line."
+    },
+    {
+      "id": "p05-sellstand-morning",
+      "set": "P",
+      "group": "lake",
+      "place": "lake",
+      "clock": 9.6,
+      "eye": [
+        -3,
+        6,
+        66
+      ],
+      "look": [
+        -18,
+        6.2,
+        96
+      ],
+      "fov": 22.9,
+      "lens_mm": 50,
+      "what": "Sell Fish stand, three-quarter view from the dock",
+      "why": "Neutral daylight material reference: planks, awning cloth, painted board, roof. Sun behind left at 50 degrees."
+    },
+    {
+      "id": "p06-stands-bluehour",
+      "set": "P",
+      "group": "lake",
+      "place": "lake",
+      "clock": 18.7,
+      "eye": [
+        0,
+        6,
+        50
+      ],
+      "look": [
+        0,
+        4.2,
+        96
+      ],
+      "fov": 39.8,
+      "lens_mm": 28,
+      "what": "Both stands and their lanterns, symmetrical, from the dock at blue hour",
+      "why": "Lantern light and shadows, lit sign boards, navy sky. Shot 08's eye."
+    },
+    {
+      "id": "p07-riffle-morning",
+      "set": "P",
+      "group": "creek",
+      "place": "creek",
+      "clock": 9.6,
+      "eye": [
+        -223.5,
+        4.5,
+        25
+      ],
+      "look": [
+        -230,
+        0.5,
+        70
+      ],
+      "fov": 32.3,
+      "lens_mm": 35,
+      "what": "Up the riffle between the two frame cedars, foam at the bottom edge",
+      "why": "Dappled light, white water, moss, pebbles under clear water. Eye moved to shot 09's (Neon's N3 review, Pass 1, 11/28/2026); lens kept; sight again before freezing."
+    },
+    {
+      "id": "p08-pool-golden",
+      "set": "P",
+      "group": "creek",
+      "place": "creek",
+      "clock": 17.4,
+      "eye": [
+        -210,
+        5.2,
+        -16
+      ],
+      "look": [
+        -225,
+        2.4,
+        -53
+      ],
+      "fov": 39.8,
+      "lens_mm": 28,
+      "what": "The deep pool: mossy log left third, lantern right, tree shadows raking across",
+      "why": "Enclosed canopy, dark water, cut banks and roots. Eye moved to shot 10's (Neon's N3 review, Pass 1, 11/28/2026); lens kept; sight again before freezing."
+    },
+    {
+      "id": "p09-boathouse-canoe-golden",
+      "set": "P",
+      "group": "boats",
+      "place": "lake",
+      "pending": "N4",
+      "clock": 17.4,
+      "eye": [
+        6,
+        5.5,
+        39
+      ],
+      "look": [
+        15,
+        1.5,
+        62
+      ],
+      "fov": 32.3,
+      "lens_mm": 35,
+      "what": "From the dock end down the slips: canoe in slip 1, boathouse and tackle shop behind",
+      "why": "Varnished cedar in three-quarter light. Finalise when the boathouse is placed."
+    },
+    {
+      "id": "p10-buoyline-dusk",
+      "set": "P",
+      "group": "biglake",
+      "place": "biglake",
+      "pending": "N5",
+      "clock": 18.7,
+      "eye": [
+        38,
+        3,
+        -230
+      ],
+      "look": [
+        100,
+        4,
+        -950
+      ],
+      "fov": 13.6,
+      "lens_mm": 85,
+      "what": "Boat height, north over the buoy line to the island beacon",
+      "why": "Navy swell, real buoys, beacon on the horizon. Put the bell buoy on the left third."
+    },
+    {
+      "id": "p11-island-aurora",
+      "set": "P",
+      "group": "island",
+      "place": "biglake",
+      "pending": "N6",
+      "clock": 22.0,
+      "eye": [
+        55,
+        3,
+        -860
+      ],
+      "look": [
+        100,
+        28,
+        -955
+      ],
+      "fov": 45.7,
+      "lens_mm": 24,
+      "what": "From a boat: bent pine and beacon under the aurora, horizon 78 percent down",
+      "why": "Sky event plus granite and reflections. Needs a forced-aurora debug switch and streaming around the eye."
+    },
+    {
+      "id": "p12-trophy-case-bluehour",
+      "set": "P",
+      "group": "lake",
+      "place": "lake",
+      "pending": "N7",
+      "clock": 18.7,
+      "eye": [
+        41,
+        5.2,
+        94
+      ],
+      "look": [
+        50,
+        5,
+        118
+      ],
+      "fov": 32.3,
+      "lens_mm": 35,
+      "what": "Across the pond to the lit trophy case",
+      "why": "Glass, brass and lantern glow in the pond. Needs the twelve-fish test save loaded."
     }
   ],
   "screen_sizes": [
