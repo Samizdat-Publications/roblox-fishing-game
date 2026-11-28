@@ -36,10 +36,10 @@ function Coop.shareCatch(price: number, helpers: number, assistOn: boolean): (nu
 end
 
 -- Double Hookup (Config.DOUBLE_HOOKUP_ON): two players within 15 studs fighting at once. If
--- both land their fish, each gets 25 percent of their own fish's price on top and a Double
+-- both land their fish, each gets 10 percent of their own fish's price on top and a Double
 -- Haul stamp in the journal.
 Coop.DOUBLE_RANGE = 15
-Coop.DOUBLE_BONUS = 0.25
+Coop.DOUBLE_BONUS = 0.10 -- 25 percent (Gemini) broke the leg budget in the sim: 11/28/2026
 
 export type Pair = { a: any, b: any, result: { [any]: string }, price: { [any]: number } }
 

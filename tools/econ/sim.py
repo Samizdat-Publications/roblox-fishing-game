@@ -1599,18 +1599,21 @@ def report_fleet(runs, sessions=12):
         canoe = med(f_mins[CANOE_GOAL[0]])
         g_base, g_fleet = med(b_mins["Graphite Rod"]), med(f_mins["Graphite Rod"])
         delta = (g_fleet - g_base) if (g_base is not None and g_fleet is not None) else None
+        # The same seeds play both ways, so the per-career difference is the steadier measure.
+        pairs = [f - b for b, f in zip(b_mins["Graphite Rod"], f_mins["Graphite Rod"]) if b is not None and f is not None]
+        paired = statistics.median(pairs) if pairs else None
         rows.append([
             name, fmt_min(canoe), fmt_min(g_base), fmt_min(g_fleet), "n/a" if delta is None else f"{delta:+.0f} min",
             f"{b_rate:.1f}", f"{f_rate:.1f} ({(f_rate / b_rate - 1) * 100:+.0f}%)",
             f"{n_rate:.1f} ({(n_rate / b_rate - 1) * 100:+.0f}%)", f"{p_rate:.1f} ({(p_rate / b_rate - 1) * 100:+.0f}%)",
             f"{p_x['assist']:.1f} + {p_x['double']:.1f}", f"{p_x['netted'] * 100:.0f}%",
         ])
-        out[name] = {"canoe": canoe, "graphite_base": g_base, "graphite_fleet": g_fleet, "delta": delta,
+        out[name] = {"canoe": canoe, "graphite_base": g_base, "graphite_fleet": g_fleet, "delta": delta, "paired": paired,
                      "rate": b_rate, "rate_fleet": f_rate, "rate_pair": p_rate, "rate_pair_nodouble": n_rate}
     print("## The fleet (N4): the canoe, the quiet approach, nets and assists\n")
     print(f"{runs} careers each, {sessions} sessions of {SESSION_MIN} min; coins/min is the mean over sessions 2 on (fish sold or held, pond, co-op pay).")
     print("Fleet: Fiberglass Rod, then the Cedar Canoe (350), then the Creek Pass and the Graphite Rod; quiet approach by canoe on the Big Lake.")
-    print("Pair: the fleet plus a partner who nets, assists (10 percent) and chums; then with Double Hookups (25 percent) too.\n")
+    print(f"Pair: the fleet plus a partner who nets, assists (10 percent) and chums; then with Double Hookups ({DOUBLE_BONUS * 100:.0f} percent) too.\n")
     print(table(rows, ["Player", "owns the canoe", "Graphite, today", "Graphite, fleet", "Graphite moves",
                        "coins/min today", "with the fleet", "pair: nets, assists, chum", "pair + Double Hookup", "pair: assist + double c/min", "own fish netted"]))
     dk, sm = out["dock and worms"], out["smart"]
@@ -1618,7 +1621,7 @@ def report_fleet(runs, sessions=12):
     print()
     print(f"Targets (leg plan, N4 and the leg budget):")
     print(f"- dock kid owns the canoe inside 20 min: {fmt_min(dk['canoe'])} -> {'PASS' if dk['canoe'] is not None and dk['canoe'] <= 20 else 'FAIL'}")
-    moved = "n/a" if dk["delta"] is None else f"{dk['delta']:+.0f} min"
+    moved = "n/a" if dk["delta"] is None else f"{dk['delta']:+.2f} min ({dk['graphite_base']:.2f} to {dk['graphite_fleet']:.2f}; per career, median {dk['paired']:+.2f})"
     print(f"- his Graphite Rod moves back no more than 12 min from {fmt_min(dk['graphite_base'])}: {moved} -> "
           f"{'PASS' if dk['delta'] is not None and dk['delta'] <= 12 else 'FAIL'}")
     print(f"- an expert earns no more than 15 percent over today ({sm['rate']:.1f} -> at most {budget_hi:.1f}): "

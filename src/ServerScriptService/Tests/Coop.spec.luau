@@ -23,13 +23,13 @@ return function(t, Shared)
 		t.eq(angler + helpers[1], 31, "nothing made or lost")
 	end)
 
-	t.test("Double Hookup pays 25 percent each only when both land", function()
+	t.test("Double Hookup pays 10 percent each only when both land", function()
 		local p = Coop.newPair("A", "B")
 		t.eq(Coop.pairResult(p, "A", "won", 40), nil, "waiting for B")
 		local pay = Coop.pairResult(p, "B", "won", 20) :: any
 		t.ok(pay ~= nil, "resolved")
-		t.eq(pay.A, 10, "A: 25 percent of 40")
-		t.eq(pay.B, 5, "B: 25 percent of 20")
+		t.eq(pay.A, 4, "A: 10 percent of 40")
+		t.eq(pay.B, 2, "B: 10 percent of 20")
 		local q = Coop.newPair("A", "B")
 		Coop.pairResult(q, "A", "won", 40)
 		local none = Coop.pairResult(q, "B", "lost") :: any

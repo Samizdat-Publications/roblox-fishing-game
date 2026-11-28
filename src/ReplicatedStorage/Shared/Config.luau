@@ -142,7 +142,7 @@ Config.QUIET_APPROACH_ON = false
 -- Gemini's co-op items for N4 (Shared/Coop). BUDDY_LOAN_ON: a passenger fishes with the boat
 -- owner's rod and line if they are better, and a player within 20 studs of a Creek Pass holder
 -- may walk through the creek gate and fish the creek. DOUBLE_HOOKUP_ON: two players within 15
--- studs fighting at once get a banner, and if both land, 25 percent more coins and a Double
+-- studs fighting at once get a banner, and if both land, 10 percent more coins and a Double
 -- Haul stamp each. CHUM_ON: the second seat of a canoe or dinghy can toss chum every 90
 -- seconds; for 25 seconds bites come a quarter sooner for everyone aboard.
 Config.BUDDY_LOAN_ON = false
