@@ -4126,5 +4126,220 @@
         ]
       }
     }
+  },
+  {
+    "date": "2026-11-28",
+    "step": "N4 set C round 1",
+    "set": "C",
+    "rubric": "look",
+    "run": "2026-11-28-0540-C",
+    "commit": "5fa4766",
+    "shots": 3,
+    "median": 6.5,
+    "scores": [
+      6.5,
+      7,
+      6.5
+    ],
+    "points": {
+      "composition": 6,
+      "light": 7,
+      "water": 6,
+      "mood": 7,
+      "want_to_fish": 7,
+      "phone_readability": 6,
+      "broken_or_ugly": 6
+    },
+    "reports": [
+      "docs\\critic\\2026-11-28-N4 set C round 1-neon.md",
+      "docs\\critic\\2026-11-28-N4 set C round 1-neon-2.md",
+      "docs\\critic\\2026-11-28-N4 set C round 1-neon-3.md"
+    ],
+    "weather": {
+      "c01-canoe-golden": "Clear",
+      "c02-slips-boathouse-noon": "Clear",
+      "c03-dinghy-wake-dawn": "Clear"
+    },
+    "session": {
+      "c01-canoe-golden": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      },
+      "c02-slips-boathouse-noon": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      },
+      "c03-dinghy-wake-dawn": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      }
+    }
+  },
+  {
+    "date": "2026-11-28",
+    "step": "N4 set C round 1",
+    "set": "C",
+    "rubric": "identity",
+    "run": "2026-11-28-0540-C",
+    "commit": "5fa4766",
+    "shots": 3,
+    "median": 6.5,
+    "scores": [
+      6,
+      6.5,
+      7
+    ],
+    "points": {
+      "materials": 6,
+      "signature": 7,
+      "cohesion": 6,
+      "stock_free": 6,
+      "identity": 6.5
+    },
+    "reports": [
+      "docs\\critic\\2026-11-28-N4 set C round 1-identity-neon.md",
+      "docs\\critic\\2026-11-28-N4 set C round 1-identity-neon-2.md",
+      "docs\\critic\\2026-11-28-N4 set C round 1-identity-neon-3.md"
+    ],
+    "stock_items": [
+      {
+        "item": "Low-poly pine and deciduous trees (c01-canoe-golden.jpg background, c02-slips-boathouse-noon.jpg upper left and right, c03-dinghy-wake-dawn.jpg treeline).",
+        "reason": "Chunky geometric shapes with untextured matte SmoothPlastic-looking foliage that read as typical Roblox low-poly asset-pack trees and clash with the textured wood docks.",
+        "runs": 1
+      },
+      {
+        "item": "Smooth shoreline sand, mud, and bare green terrain hills (c02-slips-boathouse-noon.jpg far-left hill and center-right shoreline, c01-canoe-golden.jpg mid-ground hills).",
+        "reason": "Apart from the moving grass blades, the ground surfaces read as smooth, low-detail default Roblox terrain Grass and Sand.",
+        "runs": 1
+      },
+      {
+        "item": "Sharp-edged square dock pilings (c01-canoe-golden.jpg foreground bottom-left and slip posts, c02-slips-boathouse-noon.jpg three vertical posts in the center-left water).",
+        "reason": "Plain unchamfered 90-degree rectangular Roblox block Parts that stand out against the round bark-textured logs right beside them.",
+        "runs": 1
+      },
+      {
+        "item": "Striped stall awnings (c01-canoe-golden.jpg upper left, c02-slips-boathouse-noon.jpg upper right).",
+        "reason": "Crisp, flat-colored SmoothPlastic strips that read as untextured plastic blocks rather than canvas or fabric.",
+        "runs": 1
+      },
+      {
+        "item": "Outboard motor casing and bow navigation lights on the orange dinghy (c03-dinghy-wake-dawn.jpg center).",
+        "reason": "The motor is glossy untextured black SmoothPlastic with a plain white band, and the red and green bow lights are bare glowing Neon spheres with no lamp housing.",
+        "runs": 1
+      },
+      {
+        "item": "Distant bridge structure (c03-dinghy-wake-dawn.jpg right background).",
+        "reason": "Built from thin, flat, untextured dark grey beams and ramps that read as placeholder Roblox Parts.",
+        "runs": 1
+      },
+      {
+        "item": "Daytime sky and clouds (c02-slips-boathouse-noon.jpg upper frame).",
+        "reason": "Reads as the default pale blue Roblox noon sky with standard dynamic clouds, lacking the custom mood of the golden and dawn shots.",
+        "runs": 1
+      },
+      {
+        "item": "Clustered dark shore rocks (c02-slips-boathouse-noon.jpg center-right shoreline, c01-canoe-golden.jpg center shoreline).",
+        "reason": "Smooth, bulbous dark grey low-poly blobs that read as generic SmoothPlastic rock props rather than textured stone.",
+        "runs": 1
+      },
+      {
+        "item": "Low-poly pine and deciduous trees (c01-canoe-golden.jpg, c02-slips-boathouse-noon.jpg, c03-dinghy-wake-dawn.jpg, full background treeline)",
+        "reason": "Flat-shaded polygonal pine tiers and blobby deciduous canopies read as SmoothPlastic low-poly Roblox trees with no needle or leaf texture, clashing with the realistic weathered wood docks and canoe.",
+        "runs": 1
+      },
+      {
+        "item": "Terrain grass and sand shoreline and bare hills (c02-slips-boathouse-noon.jpg, far-left hill and mid-right shoreline around the stalls; c01-canoe-golden.jpg, mid-left and center-back shore)",
+        "reason": "Default Roblox terrain material painting with flat green slopes and characteristic mottled grass-on-sand edges.",
+        "runs": 1
+      },
+      {
+        "item": "Midday sky and clouds (c02-slips-boathouse-noon.jpg, top third of frame)",
+        "reason": "Reads as the default Roblox bright blue daytime skybox paired with standard procedural Clouds, flattening the noon shot compared to golden hour and dawn.",
+        "runs": 1
+      },
+      {
+        "item": "Smooth dark rock clusters (c02-slips-boathouse-noon.jpg, center-right shoreline near the cattails; c01-canoe-golden.jpg, center shoreline behind the dock)",
+        "reason": "Uniformly dark, smooth-faceted rock piles that lack real stone texture and read as generic SmoothPlastic or stock low-poly boulders.",
+        "runs": 1
+      },
+      {
+        "item": "Dinghy outboard motor shell and bow navigation lights (c03-dinghy-wake-dawn.jpg, center of frame on the orange dinghy)",
+        "reason": "The glossy black motor reads as SmoothPlastic primitives and the green and red bow lights are bare glowing spheres stuck onto the rubber tube without fixtures.",
+        "runs": 1
+      },
+      {
+        "item": "Distant bridge (c03-dinghy-wake-dawn.jpg, upper-right background behind the moored wooden boat)",
+        "reason": "Reads as plain, untextured straight Studio beams and flat sloped ramps.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Terrain grass and sand/ground (c02-slips-boathouse-noon.jpg far-left hill and center-right shoreline; c01-canoe-golden.jpg shoreline behind the dock)",
+        "reason": "Shows the unmistakable smooth bare green terrain mounds and soft-blended beige-to-green default Roblox Smooth Terrain textures.",
+        "runs": 1
+      },
+      {
+        "item": "Low-poly pine and deciduous trees (c02-slips-boathouse-noon.jpg background across the treeline; c01-canoe-golden.jpg center background)",
+        "reason": "Faceted cones and blobby crowns read as flat, untextured SmoothPlastic generic Roblox low-poly trees, clashing with the realistic wood textures in the foreground.",
+        "runs": 1
+      },
+      {
+        "item": "Noon sky and clouds (c02-slips-boathouse-noon.jpg upper frame)",
+        "reason": "Reads as the default pale-blue Roblox Sky and standard procedural Clouds without the custom atmospheric colour grading seen in c01 and c03.",
+        "runs": 1
+      },
+      {
+        "item": "Plain flat-block bridge structure (c03-dinghy-wake-dawn.jpg upper right background behind the wooden boat)",
+        "reason": "Reads as bare, untextured rectangular Parts for the railings and angled ramps rather than a weathered lakeside bridge.",
+        "runs": 1
+      },
+      {
+        "item": "Glowing red and green bow lights on the orange dinghy (c03-dinghy-wake-dawn.jpg center-right on the bow)",
+        "reason": "Read as plain Neon/SmoothPlastic sphere Parts stuck onto the boat instead of detailed marine light fixtures.",
+        "runs": 1
+      }
+    ],
+    "weather": {
+      "c01-canoe-golden": "Clear",
+      "c02-slips-boathouse-noon": "Clear",
+      "c03-dinghy-wake-dawn": "Clear"
+    },
+    "session": {
+      "c01-canoe-golden": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      },
+      "c02-slips-boathouse-noon": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      },
+      "c03-dinghy-wake-dawn": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      }
+    }
   }
 ]
