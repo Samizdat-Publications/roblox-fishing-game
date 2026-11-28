@@ -133,6 +133,18 @@ function PlayerData.saveNow(player: Player)
 	save(player)
 end
 
+-- Studio only (N4 review 3, the quiet approach check): stop this player's data saving for the
+-- rest of the session (the same noSave flag a failed load sets), so a test run of many casts can
+-- never touch a real save. Does nothing outside Studio. Returns whether it took.
+function PlayerData.debugNoSave(player: Player): boolean
+	if not RunService:IsStudio() then
+		return false
+	end
+	noSave[player] = true
+	print("[PlayerData] " .. player.Name .. ": saving off for this Studio session (debugNoSave)")
+	return true
+end
+
 function PlayerData.start()
 	openStore()
 	Remotes.func("RequestState").OnServerInvoke = function(player)

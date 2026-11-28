@@ -43,6 +43,40 @@ return function(t, Shared)
 		t.eq(BoatRules.blockedAt("Dinghy", Vector3.new(0, 0, 60)), "dock", "under the dock")
 	end)
 
+	-- N4 review 3: the canoe went under the boathouse apron. With BOATHOUSE_ON, the shed, the apron
+	-- and the walkway (BoathousePlan.footprint) are dock; a boat already under them can back out.
+	t.test("N4 review 3: the boathouse is dock when it is built, and a boat under it backs out", function()
+		local wasHouse, wasCanoe = Config.BOATHOUSE_ON, Config.CANOE_ON
+		local ok, err = pcall(function()
+			Config.CANOE_ON = true
+			local apron = Vector3.new(57, 0, 65)
+			Config.BOATHOUSE_ON = false
+			t.ok(BoatRules.blockedAt("Canoe", apron) ~= "dock", "no boathouse, no block")
+			Config.BOATHOUSE_ON = true
+			t.eq(BoatRules.blockedAt("Canoe", apron), "dock", "under the apron")
+			t.eq(BoatRules.blockedAt("Canoe", Vector3.new(66, 0, 72)), "dock", "under the walkway")
+			t.eq(BoatRules.blockedAt("Canoe", Vector3.new(57, 0, 63.5 - BoatRules.OBSTACLE_CLEAR + 0.05)), "dock", "just off the apron's edge")
+			t.eq(BoatRules.blockedAt("Canoe", Vector3.new(57, 0, 60)), nil, "open water in front of it")
+			-- Driving south at the apron: stopped before it.
+			local SOUTH = Vector3.new(0, 0, 1)
+			local half = BoatData.byId.Canoe.length / 2
+			t.ok(BoatRules.stopAhead("Canoe", Vector3.new(57, 0, 63.5 - half - 1), SOUTH, 4) ~= nil, "stops short of the apron")
+			-- Already under it, bow in: forward is refused, backing out is not.
+			local inside = Vector3.new(57, 0, 64 - half + 2)
+			local yaw = math.pi -- CFrame.fromOrientation(0, pi, 0).LookVector is +Z (south)
+			t.ok(CFrame.fromOrientation(0, yaw, 0).LookVector.Z > 0.99, "heading south")
+			t.ok(BoatRules.footprintHits("Canoe", inside, SOUTH) > 0, "the bow is under the apron")
+			t.eq(BoatRules.stopAhead("Canoe", inside, SOUTH, 4), "dock", "the look ahead stops it going further in")
+			local backOk = BoatRules.poseCheck("Canoe", inside, yaw, -2, 0)
+			t.ok(backOk, "may back out")
+			t.eq(BoatRules.stopAhead("Canoe", inside, SOUTH, -2), nil, "nothing behind it")
+		end)
+		Config.BOATHOUSE_ON, Config.CANOE_ON = wasHouse, wasCanoe
+		if not ok then
+			error(err, 0)
+		end
+	end)
+
 	t.test("full speed at the east bank stops with water to spare, then creeps close enough to land", function()
 		withCanoe(true, function()
 			local b = BoatData.byId.Canoe

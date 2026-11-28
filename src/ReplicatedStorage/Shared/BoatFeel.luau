@@ -412,8 +412,10 @@ BoatFeel.KELVIN = math.tan(math.rad(19.47)) -- the wake's arms spread at this sh
 -- w1Speed 1.2 to 1.6). The beams lie flat by their own setting, WAKE_BEAM_NORMAL.
 -- N4 review 2 (11/28/2026): the motor wake's peak fainter again (base 0.38 to 0.55); the soft
 -- puffs (WAKE_PUFF) carry the white now, and the whole wake fades with the boat (wakeGain).
+-- N4 review 3 (11/28/2026, final): review 2 left the wake too faint to see while moving. The
+-- motor wake's peak 0.55 to 0.40 and its fade-in 0.25 to 0.10 s (the gain still clears it at rest).
 BoatFeel.WAKE = {
-	motor = { from = 0.08, life = 3.6, step = 3, w0 = 0.5, w1 = 1.2, w1Speed = 1.6, base = 0.55, baseSlow = 0.2, fadeIn = 0.25, hold = 0.3 },
+	motor = { from = 0.08, life = 3.6, step = 3, w0 = 0.5, w1 = 1.2, w1Speed = 1.6, base = 0.40, baseSlow = 0.2, fadeIn = 0.10, hold = 0.3 },
 	paddle = { from = 0.08, life = 1.8, step = 3, w0 = 0.08, w1 = 0.22, w1Speed = 0.12, base = 0.72, baseSlow = 0.15, fadeIn = 0.3, hold = 0.3 },
 }
 BoatFeel.WAKE_PHONE = { life = 0.6, step = 2 } -- the phone tier: 60 percent of the life, a point every 6 studs (half as many)
@@ -431,7 +433,12 @@ BoatFeel.SPRAY_RATE = 30 -- particles a second at full speed (desktop)
 BoatFeel.WASH_RATE = 16 -- the stern's churn, particles a second at full speed (desktop)
 -- The wash and the swirl rings are soft round puffs (the spray map) lying on the water, never
 -- the foam map's square tiles; each fades in and ends clear.
-BoatFeel.WASH = { life = { 0.9, 1.5 }, size = { 0.6, 2.2 }, transparency = { 0.72, 1 } }
+-- N4 review 3: the wash's peak 0.72 to 0.5 and its life 0.9-1.5 to 0.6-1.0 (brighter, shorter).
+BoatFeel.WASH = { life = { 0.6, 1.0 }, size = { 0.6, 2.2 }, transparency = { 0.5, 1 } }
+-- How much the scene's light dims the foam (the wake beams and every boat particle). 1 was lit
+-- exactly like the water, which hid the white at dusk; 0.75 keeps a little of its own white.
+-- Tune between 0.6 and 0.9 (spec); 0 would glow at night.
+BoatFeel.FOAM_LIGHT_INFLUENCE = 0.75
 BoatFeel.PHONE_RATE = 0.4 -- the phone tier's share of each particle rate
 BoatFeel.SWIRLS = 2 -- swirl rings per paddle stroke
 BoatFeel.SWIRL_LIFE = 1.6
@@ -570,7 +577,8 @@ end
 
 -- N4 review 2 (11/28/2026), motor boats only. Flat puffs of the spray map lying on the water at
 -- both wake start points (the arms' heads), so the wake starts soft and white, not as two lines.
-BoatFeel.WAKE_PUFF = { rate = 14, life = { 1.0, 1.5 }, size = { 0.5, 2.2 }, transparency = 0.6 }
+-- N4 review 3: peak 0.6 to 0.4, life 1.0-1.5 to 0.7-1.0.
+BoatFeel.WAKE_PUFF = { rate = 14, life = { 0.7, 1.0 }, size = { 0.5, 2.2 }, transparency = 0.4 }
 -- And a camera-facing spray thrown up and aft off the stern above 30 percent of top speed:
 -- `angle` degrees from straight up toward the stern.
 BoatFeel.STERN_SPRAY = { from = 0.3, rate = 22, speed = { 2, 4 }, angle = 55, life = { 0.35, 0.6 }, size = { 0.5, 1.3 } }

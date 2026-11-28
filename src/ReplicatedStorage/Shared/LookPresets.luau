@@ -162,7 +162,7 @@ LookPresets.PRESETS = {
 				Glare = 0.4,
 				Haze = 0.9,
 			},
-			BloomEffect = { Intensity = 0.8, Size = 30, Threshold = 1.3 },
+			BloomEffect = { Intensity = 0.8, Size = 30, Threshold = 1.6 }, -- N4 review 3: threshold 1.3 to 1.6 (1.9 graded)
 			ColorCorrectionEffect = { Brightness = 0.02, Contrast = 0.08, Saturation = -0.04, TintColor = rgb(238, 228, 255) },
 			SunRaysEffect = { Intensity = 0, Spread = 0.5 },
 		},

@@ -188,7 +188,7 @@ local function emitter(parent: Instance, textureId: number?): ParticleEmitter
 	end
 	e.Color = ColorSequence.new(WhiteWater.FOAM_COLOR)
 	e.LightEmission = 0.1
-	e.LightInfluence = 1
+	e.LightInfluence = BoatFeel.FOAM_LIGHT_INFLUENCE -- N4 review 3: 0.75, keeps a little white at dusk
 	e.Rate = 0
 	e.Parent = parent
 	return e
@@ -369,7 +369,7 @@ local function buildWake(f: Feel)
 			beam.CurveSize0 = 0
 			beam.CurveSize1 = 0
 			beam.Color = ColorSequence.new(WhiteWater.FOAM_COLOR)
-			beam.LightInfluence = 1 -- lit like the water round it, so it never glows at dawn or night
+			beam.LightInfluence = BoatFeel.FOAM_LIGHT_INFLUENCE -- N4 review 3: 0.75 (was 1, lit like the water); never 0, so no glow at night
 			beam.LightEmission = 0
 			beam.ZOffset = BoatFeel.WAKE_ZOFFSET
 			if foam then
@@ -1090,12 +1090,78 @@ local function straightenKnees(f: Feel, hum: Humanoid, seatName: string, r: Rig)
 	end
 end
 
+-- N4 review 3: in the canoe the knee check is not enough. It tests height only, but the canoe is
+-- only 0.25 to 0.5 studs of half beam at the bow paddler's feet, so the shins and feet poke out
+-- through the sides. In either canoe seat the lower legs, the feet and any accessory welded to
+-- them are hidden on this screen (LocalTransparencyModifier 1), written every frame (the camera's
+-- own transparency fade also writes it). Every character hidden here is listed; one that is no
+-- longer in a canoe seat on a later frame (it stood up, jumped, died, the canoe despawned or
+-- streamed out) is shown again (0). R6 legs are one part each and are left alone.
+local CANOE_HIDE = { RightLowerLeg = true, RightFoot = true, LeftLowerLeg = true, LeftFoot = true }
+local legsHidden: { [Model]: { [BasePart]: boolean } } = {}
+
+local function canoeLegParts(char: Model): { BasePart }
+	local out: { BasePart } = {}
+	local legs: { [BasePart]: boolean } = {}
+	for name in CANOE_HIDE do
+		local p = char:FindFirstChild(name)
+		if p and p:IsA("BasePart") then
+			legs[p] = true
+			table.insert(out, p)
+		end
+	end
+	if next(legs) == nil then
+		return out
+	end
+	for _, acc in char:GetChildren() do
+		if acc:IsA("Accessory") then
+			local handle = acc:FindFirstChild("Handle")
+			local weld = handle and handle:FindFirstChildWhichIsA("JointInstance")
+			if weld and ((weld.Part0 and legs[weld.Part0]) or (weld.Part1 and legs[weld.Part1])) then
+				for _, d in acc:GetDescendants() do
+					if d:IsA("BasePart") then
+						table.insert(out, d)
+					end
+				end
+			end
+		end
+	end
+	return out
+end
+
+local function hideCanoeLegs(char: Model, seen: { [Model]: boolean })
+	seen[char] = true
+	local set: { [BasePart]: boolean } = legsHidden[char] or {}
+	legsHidden[char] = set
+	for _, p in canoeLegParts(char) do
+		set[p] = true
+		p.LocalTransparencyModifier = 1
+	end
+end
+
+local function showLegsExcept(seen: { [Model]: boolean })
+	for char, set in legsHidden do
+		if not seen[char] then
+			for p in set do
+				if p.Parent then
+					p.LocalTransparencyModifier = 0
+				end
+			end
+			legsHidden[char] = nil
+		end
+	end
+end
+
 local function poseAll()
+	local inCanoe: { [Model]: boolean } = {}
 	for _, f in feels do
 		for hum, seatName in occupants(f) do
 			local char = hum.Parent :: Model?
 			if not char then
 				continue
+			end
+			if f.id == "Canoe" and hum.Health > 0 then
+				hideCanoeLegs(char, inCanoe)
 			end
 			local r = rigOf(char)
 			if not r then
@@ -1116,6 +1182,7 @@ local function poseAll()
 			end
 		end
 	end
+	showLegsExcept(inCanoe)
 end
 
 ----------------------------------------------------------------------------------------

@@ -26,6 +26,7 @@
 --   F:Invoke("endrun", "PlayerName")                        -- hands the helm back
 --   F:Invoke("slips", "PlayerName", "Canoe", "Dinghy")      -- shot c01: slip 1 a canoe, slip 2 a dinghy
 --   F:Invoke("unstage")                                     -- takes the still copies away
+--   F:Invoke("nosave", "PlayerName")                        -- nothing this session saves (PlayerData.debugNoSave)
 -- docs/DECISIONS.md ("Studio test helper for the N4 two-player checks") has the full check.
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -260,6 +261,13 @@ local function invoke(cmd: string, a: any, b: any, c: any, d: any): any
 	elseif cmd == "unstage" then
 		BoatService.debugUnstage()
 		return true
+	elseif cmd == "nosave" then
+		-- N4 review 3: before a run of test casts, so the run never touches the player's real save.
+		local p = playerNamed(a)
+		if not p then
+			return "no such player"
+		end
+		return if PlayerData.debugNoSave(p) then "saving off" else "not in Studio"
 	elseif cmd == "endrun" then
 		local p = playerNamed(a)
 		if p then

@@ -572,6 +572,12 @@ return function(t, Shared)
 		near(LookPresets.at(17.5).Lighting.ExposureCompensation, 0, "golden exposure unchanged")
 	end)
 
+	t.test("N4 review 3: dusk bloom threshold 1.6 (1.9 under the grade)", function()
+		t.ok(math.abs(LookPresets.at(18.7).BloomEffect.Threshold - 1.6) < 1e-9, "dusk bloom threshold 1.6")
+		local graded = LookPresets.at(18.7, nil, nil, nil, LookPresets.REALISTIC_GRADE)
+		t.ok(math.abs(graded.BloomEffect.Threshold - 1.9) < 1e-9, "graded 1.9 (" .. tostring(graded.BloomEffect.Threshold) .. ")")
+	end)
+
 	t.test("N4 review 2: no more exposure; dusk water its own blue, less mirror at golden and dawn, the moon at 6", function()
 		local function near(a, b, what)
 			t.ok(math.abs(a - b) < 1e-3, string.format("%s: %.4f want %.4f", what, a, b))

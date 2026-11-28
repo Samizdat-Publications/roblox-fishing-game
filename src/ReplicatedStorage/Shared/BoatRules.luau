@@ -10,6 +10,7 @@ local BoatLogic = require(Shared.BoatLogic)
 local Config = require(Shared.Config)
 local Shore = require(Shared.Shore)
 local Cover = require(Shared.Cover)
+local BoathousePlan = require(Shared.BoathousePlan)
 
 local BoatRules = {}
 
@@ -265,6 +266,18 @@ function BoatRules.probes(boatId: string, pos: Vector3, look: Vector3, speed: nu
 	return { tip, edge + side * (b.width / 2), edge - side * (b.width / 2) }
 end
 
+-- Is this point inside the boathouse's footprint (BoathousePlan.footprint: the shed, the apron
+-- and the walkway), or within OBSTACLE_CLEAR of it? Pure; ignores BOATHOUSE_ON.
+function BoatRules.inBoathouse(point: Vector3): boolean
+	local pad = BoatRules.OBSTACLE_CLEAR
+	for _, r in BoathousePlan.footprint() do
+		if point.X >= r.x1 - pad and point.X <= r.x2 + pad and point.Z >= r.z1 - pad and point.Z <= r.z2 + pad then
+			return true
+		end
+	end
+	return false
+end
+
 -- What a boat would hit at this point: "shore" (off the water), "log", "dock", "water" (water
 -- this boat may not use, with the reason) or nil when it is clear.
 function BoatRules.blockedAt(boatId: string, point: Vector3): (string?, string?)
@@ -276,6 +289,11 @@ function BoatRules.blockedAt(boatId: string, point: Vector3): (string?, string?)
 		if (f.kind == "Log" or f.kind == "Dock") and Cover.boatEdgeDistance(f, point) <= BoatRules.OBSTACLE_CLEAR then
 			return string.lower(f.kind), nil
 		end
+	end
+	-- N4 review 3: the boathouse's shed, apron and walkway are dock too (the canoe went under the
+	-- apron), with the same reach as the dock (OBSTACLE_CLEAR). Only when the boathouse is built.
+	if Config.BOATHOUSE_ON and BoatRules.inBoathouse(point) then
+		return "dock", nil
 	end
 	local ok, msg = BoatRules.mayBeAt(boatId, point)
 	if not ok then

@@ -528,3 +528,34 @@ The advisor's second N4 review (set C round 2: look 7, identity 5.5; the dusk fe
 3. The stern spray is thrown 55 degrees from straight up toward the stern (35 degrees over the water), with gravity, like the bow spray.
 4. Slip 4 pulls out before it turns, as slip 1 does (moving the slips was not part of the ruling).
 5. The board's posts stand on the deck (y 1.5) and the board keeps its centre at y 3.2.
+
+## 11/28/2026: N4 review 3 (final) rulings
+
+The advisor's third and final N4 review. In code, specs pass; nothing here is seen in Studio yet.
+
+- **The wake shows while moving and is gone at rest.** Review 2 made it too faint to see. The motor wake's peak is 0.40 transparent (was 0.55) and it fades in over 0.10 s (was 0.25); the stern puffs (`WAKE_PUFF`) peak at 0.4 (was 0.6) and live 0.7 to 1.0 s (was 1.0 to 1.5); the wash peaks at 0.5 (was 0.72) and lives 0.6 to 1.0 s (was 0.9 to 1.5). The wake beams and every boat particle take `BoatFeel.FOAM_LIGHT_INFLUENCE` 0.75 (was 1, lit exactly like the water), so a little of the white survives at dusk; tune it between 0.6 and 0.9 (spec). `WAKE_GAIN` is unchanged, so the whole wake still clears within a second of a stop. Specs in `BoatFeel.spec`.
+- **Legs in the canoe.** The knee check tests height only, and the canoe is only 0.25 to 0.5 studs of half beam at the bow paddler's feet, so shins and feet came through the sides. In either canoe seat (Helm, Bow) the lower legs, the feet and any accessory welded to them are hidden on every screen (`LocalTransparencyModifier` 1, written each frame in `poseAll`). Every character hidden is listed; on the first frame it is no longer in a canoe seat (stood up, jumped, died, the canoe despawned or streamed out) its parts are shown again. Dinghy and Deep-V are unchanged.
+- **The boathouse is dock.** With `BOATHOUSE_ON`, `BoatRules.blockedAt` returns "dock" inside `BoathousePlan.footprint()` (the shed, the apron, the walkway) or within `OBSTACLE_CLEAR` (0.6) of it, as for the dock (the canoe had gone under the apron). The look ahead stops a boat short of it; a boat already under it backs out, because the look ahead only looks the way the boat moves and `poseCheck` refuses only a pose that touches more (spec in `BoatStop.spec`).
+- **Dusk bloom threshold 1.6** (was 1.3; 1.9 under the Realistic grade). Spec in `LookPresets.spec`.
+- **Quiet approach, test support:** `PlayerData.debugNoSave(player)` turns on the existing noSave flag for the rest of the session, guarded by `RunService:IsStudio()` so it can never run live; reach it with `ServerStorage.DebugCoop:Invoke("nosave", "PlayerName")` before any run of test casts.
+- **The three-arrival check** (with the spec, enough to turn `QUIET_APPROACH_ON` on): Studio, `QUIET_APPROACH_ON` on for the test, "nosave" first, Day, Minnows, at the weed bed edge, one cast after each arrival, reading the `[Quiet]` line the server logs for that cast:
+  1. the canoe, paddled in: quiet, Northern Pike share about 51 percent (against 46 without the bonus);
+  2. the dinghy at full throttle all the way: normal, about 46 percent;
+  3. the dinghy at a quarter throttle or less for the last 25 studs: quiet, about 51 percent.
+  The share is read from the log, not counted from catches (one cast cannot show a 1.25 times weight).
+- **Logged, carried (not now):** the tiller against the driver's hand; the price boards lining up in c03; the bare slip posts; golden-hour reflections and black pines; sign text size.
+
+### At the close (prepared, not flipped)
+
+The orchestrator flips these after the Studio checks, not before:
+
+- On at the close: `CANOE_ON`, `BOAT_FEEL_ON`, `BOATHOUSE_ON`, `NET_ON`, `ASSIST_BONUS_ON`.
+- On once the three-arrival check passes: `QUIET_APPROACH_ON`.
+- Off until the Liam weekend: `BUDDY_LOAN_ON`, `DOUBLE_HOOKUP_ON`, `CHUM_ON`.
+
+### Defaults chosen, open to Stewart (N4 review 3)
+
+1. `FOAM_LIGHT_INFLUENCE` also covers the boat's particles (wash, puffs, spray, swirls), since they share one emitter helper with the line the ruling named; the creek's white water keeps 1.
+2. The canoe leg hiding is R15 only; an R6 leg is one part, so it is left alone.
+3. The boathouse block reaches 0.6 studs past the footprint (the dock's `OBSTACLE_CLEAR`), not exactly its edge.
+4. A canoe-seated character whose Humanoid has died is shown again at once, before the seat lets go.
