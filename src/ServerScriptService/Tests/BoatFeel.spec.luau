@@ -145,14 +145,14 @@ return function(t, Shared)
 		local wPeak, aPeak = BoatFeel.wakePiece("Dinghy", 0.5, 1)
 		local w1, a1 = BoatFeel.wakePiece("Dinghy", 3.4, 1)
 		t.ok(near(w0 :: number, 0.5) and near(a0 :: number, 1), "starts 0.5 wide and clear (it fades in at the stern)")
-		t.ok(near(aPeak :: number, 0.38), "its peak: 0.38 transparent at full speed (N4 review 1; " .. tostring(aPeak) .. ")")
+		t.ok(near(aPeak :: number, 0.55), "its peak: 0.55 transparent at full speed (N4 review 2; " .. tostring(aPeak) .. ")")
 		t.ok((w1 :: number) > (wPeak :: number) and (wPeak :: number) > (w0 :: number), "widens")
 		t.ok((a1 :: number) > (aPeak :: number), "fades out")
 		local _, aIn = BoatFeel.wakePiece("Dinghy", 0.1, 1)
 		t.ok((aIn :: number) > (aPeak :: number) and (aIn :: number) < 1, "still fading in at 0.1 s")
 		for age = 0, 3.59, 0.05 do
 			local _, tr = BoatFeel.wakePiece("Dinghy", age, 1)
-			t.ok((tr :: number) >= 0.38 - 1e-9 and (tr :: number) <= 1, "never brighter than the peak")
+			t.ok((tr :: number) >= 0.55 - 1e-9 and (tr :: number) <= 1, "never brighter than the peak")
 		end
 		t.eq(BoatFeel.wakePiece("Dinghy", 3.6, 1), nil, "gone at 3.6 s")
 		t.eq(BoatFeel.wakePiece("Dinghy", 0.2, 0.05), nil, "none when crawling")
@@ -184,7 +184,7 @@ return function(t, Shared)
 		t.eq(BoatFeel.WAKE_TEX.length, BoatFeel.WAKE.motor.step, "TextureLength equals the step (3)")
 		t.eq(BoatFeel.WAKE_TEX.length, 3, "TextureLength 3")
 		local m = BoatFeel.WAKE.motor
-		t.ok(near(m.base, 0.38) and near(m.life, 3.6) and near(m.w0, 0.5) and near(m.w1, 1.2) and near(m.w1Speed, 1.6), "the motor wake's numbers")
+		t.ok(near(m.base, 0.55) and near(m.life, 3.6) and near(m.w0, 0.5) and near(m.w1, 1.2) and near(m.w1Speed, 1.6), "the motor wake's numbers")
 		-- Not on a timer: nothing until the stern has gone a whole step.
 		local a = Vector3.new(0, 0.1, 0)
 		local none, last0 = BoatFeel.wakeDrops(a, Vector3.new(2.9, 0.1, 0), 3)
@@ -209,7 +209,7 @@ return function(t, Shared)
 	t.test("N4 review 1: soft side lights, a brighter stern light, dark housings", function()
 		t.ok(near(BoatFeel.LIGHT.red.brightness, 0.35) and BoatFeel.LIGHT.red.range == 4, "red 0.35, range 4")
 		t.ok(near(BoatFeel.LIGHT.green.brightness, 0.35) and BoatFeel.LIGHT.green.range == 4, "green 0.35, range 4")
-		t.ok(near(BoatFeel.LIGHT.white.brightness, 0.8) and BoatFeel.LIGHT.white.range == 7, "white 0.8, range 7")
+		t.ok(near(BoatFeel.LIGHT.white.brightness, 0.3) and near(BoatFeel.LIGHT.white.range, 4.5), "white 0.3, range 4.5 (N4 review 2)")
 		t.ok(BoatFeel.LIGHT_COLORS.red == Color3.fromRGB(232, 70, 52), "red 232,70,52")
 		t.ok(BoatFeel.LIGHT_COLORS.green == Color3.fromRGB(70, 200, 120), "green 70,200,120")
 		local h = BoatFeel.LAMP_HOUSING.color
@@ -218,7 +218,9 @@ return function(t, Shared)
 
 	t.test("N4 review 1: every lamp sits on its hull (gap to the art's box under 0.05)", function()
 		local d = BoatFeel.ART.Dinghy.lights
-		t.ok(d.red == Vector3.new(-0.45, 1.34, -3.4) and d.green == Vector3.new(0.45, 1.34, -3.4), "the dinghy's side lights on the tube crown")
+		-- N4 review 2: on the scaled tube crown, the ball's own 0.146 gap kept.
+		t.ok((d.red - Vector3.new(-0.61875, 1.78775, -4.675)).Magnitude < 1e-6 and (d.green - Vector3.new(0.61875, 1.78775, -4.675)).Magnitude < 1e-6, "the dinghy's side lights on the tube crown")
+		t.ok((d.white - Vector3.new(0, 3.1075, 4.74375)).Magnitude < 1e-6, "its stern light 0.11 over the scaled cowl top")
 		for _, id in { "Canoe", "Dinghy", "DeepV" } do
 			for key, pos in BoatFeel.ART[id].lights :: any do
 				local gap = BoatFeel.lampGap(id, pos)
@@ -244,8 +246,80 @@ return function(t, Shared)
 		t.ok(BoatFeel.legLow(0.64, 0) < c.floor.y, "the plain sit pokes through the canoe floor")
 		t.ok(BoatFeel.legLow(0.64, 70) < c.floor.y, "70 is not enough in the canoe")
 		t.eq(BoatFeel.kneeStraighten(0.64, c.floor.y), 75, "75 clears it")
-		-- The dinghy's passenger sits on the floor boards (0.309): straight legs.
-		t.eq(BoatFeel.kneeStraighten(0.309, BoatFeel.ART.Dinghy.floor.y), 90, "legs out straight on the floor")
+		-- The dinghy's passenger sits on the floor boards (0.309 on the model, 0.425 drawn 1.375 times):
+		-- straight legs.
+		t.eq(BoatFeel.kneeStraighten(0.309 * BoatFeel.DINGHY_SCALE, BoatFeel.ART.Dinghy.floor.y), 90, "legs out straight on the floor")
+	end)
+
+	t.test("N4 review 2: the dinghy drawn 1.375 times, every number scaled with it", function()
+		local S = BoatFeel.DINGHY_SCALE
+		t.eq(S, 1.375, "scale 1.375")
+		local a = BoatFeel.ART.Dinghy
+		t.eq(a.scale, S, "the client and the mooring ScaleTo this")
+		t.eq(BoatFeel.ART.Canoe.scale, nil, "the canoe at its own size")
+		t.eq(a.lift, 0, "pivot still on the waterline")
+		local function v(x, y, z)
+			return Vector3.new(x, y, z) * S
+		end
+		t.ok(((a.seats :: any).Helm - Vector3.new(0, 1.1, 0.9625)).Magnitude < 1e-6, "the helm on the bench (0, 1.1, 0.96)")
+		t.ok((a.bow - v(0, 0.1, -4.1)).Magnitude < 1e-6 and (a.stern - v(0, 0.05, 4.6)).Magnitude < 1e-6, "bow and stern")
+		t.ok(near(a.halfBeam, 1.7 * S) and near(a.trimPivotZ, 4.3 * S), "half beam and trim pivot")
+		t.ok(near(a.floor.y, 0.27 * S) and near(a.floor.halfW, 1.4 * S) and near(a.floor.halfL, 3.3 * S), "the floor")
+		local box = BoatFeel.ART_BOX.Dinghy
+		t.ok((box.min - v(-2, -1.12, -4)).Magnitude < 1e-6 and (box.max - v(2, 2.18, 4.4)).Magnitude < 1e-6, "the art's box")
+		t.ok(near(box.max.X - box.min.X, 5.5) and near(box.max.Z - box.min.Z, 11.55), "5.5 wide, 11.55 with the motor")
+		-- BoatData's hull matches the drawn hull.
+		t.ok(near(BoatData.byId.Dinghy.length, 11) and near(BoatData.byId.Dinghy.width, 5.5), "the hull 11 by 5.5")
+		-- The shoulders (an R15 avatar's are about 2 across) now fill well under half the beam.
+		t.ok(2 / BoatData.byId.Dinghy.width < 0.4, "room in the boat")
+	end)
+
+	t.test("N4 review 2: the wake fades with the boat, gone within about a second of a stop", function()
+		t.eq(BoatFeel.wakeGainTarget(0), 0, "none when stopped")
+		t.eq(BoatFeel.wakeGainTarget(0.08), 0, "none at 8 percent")
+		t.ok(near(BoatFeel.wakeGainTarget(0.205), 0.5), "half at 20.5 percent")
+		t.eq(BoatFeel.wakeGainTarget(0.33), 1, "full at 33 percent")
+		t.eq(BoatFeel.wakeGainTarget(-1), 1, "reverse counts by size")
+		-- Up: eased over 0.25 s from nothing.
+		local g = 0
+		for _ = 1, 15 do
+			g = BoatFeel.wakeGainStep(g, 1, 1 / 60)
+		end
+		t.ok(near(g, 1 - math.exp(-0.25 / 0.25), 1e-6), "up with tau 0.25 (" .. g .. ")")
+		-- Stopped dead from full: under 0.05 one second later.
+		g = 1
+		local tAt = 0
+		while tAt < 1.0 - 1e-9 do
+			g = BoatFeel.wakeGainStep(g, 0, 1 / 60)
+			tAt += 1 / 60
+		end
+		t.ok(g < 0.05, "gain under 0.05 at 1.0 s after a stop (" .. g .. ")")
+		t.ok(near(g, math.exp(-1 / 0.3), 1e-6), "down with tau 0.3")
+		-- A beam end under the gain.
+		t.ok(near(BoatFeel.gained(0.55, 1), 0.55), "full gain: as drawn")
+		t.ok(near(BoatFeel.gained(0.55, 0), 1), "no gain: clear")
+		t.ok(near(BoatFeel.gained(0.6, 0.5), 0.8), "1 - (1 - tr) * gain")
+	end)
+
+	t.test("N4 review 2: flat puffs at the arms' heads and a stern spray above 30 percent (motor boats)", function()
+		local P, S = BoatFeel.WAKE_PUFF, BoatFeel.STERN_SPRAY
+		t.ok(near(BoatFeel.puffRate("Dinghy", 1), 14) and near(BoatFeel.puffRate("Dinghy", 0.5), 7), "14 a second times the speed")
+		t.eq(BoatFeel.puffRate("Canoe", 1), 0, "no puffs off the canoe")
+		t.ok(near(BoatFeel.puffRate("Dinghy", 1, "phone"), 14 * BoatFeel.PHONE_RATE), "lighter on a phone")
+		t.ok(P.life[1] == 1.0 and P.life[2] == 1.5 and P.size[1] == 0.5 and P.size[2] == 2.2 and near(P.transparency, 0.6), "puff life, size, peak")
+		t.eq(BoatFeel.sternSprayRate("Dinghy", 0.3), 0, "no stern spray at 30 percent")
+		t.ok(near(BoatFeel.sternSprayRate("Dinghy", 0.5), 11), "22 a second times the speed past it")
+		t.ok(near(BoatFeel.sternSprayRate("DeepV", 1), 22), "22 at full")
+		t.eq(BoatFeel.sternSprayRate("Canoe", 1), 0, "none off the canoe")
+		t.ok(S.speed[1] == 2 and S.speed[2] == 4 and S.angle == 55, "speed 2 to 4, 55 degrees aft")
+		t.ok(near(S.life[1], 0.35) and near(S.life[2], 0.6) and near(S.size[1], 0.5) and near(S.size[2], 1.3), "life and size")
+	end)
+
+	t.test("N4 review 2: the seat camera keeps 14 studs back (the Deep-V 20) and looks from 1.5 higher", function()
+		t.eq(BoatFeel.seatMinZoom("Dinghy"), 14, "dinghy 14")
+		t.eq(BoatFeel.seatMinZoom("Canoe"), 14, "canoe 14")
+		t.eq(BoatFeel.seatMinZoom("DeepV"), 20, "Deep-V 20")
+		t.ok(BoatFeel.SEAT_CAMERA.offset == Vector3.new(0, 1.5, 0), "offset (0, 1.5, 0)")
 	end)
 
 	t.test("the wash and swirls are soft: faint puffs that end clear", function()

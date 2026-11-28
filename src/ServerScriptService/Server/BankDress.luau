@@ -73,6 +73,11 @@ BankDress.FOOTPATH_SLOT = 24
 BankDress.FOREST_SLOT = 25
 BankDress.HILL_SLOT = 27 -- the green forest floor on the hills (MaterialKit.SLOTS)
 BankDress.MEADOW_SLOT = 2 -- the stock Grass slot (MeadowGrass, with blades)
+-- N4 review 2 (11/28/2026): no grass blades within TROPHY_CLEAR studs of the Trophy Wall (they
+-- stood up through its foot): those meadow voxels become the bladeless lawn (slot 26, MeadowLawn
+-- on LeafyGrass, as round the stands), kept in Lake.BankKit.TrophyRecords for revert.
+BankDress.TROPHY_CLEAR = 2.5
+BankDress.LAWN_SLOT = 26
 local CELL = 4
 
 -- The old trees: kit trees within this far of the dock (N1 round 4: was 120 from the lake loop;
@@ -330,6 +335,55 @@ local function paintHill(b: Scatter.Blob, g: number, seed: number, records: Fold
 	return n
 end
 
+-- Repaints the bladed meadow voxels (slot 2) round the Trophy Wall's box, TROPHY_CLEAR out, as
+-- the bladeless lawn, and keeps the region's record in `records`. Every 4 stud cell that reaches
+-- into that box counts. 0 when the wall is not there.
+local function paintTrophyClear(lake: Instance, records: Folder): number
+	local wall = lake:FindFirstChild("TrophyWall", true)
+	if not wall or not wall:IsA("Model") then
+		return 0
+	end
+	local cf, size = wall:GetBoundingBox()
+	local lo, hi = Vector3.new(math.huge, math.huge, math.huge), Vector3.new(-math.huge, -math.huge, -math.huge)
+	for _, sx in { -1, 1 } do
+		for _, sy in { -1, 1 } do
+			for _, sz in { -1, 1 } do
+				local p = cf:PointToWorldSpace(Vector3.new(sx * size.X, sy * size.Y, sz * size.Z) / 2)
+				lo = Vector3.new(math.min(lo.X, p.X), math.min(lo.Y, p.Y), math.min(lo.Z, p.Z))
+				hi = Vector3.new(math.max(hi.X, p.X), math.max(hi.Y, p.Y), math.max(hi.Z, p.Z))
+			end
+		end
+	end
+	local R = BankDress.TROPHY_CLEAR
+	local t = workspace.Terrain
+	local region = Region3.new(Vector3.new(lo.X - R, lo.Y - 12, lo.Z - R), Vector3.new(hi.X + R, lo.Y + 8, hi.Z + R)):ExpandToGrid(CELL)
+	local ch = t:ReadVoxelChannels(region, CELL, { "SolidMaterialIndex", "SolidOccupancy" }) :: any
+	local idx, occ = ch.SolidMaterialIndex, ch.SolidOccupancy
+	local sz = ch.Size :: Vector3
+	local record = hexRecord(idx, sz.X, sz.Y, sz.Z)
+	local n = 0
+	for x = 1, sz.X do
+		for y = 1, sz.Y do
+			for z = 1, sz.Z do
+				if occ[x][y][z] > 0 and idx[x][y][z] == BankDress.MEADOW_SLOT then
+					idx[x][y][z] = BankDress.LAWN_SLOT
+					n += 1
+				end
+			end
+		end
+	end
+	if n > 0 then
+		t:WriteVoxelChannels(region, CELL, { SolidMaterialIndex = idx })
+		local rec = Instance.new("StringValue")
+		rec.Name = "TrophyWall"
+		rec.Value = record
+		rec:SetAttribute("Lo", region.CFrame.Position - region.Size / 2)
+		rec:SetAttribute("Hi", region.CFrame.Position + region.Size / 2)
+		rec.Parent = records
+	end
+	return n
+end
+
 -- Puts back every voxel in a record's region that still holds one of `slots` (every voxel when
 -- nil), from the record. Second result: false when the record does not match its region.
 local function restore(rec: StringValue, slots: { [number]: boolean }?): (number, boolean)
@@ -387,6 +441,17 @@ local MAIN_SLOTS = {
 -- the main region. Second result: false when any record failed to match.
 local function unpaint(folder: Instance): (number, boolean)
 	local n, ok = 0, true
+	-- The Trophy Wall's lawn first (painted last, over the main paint).
+	local trophy = folder:FindFirstChild("TrophyRecords")
+	if trophy then
+		for _, rec in trophy:GetChildren() do
+			if rec:IsA("StringValue") then
+				local m, good = restore(rec, { [BankDress.LAWN_SLOT] = true })
+				n += m
+				ok = ok and good
+			end
+		end
+	end
 	local hills = folder:FindFirstChild("HillRecords")
 	if hills then
 		local list = hills:GetChildren()
@@ -445,6 +510,8 @@ export type Result = {
 	reedsMoved: number, -- reed clumps on dry ground moved into the wet band (Scatter.seatReeds)
 	reedsSunk: number, -- and those sunk REED_SINK more instead
 	dockSandVoxels: number, -- the dock foot's meadow voxels put back to sand
+	hubPines: number, -- kit pines behind the hub's tree row (Scatter.hubPines, N4 review 2)
+	trophyVoxels: number, -- meadow voxels round the Trophy Wall made bladeless lawn (N4 review 2)
 }
 
 export type RevertResult = {
@@ -740,6 +807,19 @@ function BankDress.apply(lake: Instance, seed: number?, tuning: { [string]: any 
 		end
 	end
 
+	-- N4 review 2: a second row of kit pines behind the hub's tree row (Scatter.hubPines).
+	local nHub = 0
+	for _, it in Scatter.hubPines(s, plan, tuning) do
+		if placeItem(it, true) then
+			nHub += 1
+		end
+	end
+	-- N4 review 2: no grass blades within TROPHY_CLEAR of the Trophy Wall.
+	local trophyRecords = Instance.new("Folder")
+	trophyRecords.Name = "TrophyRecords"
+	trophyRecords.Parent = folder
+	local nTrophy = paintTrophyClear(lake, trophyRecords)
+
 	-- The old straight paths, the old leafy bushes and the old reeds round the lake: hidden,
 	-- kept for revert. The reeds only once the kit reeds exist.
 	local parts = pathParts(lake)
@@ -915,6 +995,8 @@ function BankDress.apply(lake: Instance, seed: number?, tuning: { [string]: any 
 		reedsMoved = reedsMoved,
 		reedsSunk = reedsSunk,
 		dockSandVoxels = pc.dockSand,
+		hubPines = nHub,
+		trophyVoxels = nTrophy,
 	}
 end
 

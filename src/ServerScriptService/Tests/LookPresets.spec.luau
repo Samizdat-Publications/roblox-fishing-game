@@ -568,10 +568,47 @@ return function(t, Shared)
 		local g = LookPresets.REALISTIC_GRADE
 		local gd = LookPresets.at(18.7, nil, nil, nil, g).Lighting.ExposureCompensation
 		near(gd, 0.75, "graded dusk exposure 0.75")
-		-- Golden and dawn as they were (set A closed on them).
+		-- Golden's exposure as it was (set A closed on it); its water and dawn's since N4 review 2 below.
 		near(LookPresets.at(17.5).Lighting.ExposureCompensation, 0, "golden exposure unchanged")
-		near(LookPresets.homeWaterAt(17.5).WaterReflectance, 0.55, "golden water unchanged")
-		near(LookPresets.homeWaterAt(6.6).WaterReflectance, 0.75, "dawn water unchanged")
+	end)
+
+	t.test("N4 review 2: no more exposure; dusk water its own blue, less mirror at golden and dawn, the moon at 6", function()
+		local function near(a, b, what)
+			t.ok(math.abs(a - b) < 1e-3, string.format("%s: %.4f want %.4f", what, a, b))
+		end
+		-- Dusk's exposure stays where review 1 put it; the water does the work.
+		near(LookPresets.at(18.7).Lighting.ExposureCompensation, 0.9, "dusk exposure unchanged")
+		local W = LookPresets.WATER_BY_TIME
+		t.ok(W.dusk.WaterColor == Color3.fromRGB(46, 72, 92), "dusk water 46, 72, 92")
+		near(W.dusk.WaterTransparency, 0.25, "dusk water transparency 0.25")
+		near(W.golden.WaterReflectance, 0.42, "golden reflectance 0.42")
+		near(W.dawn.WaterReflectance, 0.6, "dawn reflectance 0.6")
+		t.ok(W.day.WaterColor == nil and W.night.WaterColor == nil, "the others keep home's colour")
+		-- Pure dusk: its own colour and transparency.
+		local w = LookPresets.homeWaterAt(18.7)
+		local ws = LookPresets.weights(18.7)
+		t.ok(math.abs((ws.dusk or 0) - 1) < 1e-9, "18.7 is pure dusk")
+		near(w.WaterColor.R * 255, 46, "dusk colour R")
+		near(w.WaterColor.G * 255, 72, "dusk colour G")
+		near(w.WaterColor.B * 255, 92, "dusk colour B")
+		near(w.WaterTransparency, 0.25, "dusk transparency")
+		near(LookPresets.homeWaterAt(17.5).WaterReflectance, 0.42, "golden water")
+		near(LookPresets.homeWaterAt(6.6).WaterReflectance, 0.6, "dawn water")
+		-- Blended like the creek's: between golden and dusk the colour is the weighted mix.
+		local home = LookPresets.AREAS.home.water.WaterColor
+		for i = 0, 60 do
+			local c = 17 + i * 0.05
+			local wc = LookPresets.homeWaterAt(c)
+			local acc = { 0, 0, 0 }
+			for id, k in LookPresets.weights(c) do
+				local col = (W[id] and W[id].WaterColor) or home
+				acc[1] += col.R * k
+				acc[2] += col.G * k
+				acc[3] += col.B * k
+			end
+			t.ok(math.abs(wc.WaterColor.R - acc[1]) < 1e-6 and math.abs(wc.WaterColor.G - acc[2]) < 1e-6 and math.abs(wc.WaterColor.B - acc[3]) < 1e-6, string.format("colour blend at %.2f", c))
+		end
+		t.eq(LookPresets.MOON_ANGULAR_SIZE, 6, "Sky.MoonAngularSize 6")
 	end)
 
 	t.test("grade: blends between presets with their weights, and stays in range", function()

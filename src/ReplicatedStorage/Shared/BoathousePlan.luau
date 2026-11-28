@@ -173,6 +173,10 @@ local function size(b: BoatData.Boat): (number, number)
 		w, l = 3.18, 12.52
 	elseif b.id == "DeepV" then
 		w, l = 7.19, 17.75
+	elseif b.id == "Dinghy" then
+		-- N4 review 2: drawn 1.375 times (5.5 wide), its outboard reaching 6.05 aft of the pivot;
+		-- twice that as the length puts the motor on the stern line, clear of the float.
+		l = 2 * BoatFeel.ART_BOX.Dinghy.max.Z
 	end
 	return w, l
 end

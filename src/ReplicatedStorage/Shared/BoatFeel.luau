@@ -22,6 +22,7 @@ export type Art = {
 	hero: string, -- model name in ServerStorage.Art (copied to ReplicatedStorage.BoatArt): desktop tier
 	plain: string, -- the phone tier's twin (the same model until one is made)
 	lift: number, -- y of the model's pivot above the waterline (negative: below)
+	scale: number?, -- Model:ScaleTo this on every copy (about its pivot, on the waterline); nil is 1
 	yaw: number, -- degrees to turn the model about +Y so its bow points along -Z
 	trimPivotZ: number, -- the bow lifts about this point (the stern), so trim never sinks it
 	floor: Floor,
@@ -38,6 +39,16 @@ export type Art = {
 -- the current Dinghy model (art/scripts/boats.py: floor top 0.25 above the tubes' bottom, whose
 -- pivot is the bottom of the bounding box, the motor's skeg, 0.525 below that). The Deep-V is not
 -- for sale; its numbers are a first guess.
+--
+-- N4 review 2 (11/28/2026): the dinghy is drawn 1.375 times its model (`scale`; the avatar's
+-- shoulders spanned its whole 4 stud beam), so every dinghy number below is its model's number
+-- times DINGHY_SCALE. The lamps themselves are not scaled (0.16 balls in 0.1 housings), so a lamp
+-- keeps its own gap to the surface it sits on: its point is the surface point scaled plus the old gap.
+local DINGHY_SCALE = 1.375
+BoatFeel.DINGHY_SCALE = DINGHY_SCALE
+local function ds(x: number, y: number, z: number): Vector3
+	return Vector3.new(x, y, z) * DINGHY_SCALE
+end
 BoatFeel.ART = {
 	Canoe = {
 		hero = "CedarCanoe",
@@ -59,24 +70,32 @@ BoatFeel.ART = {
 	Dinghy = {
 		-- The re-skin (11/28/2026): pivot on the waterline, bow -Z. Art.DinghyHero and Art.DinghyPlain
 		-- carry their outboard as a second part at (0, 1.00, 3.38) (the separate DinghyOutboard models
-		-- wait for a tilting motor).
+		-- wait for a tilting motor). Drawn at DINGHY_SCALE (N4 review 2): ScaleTo scales about the
+		-- pivot, so the waterline stays put; the tubes then sit 0.30 into the water (was 0.22).
 		hero = "DinghyHero",
 		plain = "DinghyPlain",
 		lift = 0,
+		scale = DINGHY_SCALE,
 		yaw = 0,
-		trimPivotZ = 4.3,
-		floor = { y = 0.27, halfW = 1.4, halfL = 3.3, rocker = 0 },
-		bow = Vector3.new(0, 0.1, -4.1),
-		stern = Vector3.new(0, 0.05, 4.6),
-		halfBeam = 1.7,
+		trimPivotZ = 4.3 * DINGHY_SCALE,
+		floor = { y = 0.27 * DINGHY_SCALE, halfW = 1.4 * DINGHY_SCALE, halfL = 3.3 * DINGHY_SCALE, rocker = 0 },
+		bow = ds(0, 0.1, -4.1),
+		stern = ds(0, 0.05, 4.6),
+		halfBeam = 1.7 * DINGHY_SCALE,
 		-- N4 review 1 (11/28/2026): the side lights on the tube crown (they floated 0.15 off the bow
 		-- at (+-0.6, 1.25, -3.9)), the stern light on the outboard's cowl top (2.18 at z 3.45; it
 		-- floated 1.4 behind the motor at (0, 1.9, 4.5)). Measured against the meshes in
 		-- art/models (DinghyHero.glb plus DinghyOutboard.glb at its pivot): every lamp's ball is
 		-- within 0.05 of the surface (side lights 0.066 from it, the stern light 0.114, its housing
-		-- resting on the cowl).
-		lights = { red = Vector3.new(-0.45, 1.34, -3.4), green = Vector3.new(0.45, 1.34, -3.4), white = Vector3.new(0, 2.29, 3.45) },
-		seats = { Helm = Vector3.new(0, 0.8, 0.7) }, -- on the bench (the passenger keeps the server's seat)
+		-- resting on the cowl). N4 review 2: the surfaces scaled, the gaps kept (side lights 0.146
+		-- from ball centre to the crown, the stern light 0.11 over the cowl top), so
+		-- red/green (+-0.62, 1.788, -4.675) and white (0, 3.1075, 4.744).
+		lights = {
+			red = Vector3.new(-0.45 * DINGHY_SCALE, 1.194 * DINGHY_SCALE + 0.146, -3.4 * DINGHY_SCALE),
+			green = Vector3.new(0.45 * DINGHY_SCALE, 1.194 * DINGHY_SCALE + 0.146, -3.4 * DINGHY_SCALE),
+			white = Vector3.new(0, 2.18 * DINGHY_SCALE + 0.11, 3.45 * DINGHY_SCALE),
+		},
+		seats = { Helm = ds(0, 0.8, 0.7) }, -- on the bench, (0, 1.1, 0.9625) (the passenger keeps the server's seat)
 	},
 	DeepV = {
 		hero = "DeepV",
@@ -109,7 +128,7 @@ BoatFeel.ART = {
 -- in the air (the spec checks every lamp's gap to the box is under LAMP_GAP).
 BoatFeel.ART_BOX = {
 	Canoe = { min = Vector3.new(-1.59, -0.22, -6.258), max = Vector3.new(1.59, 1.747, 6.258) },
-	Dinghy = { min = Vector3.new(-2, -1.12, -4), max = Vector3.new(2, 2.18, 4.4) },
+	Dinghy = { min = ds(-2, -1.12, -4), max = ds(2, 2.18, 4.4) }, -- 5.5 x 4.54 x 11.55 at DINGHY_SCALE (z -5.5 to 6.05)
 	DeepV = { min = Vector3.new(-3.595, -0.83, -8.875), max = Vector3.new(3.595, 3.31, 8.875) },
 } :: { [string]: { min: Vector3, max: Vector3 } }
 BoatFeel.LAMP_RADIUS = 0.08 -- the lamp ball (0.16 across)
@@ -391,8 +410,10 @@ BoatFeel.KELVIN = math.tan(math.rad(19.47)) -- the wake's arms spread at this sh
 -- beam shows one whole tile and the foam runs on unbroken from beam to beam. The motor wake is
 -- brighter and longer (base 0.6 to 0.38, life 2.4 to 3.6, w0 0.35 to 0.5, w1 0.9 to 1.2,
 -- w1Speed 1.2 to 1.6). The beams lie flat by their own setting, WAKE_BEAM_NORMAL.
+-- N4 review 2 (11/28/2026): the motor wake's peak fainter again (base 0.38 to 0.55); the soft
+-- puffs (WAKE_PUFF) carry the white now, and the whole wake fades with the boat (wakeGain).
 BoatFeel.WAKE = {
-	motor = { from = 0.08, life = 3.6, step = 3, w0 = 0.5, w1 = 1.2, w1Speed = 1.6, base = 0.38, baseSlow = 0.2, fadeIn = 0.25, hold = 0.3 },
+	motor = { from = 0.08, life = 3.6, step = 3, w0 = 0.5, w1 = 1.2, w1Speed = 1.6, base = 0.55, baseSlow = 0.2, fadeIn = 0.25, hold = 0.3 },
 	paddle = { from = 0.08, life = 1.8, step = 3, w0 = 0.08, w1 = 0.22, w1Speed = 0.12, base = 0.72, baseSlow = 0.15, fadeIn = 0.3, hold = 0.3 },
 }
 BoatFeel.WAKE_PHONE = { life = 0.6, step = 2 } -- the phone tier: 60 percent of the life, a point every 6 studs (half as many)
@@ -500,6 +521,29 @@ function BoatFeel.wakeTextureSpeed(speedFrac: number): number
 	return t.drift * math.clamp(math.abs(speedFrac), 0, 1) / t.length
 end
 
+-- N4 review 2 (11/28/2026): the wake lingered on still water after the boat stopped (each point
+-- lives out its whole life). Now the whole wake, every beam of both arms, is scaled by a gain that
+-- follows the boat's speed: nothing under 8 percent of top speed, full from 33 percent, eased up
+-- over 0.25 s and down over 0.3 s, so it is gone (under 0.05) about a second after a stop.
+BoatFeel.WAKE_GAIN = { from = 0.08, span = 0.25, tauUp = 0.25, tauDown = 0.3 }
+
+-- The gain the wake heads for at this share of top speed (0 to 1).
+function BoatFeel.wakeGainTarget(speedFrac: number): number
+	local g = BoatFeel.WAKE_GAIN
+	return math.clamp((math.abs(speedFrac) - g.from) / g.span, 0, 1)
+end
+
+-- The gain after `dt` seconds, eased from `current` toward the target for this speed.
+function BoatFeel.wakeGainStep(current: number, speedFrac: number, dt: number): number
+	local g = BoatFeel.WAKE_GAIN
+	return BoatFeel.approach(current, BoatFeel.wakeGainTarget(speedFrac), dt, g.tauUp, g.tauDown)
+end
+
+-- A beam end's transparency under the gain: 1 - (1 - tr) * gain (clear at gain 0).
+function BoatFeel.gained(tr: number, gain: number): number
+	return 1 - (1 - tr) * math.clamp(gain, 0, 1)
+end
+
 -- How far a wake piece has spread out from where it was left, after `age` seconds at speed.
 function BoatFeel.wakeSpread(speed: number, age: number): number
 	return math.abs(speed) * BoatFeel.KELVIN * math.max(0, age)
@@ -524,6 +568,32 @@ function BoatFeel.washRate(boatId: string, speedFrac: number, tier: string?): nu
 	return if tier == "phone" then r * BoatFeel.PHONE_RATE else r
 end
 
+-- N4 review 2 (11/28/2026), motor boats only. Flat puffs of the spray map lying on the water at
+-- both wake start points (the arms' heads), so the wake starts soft and white, not as two lines.
+BoatFeel.WAKE_PUFF = { rate = 14, life = { 1.0, 1.5 }, size = { 0.5, 2.2 }, transparency = 0.6 }
+-- And a camera-facing spray thrown up and aft off the stern above 30 percent of top speed:
+-- `angle` degrees from straight up toward the stern.
+BoatFeel.STERN_SPRAY = { from = 0.3, rate = 22, speed = { 2, 4 }, angle = 55, life = { 0.35, 0.6 }, size = { 0.5, 1.3 } }
+
+-- Puffs a second at each wake start point (motor boats; 0 for the canoe).
+function BoatFeel.puffRate(boatId: string, speedFrac: number, tier: string?): number
+	if kindOf(boatId) ~= "motor" then
+		return 0
+	end
+	local r = BoatFeel.WAKE_PUFF.rate * math.clamp(math.abs(speedFrac), 0, 1)
+	return if tier == "phone" then r * BoatFeel.PHONE_RATE else r
+end
+
+-- Stern spray particles a second (motor boats over STERN_SPRAY.from; 0 otherwise).
+function BoatFeel.sternSprayRate(boatId: string, speedFrac: number, tier: string?): number
+	local s = math.clamp(math.abs(speedFrac), 0, 1)
+	if kindOf(boatId) ~= "motor" or s <= BoatFeel.STERN_SPRAY.from then
+		return 0
+	end
+	local r = BoatFeel.STERN_SPRAY.rate * s
+	return if tier == "phone" then r * BoatFeel.PHONE_RATE else r
+end
+
 ----------------------------------------------------------------------------------------
 -- Camera
 
@@ -536,6 +606,17 @@ function BoatFeel.approach(current: number, target: number, dt: number, tauUp: n
 		return target
 	end
 	return current + (target - current) * (1 - math.exp(-dt / tau))
+end
+
+-- N4 review 2 (11/28/2026): in any boat seat the camera may come no nearer than `minZoom` (the
+-- Deep-V `minZoomDeepV`) and looks from `offset` over the humanoid's usual focus, so the boat is
+-- always in the frame. Put back on every exit (leaving the seat, death, the boat despawning).
+BoatFeel.SEAT_CAMERA = { minZoom = 14, minZoomDeepV = 20, offset = Vector3.new(0, 1.5, 0) }
+
+-- Player.CameraMinZoomDistance while seated in this boat.
+function BoatFeel.seatMinZoom(boatId: string): number
+	local c = BoatFeel.SEAT_CAMERA
+	return if boatId == "DeepV" then c.minZoomDeepV else c.minZoom
 end
 
 -- How far the camera moves back and up, and the field of view added, at this eased share of
@@ -555,7 +636,7 @@ end
 BoatFeel.LIGHT = {
 	red = { brightness = 0.35, range = 4 },
 	green = { brightness = 0.35, range = 4 },
-	white = { brightness = 0.8, range = 7 },
+	white = { brightness = 0.3, range = 4.5 }, -- N4 review 2: was 0.8, range 7 (its glint on the water read as foam at rest)
 }
 BoatFeel.LIGHT_COLORS = {
 	red = Color3.fromRGB(232, 70, 52),

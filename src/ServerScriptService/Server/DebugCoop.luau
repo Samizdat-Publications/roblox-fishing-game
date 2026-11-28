@@ -24,6 +24,8 @@
 --   F:Invoke("run", "PlayerName", 47, 12, 60)               -- shot c03: a straight run east at full throttle
 --   F:Invoke("runlog", "PlayerName")                        -- { log = "unixms:x,...", x = hull x now }
 --   F:Invoke("endrun", "PlayerName")                        -- hands the helm back
+--   F:Invoke("slips", "PlayerName", "Canoe", "Dinghy")      -- shot c01: slip 1 a canoe, slip 2 a dinghy
+--   F:Invoke("unstage")                                     -- takes the still copies away
 -- docs/DECISIONS.md ("Studio test helper for the N4 two-player checks") has the full check.
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -185,8 +187,9 @@ function DebugCoop.seatInBoat(owner: Player): (Model?, string?)
 	return m, nil
 end
 
--- Remove every dummy (and the angler's fish).
+-- Remove every dummy (and the angler's fish), and any staged boats.
 function DebugCoop.clear()
+	BoatService.debugUnstage()
 	if angler then
 		FishingService.debugEndDummy(angler)
 		angler = nil
@@ -239,6 +242,24 @@ local function invoke(cmd: string, a: any, b: any, c: any, d: any): any
 		end
 		local log, x = BoatService.debugRunLog(p)
 		return { log = log, x = x }
+	elseif cmd == "slips" then
+		-- Shot c01: F:Invoke("slips", "PlayerName", "Canoe", "Dinghy"): slip i holds the i-th boat
+		-- (the player's own where it is one of them, else a still copy).
+		local p = playerNamed(a)
+		if not p then
+			return "no such player"
+		end
+		local ids = {}
+		for _, v in { b, c, d } do
+			if type(v) == "string" then
+				table.insert(ids, v)
+			end
+		end
+		local _, said = BoatService.debugArrange(p, ids)
+		return said
+	elseif cmd == "unstage" then
+		BoatService.debugUnstage()
+		return true
 	elseif cmd == "endrun" then
 		local p = playerNamed(a)
 		if p then

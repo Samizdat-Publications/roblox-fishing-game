@@ -393,6 +393,10 @@ local function buildMooring(root: Model, missing: { string }): number
 		local boat = boatName and art(boatName, missing, true)
 		if boat then
 			boat.Name = "Boat"
+			local sc = BoatFeel.ART[s.id] and BoatFeel.ART[s.id].scale
+			if sc and sc ~= 1 then
+				boat:ScaleTo(sc) -- the dinghy is drawn 1.375 times (N4 review 2), here as on the water
+			end
 			boat:PivotTo(s.boat)
 			boat.Parent = station
 		end

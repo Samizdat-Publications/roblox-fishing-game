@@ -914,14 +914,22 @@ end
 -- LOOK_AREAS_ON). Day was the home water as it was (AREAS.home.water) until the noon water of
 -- the Gemini fold-in (11/27/2026, N1 close-out): a finer chop (wave 0.12 to 0.09, speed 8 to 6)
 -- and reflectance 0.35 to 0.28; transparency kept at 0.42. AREAS.home.water is unchanged.
-export type TimeWater = { WaterTransparency: number, WaterReflectance: number, WaterWaveSize: number, WaterWaveSpeed: number }
+-- N4 review 2 (11/28/2026): an entry may carry its own WaterColor (blended by the preset weights,
+-- as creekWaterAt does; an entry without one uses the home area's colour). Dusk is a blue
+-- (46, 72, 92) at transparency 0.25 instead of brighter exposure; golden's mirror 0.55 to 0.42 and
+-- dawn's 0.75 to 0.6.
+export type TimeWater = { WaterTransparency: number, WaterReflectance: number, WaterWaveSize: number, WaterWaveSpeed: number, WaterColor: Color3? }
+
+-- N4 review 2 (11/28/2026): Sky.MoonAngularSize (DayNight sets it on the place's Sky at start;
+-- Roblox's default is 11).
+LookPresets.MOON_ANGULAR_SIZE = 6
 
 -- stylua: ignore
 LookPresets.WATER_BY_TIME = {
-	dawn =   { WaterWaveSize = 0.03, WaterWaveSpeed = 3, WaterReflectance = 0.75, WaterTransparency = 0.38 }, -- glass
+	dawn =   { WaterWaveSize = 0.03, WaterWaveSpeed = 3, WaterReflectance = 0.6,  WaterTransparency = 0.38 }, -- glass (N4 review 2: mirror 0.75 to 0.6)
 	day =    { WaterWaveSize = 0.09, WaterWaveSpeed = 6, WaterReflectance = 0.28, WaterTransparency = 0.42 }, -- fine noon chop (N1 close-out)
-	golden = { WaterWaveSize = 0.08, WaterWaveSpeed = 6, WaterReflectance = 0.55, WaterTransparency = 0.42 }, -- settling, glints
-	dusk =   { WaterWaveSize = 0.04, WaterWaveSpeed = 3, WaterReflectance = 0.3,  WaterTransparency = 0.4 }, -- N4 review 1: less mirror (was 0.6, 0.05, 4)
+	golden = { WaterWaveSize = 0.08, WaterWaveSpeed = 6, WaterReflectance = 0.42, WaterTransparency = 0.42 }, -- settling, glints (N4 review 2: 0.55 to 0.42)
+	dusk =   { WaterWaveSize = 0.04, WaterWaveSpeed = 3, WaterReflectance = 0.3,  WaterTransparency = 0.25, WaterColor = rgb(46, 72, 92) }, -- N4 review 1: less mirror (was 0.6, 0.05, 4); review 2: its own blue, transparency 0.4 to 0.25
 	night =  { WaterWaveSize = 0.08, WaterWaveSpeed = 3, WaterReflectance = 0.25, WaterTransparency = 0.42 }, -- calm, holds the moon (N1 review 2: less mirror, more break-up, against the tan reflection band)
 } :: { [string]: TimeWater }
 
@@ -929,14 +937,21 @@ local WATER_KEYS = { "WaterTransparency", "WaterReflectance", "WaterWaveSize", "
 
 -- The home lake's water at this clock (a fresh table).
 function LookPresets.homeWaterAt(clock: number): Water
-	local out = { WaterColor = LookPresets.AREAS.home.water.WaterColor, WaterTransparency = 0, WaterReflectance = 0, WaterWaveSize = 0, WaterWaveSpeed = 0 } :: any
+	local home = LookPresets.AREAS.home.water.WaterColor
+	local out = { WaterTransparency = 0, WaterReflectance = 0, WaterWaveSize = 0, WaterWaveSpeed = 0 } :: any
+	local total = 0
 	for id, w in LookPresets.weights(clock) do
 		local tw = LookPresets.WATER_BY_TIME[id]
 		if tw and w > 0 then
+			out.WaterColor = mixColor(out.WaterColor, tw.WaterColor or home, w)
+			total += w
 			for _, k in WATER_KEYS do
 				out[k] += (tw :: any)[k] * w
 			end
 		end
+	end
+	if out.WaterColor == nil or total <= 0 then
+		out.WaterColor = home
 	end
 	return out :: Water
 end

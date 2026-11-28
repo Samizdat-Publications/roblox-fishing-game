@@ -68,6 +68,30 @@ BoatRules.SPOT_NAMES = {
 -- edge (x 4) by more than OBSTACLE_CLEAR at any heading.
 BoatRules.SLIP_X_EDGE = 6.5 -- the near end of each boat, 2.5 studs off the deck
 BoatRules.SLIP_ZS = { 47, 56, 65, 74 }
+-- The mooring posts between the slips (BoatWorld builds them, round, 0.8 across): the near row by
+-- the deck, the far row out in the lake. N4 review 2 (11/28/2026): the near row moved in from
+-- x 7 (SLIP_X_EDGE + 0.5) to 4.6, so the dinghy drawn 1.375 times (11 by 5.5, a 12.1 by 6.05
+-- footprint) can turn round in slips 2 to 4; at slip 1 the end deck is in the way, so it pulls
+-- straight out first, like the canoe.
+BoatRules.SLIP_POST_X = 4.6
+BoatRules.SLIP_FAR_POST_X = BoatRules.SLIP_X_EDGE + 18
+BoatRules.SLIP_POST_R = 0.4
+
+-- The posts' centres (x, z): one at each edge between and outside the slips, in both rows.
+function BoatRules.slipPosts(): { Vector3 }
+	local zs = BoatRules.SLIP_ZS
+	local gap = zs[2] - zs[1]
+	local edges = { zs[1] - gap / 2 }
+	for _, z in zs do
+		table.insert(edges, z + gap / 2)
+	end
+	local out = {}
+	for _, ez in edges do
+		table.insert(out, Vector3.new(BoatRules.SLIP_POST_X, BoatRules.WATER_Y, ez))
+		table.insert(out, Vector3.new(BoatRules.SLIP_FAR_POST_X, BoatRules.WATER_Y, ez))
+	end
+	return out
+end
 
 -- Every box a boat may be over: the lake, the channel and the Big Lake around the island.
 function BoatRules.waters(): { Box }

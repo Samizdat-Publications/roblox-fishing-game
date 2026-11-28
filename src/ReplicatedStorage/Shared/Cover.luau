@@ -79,7 +79,10 @@ Cover.LOG_TILT = 0.12
 -- A log blocks boats only where its top is above this (N4 review 1: the west ends of logs 3 and 5
 -- are fully under water, but every log blocked all 22 studs and the driver got "A log is in the
 -- way" over open water). Fishing snags use the whole log, as before.
-Cover.BOAT_LOG_TOP = -0.55
+-- N4 review 2 (11/28/2026): -0.1 (was -0.55), so only a log that shows above the water stops a
+-- boat: log 5 blocks from its own x 3.25, log 3 from -0.07, log 1 from -6.7. The server's ray for
+-- anything else solid skips the log parts (BoatService), so it cannot disagree with this.
+Cover.BOAT_LOG_TOP = -0.1
 
 -- The stretch of a log's own x (from, to) where its top is above BOAT_LOG_TOP, or nil when none.
 -- Local x here is flat (along the log's yaw, as edgeDistance measures it): the top there is the

@@ -796,7 +796,12 @@
         47
       ],
       "fov": 39.8,
-      "what": "The Cedar Canoe at its slip east of the dock, seen from the water at golden hour"
+      "what": "The Cedar Canoe in slip 1 and the dinghy in slip 2, east of the dock, seen from the water at golden hour. Staged: tools/shots/shots.py snippet c01stage (Server) first",
+      "stage": [
+        "Canoe",
+        "Dinghy"
+      ],
+      "why": "N4 review 2 (11/28/2026): the canoe in slip 1 and the dinghy in slip 2 for the capture (DebugCoop \"slips\", Studio only); the camera is unchanged."
     },
     {
       "id": "c02-slips-boathouse-noon",
@@ -825,26 +830,26 @@
       "place": "lake",
       "clock": 6.6,
       "eye": [
-        62,
-        6,
-        55
+        47,
+        4.5,
+        66
       ],
       "look": [
-        38,
-        0,
-        46.5
+        40,
+        0.5,
+        47
       ],
       "fov": 39.8,
-      "what": "The dinghy under way at dawn with the player at the helm, its wake behind it, from a fixed eye ahead and to the side. Scripted: tools/shots/shots.py snippet c03run (Server) runs it straight east along z 47 at full throttle from x 12; the shot's own snippet waits for the hull to pass x 44 (capture within 40 to 48), and the throttle is off by x 60",
+      "what": "The dinghy under way at dawn with the player at the helm, its wake behind it, from a fixed eye ahead and to the side. Scripted: tools/shots/shots.py snippet c03run (Server) runs it straight east along z 47 at full throttle from x 12; the shot's own snippet waits for the hull to pass x 42 (capture within 39 to 45), and the throttle is off by x 60",
       "avatar": true,
       "run": {
         "z": 47,
         "start_x": 12,
-        "capture_x": 44,
-        "tolerance": 4,
+        "capture_x": 42,
+        "tolerance": 3,
         "stop_x": 60
       },
-      "why": "N4 review 1 (11/28/2026): eye (62, 6, 55), look (38, 0, 46.5), the avatar shown, and a scripted run so every round captures the same moment (was eye (60, 2.5, 58), look (50, 0.5, 47), driven by hand)."
+      "why": "N4 review 2 (11/28/2026): eye (47, 4.5, 66), look (40, 0.5, 47); the capture point moved from x 44 (+-4) to 42 (+-3) so the bigger dinghy's bow stays in the frame (from the new eye it leaves a 16:9 frame near x 46). N4 review 1: eye (62, 6, 55), look (38, 0, 46.5), the avatar shown, and a scripted run so every round captures the same moment (was eye (60, 2.5, 58), look (50, 0.5, 47), driven by hand)."
     },
     {
       "id": "c04-deepv-dusk",

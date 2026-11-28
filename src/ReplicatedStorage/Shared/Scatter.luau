@@ -744,6 +744,7 @@ Scatter.TAGS = {
 	TreeSwap = "FoliageTree",
 	FrontRow = "FoliageTree",
 	BackRow = "FoliageTree",
+	HubPines = "FoliageTree", -- behind the hub's tree row (Scatter.hubPines, N4 review 2)
 	CrestPines = "FoliageTree", -- far pines on the horizon's hill crests (Scatter.crestPines)
 	FootReeds = "FoliageReed", -- either side of the dock foot (N1 close-out)
 	FootStones = "FoliageStone",
@@ -1472,6 +1473,52 @@ end
 -- Points 60 to 300 studs out from the lake (Scatter.roundBox) on ground at least hillMinHeight
 -- high, clear of the Big Lake and its banks, Poisson-spaced. Also returns a blob under each, for
 -- the hill forest floor.
+-- N4 review 2 (11/28/2026): a second row of kit pines behind the hub's tree row (the kit pines
+-- of BackRow, the trees behind the stands as set C's c02 sees them), HUB.depth studs further
+-- south than that row's middle, HUB.count of them (seeded) at HUB.scale, across the stands' span
+-- (TUNING.backX). Clear of the shot cameras and HUB.clear from every item already planned.
+Scatter.HUB = { count = { 12, 16 }, depth = { 8, 20 }, scale = { 1.25, 1.6 }, minDist = 6, clear = 3.5 }
+
+-- The hub row's middle z: the mean z of the plan's BackRow kit pines (ShorePine1/2), or the
+-- middle of the band they are drawn in when there are none.
+function Scatter.hubRowZ(plan: Plan): number
+	local sum, n = 0, 0
+	for _, it in plan.items do
+		if it.group == "BackRow" and string.sub(it.model, 1, 9) == "ShorePine" then
+			sum += it.z
+			n += 1
+		end
+	end
+	if n == 0 then
+		return Scatter.TUNING.backZ[1] + 7
+	end
+	return sum / n
+end
+
+function Scatter.hubPines(seed: number, plan: Plan, tuning: { [string]: any }?): { Item }
+	local T: { [string]: any } = table.clone(Scatter.TUNING)
+	for k, v in tuning or {} do
+		T[k] = v
+	end
+	local H = Scatter.HUB
+	local r = Scatter.rng(seed + 41)
+	local rowZ = Scatter.hubRowZ(plan)
+	local pidx = Scatter.pathIndex(Scatter.homeRoutes(seed))
+	local n = Scatter.int(r, H.count[1], H.count[2])
+	local bx = T.backX
+	local pts = Scatter.poisson(r, n, H.minDist, 6000, function(rr: Rng)
+		return Scatter.range(rr, bx[1], bx[2]), rowZ + Scatter.range(rr, H.depth[1], H.depth[2])
+	end, function(x, z)
+		return Scatter.shotClear(x, z, true) and Scatter.pathEdge(pidx, x, z) > 2.5 and farEnough(plan.items, x, z, H.clear)
+	end)
+	local items: { Item } = {}
+	for _, p in pts do
+		local shadow = math.sqrt((p.x - Scatter.DOCK.x) ^ 2 + (p.z - Scatter.DOCK.z) ^ 2) < T.shadowDist
+		table.insert(items, { model = if Scatter.next(r) < 0.5 then "ShorePine1" else "ShorePine2", group = "HubPines", x = p.x, z = p.z, yaw = Scatter.range(r, 0, TAU), scale = Scatter.range(r, H.scale[1], H.scale[2]), water = false, shadow = shadow })
+	end
+	return items
+end
+
 function Scatter.hillPines(seed: number, height: (number, number) -> number?, tuning: { [string]: any }?, others: { any }?): ({ Item }, { Blob })
 	local T: { [string]: any } = table.clone(Scatter.TUNING)
 	for k, v in tuning or {} do

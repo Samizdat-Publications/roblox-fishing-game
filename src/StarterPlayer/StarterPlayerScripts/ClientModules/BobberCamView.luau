@@ -89,6 +89,13 @@ local function fadeCharacter(amount: number)
 	end
 end
 
+-- The offset the boat seat camera asks for (BoatFeelClient leaves it on the Humanoid as the
+-- BoatCameraOffset attribute; N4 review 2): added under this camera's own, and put back on letting go.
+local function restOffset(hum: Humanoid): Vector3
+	local v = hum:GetAttribute("BoatCameraOffset")
+	return if typeof(v) == "Vector3" then v else Vector3.zero
+end
+
 local function letGo(hum: Humanoid?)
 	local cam = workspace.CurrentCamera
 	fadeCharacter(0)
@@ -97,7 +104,7 @@ local function letGo(hum: Humanoid?)
 		baseFov = nil
 	end
 	if ownsOffset and hum then
-		hum.CameraOffset = Vector3.zero
+		hum.CameraOffset = restOffset(hum)
 	end
 	ownsOffset = false
 end
@@ -151,7 +158,7 @@ local function step(dt: number)
 	local flat = Vector3.new(bobber.X - root.Position.X, 0, bobber.Z - root.Position.Z)
 	local out = if flat.Magnitude > 0.01 then flat.Unit * BobberCam.pull(flat.Magnitude) else Vector3.zero
 	local worldOffset = (Vector3.new(0, BobberCam.RAISE, 0) + out) * w
-	hum.CameraOffset = root.CFrame:VectorToObjectSpace(worldOffset)
+	hum.CameraOffset = restOffset(hum) + root.CFrame:VectorToObjectSpace(worldOffset)
 	ownsOffset = true
 
 	-- Narrow the view just enough for the bobber to read on this screen.

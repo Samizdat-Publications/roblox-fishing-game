@@ -530,10 +530,19 @@ end
 local spawnFor: (Player) -> ()
 local waitingForSlip: { [Player]: boolean } = {}
 
+-- Studio only (shot c01, BoatService.debugArrange): still boats standing in slips for a capture,
+-- by slip. Nobody owns them; they count as taken slips.
+local staged: { [number]: Model } = {}
+
 local function takenSlips(): { [number]: boolean }
 	local taken = {}
 	for _, b in boats do
 		taken[b.slip] = true
+	end
+	for i, m in staged do
+		if m.Parent then
+			taken[i] = true
+		end
 	end
 	return taken
 end
@@ -840,6 +849,14 @@ local function step(dt: number)
 			table.insert(chars, p.Character)
 		end
 	end
+	-- N4 review 2: the logs are Cover's to judge (only where they show above the water,
+	-- Cover.BOAT_LOG_TOP); the ray for anything else solid skips their parts, or a sunk end the
+	-- rules call open water would still stop the boat as "Something is in the way".
+	local lake = workspace:FindFirstChild("Lake")
+	local logs = lake and lake:FindFirstChild("Logs")
+	if logs then
+		table.insert(chars, logs)
+	end
 	local rayParams = RaycastParams.new()
 	rayParams.FilterType = Enum.RaycastFilterType.Exclude
 	rayParams.IgnoreWater = true
@@ -1086,6 +1103,84 @@ function BoatService.debugRun(owner: Player, z: number, startX: number, stopX: n
 	boat.runLogAt = nil
 	boat.debugRun = { throttle = 1, stopX = stopX }
 	return true, nil
+end
+
+-- Studio only: takes the staged still boats away.
+function BoatService.debugUnstage()
+	for i, m in staged do
+		m:Destroy()
+		staged[i] = nil
+	end
+end
+
+-- Studio only (shot c01, tools/shots "snippet c01stage"): makes slip i hold a boat of ids[i]
+-- (c01: { "Canoe", "Dinghy" }, the canoe in slip 1 and the dinghy in slip 2). The owner's own
+-- boat goes to its slip when it is one of them; every other one is a still copy nobody owns
+-- (debugUnstage takes them away). A real boat in the way moves to a free slip past the list.
+-- Returns what stands where, or false and why.
+function BoatService.debugArrange(owner: Player, ids: { string }): (boolean, string)
+	if not RunService:IsStudio() then
+		return false, "Studio only"
+	end
+	BoatService.debugUnstage()
+	for i, id in ids do
+		if not BoatData.byId[id] then
+			return false, "unknown boat " .. tostring(id)
+		end
+		if not BoatRules.SLIP_ZS[i] then
+			return false, "no slip " .. i
+		end
+	end
+	local mine = boats[owner]
+	local mySlip: number? = nil
+	if mine then
+		for i, id in ids do
+			if mine.id == id then
+				mySlip = i
+				break
+			end
+		end
+	end
+	-- Clear the listed slips of real boats that are not wanted there.
+	local wanted: { [number]: boolean } = {}
+	for i in ids do
+		wanted[i] = true
+	end
+	for _, b in boats do
+		if wanted[b.slip] and not (b == mine and mySlip == b.slip) then
+			local taken = takenSlips()
+			for i in wanted do
+				taken[i] = true
+			end
+			if mine and mySlip then
+				taken[mySlip] = true
+			end
+			local free = BoatRules.nextFreeSlip(taken)
+			if not free then
+				return false, "no free slip to move " .. b.owner.Name .. "'s boat to"
+			end
+			b.slip = free
+			returnToSlip(b)
+		end
+	end
+	if mine and mySlip and mine.slip ~= mySlip then
+		mine.slip = mySlip
+		returnToSlip(mine)
+	end
+	local said = {}
+	for i, id in ids do
+		if mine and mySlip == i then
+			table.insert(said, string.format("slip %d %s (yours)", i, id))
+		else
+			local stub = { Name = "Stage", UserId = 0 } :: any
+			local model = buildModel(stub, BoatData.byId[id], BoatRules.slipCFrame(i, id))
+			model.Name = "Stage_" .. id .. "_" .. i
+			model.Parent = workspace
+			staged[i] = model
+			table.insert(said, string.format("slip %d %s (staged)", i, id))
+		end
+	end
+	return true, table.concat(said, ", ")
 end
 
 -- Studio only: ends a scripted run (the helm's own input takes over again).

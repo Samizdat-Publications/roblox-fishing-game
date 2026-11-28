@@ -95,8 +95,10 @@ local list: { Boat } = {
 		chum = true,
 		blueWater = false,
 		forSale = true,
-		length = 8,
-		width = 4,
+		-- N4 review 2 (11/28/2026): the art drawn 1.375 times (BoatFeel.ART.Dinghy.scale), since the
+		-- avatar's shoulders spanned its whole 4 stud beam; was 8 by 4.
+		length = 11,
+		width = 5.5,
 		color = Color3.fromRGB(204, 108, 48), -- orange (N1 review 2; the off-white 226,220,204 read as a stock white block; first orange was 235,120,40)
 		blurb = "A one-person inflatable with a tiny motor. Gets you out to the Big Lake, but it's too small for blue water.",
 	},

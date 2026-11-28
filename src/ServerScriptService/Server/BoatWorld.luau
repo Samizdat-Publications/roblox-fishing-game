@@ -148,6 +148,11 @@ local function groundAt(x: number, z: number): number?
 	return hit and hit.Position.Y or nil
 end
 
+BoatWorld.CAP = 0.95 -- the slip posts' caps: across
+BoatWorld.CAP_H = 0.15 -- and thick
+BoatWorld.SLIPS_BOARD = { w = 3.4, h = 1.6 } -- the painted "Boat slips" board
+BoatWorld.DECK_TOP = 1.5 -- the dock deck the board's posts stand on
+
 -- Boat slips: mooring posts between the four slips and a sign on the deck.
 local function buildSlips(parent: Instance)
 	local old = parent:FindFirstChild("BoatSlips")
@@ -166,17 +171,28 @@ local function buildSlips(parent: Instance)
 	-- each is turned upright.
 	local upright = CFrame.Angles(0, 0, math.rad(90))
 	local postProps = { Material = Enum.Material.Wood, Shape = Enum.PartType.Cylinder }
+	-- N4 review 2 (11/28/2026): the near row at BoatRules.SLIP_POST_X (4.6, was SLIP_X_EDGE + 0.5),
+	-- so the bigger dinghy can turn in slips 2 to 4, and a cap on every post (CAP across, CAP_H thick).
+	local capProps = { Material = Enum.Material.Wood, Shape = Enum.PartType.Cylinder, CanQuery = false }
+	local POST_TOP = 2 -- each post is 6 tall about y -1
 	for i, z in edges do
-		part(slips, "Post" .. i, Vector3.new(6, 0.8, 0.8), CFrame.new(BoatRules.SLIP_X_EDGE + 0.5, -1, z) * upright, COLORS.darkWood, postProps)
-		part(slips, "FarPost" .. i, Vector3.new(6, 0.8, 0.8), CFrame.new(BoatRules.SLIP_X_EDGE + 18, -1, z) * upright, COLORS.darkWood, postProps)
+		for _, row in { { "Post", BoatRules.SLIP_POST_X }, { "FarPost", BoatRules.SLIP_FAR_POST_X } } do
+			local name, x = row[1] :: string, row[2] :: number
+			part(slips, name .. i, Vector3.new(6, 0.8, 0.8), CFrame.new(x, -1, z) * upright, COLORS.darkWood, postProps)
+			part(slips, name .. "Cap" .. i, Vector3.new(BoatWorld.CAP_H, BoatWorld.CAP, BoatWorld.CAP), CFrame.new(x, POST_TOP + BoatWorld.CAP_H / 2, z) * upright, COLORS.darkWood, capProps)
+		end
 	end
 	for i, z in zs do
-		local marker = part(slips, "Slip" .. i, Vector3.new(1, 0.2, 2), CFrame.new(3.4, 1.55, z), COLORS.buoy, { CanCollide = false, CanQuery = false })
+		-- The old orange pads stay as the slips' markers (prompts and plates find them), unseen
+		-- (N4 review 2: Transparency 1; the painted number plates on the posts name the slips).
+		local marker = part(slips, "Slip" .. i, Vector3.new(1, 0.2, 2), CFrame.new(3.4, 1.55, z), COLORS.buoy, { CanCollide = false, CanQuery = false, Transparency = 1 })
 		marker:SetAttribute("SlipIndex", i)
 		sign(marker, "Slip " .. i, 1.6, 60, 2.4)
 	end
-	local board = part(slips, "BoatSlipsSign", Vector3.new(0.4, 3, 5), CFrame.new(3.8, 3.2, zs[1] - gap / 2 - 1), COLORS.wood, { Material = Enum.Material.WoodPlanks })
-	sign(board, "Boat slips", 2.6, 140, 5)
+	-- N4 review 2: the gray board sized so the painted board round it is 3.4 by 1.6 (was 5.3 by 3.2).
+	local bw, bh = BoatWorld.SLIPS_BOARD.w - 0.3, BoatWorld.SLIPS_BOARD.h - 0.2
+	local board = part(slips, "BoatSlipsSign", Vector3.new(0.4, bh, bw), CFrame.new(3.8, 3.2, zs[1] - gap / 2 - 1), COLORS.wood, { Material = Enum.Material.WoodPlanks })
+	sign(board, "Boat slips", 2.6, 140, bw)
 	slips.Parent = parent
 end
 
@@ -614,6 +630,65 @@ function BoatWorld.build(): { [string]: number }
 	return { removedScenery = removed, trees = trees, shore = shore }
 end
 
+-- The slips' painted board and number plates (BoatWorld.paintSigns and rebuildSlips).
+local function paintSlips(slips: Instance): number
+	local made = 0
+	local folder = Signs.folder(slips)
+	-- "Boat slips": a board on two posts, just round the old gray board so it hides it.
+	local old = slips:FindFirstChild("BoatSlipsSign")
+	local gui = Signs.find(old)
+	if old and old:IsA("BasePart") and gui then
+		local centre = old.Position
+		local out = Vector3.new(1, 0, 0) -- front to the water and the boats; painted both sides
+		local board = Signs.board({
+			name = "BoatSlipsBoard",
+			text = "Boat slips",
+			width = old.Size.Z + 0.3,
+			height = old.Size.Y + 0.2,
+			thickness = old.Size.X + 0.1,
+			cframe = CFrame.lookAt(centre, centre + out),
+			paint = Signs.PAINT.slips,
+			twoSided = true,
+			hang = "posts",
+			ground = BoatWorld.DECK_TOP, -- the deck (the smaller board stands on longer legs)
+			lantern = true,
+		})
+		board.Parent = folder
+		Signs.cover(gui)
+		made += 1
+	end
+	-- Number plates: on the post at each slip's low-z edge (Post i), on its deck side, nudged
+	-- toward its own slip, top half a stud over the post.
+	for i = 1, #BoatRules.SLIP_ZS do
+		local marker = slips:FindFirstChild("Slip" .. i)
+		local post = slips:FindFirstChild("Post" .. i)
+		local markerGui = Signs.find(marker)
+		if markerGui and post and post:IsA("BasePart") then
+			local w, h, thick = 1.3, 0.9, 0.12
+			local top = Signs.topOf(post) + 0.5
+			-- Out from the post's side by its cap's radius (N4 review 2; the post is a cylinder
+			-- turned upright, so Size.X is its height: the plate used to stand 3 studs off it).
+			local side = math.max(post.Size.Y, BoatWorld.CAP) / 2
+			local centre = post.Position + Vector3.new(-(side + thick / 2 + 0.01), 0, 0.3)
+			centre = Vector3.new(centre.X, top - h / 2, centre.Z)
+			local plate = Signs.board({
+				name = "SlipPlate" .. i,
+				text = tostring(i),
+				width = w,
+				height = h,
+				thickness = thick,
+				cframe = CFrame.lookAt(centre, centre - Vector3.new(1, 0, 0)), -- front to the deck
+				paint = Signs.PAINT.pale,
+				twoSided = true,
+			})
+			plate.Parent = folder
+			Signs.cover(markerGui)
+			made += 1
+		end
+	end
+	return made
+end
+
 -- Painted signs (leg 3, N2): the slips' board on posts, a number plate on each slip's post, and
 -- the blue-water warning on a post stood on its buoy. The old floating signs are switched off,
 -- not destroyed (unpaintSigns brings them back). Positions come from the parts the old signs
@@ -624,56 +699,7 @@ function BoatWorld.paintSigns(bigLake: Instance, lake: Instance?): number
 	local home = lake or workspace:FindFirstChild("Lake")
 	local slips = home and home:FindFirstChild("BoatSlips")
 	if slips then
-		local folder = Signs.folder(slips)
-		-- "Boat slips": a board on two posts, just round the old gray board so it hides it.
-		local old = slips:FindFirstChild("BoatSlipsSign")
-		local gui = Signs.find(old)
-		if old and old:IsA("BasePart") and gui then
-			local centre = old.Position
-			local out = Vector3.new(1, 0, 0) -- front to the water and the boats; painted both sides
-			local board = Signs.board({
-				name = "BoatSlipsBoard",
-				text = "Boat slips",
-				width = old.Size.Z + 0.3,
-				height = old.Size.Y + 0.2,
-				thickness = old.Size.X + 0.1,
-				cframe = CFrame.lookAt(centre, centre + out),
-				paint = Signs.PAINT.slips,
-				twoSided = true,
-				hang = "posts",
-				ground = centre.Y - old.Size.Y / 2 - 0.2,
-				lantern = true,
-			})
-			board.Parent = folder
-			Signs.cover(gui)
-			made += 1
-		end
-		-- Number plates: on the post at each slip's low-z edge (Post i), on its deck side, nudged
-		-- toward its own slip, top half a stud over the post.
-		for i = 1, #BoatRules.SLIP_ZS do
-			local marker = slips:FindFirstChild("Slip" .. i)
-			local post = slips:FindFirstChild("Post" .. i)
-			local markerGui = Signs.find(marker)
-			if markerGui and post and post:IsA("BasePart") then
-				local w, h, thick = 1.3, 0.9, 0.12
-				local top = Signs.topOf(post) + 0.5
-				local centre = post.Position + Vector3.new(-(post.Size.X / 2 + thick / 2 + 0.01), 0, 0.3)
-				centre = Vector3.new(centre.X, top - h / 2, centre.Z)
-				local plate = Signs.board({
-					name = "SlipPlate" .. i,
-					text = tostring(i),
-					width = w,
-					height = h,
-					thickness = thick,
-					cframe = CFrame.lookAt(centre, centre - Vector3.new(1, 0, 0)), -- front to the deck
-					paint = Signs.PAINT.pale,
-					twoSided = true,
-				})
-				plate.Parent = folder
-				Signs.cover(markerGui)
-				made += 1
-			end
-		end
+		made += paintSlips(slips)
 	end
 
 	-- The blue-water warning: a single post stood on its buoy, the board facing the near water
@@ -705,6 +731,24 @@ function BoatWorld.paintSigns(bigLake: Instance, lake: Instance?): number
 		end
 	end
 	return made
+end
+
+-- Rebuilds only the boat slips (posts, caps, markers, the gray board) and, with painted signs on,
+-- their painted board and number plates; the Big Lake is left alone. Run in Edit, then
+-- MaterialKit.apply() (its Lake.BoatSlips. rule re-skins the posts), then save:
+--   require(game.ServerScriptService.Server.BoatWorld).rebuildSlips()
+function BoatWorld.rebuildSlips(): number
+	local lake = workspace:FindFirstChild("Lake")
+	if not lake then
+		warn("[BoatWorld] Workspace.Lake missing")
+		return 0
+	end
+	buildSlips(lake)
+	local slips = lake:FindFirstChild("BoatSlips")
+	if Config.PAINTED_SIGNS_ON and slips then
+		return paintSlips(slips)
+	end
+	return 0
 end
 
 -- Takes the painted boards away and switches the old floating signs back on.

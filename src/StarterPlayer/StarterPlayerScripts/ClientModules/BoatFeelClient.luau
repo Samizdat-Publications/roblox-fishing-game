@@ -27,6 +27,12 @@
 --    R15 knees straightened so no leg pokes through the floor.
 --  * The camera eases back and up with speed and widens up to 6 degrees, and comes back when slow;
 --    a spherecast keeps the moved eye 0.5 short of anything solid behind it.
+--  * N4 review 2 (11/28/2026): the dinghy art is drawn at BoatFeel.ART.Dinghy.scale (ScaleTo on
+--    the copy); the whole wake fades with the boat's speed (BoatFeel.wakeGain: gone about a second
+--    after a stop); motor boats get flat spray puffs at the arms' heads and a camera-facing spray
+--    off the stern above 30 percent; in any boat seat the camera keeps 14 studs back (the Deep-V
+--    20) and looks from 1.5 higher (Humanoid.CameraOffset, shared with the bobber camera through
+--    the Humanoid's BoatCameraOffset attribute), put back on every exit.
 -- The helm's input is untouched (BoatClient sends it as before), so nothing here adds lag.
 -- Written 11/28/2026 in a worktree. UNVERIFIED in Studio.
 local Players = game:GetService("Players")
@@ -81,6 +87,9 @@ type Feel = {
 	arms: { Arm },
 	wakeHolder: BasePart?,
 	spray: { ParticleEmitter },
+	puffs: { ParticleEmitter }, -- the flat puffs at the arms' heads (motor boats)
+	sternSpray: ParticleEmitter?, -- the camera-facing spray off the stern (motor boats)
+	wakeGain: number, -- 0 to 1: the whole wake's strength, eased with speed (BoatFeel.wakeGainStep)
 	wash: ParticleEmitter,
 	swirl: ParticleEmitter,
 	swirlAt: Attachment,
@@ -228,6 +237,10 @@ local function buildArt(f: Feel)
 	local copy = src:Clone()
 	local place = f.root.CFrame * CFrame.new(0, f.art.lift, 0) * CFrame.Angles(0, math.rad(f.art.yaw), 0)
 	if copy:IsA("Model") then
+		local sc = f.art.scale
+		if sc and sc ~= 1 then
+			copy:ScaleTo(sc) -- about its pivot (on the waterline), before it is placed
+		end
 		copy:PivotTo(place)
 	elseif copy:IsA("BasePart") then
 		copy.CFrame = place
@@ -380,11 +393,18 @@ local function buildFx(f: Feel)
 		(e.Parent :: Instance):Destroy()
 	end
 	table.clear(f.spray)
-	for _, old in { f.wash, f.swirl } do
+	for _, old in { f.wash, f.swirl, f.sternSpray } do
 		if old and old.Parent then
 			(old.Parent :: Instance):Destroy() -- a rebuild (the tier changed): its attachment goes too
 		end
 	end
+	for _, e in f.puffs do
+		if e.Parent then
+			(e.Parent :: Instance):Destroy()
+		end
+	end
+	table.clear(f.puffs)
+	f.sternSpray = nil
 	if BoatFeel.kindOf(f.id) == "motor" then
 		for _, sx in { -1, 1 } do
 			local at = Instance.new("Attachment")
@@ -433,6 +453,55 @@ local function buildFx(f: Feel)
 		NumberSequenceKeypoint.new(1, W.transparency[2]),
 	})
 	f.wash = wash
+	if BoatFeel.kindOf(f.id) == "motor" then
+		-- N4 review 2: flat spray puffs at both arms' heads, lying on the water like the wash.
+		local P = BoatFeel.WAKE_PUFF
+		for _, sx in { -1, 1 } do
+			local at = Instance.new("Attachment")
+			at.Name = "WakePuff"
+			at.Position = BoatFeel.wakeStart(f.art, sx) + Vector3.new(0, WAKE_Y, 0)
+			at.Parent = f.root
+			local e = emitter(at, WhiteWater.TEXTURES.spray)
+			e.LightEmission = 0
+			e.Orientation = Enum.ParticleOrientation.VelocityPerpendicular
+			e.EmissionDirection = Enum.NormalId.Top
+			e.Speed = NumberRange.new(0.05)
+			e.SpreadAngle = Vector2.new(0, 0)
+			e.Lifetime = NumberRange.new(P.life[1], P.life[2])
+			e.Rotation = NumberRange.new(0, 360)
+			e.RotSpeed = NumberRange.new(-20, 20)
+			e.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, P.size[1]), NumberSequenceKeypoint.new(1, P.size[2]) })
+			e.Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 1),
+				NumberSequenceKeypoint.new(0.2, P.transparency),
+				NumberSequenceKeypoint.new(1, 1),
+			})
+			table.insert(f.puffs, e)
+		end
+		-- And spray thrown up and aft off the stern above 30 percent, facing the camera: the
+		-- attachment's up tipped STERN_SPRAY.angle degrees toward the stern (+Z).
+		local S = BoatFeel.STERN_SPRAY
+		local sAt = Instance.new("Attachment")
+		sAt.Name = "SternSpray"
+		sAt.Position = f.art.stern + Vector3.new(0, 0.15, 0.3)
+		sAt.Orientation = Vector3.new(S.angle, 0, 0)
+		sAt.Parent = f.root
+		local ss = emitter(sAt, WhiteWater.TEXTURES.spray)
+		ss.EmissionDirection = Enum.NormalId.Top
+		ss.Speed = NumberRange.new(S.speed[1], S.speed[2])
+		ss.SpreadAngle = Vector2.new(15, 15)
+		ss.Lifetime = NumberRange.new(S.life[1], S.life[2])
+		ss.Acceleration = Vector3.new(0, -18, 0)
+		ss.Drag = 1
+		ss.Rotation = NumberRange.new(0, 360)
+		ss.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, S.size[1]), NumberSequenceKeypoint.new(1, S.size[2]) })
+		ss.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 1),
+			NumberSequenceKeypoint.new(0.15, 0.55),
+			NumberSequenceKeypoint.new(1, 1),
+		})
+		f.sternSpray = ss
+	end
 	-- Swirl rings: emitted where a paddle stroke ends.
 	local swirlAt = Instance.new("Attachment")
 	swirlAt.Name = "Swirl"
@@ -550,6 +619,9 @@ local function setup(model: Model)
 		arms = {},
 		wakeHolder = nil,
 		spray = {},
+		puffs = {},
+		sternSpray = nil,
+		wakeGain = 0,
 		wash = nil :: any,
 		swirl = nil :: any,
 		swirlAt = nil :: any,
@@ -644,6 +716,9 @@ local function updateWake(f: Feel, frame: CFrame, speed: number, frac: number, d
 	local y = BoatRules.WATER_Y + WAKE_Y
 	-- The foam drifts away from the boat; each beam's Attachment0 is its older point, so minus.
 	local texSpeed = -BoatFeel.wakeTextureSpeed(frac)
+	-- N4 review 2: the whole wake follows the boat's speed, so it is gone about a second after a stop.
+	f.wakeGain = BoatFeel.wakeGainStep(f.wakeGain, frac, dt)
+	local gain = f.wakeGain
 	for i, arm in f.arms do
 		local sx = if i == 1 then -1 else 1
 		local st = frame:PointToWorldSpace(BoatFeel.wakeStart(f.art, sx))
@@ -687,10 +762,10 @@ local function updateWake(f: Feel, frame: CFrame, speed: number, frac: number, d
 			-- Attachment0 is the older point (k + 1), Attachment1 the newer (k).
 			local wNew, wOld = ws[k], ws[k + 1]
 			local a, b = pts[k], pts[k + 1]
-			if wNew and wOld and a and b and (a - b).Magnitude > 0.05 then
+			if gain > 0.01 and wNew and wOld and a and b and (a - b).Magnitude > 0.05 then
 				beam.Width0 = wOld
 				beam.Width1 = wNew
-				beam.Transparency = NumberSequence.new(ts[k + 1], ts[k])
+				beam.Transparency = NumberSequence.new(BoatFeel.gained(ts[k + 1], gain), BoatFeel.gained(ts[k], gain))
 				beam.TextureSpeed = texSpeed
 				beam.Enabled = true
 			else
@@ -702,6 +777,13 @@ local function updateWake(f: Feel, frame: CFrame, speed: number, frac: number, d
 		e.Rate = BoatFeel.sprayRate(f.id, frac, f.tier)
 	end
 	f.wash.Rate = BoatFeel.washRate(f.id, frac, f.tier)
+	local puff = BoatFeel.puffRate(f.id, frac, f.tier)
+	for _, e in f.puffs do
+		e.Rate = puff
+	end
+	if f.sternSpray then
+		f.sternSpray.Rate = BoatFeel.sternSprayRate(f.id, frac, f.tier)
+	end
 end
 
 local function swirlsAt(f: Feel, pos: Vector3)
@@ -1109,6 +1191,64 @@ local function cameraStep(dt: number)
 end
 
 ----------------------------------------------------------------------------------------
+-- The seat camera (N4 review 2): in any boat seat the camera keeps BoatFeel.seatMinZoom back and
+-- looks from SEAT_CAMERA.offset higher. The offset is also left on the Humanoid as the
+-- BoatCameraOffset attribute, which the bobber camera (BobberCamView) adds to its own and puts
+-- back when it lets go. Everything is put back on every exit: leaving the seat, death (the
+-- Humanoid dies or the character goes), and the boat despawning (no seat, no feel).
+
+local SEAT_OFFSET_ATTR = "BoatCameraOffset"
+type SeatCam = { hum: Humanoid, minZoom: number }
+local seatCam: SeatCam? = nil
+
+local function seatCamRelease()
+	local sc = seatCam
+	if not sc then
+		return
+	end
+	seatCam = nil
+	local player = Players.LocalPlayer
+	player.CameraMinZoomDistance = sc.minZoom
+	local hum = sc.hum
+	if hum.Parent then
+		hum:SetAttribute(SEAT_OFFSET_ATTR, nil)
+		-- Only take back our own offset (the bobber camera writes its own every frame it is on).
+		if (hum.CameraOffset - BoatFeel.SEAT_CAMERA.offset).Magnitude < 1e-3 then
+			hum.CameraOffset = Vector3.zero
+		end
+	end
+end
+
+local function seatCamStep()
+	local player = Players.LocalPlayer
+	local char = player.Character
+	local hum = char and char:FindFirstChildOfClass("Humanoid")
+	local f: Feel? = nil
+	if hum and hum.Health > 0 then
+		f = seatedBoat()
+	end
+	if seatCam and (not f or (seatCam :: SeatCam).hum ~= hum) then
+		seatCamRelease()
+	end
+	if not f or not hum then
+		return
+	end
+	local offset = BoatFeel.SEAT_CAMERA.offset
+	if not seatCam then
+		seatCam = { hum = hum, minZoom = player.CameraMinZoomDistance }
+		hum:SetAttribute(SEAT_OFFSET_ATTR, offset)
+	end
+	local want = math.min(BoatFeel.seatMinZoom((f :: Feel).id), player.CameraMaxZoomDistance)
+	if player.CameraMinZoomDistance ~= want then
+		player.CameraMinZoomDistance = want
+	end
+	-- Nobody else holds the offset (the bobber camera is off): ours.
+	if hum.CameraOffset.Magnitude < 1e-3 then
+		hum.CameraOffset = offset
+	end
+end
+
+----------------------------------------------------------------------------------------
 -- Horn
 
 -- The boat you are at the helm of on this screen, or nil.
@@ -1208,6 +1348,8 @@ function BoatFeelClient.start()
 		end
 	end)
 	RunService:BindToRenderStep("BoatFeelCam", Enum.RenderPriority.Camera.Value + 2, cameraStep)
+	RunService:BindToRenderStep("BoatSeatCam", Enum.RenderPriority.Camera.Value - 2, seatCamStep)
+	player.CharacterRemoving:Connect(seatCamRelease)
 
 	-- H is also the bait bench's hook key (Controller binds it through ContextActionService, which
 	-- can mark it processed), so only typing in a text box stops the horn.

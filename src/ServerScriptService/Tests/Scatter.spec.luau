@@ -1234,4 +1234,35 @@ return function(t, Shared)
 		end
 		t.ok(same, "revert restores the dock foot")
 	end)
+
+	-- N4 review 2 (11/28/2026): 12 to 16 kit pines 8 to 20 studs behind the hub's tree row (the
+	-- BackRow kit pines behind the stands), at 1.25 to 1.6, seeded, clear of every shot camera.
+	t.test("hub pines: a second row behind the trees behind the stands", function()
+		local H = Scatter.HUB
+		local rowZ = Scatter.hubRowZ(plan)
+		local kit = 0
+		for _, it in plan.items do
+			if it.group == "BackRow" and string.sub(it.model, 1, 9) == "ShorePine" then
+				kit += 1
+			end
+		end
+		t.ok(kit > 0, "the hub row has kit pines (" .. kit .. ")")
+		t.ok(rowZ > Scatter.TUNING.backZ[1] - 1e-9 and rowZ < Scatter.TUNING.backZ[1] + 14 + 1e-9, "its middle is in their band (" .. rowZ .. ")")
+		local pines = Scatter.hubPines(SEED, plan)
+		t.ok(#pines >= H.count[1] and #pines <= H.count[2], "12 to 16 of them (" .. #pines .. ")")
+		for _, p in pines do
+			t.ok(p.model == "ShorePine1" or p.model == "ShorePine2", "kit pines")
+			t.eq(p.group, "HubPines", "their own group")
+			t.ok(p.z >= rowZ + H.depth[1] - 1e-9 and p.z <= rowZ + H.depth[2] + 1e-9, string.format("8 to 20 behind the row (%.1f)", p.z - rowZ))
+			t.ok(p.scale >= 1.25 - 1e-9 and p.scale <= 1.6 + 1e-9, "scale 1.25 to 1.6")
+			t.ok(Scatter.shotClear(p.x, p.z, true), "clear of the shot cameras")
+			for _, it in plan.items do
+				t.ok((it.x - p.x) ^ 2 + (it.z - p.z) ^ 2 >= H.clear * H.clear - 1e-9, "clear of what is planned")
+			end
+		end
+		t.eq(Scatter.TAGS.HubPines, "FoliageTree", "tagged for the phone tier")
+		local again = Scatter.hubPines(SEED, plan)
+		t.eq(#again, #pines, "seeded: same count")
+		t.ok(#pines == 0 or (again[1].x == pines[1].x and again[1].z == pines[1].z), "seeded: same place")
+	end)
 end

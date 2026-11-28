@@ -53,6 +53,11 @@ end
 
 function DayNight.start()
 	Lighting.ClockTime = Config.START_CLOCK
+	-- N4 review 2 (11/28/2026): the moon at LookPresets.MOON_ANGULAR_SIZE (the place's Sky; replicates).
+	local sky = Lighting:FindFirstChildOfClass("Sky")
+	if sky then
+		sky.MoonAngularSize = LookPresets.MOON_ANGULAR_SIZE
+	end
 	if Config.LOOK_DIRECTOR_ON then
 		workspace:SetAttribute("LookOnClient", true)
 	end

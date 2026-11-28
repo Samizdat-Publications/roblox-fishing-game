@@ -125,9 +125,15 @@ moving when it is captured. Per capture:
     4. execute_luau (Server) "snippet c03log"; save the log string it returns, then
        python tools/shots/shots.py runcheck <run>/<id>.jpg "<log>"
        says where the hull was when the file was written (its time against the log's unix
-       milliseconds) and exits 1 outside capture_x +- tolerance (44 +- 4): then run 1 again and
+       milliseconds) and exits 1 outside capture_x +- tolerance (42 +- 3): then run 1 again and
        redo 2 with --lead set to how far past it went.
   python tools/shots/shots.py snippet c03run | c03log  the Server Luau for steps 1 and 4
+
+Staged shots (N4 review 2): a shot with a "stage" entry (c01: ["Canoe", "Dinghy"]) wants slip i to
+hold the i-th boat. Before its capture, execute_luau (Server) "snippet c01stage": the player's own
+boat goes to its slip when it is one of them, every other one is a still copy nobody owns
+(DebugCoop "slips", Studio only); it returns what stands where. "snippet unstage" (Server) takes
+the copies away after.
 
 Runs live under artifacts/ (not committed). Copy a sheet worth keeping into docs/critic/ or the making-of.
 Standard library plus Pillow.
@@ -504,6 +510,25 @@ return if type(r) == "table" and r.log then r.log else "no run log"
 """
 
 
+def stage_server_luau(sid: str = "c01-canoe-golden") -> str:
+    s = shot(sid)
+    ids = s.get("stage")
+    if not ids:
+        sys.exit(f"{sid} has no stage")
+    args = ", ".join(f'"{i}"' for i in ids)
+    names = ", ".join(ids)
+    return (f"-- Server, during Play (Studio only): shot {sid}'s slips, slip 1 onward: {names}.\n"
+            "local F = game:GetService(\"ServerStorage\"):WaitForChild(\"DebugCoop\")\n"
+            "local me = game:GetService(\"Players\"):GetPlayers()[1]\n"
+            f"return tostring(F:Invoke(\"slips\", me.Name, {args}))\n")
+
+
+UNSTAGE = """-- Server, during Play (Studio only): takes the staged still boats away.
+local F = game:GetService("ServerStorage"):WaitForChild("DebugCoop")
+return tostring(F:Invoke("unstage"))
+"""
+
+
 def run_wait_luau(s: dict, lead: float) -> str:
     r = s["run"]
     trigger = r["capture_x"] - lead
@@ -585,6 +610,10 @@ def cmd_snippet(a):
         print(run_server_luau())
     elif a.id == "c03log":
         print(RUN_LOG)
+    elif a.id == "c01stage":
+        print(stage_server_luau())
+    elif a.id == "unstage":
+        print(UNSTAGE)
     elif a.id == "all":
         for s in need_set(a.set, a.include_pending):
             print(luau_for(s))
