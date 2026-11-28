@@ -158,6 +158,14 @@ Config.CHUM_ON = false
 -- Off, boats look and work exactly as before. The server's hull never tilts either way.
 Config.BOAT_FEEL_ON = false
 
+-- BOATHOUSE_ON (N4, Shared/BoathousePlan, Server/Boathouse): the boathouse on the shore east of
+-- the slips (a canoe on its rack, a lantern), the Boats shop at its painted board (it leaves Bait
+-- and Tackle), the "Your boat" board that picks which owned boat waits at your slip, and the sales
+-- mooring off the dock end: each boat afloat by a float with its price painted on a board. Built
+-- in Edit by Boathouse.build() and saved in the place. Off, the server stores the whole set away
+-- at start and the shop at Bait and Tackle still sells boats, exactly as before.
+Config.BOATHOUSE_ON = false
+
 function Config.boatsOn(): boolean
 	return Config.BOATS_ON and Config.BIG_LAKE_ON
 end

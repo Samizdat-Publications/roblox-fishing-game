@@ -41,6 +41,27 @@ function BoatLogic.owns(data: any, id: string): boolean
 	return type(data.boats) == "table" and data.boats[id] == true
 end
 
+-- Pick which owned boat waits at your slip (the boathouse's "Your boat" board, N4, and the
+-- shop's "Use this boat"). Sets data.boat (saved) when it is allowed. Whether the current boat is
+-- out on the water with someone aboard is the server's check (BoatService), not this one.
+function BoatLogic.choose(data: any, id: any): (boolean, string)
+	local b = if type(id) == "string" then BoatData.byId[id] else nil
+	if not b then
+		return false, "That isn't one of your boats."
+	end
+	if not BoatLogic.owns(data, b.id) then
+		return false, "You don't own the " .. b.name .. " yet."
+	end
+	if not BoatData.available(b) then
+		return false, "The " .. b.name .. " isn't on the water yet."
+	end
+	if data.boat == b.id then
+		return false, "Your " .. b.name .. " is already at your slip."
+	end
+	data.boat = b.id
+	return true, "Your " .. b.name .. " will be waiting at your slip."
+end
+
 -- Top speed now: a paddled boat with a second paddler aboard goes faster (the canoe, 7 to 11).
 function BoatLogic.topSpeed(boatId: string, paddlers: number?): number
 	local b = assert(BoatData.byId[boatId], "unknown boat")

@@ -993,6 +993,10 @@ function Controller.start()
 	game:GetService("ProximityPromptService").PromptTriggered:Connect(function(prompt)
 		if prompt.Name == "ShopPrompt" and not UI.isLocked() then
 			UI.openShop()
+		elseif prompt.Name == "BoatShopPrompt" and not UI.isLocked() then
+			UI.openShop("boats") -- the boathouse's board (N4, BOATHOUSE_ON)
+		elseif prompt.Name == "BoatChoicePrompt" and not UI.isLocked() then
+			UI.openShop("yours") -- the boathouse's "Your boat" board
 		elseif prompt.Name == "PondPrompt" and not UI.isLocked() then
 			UI.openPond()
 		end
@@ -1093,6 +1097,10 @@ function Controller.start()
 			end
 			if which == "shop" then
 				UI.openShop()
+			elseif which == "boatshop" then
+				UI.openShop("boats") -- N4, BOATHOUSE_ON
+			elseif which == "yourboat" then
+				UI.openShop("yours")
 			elseif which == "journal" then
 				UI.toggleJournal()
 			elseif which == "card" then

@@ -1076,19 +1076,32 @@ function BoatService.start()
 		lastSendHome[p] = nil
 	end)
 
+	-- Which owned boat waits at your slip: the shop's "Use this boat" and, with BOATHOUSE_ON, the
+	-- boathouse's "Your boat" board. The rule is BoatLogic.choose (it saves data.boat); this adds
+	-- that nobody may be aboard the current boat. With the boathouse on, the player hears why.
 	Remotes.event("ChooseBoat").OnServerEvent:Connect(function(player: Player, boatId: any)
 		local data = PlayerData.get(player)
-		if not data or type(boatId) ~= "string" or not BoatLogic.owns(data, boatId) or data.boat == boatId then
+		if not data or type(boatId) ~= "string" then
 			return
 		end
 		local current = boats[player]
-		if current and (current.helm.Occupant or (current.nav and current.nav.Occupant)) then
+		if BoatLogic.owns(data, boatId) and data.boat ~= boatId and current and (current.helm.Occupant or (current.nav and current.nav.Occupant)) then
 			hint(player, "Tie up your boat before switching.")
 			return
 		end
-		data.boat = boatId
+		local ok, msg = BoatLogic.choose(data, boatId)
+		if not ok then
+			if Config.BOATHOUSE_ON then
+				hint(player, msg)
+			end
+			return
+		end
+		print(string.format("[Boats] %s chose the %s for their slip", player.Name, boatId))
 		PlayerData.changed(player)
 		spawnFor(player)
+		if Config.BOATHOUSE_ON then
+			hint(player, msg)
+		end
 	end)
 
 	-- The fish finder: only the navigator of a boat sees what's under it (boat plan Task 8).

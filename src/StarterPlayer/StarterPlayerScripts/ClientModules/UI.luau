@@ -15,6 +15,7 @@ local RodData = require(Shared.RodData)
 local FishLogic = require(Shared.FishLogic)
 local Rarity = require(Shared.Rarity)
 local BoatData = require(Shared.BoatData)
+local BoathousePlan = require(Shared.BoathousePlan)
 local Config = require(Shared.Config)
 local Journal = require(Shared.Journal)
 local Units = require(Shared.Units)
@@ -1731,8 +1732,15 @@ local function panelShell(name: string, title: string, look: string?): (Frame, S
 	return p, scroll
 end
 
+-- Which shop is open (N4, Config.BOATHOUSE_ON): "tackle" (Bait and Tackle), "boats" (the
+-- boathouse's board) or "yours" (the "Your boat" board: only the boats you own).
+local shopMode = "tackle"
+local SHOP_TITLES = { tackle = "Bait and Tackle", boats = "Boathouse", yours = "Your boat" }
+
 function UI.buildShop()
 	local p, scroll = panelShell("Shop", "Bait and Tackle", "box")
+	refs.shopList = scroll
+	refs.shopTitle = p:FindFirstChild("Title")
 	local layout = Instance.new("UIListLayout")
 	layout.Padding = UDim.new(0, 8)
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -1830,10 +1838,12 @@ function UI.buildShop()
 			if not st then
 				return
 			end
-			if not BoatData.onSale(b) then
+			local owned = st.boats and st.boats[b.id]
+			-- With the boathouse (N4) a boat you own can be picked even when it isn't sold.
+			if not BoatData.onSale(b) and not (Config.BOATHOUSE_ON and owned) then
 				return
 			end
-			if st.boats and st.boats[b.id] then
+			if owned then
 				if callbacks.chooseBoat then
 					callbacks.chooseBoat(b.id)
 				end
@@ -1902,7 +1912,7 @@ function UI.refreshShop()
 		local btn = refs.boatRows and refs.boatRows[b.id]
 		if btn then
 			local owned = s.boats and s.boats[b.id]
-			if not BoatData.onSale(b) then
+			if not BoatData.onSale(b) and not (Config.BOATHOUSE_ON and owned) then
 				btn.Text = "Coming soon"
 				btn.AutoButtonColor = false
 				paint(btn, C.panel)
@@ -1920,6 +1930,35 @@ function UI.refreshShop()
 	end
 	local forecast = workspace:GetAttribute("Forecast")
 	refs.shopHint.Text = string.format("You have %d coins. %s", s.coins, if type(forecast) == "string" then "Forecast: " .. forecast else "The right bait beats the expensive bait.")
+	-- The boathouse (N4): boats leave Bait and Tackle for the boathouse's board, and the "Your
+	-- boat" board lists only the boats you own. Off, every row shows as before.
+	if Config.BOATHOUSE_ON and refs.shopList then
+		local mine: { [string]: boolean } = {}
+		for _, id in BoathousePlan.yours(s) do
+			mine[id] = true
+		end
+		for _, row in refs.shopList:GetChildren() do
+			if row:IsA("GuiObject") then
+				local id = string.match(row.Name, "^Boat_(.+)$")
+				local isBoat = id ~= nil or row.Name == "BoatsHeader"
+				if shopMode == "tackle" then
+					row.Visible = not isBoat
+				elseif shopMode == "boats" then
+					row.Visible = isBoat and Config.boatsOn()
+				else
+					row.Visible = id ~= nil and mine[id] == true
+				end
+			end
+		end
+		if refs.shopTitle and refs.shopTitle:IsA("TextLabel") then
+			refs.shopTitle.Text = SHOP_TITLES[shopMode] or SHOP_TITLES.tackle
+		end
+		if shopMode == "yours" then
+			refs.shopHint.Text = if next(mine) == nil then "No boat yet. The boats for sale are moored off the dock end." else "Pick the boat that waits at your slip."
+		elseif shopMode == "boats" then
+			refs.shopHint.Text = string.format("You have %d coins. Your boat waits at your slip by the dock.", s.coins)
+		end
+	end
 end
 
 function UI.buildJournal()
@@ -2128,18 +2167,32 @@ function UI.closePanels()
 	sideTabs(true)
 end
 
-function UI.openShop()
+-- mode: "tackle" (default), "boats" or "yours" (N4, only with Config.BOATHOUSE_ON).
+function UI.openShop(mode: string?)
 	if locked then
 		return
 	end
 	UI.closePanels()
+	shopMode = if Config.BOATHOUSE_ON and (mode == "boats" or mode == "yours") then mode :: string else "tackle"
 	openPanel = "Shop"
 	updateTop()
 	sideTabs(false)
 	UI.refreshShop()
 	refs.shop.Visible = true
 	if UI.inputName() == "R2" then
-		GuiService.SelectedObject = refs.shopRows[BaitData.list[1].id].buy
+		local first: GuiObject? = refs.shopRows[BaitData.list[1].id].buy
+		if shopMode ~= "tackle" then
+			first = nil
+			for _, b in BoatData.list do
+				local btn = refs.boatRows and refs.boatRows[b.id]
+				local row = refs.shopList and refs.shopList:FindFirstChild("Boat_" .. b.id)
+				if btn and row and row:IsA("GuiObject") and row.Visible then
+					first = btn
+					break
+				end
+			end
+		end
+		GuiService.SelectedObject = first
 	end
 end
 
