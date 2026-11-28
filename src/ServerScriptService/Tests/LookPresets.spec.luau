@@ -810,4 +810,111 @@ return function(t, Shared)
 		end, nil, nil, nil, nil, { creek = 1 })
 		t.ok(math.abs(made.Atmosphere.Density - atmo(dawnClock, { creek = 1 }, true).Density) < 1e-9, "applyTo adds the mist")
 	end)
+
+	-- 11/27/2026: shots 01 and 03 looked darker with LOOK_AREAS_ON. They were captured in Studio's
+	-- phone Device Simulator (the bezel is in the frame), so the mean RGB fell; these pin that the
+	-- look and water at home are the areas-off ones, value for value, at every home camera.
+	local HOME_SPOTS = {
+		{ "shot 01 eye (dock, dawn)", Vector3.new(0, 8, 117), 6.6 },
+		{ "shot 02 eye (dock, golden)", Vector3.new(0, 8, 117), 17.4 },
+		{ "shot 03 eye (dock end, noon)", Vector3.new(0, 6, 37), 12 },
+		{ "shot 04 eye (dock end, night)", Vector3.new(0, 6, 37), 22 },
+		{ "shot 07 eye (overview, outside home's own band)", Vector3.new(86, 80, 165), 17.4 },
+		{ "shot 08 eye (stands view)", Vector3.new(0, 6, 50), 12 },
+		{ "the dock", Vector3.new(0, 2, 57), 6.6 },
+		{ "the stands", Vector3.new(11, 4, 100), 12 },
+		{ "the pond", Vector3.new(50, 1, 106), 6.6 },
+		{ "home 11 studs in from its west edge, 21 short of the creek", Vector3.new(-139, 3, 15), 6.6 },
+		{ "21 studs south of home, nothing else near", Vector3.new(0, 3, 161), 6.6 },
+	}
+
+	-- A fake Lighting that records every property applyTo writes, by "Target.Prop".
+	local function recordWrites(clock: number, weather: string?, amount: number?, from: string?, areas, grade): { [string]: any }
+		local made: { [string]: any } = {}
+		local lighting: any = {}
+		lighting.FindFirstChild = function(_, name: string): any
+			for _, o in made do
+				if o.Name == name then
+					return o
+				end
+			end
+			return nil
+		end
+		lighting.FindFirstChildOfClass = function(_, className: string): any
+			return made[className]
+		end
+		LookPresets.applyTo(lighting, clock, function(className: string): any
+			local o = {}
+			made[className] = o
+			return o
+		end, weather, amount, from, nil, areas, grade)
+		local out: { [string]: any } = {}
+		for k, v in lighting do
+			if type(v) ~= "function" then
+				out["Lighting." .. k] = v
+			end
+		end
+		for className, o in made do
+			for k, v in o do
+				if k ~= "Name" and k ~= "Parent" then
+					out[className .. "." .. k] = v
+				end
+			end
+		end
+		return out
+	end
+
+	t.test("at home, areas on writes exactly what areas off writes (look and water)", function()
+		local grade = LookPresets.gradeFor(LookPresets.TIERS.desktop, true)
+		t.ok(grade ~= nil, "the desktop Realistic grade")
+		for _, spot in HOME_SPOTS do
+			local name, pos, shotClock = spot[1], spot[2], spot[3]
+			local w = LookPresets.areaWeights(pos)
+			t.eq(w.home, 1, name .. ": home weight 1")
+			for id, v in w do
+				if id ~= "home" then
+					t.eq(v, 0, name .. ": no " .. id)
+				end
+			end
+			t.eq(LookPresets.topArea(w), "home", name .. ": top area")
+			local clocks = table.clone(CLOCKS)
+			table.insert(clocks, shotClock)
+			for _, c in clocks do
+				for _, gopt in { { g = grade }, { g = nil } } do
+					local g = gopt.g
+					for _, wx in { { "Clear", 1, "Clear" }, { nil, nil, nil }, { "Storm", 0.6, "Overcast" } } do
+						local what = string.format("%s at %s %s%s", name, tostring(c), tostring(wx[1]), if g then " graded" else "")
+						local off = recordWrites(c, wx[1], wx[2], wx[3], nil, g)
+						local on = recordWrites(c, wx[1], wx[2], wx[3], w, g)
+						local n = 0
+						for k, v in off do
+							n += 1
+							t.ok(on[k] == v, what .. " " .. k)
+						end
+						for k in on do
+							t.ok(off[k] ~= nil, what .. " extra " .. k)
+						end
+						t.eq(n, 23, what .. ": all 23 Lighting and effect properties compared")
+					end
+				end
+				-- Water: LookDirector writes areaWater(weights, clock) with areas on and homeWaterAt(clock)
+				-- with them off (WATER_BY_TIME_ON); without the clock, home's own saved water.
+				local on, off = LookPresets.areaWater(w, c), LookPresets.homeWaterAt(c)
+				for _, k in { "WaterColor", "WaterTransparency", "WaterReflectance", "WaterWaveSize", "WaterWaveSpeed" } do
+					t.ok((on :: any)[k] == (off :: any)[k], name .. " water by time at " .. c .. " " .. k)
+					t.ok((LookPresets.areaWater(w) :: any)[k] == (LookPresets.AREAS.home.water :: any)[k], name .. " static water " .. k)
+				end
+			end
+		end
+	end)
+
+	t.test("other areas only start inside their own band", function()
+		local half = LookPresets.AREA_BAND / 2
+		-- Walking west from home toward the creek (creek's east edge x -160): nothing until 20 studs out.
+		t.eq(LookPresets.areaWeights(Vector3.new(-160 + half + 0.5, 0, 15)).home, 1, "creek 20.5 studs away: home only")
+		t.ok(LookPresets.areaWeights(Vector3.new(-160 + half - 1, 0, 15)).creek > 0, "creek 19 studs away: creek starts")
+		-- Walking north up the channel toward the basin (south edge z -140).
+		t.eq(LookPresets.areaWeights(Vector3.new(0, 0, -140 + half + 0.5)).home, 1, "basin 20.5 studs away: home only")
+		t.ok(LookPresets.areaWeights(Vector3.new(0, 0, -140 + half - 1)).basin > 0, "basin 19 studs away: basin starts")
+	end)
 end
