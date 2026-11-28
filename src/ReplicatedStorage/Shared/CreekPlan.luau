@@ -1469,4 +1469,165 @@ function CreekPlan.foam(seed: number?): { Strip }
 	return out
 end
 
+---------------------------------------------------------------------------------------------
+-- The creek kit (Neon Pass 2, 11/28/2026): the gate arch, the hero fence and the lantern posts
+---------------------------------------------------------------------------------------------
+
+-- The one switch for the creek kit. On: Scenery.creekKit places CreekGateArch over the gate (the
+-- gray-box ArchPost and ArchBeam hide), eight CreekFenceSection copies on the gate face (the old
+-- posts and rails in that span hide; the creek's FenceNorth and FenceSouth walls keep their
+-- collision), WorldBuilder.paintSigns paints "Cedar Creek" on the arch's sign slab, and
+-- CreekSwap builds its lanterns from CreekLanternPost. Off: the gray box as before (each builder
+-- puts it back on its next run). Art from ServerStorage.Art (art/README.md, the last two sections).
+CreekPlan.CREEK_KIT_ON = true
+
+-- Triangles per placed set (art/models/manifest.json: the meshes of each set, specks included).
+CreekPlan.KIT_TRIS = {
+	CreekGateArch = 1100, -- bark 224, wood 668, stone 208
+	CreekFenceSection1 = 212,
+	CreekFenceSection2 = 212,
+	CreekLanternPost = 351, -- bark 205, metal 134, glass 12
+} :: { [string]: number }
+CreekPlan.KIT_LANTERNS = 2 -- the pool lantern and the gate lamp (CreekSwap.LAMPS)
+
+-- The arch, in studs from its pivot (the base centre, front -Z; the ground line SINK above it).
+-- At yaw -90 degrees its front faces the lake (+X) and its own +X runs south (+Z).
+CreekPlan.ARCH = {
+	sink = 0.4,
+	yaw = -math.pi / 2,
+	opening = 8.56, -- clear between the posts
+	stones = 8.1, -- clear between the footing stones
+	-- The sign slab: 0.32 thick, its centre plane z -1.02; the flat lake face 6.97 x 1.24 at
+	-- (0, 8.17, -1.18), the creek face at z -0.86. The painted board is a hair thicker so its two
+	-- faces sit just proud of the slab's.
+	sign = { y = 8.17, z = -1.02, width = 6.97, height = 1.24, depth = 0.36 },
+	-- The invisible post blocks: the posts and their stones, local |x| from INNER to OUTER, DEPTH
+	-- deep, from the ground to the beam's underside (10.2 over the pivot).
+	post = { inner = 4.1, outer = 5.7, depth = 1.6, top = 10.2 },
+}
+
+-- The arch's pivot over the gate leaf at (gx, gz) on ground `ground`.
+function CreekPlan.archCFrame(gx: number, gz: number, ground: number): CFrame
+	return CFrame.new(gx, ground - CreekPlan.ARCH.sink, gz) * CFrame.Angles(0, CreekPlan.ARCH.yaw, 0)
+end
+
+-- The painted board on the sign slab: its centre (LookVector = the lake face), width, height and
+-- thickness.
+function CreekPlan.archSign(arch: CFrame): (CFrame, number, number, number)
+	local S = CreekPlan.ARCH.sign
+	return arch * CFrame.new(0, S.y, S.z), S.width, S.height, S.depth
+end
+
+-- The two post blocks: { cframe, size } each.
+function CreekPlan.archColliders(arch: CFrame): { { cframe: CFrame, size: Vector3 } }
+	local P = CreekPlan.ARCH.post
+	local sink = CreekPlan.ARCH.sink
+	local h = P.top - sink
+	local out = {}
+	for _, side in { -1, 1 } do
+		local x = side * (P.inner + P.outer) / 2
+		table.insert(out, { cframe = arch * CFrame.new(x, sink + h / 2, 0), size = Vector3.new(P.outer - P.inner, h, P.depth) })
+	end
+	return out
+end
+
+-- The hero fence (the advisor: the gate face only, eight sections, the rest of the fence as it
+-- is). A section is 10 studs of fence: posts at local x +5 and 0, rails running on to -5.5 (its
+-- open end, toward the arch). Four a side, the first pivot FIRST from the gate's centre line so
+-- its rails end inside the arch post. The last post lands on Scenery's old post at END_AT (the
+-- old fence's posts stand every 76/12 studs from the leaf's edge at 4), so the run hands over to
+-- the old fence with no gap: the step stretches from 10 to about 10.88 (the modeler allows a
+-- stretch; the rails still meet the next post).
+CreekPlan.HERO_FENCE = {
+	first = 10.7,
+	perSide = 4,
+	endAt = 4 + 7 * 76 / 12, -- 48.33
+	post = 5, -- the far post, local +x
+	openEnd = 5.5, -- the rails' open end, local -x
+	sink = 0.4,
+	yawJitter = 0.025, -- radians either way (about 1.4 degrees)
+	liftJitter = 0.08, -- studs either way
+}
+
+export type FenceSection = { model: string, side: number, index: number, z: number, yaw: number, lift: number, cframe: CFrame }
+
+function CreekPlan.heroStep(): number
+	local F = CreekPlan.HERO_FENCE
+	return (F.endAt - F.post - F.first) / (F.perSide - 1)
+end
+
+-- The eight sections round the gate at (gx, gz), alternating the two variants (south starts on
+-- 1, north on 2). Seeded yaw and height jitter; the same seed gives the same fence.
+function CreekPlan.heroFence(seed: number?, gx: number, gz: number, ground: number): { FenceSection }
+	local F = CreekPlan.HERO_FENCE
+	local r = Scatter.rng((seed or CreekPlan.SEED) + 31)
+	local step = CreekPlan.heroStep()
+	local out: { FenceSection } = {}
+	for _, side in { 1, -1 } do -- south (+z), then north
+		for i = 0, F.perSide - 1 do
+			local d = F.first + i * step
+			local z = gz + side * d
+			local yaw = (if side == 1 then -math.pi / 2 else math.pi / 2) + Scatter.range(r, -F.yawJitter, F.yawJitter)
+			local lift = Scatter.range(r, -F.liftJitter, F.liftJitter)
+			local first = if side == 1 then 1 else 2
+			local variant = if i % 2 == 0 then first else 3 - first
+			table.insert(out, {
+				model = "CreekFenceSection" .. variant,
+				side = side,
+				index = i,
+				z = z,
+				yaw = yaw,
+				lift = lift,
+				cframe = CFrame.new(gx, ground - F.sink + lift, z) * CFrame.Angles(0, yaw, 0),
+			})
+		end
+	end
+	return out
+end
+
+-- Whether Scenery's old fence part (a "Post", or a "Rail" by its middle) at `z` hides under the
+-- hero fence round a gate at gz: posts up to and including the one the run ends on, rails short
+-- of it.
+function CreekPlan.heroHides(kind: string, z: number, gz: number): boolean
+	local d = math.abs(z - gz)
+	local E = CreekPlan.HERO_FENCE.endAt
+	if kind == "Post" then
+		return d <= E + 0.5
+	end
+	return d < E
+end
+
+-- The lantern post (CreekLanternPost): pivot at the foot, arm along local -Z, set at 1.15 so a
+-- 5 stud avatar walks under the lantern, sunk 0.1 so its stones bite. The glass core (the
+-- MeshPart that carries the light) is at CORE times the scale from the pivot.
+CreekPlan.LANTERN_KIT = { scale = 1.15, sink = 0.1, core = Vector3.new(0, 5.59, -1.2) }
+
+-- The turn about Y that points the arm (local -Z) along (ax, az).
+function CreekPlan.lanternYaw(ax: number, az: number): number
+	return math.atan2(-ax, -az)
+end
+
+function CreekPlan.lanternCFrame(foot: Vector3, ax: number, az: number): CFrame
+	local L = CreekPlan.LANTERN_KIT
+	return CFrame.new(foot - Vector3.new(0, L.sink, 0)) * CFrame.Angles(0, CreekPlan.lanternYaw(ax, az), 0)
+end
+
+function CreekPlan.lanternCore(cf: CFrame): Vector3
+	local L = CreekPlan.LANTERN_KIT
+	return (cf * CFrame.new(L.core * L.scale)).Position
+end
+
+-- The kit's triangles in the creek's views: the arch, the eight sections and the two lanterns.
+function CreekPlan.kitTriangles(): number
+	if not CreekPlan.CREEK_KIT_ON then
+		return 0
+	end
+	local T = CreekPlan.KIT_TRIS
+	local n = T.CreekGateArch + CreekPlan.KIT_LANTERNS * T.CreekLanternPost
+	for _, s in CreekPlan.heroFence(CreekPlan.SEED, 0, 0, 1) do
+		n += T[s.model]
+	end
+	return n
+end
+
 return CreekPlan

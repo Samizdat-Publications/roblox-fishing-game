@@ -24,6 +24,8 @@ local BoatRules = require(Shared:WaitForChild("BoatRules"))
 local Config = require(Shared:WaitForChild("Config"))
 local WaterMap = require(Shared:WaitForChild("WaterMap"))
 local Shore = require(Shared:WaitForChild("Shore"))
+local CreekPlan = require(Shared:WaitForChild("CreekPlan"))
+local ServerStorage = game:GetService("ServerStorage")
 
 local Scenery = {}
 
@@ -226,6 +228,131 @@ function Scenery.creekGateLook(lake: Instance): number
 		end
 	end
 	return Scenery.dressCreekGate(lake, fence)
+end
+
+-- The creek kit (Neon Pass 2, 11/28/2026; switch CreekPlan.CREEK_KIT_ON): CreekGateArch over the
+-- gate in place of the gray-box ArchPost and ArchBeam, with two invisible blocks where its posts
+-- stand (the old posts did not collide; the creek's FenceNorth and FenceSouth walls still run to
+-- the leaf's edges), and eight CreekFenceSection copies on the gate face (CreekPlan.heroFence) in
+-- place of the old posts and rails there. The leaf, its knee braces and its collision are not
+-- touched, so it opens for a Creek Pass or a buddy as before (ClientModules/Controller). Art from
+-- ServerStorage.Art; a piece that is missing leaves its gray box showing. Rebuilds Lake.Scenery.
+-- CreekKit and shows what an earlier run hid first, so it is safe to run again, and with the
+-- switch off it puts the gray box back. Scenery.apply runs it; on the saved world:
+--   require(game.ServerScriptService.Server.Scenery).creekKit(workspace.Lake)
+-- Then rerun WorldBuilder.paintSigns so the board moves onto the arch's sign slab.
+local KIT_FOLDER = "CreekKit"
+local KIT_HIDDEN = "CreekKitOrigTransparency"
+
+export type KitResult = { arch: boolean, sections: number, colliders: number, hidden: number, missing: { string } }
+
+local function kitArt(name: string): Model?
+	local folder = ServerStorage:FindFirstChild("Art")
+	local m = folder and folder:FindFirstChild(name)
+	return if m and m:IsA("Model") then m else nil
+end
+
+-- A decoration copy of a kit model at `cf` (no collision, no queries, no touches).
+local function kitCopy(template: Model, parent: Instance, cf: CFrame): Model
+	local m = template:Clone()
+	m:PivotTo(cf)
+	for _, d in m:GetDescendants() do
+		if d:IsA("BasePart") then
+			d.Anchored = true
+			d.CanCollide = false
+			d.CanQuery = false
+			d.CanTouch = false
+			d.CastShadow = true
+		end
+	end
+	m.Parent = parent
+	return m
+end
+
+function Scenery.creekKit(lake: Instance): KitResult
+	local res: KitResult = { arch = false, sections = 0, colliders = 0, hidden = 0, missing = {} }
+	local folder = lake:FindFirstChild(FOLDER)
+	local fence = folder and folder:FindFirstChild("CreekFence")
+	local creek = lake:FindFirstChild("CedarCreek")
+	local gate = creek and creek:FindFirstChild("CreekGate")
+	if not (folder and fence and gate and gate:IsA("BasePart")) then
+		return res
+	end
+	local old = folder:FindFirstChild(KIT_FOLDER)
+	if old then
+		old:Destroy()
+	end
+	for _, d in fence:GetChildren() do
+		local was = d:GetAttribute(KIT_HIDDEN)
+		if d:IsA("BasePart") and type(was) == "number" then
+			d.Transparency = was
+			d:SetAttribute(KIT_HIDDEN, nil)
+		end
+	end
+	if not CreekPlan.CREEK_KIT_ON then
+		return res
+	end
+	local kit = Instance.new("Folder")
+	kit.Name = KIT_FOLDER
+	kit.Parent = folder
+	local g = gate.Position
+	local ground = Scenery.GROUND_TOP
+	local function hide(p: BasePart)
+		if p:GetAttribute(KIT_HIDDEN) == nil then
+			p:SetAttribute(KIT_HIDDEN, p.Transparency)
+		end
+		p.Transparency = 1
+		res.hidden += 1
+	end
+
+	-- The arch, and its post blocks.
+	local archTpl = kitArt("CreekGateArch")
+	if archTpl then
+		local cf = CreekPlan.archCFrame(g.X, g.Z, ground)
+		kitCopy(archTpl, kit, cf).Name = "CreekGateArch"
+		for i, c in CreekPlan.archColliders(cf) do
+			local p = Instance.new("Part")
+			p.Name = "ArchPostBlock" .. i
+			p.Anchored = true
+			p.CanCollide = true
+			p.CanQuery = false
+			p.CanTouch = false
+			p.CastShadow = false
+			p.Transparency = 1
+			p.Size = c.size
+			p.CFrame = c.cframe
+			p.Parent = kit
+			res.colliders += 1
+		end
+		for _, d in fence:GetChildren() do
+			if d:IsA("BasePart") and (d.Name == "ArchPost" or d.Name == "ArchBeam") then
+				hide(d)
+			end
+		end
+		res.arch = true
+	else
+		table.insert(res.missing, "CreekGateArch")
+	end
+
+	-- The hero fence (both variants needed, so the run alternates).
+	local s1, s2 = kitArt("CreekFenceSection1"), kitArt("CreekFenceSection2")
+	if s1 and s2 then
+		for _, s in CreekPlan.heroFence(CreekPlan.SEED, g.X, g.Z, ground) do
+			local tpl = if s.model == "CreekFenceSection1" then s1 else s2
+			kitCopy(tpl, kit, s.cframe).Name = s.model
+			res.sections += 1
+		end
+		for _, d in fence:GetChildren() do
+			if d:IsA("BasePart") and (d.Name == "Post" or d.Name == "Rail") and math.abs(d.Position.X - g.X) < 2 then
+				if CreekPlan.heroHides(d.Name, d.Position.Z, g.Z) then
+					hide(d)
+				end
+			end
+		end
+	else
+		table.insert(res.missing, if s1 then "CreekFenceSection2" else "CreekFenceSection1")
+	end
+	return res
 end
 
 -- The old low-poly tree models (N1 round 2). BankDress swaps their copies for the bank kit near
@@ -792,6 +919,7 @@ function Scenery.apply(lake: Model): Result
 	end
 
 	folder.Parent = lake
+	Scenery.creekKit(lake) -- Neon Pass 2: the arch and the hero fence (CreekPlan.CREEK_KIT_ON)
 	return { hills = #hills, trees = treeCount, shore = shoreCount, walls = #walls:GetChildren() }
 end
 

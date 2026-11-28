@@ -49,6 +49,9 @@ export type BoardOptions = {
 	eave: number?, -- eave: the y the chains hang from
 	lantern: boolean?,
 	name: string?,
+	-- Paint only (the creek kit's arch, CreekPlan.archSign): the board is an unseen carrier for the
+	-- painted faces, laid on a slab the art already draws. No wood, no shadow, no supports.
+	bare: boolean?,
 }
 
 local function piece(parent: Instance, name: string, size: Vector3, cf: CFrame, color: Color3, material: Enum.Material, shadow: boolean?): Part
@@ -167,8 +170,12 @@ function Signs.board(opts: BoardOptions): Model
 	local paint = opts.paint or Signs.PAINT.creek
 	local ink = opts.ink or (if luminance(paint) > 0.5 then Signs.INK else Signs.CREAM)
 
-	local board = piece(m, "Board", Vector3.new(w, h, thick), cf, paint, Enum.Material.Wood)
-	weathered(board)
+	local board = piece(m, "Board", Vector3.new(w, h, thick), cf, paint, Enum.Material.Wood, not opts.bare)
+	if opts.bare then
+		board.Transparency = 1
+	else
+		weathered(board)
+	end
 	paintFace(board, Enum.NormalId.Front, opts.text, paint, ink)
 	if opts.twoSided then
 		paintFace(board, Enum.NormalId.Back, opts.text, paint, ink)
@@ -180,7 +187,9 @@ function Signs.board(opts: BoardOptions): Model
 	local behind = thick / 2 + POST / 2
 	local lanternAt: Vector3? = nil
 	local lanternChain: number? = nil
-	if opts.hang == "posts" or opts.hang == "post" then
+	if opts.bare then
+		lanternAt = nil
+	elseif opts.hang == "posts" or opts.hang == "post" then
 		local postTop = top + 0.2
 		local bottom = opts.ground or (cf.Position.Y - h / 2 - 3)
 		local len = math.max(postTop - bottom, 0.2)

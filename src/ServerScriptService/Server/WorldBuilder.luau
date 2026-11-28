@@ -11,6 +11,7 @@ local Config = require(Shared:WaitForChild("Config"))
 -- The water and zone boxes live in Shared/WaterMap so the client's landing ring uses the
 -- same map as the server (L2, 2026-11-26).
 local WaterMap = require(Shared:WaitForChild("WaterMap"))
+local CreekPlan = require(Shared:WaitForChild("CreekPlan"))
 local Signs = require(script.Parent.Signs) -- painted boards (leg 3, N2)
 
 local WorldBuilder = {}
@@ -970,7 +971,26 @@ function WorldBuilder.paintSigns(lake: Model): number
 	local creekGui = Signs.find(creek)
 	if creek and creekGui then
 		local gate = if creekGui.Adornee and creekGui.Adornee:IsA("BasePart") then creekGui.Adornee else creek:FindFirstChild("CreekGate")
-		if gate and gate:IsA("BasePart") then
+		-- Neon Pass 2 (CreekPlan.CREEK_KIT_ON): with the kit's arch up, the words are painted on its
+		-- live-edge sign slab (both faces), sized to the slab's flat face; no board of our own.
+		local kitArch = if CreekPlan.CREEK_KIT_ON then find(lake, "Scenery.CreekKit.CreekGateArch") else nil
+		if kitArch and kitArch:IsA("Model") then
+			local cf, width, height, depth = CreekPlan.archSign(kitArch:GetPivot())
+			local board = Signs.board({
+				name = "CreekSign",
+				text = "Cedar Creek",
+				width = width,
+				height = height,
+				thickness = depth,
+				cframe = cf, -- front to the lake (east), the arch's front
+				paint = Signs.PAINT.creek,
+				twoSided = true,
+				bare = true,
+			})
+			board.Parent = folder
+			Signs.cover(creekGui)
+			made += 1
+		elseif gate and gate:IsA("BasePart") then
 			local beam = nearPart(lake, "ArchBeam", gate.Position, 12)
 			local x, z, eave
 			if beam then

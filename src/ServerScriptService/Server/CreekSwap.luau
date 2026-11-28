@@ -26,6 +26,7 @@ local MaterialService = game:GetService("MaterialService")
 local CollectionService = game:GetService("CollectionService")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Scatter = require(Shared:WaitForChild("Scatter"))
+local CreekPlan = require(Shared:WaitForChild("CreekPlan"))
 
 local CreekSwap = {}
 
@@ -143,6 +144,50 @@ local function buildLantern(parent: Instance, base: Vector3, h: number, ax: numb
 	return m, glass
 end
 
+-- Neon Pass 2 (CreekPlan.CREEK_KIT_ON): the lantern post from the creek kit (CreekLanternPost in
+-- ServerStorage.Art) at scale 1.15, its foot on the old post's, the arm turned along (ax, az).
+-- The glass MeshPart is the lantern core the light goes in (ClientModules/Lanterns turns it Neon
+-- while lit, Glass by day). The metal stays white (its iron is in the vertex colours); metal and
+-- glass cast no shadow (the base plate would throw a dark square where the light pools), the
+-- bark may. Nil when the art or its glass is missing (the caller builds the gray box instead).
+local function buildKitLantern(parent: Instance, foot: Vector3, ax: number, az: number): (Model?, BasePart?)
+	local tpl = artModel("CreekLanternPost")
+	if not (CreekPlan.CREEK_KIT_ON and tpl) then
+		return nil, nil
+	end
+	local m = tpl:Clone()
+	m.Name = "CreekLantern"
+	m:ScaleTo(CreekPlan.LANTERN_KIT.scale)
+	m:PivotTo(CreekPlan.lanternCFrame(foot, ax, az))
+	local glass: BasePart? = nil
+	for _, d in m:GetDescendants() do
+		if d:IsA("BasePart") then
+			d.Anchored = true
+			d.CanCollide = false
+			d.CanQuery = false
+			d.CanTouch = false
+			local name = string.lower(d.Name)
+			if string.match(name, "_glass$") then
+				d.Material = Enum.Material.Glass
+				d.Color = CreekSwap.LANTERN_COLOR
+				d.CastShadow = false
+				glass = d
+			elseif string.match(name, "_metal$") then
+				d.Color = Color3.new(1, 1, 1)
+				d.CastShadow = false
+			else
+				d.CastShadow = true
+			end
+		end
+	end
+	if not glass then
+		m:Destroy()
+		return nil, nil
+	end
+	m.Parent = parent
+	return m, glass
+end
+
 -- The creek's pole-and-ball lamps: the named ones, then any glass or neon ball with a light
 -- whose thin upright post stands under it in the creek area. Each { ball, post, arm }.
 type Lamp = { ball: BasePart, post: BasePart?, arm: { number } }
@@ -216,6 +261,7 @@ end
 
 export type Result = {
 	lamps: number, -- pole-and-ball lamps turned into lantern posts
+	kit: number, -- of those, built from the creek kit's CreekLanternPost (CreekPlan.CREEK_KIT_ON)
 	lightsMoved: number, -- their PointLights moved into the new glass
 	pines: number, -- cone pines replaced
 	shorePines: number,
@@ -276,7 +322,7 @@ function CreekSwap.apply(lake: Instance): Result
 	local pinesFolder = Instance.new("Folder")
 	pinesFolder.Name = "Pines"
 	pinesFolder.Parent = folder
-	local res: Result = { lamps = 0, lightsMoved = 0, pines = 0, shorePines = 0, farPines = 0, pinesMissing = 0, lite = 0, hidden = 0 }
+	local res: Result = { lamps = 0, kit = 0, lightsMoved = 0, pines = 0, shorePines = 0, farPines = 0, pinesMissing = 0, lite = 0, hidden = 0 }
 
 	-- (a) The lamps.
 	for _, l in findLamps(lake) do
@@ -290,7 +336,15 @@ function CreekSwap.apply(lake: Instance): Result
 			base = ball.Position - Vector3.new(0, 8.4, 0)
 			h = 8.6
 		end
-		local _, glass = buildLantern(lampsFolder, base, h, l.arm[1], l.arm[2])
+		local _, kitGlass = buildKitLantern(lampsFolder, base, l.arm[1], l.arm[2])
+		local glass: BasePart
+		if kitGlass then
+			glass = kitGlass
+			res.kit += 1
+		else
+			local _, box = buildLantern(lampsFolder, base, h, l.arm[1], l.arm[2])
+			glass = box
+		end
 		local from = Instance.new("ObjectValue")
 		from.Name = LIGHT_FROM
 		from.Value = ball
