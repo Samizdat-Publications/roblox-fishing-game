@@ -1,5 +1,41 @@
 # Progress
 
+## Overnight report, 11/28/2026: N3 closed, the fleet built (switched off), a leg 4 draft (leg 3)
+
+**In one breath:** Cedar Creek (N3) is closed after its last review and saved as place version 180, with a known gap (the critic's look score stayed at 5.5). Two capture bugs were found and fixed, so earlier creek scores had been taken on the wrong picture. The N4 fleet's code and art are built and in the place, all switched off until their playtests. A leg 4 design draft and a fixed set of prime shots for the making-of are in the repo. Everything is pushed to main with the gate passing.
+
+**N3, Cedar Creek: what changed in the game**
+- A real woodland creek in place of the voxel pool and ditch: a rounded pool and a riffle with emergent wet-slate rocks, a leaning cedar canopy with hanging boughs over the riffle, roots, ferns, moss, a mossy log, gravel bars, bushes under the trees and cheap far pines closing the woods behind.
+- The riffle bed was too shallow for Roblox to draw a water surface (only a hard-edged patch showed); it is deeper now and the water runs up the chute.
+- The creek has its own light and water through the day (dawn mist, a darker golden pool, a calm night), now switched on for good with the other area looks (`LOOK_AREAS_ON`). The basin and the home lake were checked with it on; walking the two blend bands showed no pop.
+- Moss and forest floor replace the spiky meadow grass inside the creek fence and out to the gate.
+- A new gate: a peeled-log arch with knee braces, a shingle cap, stone footings and a hanging "Cedar Creek" board, a split-rail fence either side, and timber lantern posts with a warm light in the glass. The gate still opens with a Creek Pass.
+
+**N3: proven (with evidence)**
+- Advisor (Fable), three reviews, all "not yet". Gemini Neon's overnight review (`docs/reviews/2026-11-28-gemini-n3-creek-review.md`) was run as you asked: its Pass 1 in full, then its Pass 2 art ranks 1 and 2 (the gate set and the lantern post) once Pass 1 had not cleared the bar. The advisor ruled ranks 3 and 4 not worth it.
+- Critic (Neon, median of 3), creek shots 09 to 12: look 5.5 and identity 4 in every round (rounds 2 and 3, Pass 1, final). Measured on the final frames: sky in 09 is 4 percent (target under 8, met); night 12 is 16.9 (under 45, met); 09's mean brightness 35 (target 45, missed); 11 still shows 27 percent lime lawn (target under 3, missed: it is the home meadow in front of the gate, which the advisor kept out of scope).
+- Two capture bugs found and fixed: the shot pin was repainting the plain, ungraded look on most frames, and the area looks were off in every capture, so earlier creek rounds were scored on the wrong picture. On the fixed harness the home lake scores look 7, identity 5; set B (the Big Lake) look 5.5. These are the new baselines.
+- 529 tests pass in Studio and with Lune.
+- Frames at 1237 wide (comparable with `docs/PERF.md`): desktop render CPU 6.1 to 7.0 ms, phone 5.0 to 5.4. Desktop triangles 417k to 502k at shots 01, 09 and 10 (budget 700k); phone 227k to 325k (budget 350k). Over budget: phone draw calls at shot 01 (408, budget 300) and the high overview shot 07 (898k desktop, 475k phone, 466 draw calls), which the advisor logs as the aerial exception since no player stands there.
+
+**N3: the known gap (logged, carried)**
+- The critic's look stays at 5.5 and identity at 4. What it still names: the white water (hard-edged strips: `WHITE_WATER_ON` is held off), the Cedar model's bent-tip crown repeating across the pool, crushed black shadows in the canopy, the lit path reading pale at night, the home meadow's lime lawn at the gate, and the stock sky. The sky is the planned A/B step; the rest goes on the leg's look list.
+
+**N4, the fleet: built, not yet played (all switches off)**
+- Code: the Cedar Canoe (350 coins, 7 studs a second alone, 11 with a second paddler), a second seat in the dinghy, net it, the assist bonus (10 percent, no more even split), quiet approach, the buddy rod loan, Double Hookup (cut from 25 to 10 percent to fit the coin ceiling), chum, "Send my boat home", old saves load (save version 11). The feel layer: trim, lean, bob, wakes, spray, the speed camera, running lights, the horn, paddling poses, touch buttons.
+- Art in the place: the Cedar Canoe and paddle (hero set and phone twin), the new orange dinghy with its outboard, the boathouse, price boards and mooring floats.
+- Economy: the dock kid owns the canoe at 18 minutes (target 20); his Graphite Rod moves 12.08 minutes (limit 12, logged as a 5 second miss); an expert pair stays inside the ceiling at 107.2.
+- Next: the N4 playtests in Studio, one switch at a time, then set C.
+
+**New this night**
+- **Leg 4 draft** (`docs/superpowers/plans/2026-11-28-leg-4-draft.md`, not approved): the Lugger (a six-seat sailing work boat one player can run with effort, better with a crew, with a group "spread" catch and up to 15 percent crew bonus), three islands with four real fish each circling them by sun, wind or clock, the Survey (a lake biologist's fish-finding missions that teach bait, time, place and boat), and the core loop first (the hooked fish drawn in the water during the fight). It has five questions for you at the end.
+- **Prime shots** (`docs/looks/prime-shots.md`): eight fixed beauty shots with real lenses (24 to 85 mm), re-taken every milestone for the making-of; four more wait for their areas. First set: `artifacts/shots/2026-11-28-0320-P/`.
+
+**What needs you**
+- Read the leg 4 draft's five questions when you have a minute (first sea fresh water; the Lugger's price; who may board; four fish per island; the server's player limit).
+- Your frame counter on your PC and phone (still owed from N1); the phone's draw calls at the dock are over budget in Studio's stand-in and only a real phone can say if it matters.
+- Liam's weekend: walk to the stands without labels (N2), and paddle the canoe together (N4).
+
 ## N2 report, 11/27/2026 (night): the handmade UI (leg 3)
 
 N2 is done and switched on (`UI_STYLE_ON`, `BOARD_CARD_ON`), saved in the place as version 156 ("N2: the field-guide UI and the board card on"). 443 tests pass in Studio and with Lune; a playtest with the new screens (real casts, three catches, the card with the real fish, a sale, buying worms, the journal) logged no script errors.

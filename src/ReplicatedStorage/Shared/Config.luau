@@ -90,7 +90,7 @@ Config.LURE_RETRIEVE_ON = true
 -- water; off, the client draws exactly what the server drew. REALISTIC_DESKTOP lets the desktop
 -- tier set Lighting.LightingStyle to Realistic; off, the place's own style is kept.
 Config.LOOK_DIRECTOR_ON = true -- on 11/27/2026 after its playtest: set A 6.0 off and 6.0 on, clocks match
-Config.LOOK_AREAS_ON = false
+Config.LOOK_AREAS_ON = true -- on 11/28/2026 at the N3 close: lake set A 7 with it on, set B and both blend bands checked (no pop)
 Config.REALISTIC_DESKTOP = true -- N1: the place runs Realistic (set in Edit; a LocalScript cannot write LightingStyle) and the grade applies
 -- Painted world signs (leg 3, N2): wooden boards with painted words (Server/Signs) in place of
 -- the floating name labels, and sign lanterns lit at night (ClientModules/Lanterns). Off, the
@@ -122,7 +122,7 @@ Config.BOARD_CARD_ON = true -- on 11/27/2026 with the UI restyle
 -- White water on Cedar Creek's riffle (leg 3, N3, ClientModules/WhiteWater): scrolling foam strips
 -- down the riffle and below the boulders, a little spray at the riffle's head and its drop. Never
 -- on the phone tier (player attribute LookTierActive "phone": fill rate). Off, nothing is made.
-Config.WHITE_WATER_ON = false
+Config.WHITE_WATER_ON = false -- held off at the N3 close (11/28/2026): the critic still reads the strips as hard-edged rectangles
 
 -- The fleet (leg 3, N4). Each lands switched off and is turned on after its own playtest.
 -- CANOE_ON: the Cedar Canoe is for sale (350 coins, two paddlers, Lily Cove), the dinghy gets

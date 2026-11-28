@@ -3903,5 +3903,228 @@
         ]
       }
     }
+  },
+  {
+    "date": "2026-11-28",
+    "step": "N3 final creek",
+    "set": "A",
+    "rubric": "look",
+    "run": "2026-11-28-0320",
+    "commit": "3137063",
+    "shots": 4,
+    "median": 5.5,
+    "scores": [
+      5.5,
+      5.5,
+      6
+    ],
+    "points": {
+      "composition": 7,
+      "light": 5,
+      "water": 5,
+      "mood": 7,
+      "want_to_fish": 6,
+      "phone_readability": 5,
+      "broken_or_ugly": 4
+    },
+    "reports": [
+      "docs\\critic\\2026-11-28-N3 final creek-neon.md",
+      "docs\\critic\\2026-11-28-N3 final creek-neon-2.md",
+      "docs\\critic\\2026-11-28-N3 final creek-neon-3.md"
+    ],
+    "weather": {
+      "09-riffle-dawn": "Clear",
+      "10-pool-golden": "Clear",
+      "11-gate-noon": "Clear",
+      "12-pool-night": "Clear"
+    },
+    "session": {
+      "09-riffle-dawn": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      },
+      "10-pool-golden": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      },
+      "11-gate-noon": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      },
+      "12-pool-night": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      }
+    }
+  },
+  {
+    "date": "2026-11-28",
+    "step": "N3 final creek",
+    "set": "A",
+    "rubric": "identity",
+    "run": "2026-11-28-0320",
+    "commit": "3137063",
+    "shots": 4,
+    "median": 4,
+    "scores": [
+      4,
+      4,
+      4.5
+    ],
+    "points": {
+      "materials": 4,
+      "signature": 4,
+      "cohesion": 4,
+      "stock_free": 4,
+      "identity": 4
+    },
+    "reports": [
+      "docs\\critic\\2026-11-28-N3 final creek-identity-neon.md",
+      "docs\\critic\\2026-11-28-N3 final creek-identity-neon-2.md",
+      "docs\\critic\\2026-11-28-N3 final creek-identity-neon-3.md"
+    ],
+    "stock_items": [
+      {
+        "item": "Stock Roblox Terrain Grass and Ground/Mud (11-gate-noon.jpg entire foreground and path; 09-riffle-dawn.jpg left and right creek banks)",
+        "reason": "Reads unmistakably as default smooth, blurry-textured lime-green Roblox grass and flat brown mud painted with the stock terrain brush.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Terrain Sand (10-pool-golden.jpg right bank; 12-pool-night.jpg right bank)",
+        "reason": "Smooth untextured default beige terrain sand with a sharp grass edge that turns icy pale grey-white at night.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox Sky and volumetric Clouds (11-gate-noon.jpg top; 10-pool-golden.jpg top; 12-pool-night.jpg top)",
+        "reason": "Displays the signature default Roblox bright blue midday sky and standard Roblox Clouds across day, golden hour, and night.",
+        "runs": 1
+      },
+      {
+        "item": "Flat-shaded low-poly bushes and ground ferns (11-gate-noon.jpg lower-left and lower-right foreground; 10-pool-golden.jpg and 12-pool-night.jpg bottom-right bank)",
+        "reason": "Sharp faceted polygons with SmoothPlastic/flat untextured shading that read like standard low-poly Roblox free-model foliage.",
+        "runs": 1
+      },
+      {
+        "item": "Repeated stylized pine trees (10-pool-golden.jpg and 12-pool-night.jpg entire far-bank treeline; 09-riffle-dawn.jpg foreground canopy) and generic conical low-poly pines (11-gate-noon.jpg background; 09-riffle-dawn.jpg far left)",
+        "reason": "Identical cloned silhouettes with crooked top blobs mixed with generic angular Roblox forest-pack pines read as Toolbox assets rather than bespoke trees.",
+        "runs": 1
+      },
+      {
+        "item": "Rectangular whitewater riffle planes (09-riffle-dawn.jpg center and bottom-right of the stream)",
+        "reason": "Hard-edged rectangular strips of stretched white lines read as raw Roblox Beam or Decal parts placed over the water.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Terrain Grass and Mud trail in 11-gate-noon.jpg (entire bottom half foreground)",
+        "reason": "Blurry, smooth-blended default Roblox green grass and brown mud terrain with no ground grit or organic detail.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Terrain Sand and Grass bank in 10-pool-golden.jpg and 12-pool-night.jpg (right foreground path)",
+        "reason": "Smooth, featureless default Roblox terrain sand blending into default grass; reads as flat pale snow/plastic under moonlight in 12-pool-night.jpg.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Terrain Grass, Mud, and Rock banks in 09-riffle-dawn.jpg (left and right stream banks and upper-center creek head)",
+        "reason": "Soft, low-detail default Roblox terrain surfaces.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox Sky and Clouds in 11-gate-noon.jpg (top half), 10-pool-golden.jpg (top half), and 12-pool-night.jpg (top third)",
+        "reason": "Standard saturated Roblox daytime blue sky and recognizable default dynamic Clouds noise pattern.",
+        "runs": 1
+      },
+      {
+        "item": "Low-poly bushes and ground ferns in 11-gate-noon.jpg (foreground center-left, center, and right) and 10-pool-golden.jpg / 12-pool-night.jpg (lower-right foreground)",
+        "reason": "Chunky faceted green meshes that read as flat-coloured SmoothPlastic or Plastic rather than textured leaves.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox terrain Grass and Mud/Ground in 11-gate-noon.jpg (entire foreground and trail) and 09-riffle-dawn.jpg (left bank and distant clearing)",
+        "reason": "Smooth, airbrushed bright green grass and flat brown mud transitions without custom MaterialVariant textures read immediately as default Roblox terrain.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox terrain Sand path and bank grass in 10-pool-golden.jpg and 12-pool-night.jpg (right foreground bank)",
+        "reason": "The smooth pale beige sand (which turns pale snowy grey at night in 12-pool-night.jpg) and smooth green bank edge look like unmodified default Roblox terrain materials.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox Sky and volumetric Clouds in 11-gate-noon.jpg (top frame), 10-pool-golden.jpg (top frame), and 12-pool-night.jpg (top frame)",
+        "reason": "The saturated default midday blue sky, standard golden-hour sky tint, and default wispy Roblox cloud layer give away the engine immediately.",
+        "runs": 1
+      },
+      {
+        "item": "Faceted SmoothPlastic-like bushes and ferns in 11-gate-noon.jpg (foreground center-left large bush and three small clumps on the right) and 10-pool-golden.jpg / 12-pool-night.jpg (bottom-right foreground ferns)",
+        "reason": "Hard-edged low-poly triangles shaded in flat dark green with no leaf grain or material breakup read like a standard Roblox low-poly free-model foliage pack.",
+        "runs": 1
+      },
+      {
+        "item": "Smooth-trunk bulbous curly-top pine trees in 09-riffle-dawn.jpg (foreground left and right) and 10-pool-golden.jpg / 12-pool-night.jpg (entire treeline across the pond)",
+        "reason": "Plain smooth brown cylindrical trunks with no visible bark grain and repeated identical curved-tip silhouettes read as generic stylized free-model trees and clash with the sharp textured-bark pines in 11-gate-noon.jpg.",
+        "runs": 1
+      },
+      {
+        "item": "Flat white-streak riffle strips in 09-riffle-dawn.jpg (center through bottom-right along the creek)",
+        "reason": "Unblended rectangular beams or flat parts with a stretched white-line texture look like raw default Roblox effects rather than real moving creek water.",
+        "runs": 1
+      }
+    ],
+    "weather": {
+      "09-riffle-dawn": "Clear",
+      "10-pool-golden": "Clear",
+      "11-gate-noon": "Clear",
+      "12-pool-night": "Clear"
+    },
+    "session": {
+      "09-riffle-dawn": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      },
+      "10-pool-golden": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      },
+      "11-gate-noon": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      },
+      "12-pool-night": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      }
+    }
   }
 ]

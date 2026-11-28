@@ -219,12 +219,19 @@ _G.__shotTopbarHidden = (topbar == "hidden")
 -- come back. Command-level code can reach CoreGui; a failure leaves "coretopbar 0".
 local CG = game:GetService("CoreGui")
 local CORE_TOPBAR = { TopBarApp = true, TopBarScrim = true }
+-- TopBarApp is a Folder (11/28/2026), so switch off every LayerCollector at or under a named root.
 local function coreOff(g: Instance): number
-\tif CORE_TOPBAR[g.Name] and g:IsA("LayerCollector") then
-\t\tlocal ok = pcall(function() (g :: any).Enabled = false end)
-\t\treturn if ok then 1 else 0
+\tif not CORE_TOPBAR[g.Name] then return 0 end
+\tlocal n = 0
+\tlocal list = g:GetDescendants()
+\ttable.insert(list, g)
+\tfor _, d in list do
+\t\tif d:IsA("LayerCollector") then
+\t\t\tlocal ok = pcall(function() (d :: any).Enabled = false end)
+\t\t\tif ok then n += 1 end
+\t\tend
 \tend
-\treturn 0
+\treturn n
 end
 local coreTopbar = 0
 pcall(function()
