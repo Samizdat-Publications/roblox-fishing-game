@@ -639,11 +639,14 @@ return function(t, Shared)
 	t.test("water by time: a mirror at dawn, a light chop by day, calm at night", function()
 		local home = LookPresets.AREAS.home.water
 		local day = LookPresets.homeWaterAt(12)
-		for _, k in { "WaterTransparency", "WaterReflectance", "WaterWaveSize", "WaterWaveSpeed" } do
-			t.ok(math.abs(day[k] - home[k]) < 1e-9, "day is home's water: " .. k)
-		end
+		-- Noon water (Gemini fold-in, N1 close-out): a finer chop than home's own water.
+		t.ok(math.abs(day.WaterWaveSize - 0.09) < 1e-9, "noon wave size 0.09")
+		t.ok(math.abs(day.WaterReflectance - 0.28) < 1e-9, "noon reflectance 0.28")
+		t.ok(math.abs(day.WaterWaveSpeed - 6) < 1e-9, "noon wave speed 6")
+		t.ok(math.abs(day.WaterTransparency - home.WaterTransparency) < 1e-9, "noon transparency is home's")
 		t.ok(day.WaterColor == home.WaterColor, "colour stays home's")
 		t.ok(math.abs(day.WaterTransparency - 0.42) < 1e-9, "home transparency 0.42")
+		t.eq(home.WaterWaveSize, 0.12, "home's own water unchanged (no clock)")
 		local dawn = LookPresets.homeWaterAt(6)
 		t.ok(dawn.WaterWaveSize >= 0.02 and dawn.WaterWaveSize <= 0.05, "dawn waves 0.02 to 0.05")
 		t.ok(dawn.WaterReflectance >= 0.6, "dawn reflectance high")

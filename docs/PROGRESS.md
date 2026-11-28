@@ -528,6 +528,7 @@ A full loop on keyboard and mouse, touch and gamepad: cast from the dock or shor
 - The test save on the Studio account holds Claude's playtest results (as of 11/27/2026 after L7: 100 coins, the Inflatable Dinghy, the Graphite Rod, braided line, a few fish in the bag, a monster carp on the trophy wall). Ask Claude to wipe it if you want a fresh start.
 
 ## Waiting on Stewart
+- **Gemini critic credits: topped up by Stewart, 11/27/2026 evening.** They had run out mid-run (HTTP 402); the missed creek score was rerun after the top-up.
 - **Leg 3 plan: approved 11/27/2026.** Still to come from you during the leg: read the frame counter on your PC and your phone after N1 and after N6, and confirm Liam's account on the weekend of 12/05/2026.
 - **ID verification: done 11/27/2026.** Stewart completed Roblox's age verification on the account Studio is signed in to (the one he and Liam have been playing on, and the one Claude uploads with). It counts: that evening six audio uploads went through after the month's 100 were used up. New sounds the same evening: the dinghy motor (idle and running), the frenzy boil and its music burst, a goal chime, coins, journal and UI clicks, cast, plop, line snap, pond splash, boat bump, buoy bell, thunder and a wind gust (two sound sheets), and rain from Roblox's licensed library. All load in play, and the motor follows the boat's speed.
 - **Voice chat off:** in Studio, File, Experience Settings, Communication, turn Enable Voice Chat off.

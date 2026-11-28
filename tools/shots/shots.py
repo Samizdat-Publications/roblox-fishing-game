@@ -12,6 +12,16 @@ A home lake and creek, B the Big Lake, C the boats (N4), D the island (N6), U th
   python tools/shots/shots.py snippet 01-dock-dawn      Luau for one shot or screen (execute_luau, Client)
   python tools/shots/shots.py snippet all [--set U]    every shot of a set, for reference
   python tools/shots/shots.py newrun [--set B]         makes artifacts/shots/<stamp>[-<set>]/ and prints it
+  python tools/shots/shots.py snippet weather          Luau for the SERVER (execute_luau, Server, not Client):
+                                                       sets workspace DebugWeather to Clear, waits 25 s for
+                                                       the look to settle, returns the Weather attribute
+  Weather: every scored shot must be taken under Clear. The client cannot force it: DebugWeather
+  is a server attribute (Studio only; WeatherService then holds that kind through every refresh,
+  the UTC date roll and game midnight included, until it is cleared). Run "snippet weather" on
+  the Server once per Play session, after pin. Each shot snippet returns the Weather it sees,
+  like "shot 03-dockend-noon set Clear"; record it right after the capture:
+  python tools/shots/shots.py weather <run> <id> <kind>  writes run.json "weather": {"<id>": "<kind>"}
+                                                       (<id> may be "all" for every shot of the run)
   (per shot: execute the snippet, then
    powershell -ExecutionPolicy Bypass -File tools/capture-studio.ps1 -ViewportOnly -Out <run>/<id>.jpg
    capture-studio.ps1 picks the window titled "Fishing Game" when several Studios are open)
@@ -24,6 +34,10 @@ A home lake and creek, B the Big Lake, C the boats (N4), D the island (N6), U th
   <run>/audit.json; score stores it beside the scores.
   python tools/shots/shots.py sheet <run> [--before <run>]   contact sheet (and before/after pairs)
   python tools/shots/shots.py score <run> --step <slug> [--runs 3] [--note "..."] [--also identity]
+                                                       [--any-weather]
+                                                       Refuses a run whose run.json "weather" is not
+                                                       Clear for every scored shot, unless --any-weather
+                                                       (old runs, before the weather was recorded).
                                                        Neon review, median of runs, appended to
                                                        docs/critic/score_history.json. Rubric by set:
                                                        look for A, B, C, D and ui for U (--rubric
@@ -163,6 +177,17 @@ task.wait(0.5)
 """
 
 
+# Run on the SERVER (execute_luau, Server data model) once per Play session: DebugWeather is a
+# server attribute, so the client cannot set it. WeatherService holds the kind in Studio.
+WEATHER = """-- Server, during Play: hold Clear for the look shots (Studio only; see WeatherService).
+workspace:SetAttribute("DebugWeather", "Clear")
+task.wait(25) -- let the weather look blend in before any capture
+return "weather " .. tostring(workspace:GetAttribute("Weather"))
+"""
+
+SCORED_WEATHER = "Clear"
+
+
 def shot_line(s: dict) -> str:
     e, l = s["eye"], s["look"]
     return (f"_G.__shot = {{clock = {s['clock']}, fov = {SHOTS['fov']}, "
@@ -175,7 +200,7 @@ def luau_for(s: dict) -> str:
         return (f"-- screen {s['id']}: {s['what']} (capture at {sizes}; run pin first)\n"
                 + shot_line(s) + SCREEN_PRELUDE + "\n".join(s["luau"]) + "\n")
     return (f"-- shot {s['id']}: {s['what']}\n" + shot_line(s)
-            + f"task.wait(1.5)\nreturn \"shot {s['id']} set\"\n")
+            + f"task.wait(1.5)\nreturn \"shot {s['id']} set \" .. tostring(workspace:GetAttribute(\"Weather\"))\n")
 
 
 def git_commit() -> str:
@@ -208,6 +233,8 @@ def cmd_list(a):
 def cmd_snippet(a):
     if a.id == "pin":
         print(PIN)
+    elif a.id == "weather":
+        print(WEATHER)
     elif a.id == "all":
         for s in need_set(a.set):
             print(luau_for(s))
@@ -226,6 +253,43 @@ def cmd_newrun(a):
         meta["screen_sizes"] = [list(x) for x in SCREEN_SIZES]
     (run / "run.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
     print(run)
+
+
+def read_meta(run: Path) -> dict:
+    meta = run / "run.json"
+    return json.loads(meta.read_text(encoding="utf-8")) if meta.exists() else {}
+
+
+def cmd_weather(a):
+    run = Path(a.run)
+    meta_path = run / "run.json"
+    if not meta_path.exists():
+        sys.exit(f"No run.json in {run}. Make the run with: python tools/shots/shots.py newrun")
+    meta = read_meta(run)
+    ids = meta.get("shots") or [s["id"] for s in need_set(meta.get("set", "A"))]
+    if a.id == "all":
+        targets = list(ids)
+    elif a.id in ids:
+        targets = [a.id]
+    else:
+        sys.exit(f"{a.id} is not a shot of {run.name}. Its shots: {', '.join(ids)}")
+    weather = meta.setdefault("weather", {})
+    for sid in targets:
+        weather[sid] = a.kind
+    meta_path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
+    note = "" if a.kind == SCORED_WEATHER else f"  (not {SCORED_WEATHER}: score will refuse it without --any-weather)"
+    print(f"{run.name}: " + ", ".join(f"{sid} {a.kind}" for sid in targets) + note)
+
+
+def weather_problems(run: Path, shots: list[dict]) -> list[str]:
+    """Scored shots whose recorded weather is missing or not Clear."""
+    recorded = read_meta(run).get("weather", {}) or {}
+    bad = []
+    for s in shots:
+        w = recorded.get(s["id"])
+        if w != SCORED_WEATHER:
+            bad.append(f"{s['id']} ({w if w else 'not recorded'})")
+    return bad
 
 
 def images(run: Path, shots: list[dict]) -> list[tuple[str, Path | None]]:
@@ -344,6 +408,16 @@ def cmd_score(a):
     files = [str(p) for _, p in found if p]
     if not files:
         sys.exit(f"No images for set {set_name} in {run}")
+    scored = [s for s in shots if any(p for stem, p in found if stem in file_stems(s))]
+    bad = weather_problems(run, scored)
+    if bad and not a.any_weather:
+        sys.exit(f"Refusing to score {run.name}: these shots were not recorded under {SCORED_WEATHER}: "
+                 + ", ".join(bad) + ". Record each with: python tools/shots/shots.py weather <run> <id> <kind>"
+                 " (or pass --any-weather for an old run).")
+    if bad:
+        print(f"Warning (--any-weather): not recorded under {SCORED_WEATHER}: " + ", ".join(bad))
+    recorded = read_meta(run).get("weather", {}) or {}
+    weather = {s["id"]: recorded.get(s["id"]) for s in scored}
     if len(files) < len(found):
         print(f"Warning: only {len(files)} of {len(found)} images found in {run}")
     audit = None
@@ -358,6 +432,9 @@ def cmd_score(a):
     hist = json.loads(HISTORY.read_text(encoding="utf-8")) if HISTORY.exists() else []
     for rubric in rubrics:
         entry = score_one(a, run, set_name, files, rubric, audit)
+        entry["weather"] = weather
+        if bad:
+            entry["any_weather"] = True
         hist.append(entry)
         HISTORY.write_text(json.dumps(hist, indent=2) + "\n", encoding="utf-8")
         print(f"set {set_name}, {rubric}: median {entry['median']}/10 over {a.runs} runs, appended to {HISTORY.relative_to(ROOT)}")
@@ -371,6 +448,10 @@ def main():
     p = sub.add_parser("list"); p.add_argument("--set", choices=SETS, default="A"); p.set_defaults(fn=cmd_list)
     p = sub.add_parser("snippet"); p.add_argument("id"); p.add_argument("--set", choices=SETS, default="A"); p.set_defaults(fn=cmd_snippet)
     p = sub.add_parser("newrun"); p.add_argument("--set", choices=SETS, default="A"); p.set_defaults(fn=cmd_newrun)
+    p = sub.add_parser("weather", help="record the weather a shot was taken under in run.json")
+    p.add_argument("run"); p.add_argument("id", help='a shot id of the run, or "all"')
+    p.add_argument("kind", help="the Weather attribute the shot snippet returned, like Clear")
+    p.set_defaults(fn=cmd_weather)
     p = sub.add_parser("sheet"); p.add_argument("run"); p.add_argument("--before"); p.add_argument("--out")
     p.add_argument("--set", choices=SETS, default=None, help="default: the run's own set (run.json), else A")
     p.set_defaults(fn=cmd_sheet)
@@ -382,6 +463,7 @@ def main():
     p.add_argument("--audit", default=None, help="audit.luau output saved as JSON (default: <run>/audit.json if present)")
     p.add_argument("--note", default="")
     p.add_argument("--group", default=None, help="score only this group of the set, like lake or creek")
+    p.add_argument("--any-weather", action="store_true", help="score even if a shot's recorded weather is not Clear (old runs)")
     p.set_defaults(fn=cmd_score)
     a = ap.parse_args()
     a.fn(a)

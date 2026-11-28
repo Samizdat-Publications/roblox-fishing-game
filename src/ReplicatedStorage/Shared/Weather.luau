@@ -149,6 +149,17 @@ function Weather.planForDate(date: number): DayPlan
 	return plan :: DayPlan
 end
 
+-- The Studio-only weather hold (N1 close-out): the plan for this refresh. `held` is the
+-- DebugWeather attribute's value (any type) and `studio` says whether this is Studio. In
+-- Studio a valid kind id wins over the date's plan on every refresh (new date, game midnight),
+-- so the look harness keeps its forced weather; anything else, or a live server, gets `dated`.
+function Weather.heldPlan(dated: DayPlan, held: any, studio: boolean, day: number, wind: string?): DayPlan
+	if studio and type(held) == "string" and Weather.byId[held] then
+		return { day = day, kind = held, wind = wind }
+	end
+	return dated
+end
+
 -- What the weather is at this hour of a planned day (fog lifts; a storm day goes rush,
 -- storm, then clear).
 function Weather.at(plan: DayPlan, clock: number, moon: number): Now

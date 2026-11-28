@@ -384,6 +384,9 @@ LookPresets.REALISTIC_GRADE = {
 	},
 	golden = {
 		Lighting = { ExposureCompensation = -0.4 },
+		-- Follow-up knob (N1 review 3), OFF: the advisor wants this grade seen under Clear first.
+		-- To try a lighter golden haze (net Density 0.22), swap Density -0.07 for -0.10 below.
+		-- Atmosphere = { Glare = -2.2, Haze = -0.8, Density = -0.10, Color = rgb(224, 186, 140) },
 		Atmosphere = { Glare = -2.2, Haze = -0.8, Density = -0.07, Color = rgb(224, 186, 140) },
 		BloomEffect = { Intensity = -0.4, Threshold = 0.5 },
 		SunRaysEffect = { Intensity = -0.17 },
@@ -803,14 +806,16 @@ end
 
 -- The home lake's water by time of day (N1, signature 4: a mirror at dawn, a light chop by
 -- day, calm at night). Per preset id, blended with the preset weights; WaterColor stays the
--- home area's. Day is the home water as it was (AREAS.home.water). Used with
--- Config.WATER_BY_TIME_ON (on its own, or inside the area blend with LOOK_AREAS_ON).
+-- home area's. Used with Config.WATER_BY_TIME_ON (on its own, or inside the area blend with
+-- LOOK_AREAS_ON). Day was the home water as it was (AREAS.home.water) until the noon water of
+-- the Gemini fold-in (11/27/2026, N1 close-out): a finer chop (wave 0.12 to 0.09, speed 8 to 6)
+-- and reflectance 0.35 to 0.28; transparency kept at 0.42. AREAS.home.water is unchanged.
 export type TimeWater = { WaterTransparency: number, WaterReflectance: number, WaterWaveSize: number, WaterWaveSpeed: number }
 
 -- stylua: ignore
 LookPresets.WATER_BY_TIME = {
 	dawn =   { WaterWaveSize = 0.03, WaterWaveSpeed = 3, WaterReflectance = 0.75, WaterTransparency = 0.38 }, -- glass
-	day =    { WaterWaveSize = 0.12, WaterWaveSpeed = 8, WaterReflectance = 0.35, WaterTransparency = 0.42 }, -- small chop
+	day =    { WaterWaveSize = 0.09, WaterWaveSpeed = 6, WaterReflectance = 0.28, WaterTransparency = 0.42 }, -- fine noon chop (N1 close-out)
 	golden = { WaterWaveSize = 0.08, WaterWaveSpeed = 6, WaterReflectance = 0.55, WaterTransparency = 0.42 }, -- settling, glints
 	dusk =   { WaterWaveSize = 0.05, WaterWaveSpeed = 4, WaterReflectance = 0.6,  WaterTransparency = 0.4 },
 	night =  { WaterWaveSize = 0.08, WaterWaveSpeed = 3, WaterReflectance = 0.25, WaterTransparency = 0.42 }, -- calm, holds the moon (N1 review 2: less mirror, more break-up, against the tan reflection band)

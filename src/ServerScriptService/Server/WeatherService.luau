@@ -95,14 +95,26 @@ function WeatherService.start()
 	end
 	-- Studio-only test hook: set workspace attribute DebugWeather to a kind id to force it
 	-- (scripts run from the Studio tools live in their own VM and can't call force directly).
+	-- While it holds a valid kind, every refresh below keeps that kind (Weather.heldPlan);
+	-- set it to nil to go back to the date's plan right away. A live server never reads it.
 	if RunService:IsStudio() then
-		workspace:GetAttributeChangedSignal("DebugWeather"):Connect(function()
+		local holding = false
+		local function fromAttribute()
 			local kind = workspace:GetAttribute("DebugWeather")
 			if type(kind) == "string" and Weather.byId[kind] then
+				holding = true
 				WeatherService.force(kind)
-				print(string.format("[Weather] forced %s (Studio test)", kind))
+				print(string.format("[Weather] forced %s (Studio test, held until DebugWeather is cleared)", kind))
+			elseif kind == nil and holding then
+				holding = false
+				plan = Weather.planForDate(date)
+				current = Weather.at(plan, Lighting.ClockTime, Weather.moonOf(day))
+				publish(true)
+				print("[Weather] hold cleared: back to the date's plan")
 			end
-		end)
+		end
+		workspace:GetAttributeChangedSignal("DebugWeather"):Connect(fromAttribute)
+		fromAttribute() -- already set before Play started
 	end
 	RunService.Heartbeat:Connect(function(dt)
 		timer += dt
@@ -117,7 +129,9 @@ function WeatherService.start()
 				day += 1
 			end
 			date = today
-			plan = Weather.planForDate(date)
+			-- In Studio a DebugWeather kind holds through the refresh (Weather.heldPlan), so the
+			-- look harness's Clear survives the UTC date roll and game midnight. Never live.
+			plan = Weather.heldPlan(Weather.planForDate(date), workspace:GetAttribute("DebugWeather"), RunService:IsStudio(), day, plan.wind)
 			if clock >= lastClock then
 				publish(false) -- a new date mid game day: the forecast changes even if the sky doesn't yet
 			end

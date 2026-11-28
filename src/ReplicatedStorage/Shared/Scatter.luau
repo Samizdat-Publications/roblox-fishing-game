@@ -716,6 +716,7 @@ export type Item = {
 	scale: number,
 	water: boolean, -- true: stands in the water (pivot from the surface, y 0), else on the terrain
 	shadow: boolean,
+	sink: number?, -- studs more to bury it (Scatter.seatReeds: a reed clump on ground above the water)
 }
 
 export type Plan = {
@@ -743,6 +744,9 @@ Scatter.TAGS = {
 	TreeSwap = "FoliageTree",
 	FrontRow = "FoliageTree",
 	BackRow = "FoliageTree",
+	CrestPines = "FoliageTree", -- far pines on the horizon's hill crests (Scatter.crestPines)
+	FootReeds = "FoliageReed", -- either side of the dock foot (N1 close-out)
+	FootStones = "FoliageStone",
 } :: { [string]: string }
 
 -- True for the far models (FarPine1/2, FarLeafy1/2): the phone tier hides every second one
@@ -761,6 +765,20 @@ function Scatter.waterline(x: number, z: number): number
 	end
 	return d
 end
+
+-- (N1 close-out) The bank's modelled ground height over the water's surface (y 0) at (x, z):
+-- WaterLook's bank rises ShoreEdge.SLOPE studs per stud from the drawn waterline. Negative under
+-- the water. Only near the waterline is it the real ground (the land tops out at y 1).
+function Scatter.bankHeight(x: number, z: number): number
+	return Scatter.waterline(x, z) * ShoreEdge.SLOPE
+end
+-- A reed clump stands no more than this over the water (the advisor, N1 review 3: cattails on dry
+-- sand with their bases cut off in shot 05).
+Scatter.REED_DRY = 0.3
+-- The wet sand band reaches this far over the water (MaterialKit.WET_ABOVE).
+Scatter.WET_ABOVE = 1.5
+-- The sand at the dock foot (shot 08's lime grass blobs: meadow baked onto the shore sand there).
+Scatter.DOCK_FOOT = { name = "DockFoot", x1 = -22, x2 = 22, z1 = 75, z2 = 92 }
 
 -- Distance outside the lake's rounded box (corners of radius CORNER_R), ignoring points of land:
 -- the lake loop path runs along its 5 stud line. Positive on land.
@@ -1059,7 +1077,7 @@ function Scatter.homeLake(seed: number, tuning: { [string]: any }?): Plan
 	end)
 	local reeds = Scatter.cluster(rr, reedCentres, T.reedPer, { 3, 6 }, T.reedSpacing, function(x, z)
 		local w = Scatter.waterline(x, z)
-		return w >= -6 and w <= -0.8 and free(x, z, 2) and not Scatter.inLane(x, z)
+		return w >= -6 and w <= -0.8 and Scatter.bankHeight(x, z) <= Scatter.REED_DRY and free(x, z, 2) and not Scatter.inLane(x, z)
 	end)
 	for _, p in reeds do
 		add({ model = pick(rr, "ReedClump1", "ReedClump2"), group = "Reeds", x = p.x, z = p.z, yaw = Scatter.range(rr, 0, TAU), scale = Scatter.range(rr, 0.8, 1.2), water = true, shadow = false })
@@ -1069,7 +1087,7 @@ function Scatter.homeLake(seed: number, tuning: { [string]: any }?): Plan
 	-- z 11..65), in a few clumps clear of its two cast lanes.
 	local rw = Scatter.rng(seed + 12)
 	local function weedOk(x: number, z: number): boolean
-		return Scatter.waterline(x, z) <= -3 and free(x, z, 2) and not Scatter.inLane(x, z)
+		return Scatter.waterline(x, z) <= -3 and Scatter.bankHeight(x, z) <= Scatter.REED_DRY and free(x, z, 2) and not Scatter.inLane(x, z)
 	end
 	local weedCentres = Scatter.poisson(rw, T.weedClusters, 12, 2000, function(r: Rng)
 		return Scatter.range(r, -98, -60), Scatter.range(r, 18, 58)
@@ -1380,6 +1398,56 @@ function Scatter.homeLake(seed: number, tuning: { [string]: any }?): Plan
 		add({ model = pick(rbk, "FarPine1", "FarPine2"), group = "BackRow", x = p.x, z = p.z, yaw = Scatter.range(rbk, 0, TAU), scale = Scatter.range(rbk, 1.0, 1.4), water = false, shadow = false })
 	end
 
+	-- 12. The dock foot (N1 close-out, the advisor's review 3): a few shore stones and one reed
+	-- clump each side of where the dock meets the bank, inside the dock head's keep-out (which
+	-- only has to keep the chalkboard in sight from the dock) but clear of the deck, the slips
+	-- (x 6 to 22), the stands, the cast lanes, the paths and shot 08's sight line to the chalkboard.
+	local rdf = Scatter.rng(seed + 22)
+	local sight: Lane = { name = "ChalkSight", x1 = 0, z1 = 50, x2 = 30, z2 = 94, r = 3 }
+	local footPts: { Pt } = {}
+	local function footOk(x: number, z: number, reed: boolean): boolean
+		for _, b in Scatter.KEEP_BOXES do
+			if b.name ~= "DockHeadChalk" and Scatter.inBox(b, x, z, 1) then
+				return false
+			end
+		end
+		if math.abs(x) < 10 or (x >= 5 and x <= 23) or Scatter.inLane(x, z) or not Scatter.shotClear(x, z, false) then
+			return false
+		end
+		if Scatter.laneDist(sight, x, z) <= (if reed then 4 else 2) then
+			return false
+		end
+		return offPath(x, z, 1.2) and farEnough(footPts, x, z, if reed then 3 else 1.6) and farEnough(reeds, x, z, T.reedSpacing) and farEnough(stones, x, z, T.stoneSpacing)
+	end
+	for _, xr in { { -26, -15 }, { 27, 36 } } do
+		local function sample(r: Rng): (number, number)
+			return Scatter.range(r, xr[1], xr[2]), Scatter.range(r, 68, 90)
+		end
+		local nStones = Scatter.int(rdf, 2, 3)
+		local got = 0
+		for _ = 1, 3000 do
+			if got >= nStones then
+				break
+			end
+			local x, z = sample(rdf)
+			local w = Scatter.waterline(x, z)
+			if w >= -0.9 and w <= 0.6 and footOk(x, z, false) then
+				table.insert(footPts, { x = x, z = z })
+				add({ model = pick(rdf, "ShoreStones1", "ShoreStones2"), group = "FootStones", x = x, z = z, yaw = Scatter.range(rdf, 0, TAU), scale = Scatter.range(rdf, 0.7, 1.2), water = false, shadow = false })
+				got += 1
+			end
+		end
+		for _ = 1, 6000 do
+			local x, z = sample(rdf)
+			local w = Scatter.waterline(x, z)
+			if w >= -3 and w <= -0.8 and Scatter.bankHeight(x, z) <= Scatter.REED_DRY and footOk(x, z, true) then
+				table.insert(footPts, { x = x, z = z })
+				add({ model = pick(rdf, "ReedClump1", "ReedClump2"), group = "FootReeds", x = x, z = z, yaw = Scatter.range(rdf, 0, TAU), scale = Scatter.range(rdf, 0.8, 1.05), water = true, shadow = false })
+				break
+			end
+		end
+	end
+
 	return { items = items, routes = routes, forest = forest, meadow = meadow, counts = counts }
 end
 
@@ -1394,7 +1462,7 @@ end
 -- Points 60 to 300 studs out from the lake (Scatter.roundBox) on ground at least hillMinHeight
 -- high, clear of the Big Lake and its banks, Poisson-spaced. Also returns a blob under each, for
 -- the hill forest floor.
-function Scatter.hillPines(seed: number, height: (number, number) -> number?, tuning: { [string]: any }?): ({ Item }, { Blob })
+function Scatter.hillPines(seed: number, height: (number, number) -> number?, tuning: { [string]: any }?, others: { any }?): ({ Item }, { Blob })
 	local T: { [string]: any } = table.clone(Scatter.TUNING)
 	for k, v in tuning or {} do
 		T[k] = v
@@ -1412,12 +1480,192 @@ function Scatter.hillPines(seed: number, height: (number, number) -> number?, tu
 		end
 		local h = height(x, z)
 		return h ~= nil and h >= T.hillMinHeight
-	end)
+	end, others)
 	for _, p in pts do
 		table.insert(items, { model = if Scatter.next(r) < 0.5 then "FarPine1" else "FarPine2", group = "HillPines", x = p.x, z = p.z, yaw = Scatter.range(r, 0, TAU), scale = Scatter.range(r, 1.0, 1.5), water = false, shadow = false })
 		table.insert(blobs, { x = p.x, z = p.z, r = Scatter.range(r, 8, 12) })
 	end
 	return items, blobs
+end
+
+---------------------------------------------------------------------------------------------
+-- Crest pines (N1 close-out, the advisor's review 3): the plan's wrong-list has "a horizon where
+-- sky meets a bare green hill". Shot 03 sees one through the channel to the north, shot 08 at
+-- both edges (south-east and south-west of the stands). For each such view, rays from the shot's
+-- eye across the bearing fan where the bare crest shows find the horizon (the ground point with
+-- the highest elevation angle from the eye, over `height`, the same ground function hillPines
+-- takes); far pines stand in seeded clumps along that crest line.
+---------------------------------------------------------------------------------------------
+
+-- Bearings in degrees: 0 is +z (south), 90 is +x (east), 180 is -z (north).
+export type CrestView = { id: string, eye: { number }, fan: { number } }
+Scatter.CREST_VIEWS = {
+	{ id = "03 north, through the channel", eye = { 0, 6, 37 }, fan = { 166, 194 } },
+	{ id = "08 left edge, south-east", eye = { 0, 6, 50 }, fan = { 34, 62 } },
+	{ id = "08 right edge, south-west", eye = { 0, 6, 50 }, fan = { -38, -18 } },
+} :: { CrestView }
+Scatter.CREST_TUNING = {
+	crestPer = { 12, 18 }, -- pines per crest line
+	crestClumps = { 3, 4 },
+	crestNear = 110, -- studs from the eye before a sample can be the horizon (the back row's band)
+	crestFar = 720,
+	crestStep = 4, -- studs between samples along a ray
+	crestRay = 1, -- degrees between rays
+	crestMinDist = 5, -- studs between crest pines
+	crestBehind = { -1, 6 }, -- studs past the crest along the ray (behind it, so the tops break the sky)
+	crestSide = 5, -- studs either side of the ray
+	crestScale = { 0.9, 1.3 },
+}
+
+export type CrestPoint = { x: number, z: number, h: number, d: number, a: number }
+
+-- The horizon along one ray from `eye` at bearing `a` degrees: the sample with the highest
+-- elevation angle (nil when no sample has ground). Samples on the Big Lake and its banks are
+-- skipped (the far ground beyond is what shows).
+function Scatter.horizon(eye: { number }, a: number, height: (number, number) -> number?, T: { [string]: any }): CrestPoint?
+	local dx, dz = math.sin(math.rad(a)), math.cos(math.rad(a))
+	local best: CrestPoint? = nil
+	local bestE = -math.huge
+	local d = T.crestNear
+	while d <= T.crestFar do
+		local x, z = eye[1] + dx * d, eye[3] + dz * d
+		if not Scatter.inBigLake(x, z) then
+			local h = height(x, z)
+			if h then
+				local e = (h - eye[2]) / d
+				if e > bestE then
+					bestE = e
+					best = { x = x, z = z, h = h, d = d, a = a }
+				end
+			end
+		end
+		d += T.crestStep
+	end
+	return best
+end
+
+-- The crest pines for every view. Second result: per view id, how many rays found a hill crest
+-- (ground at least hillMinHeight) and how many pines stand on it.
+function Scatter.crestPines(seed: number, height: (number, number) -> number?, tuning: { [string]: any }?): ({ Item }, { [string]: { rays: number, pines: number } })
+	local T: { [string]: any } = table.clone(Scatter.TUNING)
+	for k, v in Scatter.CREST_TUNING do
+		T[k] = v
+	end
+	for k, v in tuning or {} do
+		T[k] = v
+	end
+	local r = Scatter.rng(seed + 23)
+	local items: { Item } = {}
+	local placed: { Pt } = {}
+	local info: { [string]: { rays: number, pines: number } } = {}
+	for _, v in Scatter.CREST_VIEWS do
+		local line: { CrestPoint } = {}
+		local a = v.fan[1]
+		while a <= v.fan[2] + 1e-9 do
+			local c = Scatter.horizon(v.eye, a, height, T)
+			if c and c.h >= T.hillMinHeight then
+				table.insert(line, c)
+			end
+			a += T.crestRay
+		end
+		local n = 0
+		if #line >= 3 then
+			local want = Scatter.int(r, T.crestPer[1], T.crestPer[2])
+			local clumps = Scatter.int(r, T.crestClumps[1], T.crestClumps[2])
+			local per = math.ceil(want / clumps)
+			-- Clump centres spread along the line: one in each equal share of it, at a seeded spot.
+			for ci = 1, clumps do
+				local lo = math.floor((ci - 1) * #line / clumps) + 1
+				local hi = math.max(lo, math.floor(ci * #line / clumps))
+				local centre = Scatter.int(r, lo, hi)
+				local got, k = 0, 0
+				while got < per and n < want and k < per * 30 do
+					k += 1
+					local i = math.clamp(centre + Scatter.int(r, -2, 2), 1, #line)
+					local c = line[i]
+					local rx, rz = math.sin(math.rad(c.a)), math.cos(math.rad(c.a))
+					local back = Scatter.range(r, T.crestBehind[1], T.crestBehind[2])
+					local side = Scatter.range(r, -T.crestSide, T.crestSide)
+					local x, z = c.x + rx * back + rz * side, c.z + rz * back - rx * side
+					local h = height(x, z)
+					if h and h >= T.hillMinHeight and not Scatter.inBigLake(x, z) and Scatter.shotClear(x, z, true) and farEnough(placed, x, z, T.crestMinDist) then
+						table.insert(placed, { x = x, z = z })
+						table.insert(items, { model = if Scatter.next(r) < 0.5 then "FarPine1" else "FarPine2", group = "CrestPines", x = x, z = z, yaw = Scatter.range(r, 0, TAU), scale = Scatter.range(r, T.crestScale[1], T.crestScale[2]), water = false, shadow = false })
+						got += 1
+						n += 1
+					end
+				end
+			end
+		end
+		info[v.id] = { rays = #line, pines = n }
+	end
+	return items, info
+end
+
+---------------------------------------------------------------------------------------------
+-- Reed seating (N1 close-out, the advisor's review 3): cattails stood on dry sand with their
+-- bases cut off (shot 05). `height(x, z)` is the real ground under the water (Studio: a terrain
+-- raycast that ignores water). A ReedClump whose ground is more than REED_DRY over the water
+-- moves toward the water into the wet band (within 3 studs of the drawn waterline, in the water,
+-- on ground no higher than REED_DRY) when a clear spot is there, else sinks REED_SINK more.
+---------------------------------------------------------------------------------------------
+
+Scatter.REED_SINK = 0.5
+Scatter.REED_BAND = 3 -- studs into the water from the drawn waterline a moved reed may stand
+
+function Scatter.isReed(model: string): boolean
+	return string.sub(model, 1, 9) == "ReedClump"
+end
+
+-- Moves or sinks the reed clumps in `items` in place. Returns how many moved and how many sank.
+function Scatter.seatReeds(items: { Item }, height: (number, number) -> number?): (number, number)
+	local reeds: { Item } = {}
+	for _, it in items do
+		if Scatter.isReed(it.model) then
+			table.insert(reeds, it)
+		end
+	end
+	local moved, sunk = 0, 0
+	for _, it in reeds do
+		local g = height(it.x, it.z)
+		if g and g > Scatter.REED_DRY then
+			local wx, wz = Scatter.toWater(it.x, it.z)
+			local done = false
+			for step = 1, 24 do
+				local d = step * 0.5
+				for _, side in { 0, 0.6, -0.6, 1.2, -1.2 } do
+					local x, z = it.x + wx * d - wz * side, it.z + wz * d + wx * side
+					local w = Scatter.waterline(x, z)
+					local h = height(x, z)
+					if w < 0 and w >= -Scatter.REED_BAND and h and h <= Scatter.REED_DRY and not Scatter.kept(x, z, 1) and not Scatter.inLane(x, z) and Scatter.shotClear(x, z, false) then
+						local clear = true
+						for _, o in reeds do
+							if o ~= it and (o.x - x) ^ 2 + (o.z - z) ^ 2 < 1.2 * 1.2 then
+								clear = false
+								break
+							end
+						end
+						if clear then
+							it.x, it.z = x, z
+							it.water = true
+							done = true
+							break
+						end
+					end
+				end
+				if done then
+					break
+				end
+			end
+			if done then
+				moved += 1
+			else
+				it.sink = (it.sink or 0) + Scatter.REED_SINK
+				sunk += 1
+			end
+		end
+	end
+	return moved, sunk
 end
 
 ---------------------------------------------------------------------------------------------
@@ -1429,7 +1677,7 @@ end
 -- covers the cell ix0 + x - 1, iz0 + z - 1 (`cell` studs square).
 export type Grid = { idx: any, occ: any, nx: number, ny: number, nz: number, ix0: number, iz0: number, cell: number }
 
-Scatter.SLOT = { MEADOW = 2, SAND = 6, FOOTPATH = 24, FOREST = 25, LAWN = 26, HILL = 27 }
+Scatter.SLOT = { MEADOW = 2, SAND = 6, WET_SAND = 23, FOOTPATH = 24, FOREST = 25, LAWN = 26, HILL = 27 }
 Scatter.PATH_DRY = 2 -- studs from any water before a footpath cell is painted
 -- What each paint may cover (2 Grass/meadow, 14 Ground, 19 LeafyGrass, 26 the bladeless lawn;
 -- the footpath also forest floor, and sand away from the water).
@@ -1468,7 +1716,7 @@ function Scatter.northFloor(x: number, z: number, T: { [string]: any }): boolean
 	return w >= T.northFloor[1] and w <= T.northFloor[2] and z >= T.farZMin
 end
 
-export type PaintCounts = { path: number, forest: number, meadow: number, sand: number, north: number }
+export type PaintCounts = { path: number, forest: number, meadow: number, sand: number, north: number, dockSand: number }
 
 -- Paints the grid for a plan: the footpaths (surface only), then off the paths forest floor
 -- under the trees, meadow blobs on the lawn, the green floor behind the north shore, and the sand
@@ -1482,7 +1730,7 @@ function Scatter.paintGrid(g: Grid, plan: Plan, seed: number, tuning: { [string]
 	local paths = Scatter.pathCells(plan.routes, g.cell, seed)
 	local forest = Scatter.blobCells(plan.forest, g.cell, seed)
 	local meadow = Scatter.blobCells(plan.meadow, g.cell, seed + 1)
-	local c: PaintCounts = { path = 0, forest = 0, meadow = 0, sand = 0, north = 0 }
+	local c: PaintCounts = { path = 0, forest = 0, meadow = 0, sand = 0, north = 0, dockSand = 0 }
 	local idx, occ = g.idx, g.occ
 	for x = 1, g.nx do
 		local cx = (g.ix0 + x - 1 + 0.5) * g.cell
@@ -1504,7 +1752,17 @@ function Scatter.paintGrid(g: Grid, plan: Plan, seed: number, tuning: { [string]
 				local inForest, inMeadow = forest[k] == true, meadow[k] == true
 				local sandOff = Scatter.sandOff(cx, cz, T)
 				local north = Scatter.northFloor(cx, cz, T)
-				if inForest or inMeadow or sandOff or north then
+				if Scatter.inBox(Scatter.DOCK_FOOT, cx, cz) then
+					-- (N1 close-out) The dock foot is shore sand: meadow there (shot 08's lime blobs) goes
+					-- back to wet sand in the wet band and dry sand above it.
+					local sand = if Scatter.bankHeight(cx, cz) <= Scatter.WET_ABOVE then S.WET_SAND else S.SAND
+					for y = 1, g.ny do
+						if occ[x][y][z] > 0 and idx[x][y][z] == S.MEADOW then
+							idx[x][y][z] = sand
+							c.dockSand += 1
+						end
+					end
+				elseif inForest or inMeadow or sandOff or north then
 					for y = 1, g.ny do
 						if occ[x][y][z] > 0 then
 							local s = idx[x][y][z]

@@ -52,6 +52,11 @@
 -- Gemini's review 1.2 (11/27/2026): a group "Seams" of low ferns, a few low bushes and flat shore
 -- stones along the borders between ground slots (gravel, forest floor, meadow, sand, wet sand),
 -- from the painted grid (Scatter.seams), about 15k triangles, tagged FoliageUnder.
+--
+-- N1 close-out (the advisor's review 3): far pines along the bare hill crests on shots 03 and 08's
+-- horizons (Scatter.crestPines, group CrestPines, no shadows); the dock foot's meadow repainted to
+-- sand, with a few stones and a reed clump each side (FootStones, FootReeds); every reed clump on
+-- ground more than 0.3 over the water moved into the wet band or sunk 0.5 more (Scatter.seatReeds).
 local ServerStorage = game:GetService("ServerStorage")
 local MaterialService = game:GetService("MaterialService")
 local CollectionService = game:GetService("CollectionService")
@@ -365,12 +370,17 @@ local function restore(rec: StringValue, slots: { [number]: boolean }?): (number
 	return n, true
 end
 
--- The slots the main paint writes (footpath, forest floor, meadow, the north shore's green floor).
+-- The slots the main paint writes (footpath, forest floor, meadow, the north shore's green floor,
+-- and since the N1 close-out dry and wet sand: the dock foot's meadow goes back to sand). A revert
+-- puts back any voxel of these slots that differs from the record, so a WaterLook or wet band rerun
+-- after apply is undone there too: rerun those after a revert, not between apply and revert.
 local MAIN_SLOTS = {
 	[BankDress.FOOTPATH_SLOT] = true,
 	[BankDress.FOREST_SLOT] = true,
 	[BankDress.MEADOW_SLOT] = true,
 	[BankDress.HILL_SLOT] = true,
+	[Scatter.SLOT.SAND] = true,
+	[Scatter.SLOT.WET_SAND] = true,
 }
 
 -- Undoes the hill patches (newest first, so overlapping patches end on the true original), then
@@ -430,6 +440,11 @@ export type Result = {
 	seamEdges: number, -- borders between ground slots in the painted grid (Scatter.seams)
 	seamItems: number, -- seam plants and stones placed (group Seams)
 	seamTris: number, -- their planned triangles (Scatter.SEAM_TRIS; the budget is 15k)
+	crestPines: number, -- far pines on the shots' horizon crests (Scatter.crestPines)
+	crestRays: { [string]: number }, -- per crest view, the rays that found a hill crest
+	reedsMoved: number, -- reed clumps on dry ground moved into the wet band (Scatter.seatReeds)
+	reedsSunk: number, -- and those sunk REED_SINK more instead
+	dockSandVoxels: number, -- the dock foot's meadow voxels put back to sand
 }
 
 export type RevertResult = {
@@ -622,7 +637,7 @@ function BankDress.apply(lake: Instance, seed: number?, tuning: { [string]: any 
 			end
 			return nil
 		end
-		local bury = (Scatter.KIT[it.model] or 0) * it.scale
+		local bury = (Scatter.KIT[it.model] or 0) * it.scale + (it.sink or 0)
 		local y: number
 		if it.water then
 			y = 0 - bury -- the water's surface is y 0
@@ -679,6 +694,11 @@ function BankDress.apply(lake: Instance, seed: number?, tuning: { [string]: any 
 		return m
 	end
 
+	-- (N1 close-out) Reed clumps on ground more than Scatter.REED_DRY over the water move into the
+	-- wet band or sink a little more (shot 05's cattails on dry sand).
+	local reedsMoved, reedsSunk = Scatter.seatReeds(plan.items, function(x: number, z: number): number?
+		return groundY(params, x, z)
+	end)
 	for _, it in plan.items do
 		placeItem(it, true)
 	end
@@ -693,8 +713,22 @@ function BankDress.apply(lake: Instance, seed: number?, tuning: { [string]: any 
 		end
 	end
 
-	-- The hill pines and the green forest floor under them.
-	local hillItems, hillBlobs = Scatter.hillPines(s, dryHeight, tuning)
+	-- (N1 close-out) Far pines along the bare hill crests on the shots' horizons (03 north, 08 at
+	-- both edges). No shadows, tagged FoliageTree and FoliageFar like every far model.
+	local crestItems, crestInfo = Scatter.crestPines(s, dryHeight, tuning)
+	local nCrest = 0
+	local crestRays: { [string]: number } = {}
+	for id, ci in crestInfo do
+		crestRays[id] = ci.rays
+	end
+	for _, it in crestItems do
+		if placeItem(it, true) then
+			nCrest += 1
+		end
+	end
+
+	-- The hill pines and the green forest floor under them (kept clear of the crest pines).
+	local hillItems, hillBlobs = Scatter.hillPines(s, dryHeight, tuning, crestItems)
 	local nHill, nHillVox = 0, 0
 	for i, it in hillItems do
 		if placeItem(it, true) then
@@ -745,6 +779,9 @@ function BankDress.apply(lake: Instance, seed: number?, tuning: { [string]: any 
 		end
 	end
 	for _, it in hillItems do
+		table.insert(standing, { x = it.x, z = it.z })
+	end
+	for _, it in crestItems do
 		table.insert(standing, { x = it.x, z = it.z })
 	end
 	-- d: distance to the dock (the order and the kit test); rb: to the lake's rounded box (the
@@ -873,6 +910,11 @@ function BankDress.apply(lake: Instance, seed: number?, tuning: { [string]: any 
 		seamEdges = seamInfo.edges,
 		seamItems = nSeams,
 		seamTris = seamInfo.tris,
+		crestPines = nCrest,
+		crestRays = crestRays,
+		reedsMoved = reedsMoved,
+		reedsSunk = reedsSunk,
+		dockSandVoxels = pc.dockSand,
 	}
 end
 

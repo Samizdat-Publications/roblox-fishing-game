@@ -7,6 +7,11 @@ return function(t, Shared)
 	local SEED = 20261129
 	local plan = Scatter.homeLake(SEED)
 
+	-- The dock foot's stones and reed clumps (N1 close-out).
+	local function foot(it: any): boolean
+		return it.group == "FootReeds" or it.group == "FootStones"
+	end
+
 	local function group(name: string): { any }
 		local out = {}
 		for _, it in plan.items do
@@ -151,14 +156,23 @@ return function(t, Shared)
 	t.test("nothing lands in a keep-clear place, a cast lane or on a path", function()
 		local pidx = Scatter.pathIndex(plan.routes)
 		for _, it in plan.items do
-			t.ok(not Scatter.kept(it.x, it.z), string.format("%s at (%.1f, %.1f) is in a keep-clear place", it.model, it.x, it.z))
-			if it.group == "Reeds" or it.group == "Stones" or it.group == "Driftwood" then
+			if foot(it) then
+				-- The dock foot's stones and reeds stand inside the dock head's keep-out (only), on purpose.
+				for _, b in Scatter.KEEP_BOXES do
+					if b.name ~= "DockHeadChalk" then
+						t.ok(not Scatter.inBox(b, it.x, it.z), string.format("%s at (%.1f, %.1f) is in %s", it.model, it.x, it.z, b.name))
+					end
+				end
+			else
+				t.ok(not Scatter.kept(it.x, it.z), string.format("%s at (%.1f, %.1f) is in a keep-clear place", it.model, it.x, it.z))
+			end
+			if it.group == "Reeds" or it.group == "Stones" or it.group == "Driftwood" or foot(it) then
 				t.ok(not Scatter.inLane(it.x, it.z), string.format("%s at (%.1f, %.1f) is in a cast lane", it.model, it.x, it.z))
 				for _, l in Scatter.LANES do
 					t.ok((it.x - l.x1) ^ 2 + (it.z - l.z1) ^ 2 > 36, it.model .. " within 6 studs of a spot's shore point")
 				end
 			end
-			if it.group ~= "Reeds" and it.group ~= "Stones" then
+			if it.group ~= "Reeds" and it.group ~= "Stones" and not foot(it) then
 				t.ok(Scatter.pathEdge(pidx, it.x, it.z) > 0, string.format("%s at (%.1f, %.1f) stands on a path", it.model, it.x, it.z))
 			end
 		end
@@ -167,9 +181,9 @@ return function(t, Shared)
 	t.test("each kind sits where the kit says", function()
 		for _, it in plan.items do
 			local w = Scatter.waterline(it.x, it.z)
-			if it.group == "Reeds" then
+			if it.group == "Reeds" or it.group == "FootReeds" then
 				t.ok(it.water and w < 0, "reeds stand in the water")
-			elseif it.group == "Stones" then
+			elseif it.group == "Stones" or it.group == "FootStones" then
 				t.ok(math.abs(w) <= 1, "stones at the waterline")
 			elseif it.group == "Birches" then
 				t.ok(w >= 1 and w <= 3, "a bank birch's foot is 1 to 3 studs back from the water")
@@ -440,7 +454,12 @@ return function(t, Shared)
 		-- Shot 08's line of sight, from the dock (0, 50) to the chalkboard (30, 94).
 		local sight = { name = "Sight", x1 = 0, z1 = 50, x2 = 30, z2 = 94, r = 3 }
 		for _, it in plan.items do
-			t.ok(not Scatter.inBox(box, it.x, it.z), string.format("%s at (%.1f, %.1f) is between the dock head and the chalkboard", it.model, it.x, it.z))
+			if foot(it) then
+				-- (N1 close-out) The dock foot's own stones and reeds: off the sight line instead.
+				t.ok(Scatter.laneDist(sight, it.x, it.z) > (if it.group == "FootReeds" then 4 else 2), string.format("%s at (%.1f, %.1f) blocks the chalkboard from the dock", it.model, it.x, it.z))
+			else
+				t.ok(not Scatter.inBox(box, it.x, it.z), string.format("%s at (%.1f, %.1f) is between the dock head and the chalkboard", it.model, it.x, it.z))
+			end
 			t.ok(not Scatter.inBox(Scatter.KEEP_BOXES[4], it.x, it.z), it.model .. " at the chalkboard")
 			if it.group == "Reeds" then
 				t.ok(Scatter.laneDist(sight, it.x, it.z) > 3, string.format("reeds at (%.1f, %.1f) block the chalkboard from the dock", it.x, it.z))
@@ -716,7 +735,8 @@ return function(t, Shared)
 			end
 		end
 	end
-	local MAIN = { [24] = true, [25] = true, [2] = true, [27] = true }
+	-- (N1 close-out) Sand (6) and wet sand (23) too: the dock foot's meadow goes back to sand.
+	local MAIN = { [24] = true, [25] = true, [2] = true, [27] = true, [6] = true, [23] = true }
 	-- Round 2's paint, baked: whole-column gravel on another seed's paths, forest floor and meadow
 	-- blobs from that plan.
 	local function bake(g: any)
@@ -944,5 +964,270 @@ return function(t, Shared)
 		t.eq(string.sub(Scatter.creekPine(-265, 40, 0.7), 1, 7), "FarPine", "Trunk1 (29 from the riffle) is a far pine")
 		t.eq(Scatter.creekPine(-190, -40, 0.2), "ShorePine1", "u under 0.5")
 		t.eq(Scatter.creekPine(-190, -40, 0.8), "ShorePine2", "u over 0.5")
+	end)
+	-- N1 close-out (the advisor's review 3).
+
+	t.test("crest pines: 12 to 18 far pines along each bare crest on 03 and 08's horizons", function()
+		-- A fake world: flat at y 1, one dome 30 high (radius 90) in each crest view's fan.
+		local domes = {
+			{ x = 0, z = -560 }, -- north of the Big Lake, through the channel (03)
+			{ x = 312, z = 331 }, -- south-east of the stands (08's left edge)
+			{ x = -188, z = 403 }, -- south-west (08's right edge)
+		}
+		local function height(x: number, z: number): number?
+			local h = 1
+			for _, d in domes do
+				local q = (x - d.x) ^ 2 + (z - d.z) ^ 2
+				if q < 90 * 90 then
+					h = math.max(h, 1 + 30 * (1 - q / (90 * 90)))
+				end
+			end
+			return h
+		end
+		local items, info = Scatter.crestPines(SEED, height)
+		local C = Scatter.CREST_TUNING
+		t.eq(#Scatter.CREST_VIEWS, 3, "three crest lines: 03 north, 08 south-east, 08 south-west")
+		for vi, v in Scatter.CREST_VIEWS do
+			local ci = info[v.id]
+			t.ok(ci ~= nil and ci.rays >= 3, v.id .. ": the rays find the crest")
+			print(string.format("  [Scatter] crest %s: %d rays on the hill, %d pines", v.id, ci.rays, ci.pines))
+			t.ok(ci.pines >= C.crestPer[1] and ci.pines <= C.crestPer[2], string.format("%s: 12 to 18 pines (%d)", v.id, ci.pines))
+			-- Each of this view's pines sits on its dome, in the fan, past the near band.
+			local d = domes[vi]
+			local n = 0
+			for _, it in items do
+				if (it.x - d.x) ^ 2 + (it.z - d.z) ^ 2 < 90 * 90 then
+					n += 1
+					local a = math.deg(math.atan2(it.x - v.eye[1], it.z - v.eye[3]))
+					if v.fan[1] > 90 and a < 0 then
+						a += 360
+					end
+					t.ok(a >= v.fan[1] - 2 and a <= v.fan[2] + 2, string.format("%s: a pine at bearing %.1f is outside the fan", v.id, a))
+				end
+			end
+			t.eq(n, ci.pines, v.id .. ": every pine on its hill")
+		end
+		for _, it in items do
+			t.eq(it.group, "CrestPines", "group")
+			t.ok(it.model == "FarPine1" or it.model == "FarPine2", "far pines")
+			t.ok(it.shadow == false, "no shadow")
+			t.ok(it.scale >= 0.9 and it.scale <= 1.3, "scale 0.9 to 1.3")
+			t.ok((height(it.x, it.z) :: number) >= Scatter.TUNING.hillMinHeight, "on the hill, not the flat")
+			t.ok(not Scatter.inBigLake(it.x, it.z), "not by the Big Lake")
+		end
+		t.ok(Scatter.minSpacing(items) >= C.crestMinDist - 1e-9, "spaced")
+		t.eq(Scatter.TAGS.CrestPines, "FoliageTree", "tagged as trees")
+		t.ok(Scatter.isFar("FarPine1"), "far models (FoliageFar)")
+		-- Clumped along the line, not strung evenly.
+		local cv = Scatter.cv(Scatter.nearest(items))
+		print(string.format("  [Scatter] crest pines: %d, nearest-neighbour CV %.2f", #items, cv))
+		t.ok(cv > 0.2, "clumped")
+		-- The same seed, the same pines; flat land, none.
+		local again = Scatter.crestPines(SEED, height)
+		t.eq(#again, #items, "same count")
+		t.ok(again[1].x == items[1].x and again[#again].z == items[#items].z, "same layout")
+		local flat = Scatter.crestPines(SEED, function()
+			return 1
+		end)
+		t.eq(#flat, 0, "no crest pines without a hill")
+		-- The hill pines keep their distance from the crest pines.
+		local hills = Scatter.hillPines(SEED, height, nil, items)
+		for _, h in hills do
+			t.ok(Scatter.farEnough(items, h.x, h.z, Scatter.TUNING.hillMinDist), "a hill pine crowds a crest pine")
+		end
+	end)
+
+	t.test("crest pines stay out of every shot camera's keep-clear", function()
+		-- A raised plain (y 12) everywhere past 100 studs from the lake: the crest is wherever the
+		-- rays end, and the pines still keep the eye spheres and the first 25 studs of every line.
+		local function height(x: number, z: number): number?
+			return if Scatter.roundBox(x, z) > 100 then 12 else 1
+		end
+		for _, seed in { SEED, 1, 2 } do
+			local items = Scatter.crestPines(seed, height)
+			t.ok(#items > 0, "pines on the raised plain")
+			for _, it in items do
+				t.ok(Scatter.shotClear(it.x, it.z, true), string.format("seed %d: a crest pine at (%.1f, %.1f) is in a shot's keep-clear", seed, it.x, it.z))
+				for _, c in Scatter.SHOT_CAMS do
+					local ex, ey, ez = c.eye[1], c.eye[2], c.eye[3]
+					local dy = math.max(0, ey - Scatter.TREE_H, -ey)
+					t.ok((it.x - ex) ^ 2 + (it.z - ez) ^ 2 + dy * dy >= 16 * 16, string.format("seed %d: a crest pine within 16 of the %s camera", seed, c.id))
+					local lx, ly, lz = c.look[1] - ex, c.look[2] - ey, c.look[3] - ez
+					local len = math.sqrt(lx * lx + ly * ly + lz * lz)
+					for st = 0, 25, 0.5 do
+						local px, py, pz = ex + lx / len * st, ey + ly / len * st, ez + lz / len * st
+						if py >= 0 and py <= Scatter.TREE_H then
+							t.ok((it.x - px) ^ 2 + (it.z - pz) ^ 2 >= 81 - 1e-6, string.format("seed %d: a crest pine on the %s camera's line", seed, c.id))
+						end
+					end
+				end
+			end
+		end
+	end)
+
+	t.test("reed clumps: placed in the water, and any on dry ground moves into the wet band or sinks", function()
+		-- Placement: by the bank model no reed's ground is more than 0.3 over the water.
+		for _, seed in { SEED, 1, 2 } do
+			local p = if seed == SEED then plan else Scatter.homeLake(seed)
+			for _, it in p.items do
+				if Scatter.isReed(it.model) then
+					t.ok(it.water, "a reed clump stands in the water")
+					t.ok(Scatter.bankHeight(it.x, it.z) <= Scatter.REED_DRY, string.format("seed %d: a reed at (%.1f, %.1f) on ground %.2f over the water", seed, it.x, it.z, Scatter.bankHeight(it.x, it.z)))
+				end
+			end
+		end
+		t.eq(Scatter.REED_DRY, 0.3, "0.3 studs")
+		t.eq(Scatter.REED_SINK, 0.5, "0.5 more")
+		-- The real ground can differ from the model: a fake world where the west bank (the weed bed
+		-- and the south-west corner) stands 1 stud higher than the bank model.
+		local function height(x: number, z: number): number?
+			local h = Scatter.bankHeight(x, z)
+			if x < -60 and z > 30 then
+				h += 1.2
+			end
+			return math.min(h, 1)
+		end
+		local items = {}
+		for _, it in plan.items do
+			table.insert(items, table.clone(it))
+		end
+		local before = {}
+		for i, it in items do
+			before[i] = { x = it.x, z = it.z }
+		end
+		local moved, sunk = Scatter.seatReeds(items, height)
+		print(string.format("  [Scatter] reed seating on the raised west bank: %d moved, %d sunk", moved, sunk))
+		t.ok(moved + sunk > 0, "some reeds stood on dry ground")
+		local nMoved, nSunk = 0, 0
+		for i, it in items do
+			if Scatter.isReed(it.model) then
+				local g = height(it.x, it.z) :: number
+				local wasMoved = it.x ~= before[i].x or it.z ~= before[i].z
+				if wasMoved then
+					nMoved += 1
+					local w = Scatter.waterline(it.x, it.z)
+					t.ok(w < 0 and w >= -3, string.format("a moved reed at (%.1f, %.1f) is in the wet band (w %.2f)", it.x, it.z, w))
+					t.ok(g <= Scatter.REED_DRY, "a moved reed stands on ground at most 0.3 over the water")
+					t.ok(not Scatter.kept(it.x, it.z) and not Scatter.inLane(it.x, it.z), "a moved reed keeps out of keep-clears and lanes")
+				end
+				if (it.sink or 0) > 0 then
+					nSunk += 1
+				end
+				t.ok(g <= Scatter.REED_DRY or (it.sink or 0) >= 0.5, string.format("a reed at (%.1f, %.1f) on ground %.2f neither moved nor sank", it.x, it.z, g))
+			else
+				t.ok(it.x == before[i].x and it.z == before[i].z and it.sink == nil, "only reeds are touched")
+			end
+		end
+		t.eq(nMoved, moved, "moved count")
+		t.eq(nSunk, sunk, "sunk count")
+		-- One by hand: a reed 1 stud up the south bank (east of the slips) moves into the water.
+		local one = { { model = "ReedClump1", group = "Reeds", x = 60, z = 70, yaw = 0, scale = 1, water = true, shadow = false } }
+		for zz = 70, 100, 0.25 do
+			if Scatter.waterline(60, zz) >= 1 then
+				one[1].z = zz
+				break
+			end
+		end
+		local m1, s1 = Scatter.seatReeds(one :: any, function(x: number, z: number): number?
+			return Scatter.bankHeight(x, z)
+		end)
+		t.eq(m1, 1, "it moved")
+		t.eq(s1, 0, "it did not sink")
+		t.ok(Scatter.waterline(one[1].x, one[1].z) < 0, "now in the water")
+		-- And one where all the ground is dry: it sinks 0.5.
+		local dry = { { model = "ReedClump2", group = "Reeds", x = -80, z = 40, yaw = 0, scale = 1, water = true, shadow = false } }
+		local m2, s2 = Scatter.seatReeds(dry :: any, function()
+			return 2
+		end)
+		t.eq(m2, 0, "nowhere wet to move to")
+		t.eq(s2, 1, "so it sinks")
+		t.eq(dry[1].sink, 0.5, "0.5 more")
+	end)
+
+	t.test("the dock foot: sand again, a few stones and one reed clump each side, clear of the slips", function()
+		for _, seed in { SEED, 1, 2 } do
+			local p = if seed == SEED then plan else Scatter.homeLake(seed)
+			local reeds, stones = { 0, 0 }, { 0, 0 }
+			for _, it in p.items do
+				if foot(it) then
+					local side = if it.x < 0 then 1 else 2
+					if it.group == "FootReeds" then
+						reeds[side] += 1
+						t.ok(it.water and Scatter.waterline(it.x, it.z) < 0, "the reed stands in the water")
+					else
+						stones[side] += 1
+						t.ok(math.abs(Scatter.waterline(it.x, it.z)) <= 1, "stones at the waterline")
+					end
+					t.ok(math.abs(it.x) >= 10, "clear of the deck")
+					t.ok(it.x < 5 or it.x > 23, string.format("seed %d: %s at x %.1f is in the slips", seed, it.model, it.x))
+					t.ok(it.z >= 68 and it.z <= 90, "at the dock foot")
+					t.ok(not Scatter.inLane(it.x, it.z), "out of the cast lanes")
+					t.ok(Scatter.shotClear(it.x, it.z, false), "clear of the shot cameras")
+					t.ok(Scatter.TAGS[it.group] ~= nil, "tagged")
+				end
+			end
+			if seed == SEED then
+				print(string.format("  [Scatter] dock foot: west %d stones and %d reed, east %d stones and %d reed", stones[1], reeds[1], stones[2], reeds[2]))
+			end
+			for side = 1, 2 do
+				t.eq(reeds[side], 1, string.format("seed %d: one reed clump each side", seed))
+				t.ok(stones[side] >= 2 and stones[side] <= 3, string.format("seed %d: 2 or 3 stones each side (%d)", seed, stones[side]))
+			end
+		end
+		-- The paint: meadow baked onto the dock foot's sand goes back to sand, wet in the wet band.
+		local g = makeGrid()
+		local paths = Scatter.pathCells(plan.routes, 4, SEED)
+		local planted = 0
+		for x = 1, g.nx do
+			for z = 1, g.nz do
+				local cx, cz = (g.ix0 + x - 0.5) * 4, (g.iz0 + z - 0.5) * 4
+				if Scatter.inBox(Scatter.DOCK_FOOT, cx, cz) and g.occ[x][3][z] > 0 then
+					g.idx[x][3][z] = 2
+					planted += 1
+				end
+			end
+		end
+		t.ok(planted > 10, "meadow on the dock foot to start")
+		local rec = copy(g)
+		local pc = Scatter.paintGrid(g, plan, SEED)
+		print(string.format("  [Scatter] dock foot: %d meadow voxels back to sand", pc.dockSand))
+		t.ok(pc.dockSand > 10, "repainted")
+		local wet, dry = 0, 0
+		for x = 1, g.nx do
+			for z = 1, g.nz do
+				local cx, cz = (g.ix0 + x - 0.5) * 4, (g.iz0 + z - 0.5) * 4
+				if Scatter.inBox(Scatter.DOCK_FOOT, cx, cz) and not paths[Scatter.key(g.ix0 + x - 1, g.iz0 + z - 1)] then
+					for y = 1, g.ny do
+						if g.occ[x][y][z] > 0 then
+							t.ok(g.idx[x][y][z] ~= 2, string.format("meadow left at the dock foot (%.0f, %.0f)", cx, cz))
+						end
+					end
+					if g.occ[x][3][z] > 0 and rec.idx[x][3][z] == 2 then
+						local want = if Scatter.bankHeight(cx, cz) <= Scatter.WET_ABOVE then 23 else 6
+						t.eq(g.idx[x][3][z], want, "wet sand in the wet band, dry sand above it")
+						if want == 23 then
+							wet += 1
+						else
+							dry += 1
+						end
+					end
+				end
+			end
+		end
+		print(string.format("  [Scatter] dock foot sand: %d wet, %d dry", wet, dry))
+		t.ok(wet > 0 and dry > 0, "both bands")
+		-- A revert (BankDress's MAIN_SLOTS) puts it back exactly.
+		restore(g, rec, MAIN)
+		local same = true
+		for x = 1, g.nx do
+			for y = 1, g.ny do
+				for z = 1, g.nz do
+					if g.idx[x][y][z] ~= rec.idx[x][y][z] then
+						same = false
+					end
+				end
+			end
+		end
+		t.ok(same, "revert restores the dock foot")
 	end)
 end
