@@ -4561,5 +4561,220 @@
         ]
       }
     }
+  },
+  {
+    "date": "2026-11-28",
+    "step": "N4 set C round 3",
+    "set": "C",
+    "rubric": "look",
+    "run": "2026-11-28-0801-C",
+    "commit": "4cc4161",
+    "shots": 3,
+    "median": 7,
+    "scores": [
+      7.5,
+      7,
+      6.8
+    ],
+    "points": {
+      "composition": 7,
+      "light": 7,
+      "water": 7,
+      "mood": 8,
+      "want_to_fish": 8,
+      "phone_readability": 6,
+      "broken_or_ugly": 6
+    },
+    "reports": [
+      "docs\\critic\\2026-11-28-N4 set C round 3-neon.md",
+      "docs\\critic\\2026-11-28-N4 set C round 3-neon-2.md",
+      "docs\\critic\\2026-11-28-N4 set C round 3-neon-3.md"
+    ],
+    "weather": {
+      "c01-canoe-golden": "Clear",
+      "c02-slips-boathouse-noon": "Clear",
+      "c03-dinghy-wake-dawn": "Clear"
+    },
+    "session": {
+      "c01-canoe-golden": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      },
+      "c02-slips-boathouse-noon": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      },
+      "c03-dinghy-wake-dawn": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      }
+    }
+  },
+  {
+    "date": "2026-11-28",
+    "step": "N4 set C round 3",
+    "set": "C",
+    "rubric": "identity",
+    "run": "2026-11-28-0801-C",
+    "commit": "4cc4161",
+    "shots": 3,
+    "median": 6,
+    "scores": [
+      6.5,
+      6,
+      6
+    ],
+    "points": {
+      "materials": 6.5,
+      "signature": 7,
+      "cohesion": 5,
+      "stock_free": 5,
+      "identity": 6
+    },
+    "reports": [
+      "docs\\critic\\2026-11-28-N4 set C round 3-identity-neon.md",
+      "docs\\critic\\2026-11-28-N4 set C round 3-identity-neon-2.md",
+      "docs\\critic\\2026-11-28-N4 set C round 3-identity-neon-3.md"
+    ],
+    "stock_items": [
+      {
+        "item": "Shoreline smooth terrain ground (c02-slips-boathouse-noon.jpg across the middle shore strip; c01-canoe-golden.jpg bank behind the dock)",
+        "reason": "Default Roblox Terrain sand, mud, and green grass textures with soft uniform terrain-blending patches stand out immediately under midday light.",
+        "runs": 1
+      },
+      {
+        "item": "Midday sky and volumetric clouds (c02-slips-boathouse-noon.jpg top third; c01-canoe-golden.jpg upper sky)",
+        "reason": "Reads as the default Roblox bright blue sky gradient with standard soft white dynamic Clouds.",
+        "runs": 1
+      },
+      {
+        "item": "Low-poly pine and deciduous treeline (c02-slips-boathouse-noon.jpg entire background and far-left green tree; c01-canoe-golden.jpg background treeline)",
+        "reason": "Flat-shaded, SmoothPlastic-like faceted cones and stacked lumpy foliage blobs read as generic Roblox low-poly asset-pack trees and clash with the textured wood props.",
+        "runs": 1
+      },
+      {
+        "item": "Untextured boxy white-and-grey boat with blocky black outboard (c03-dinghy-wake-dawn.jpg background right, moored behind the wooden canoe)",
+        "reason": "Plain SmoothPlastic rectangular hull and block motor read as unfinished default Roblox primitives next to the detailed canoe and dinghy.",
+        "runs": 1
+      },
+      {
+        "item": "Dark lumpy shoreline rock clusters (c02-slips-boathouse-noon.jpg water's edge center and far right; c01-canoe-golden.jpg shore center behind the dock)",
+        "reason": "Smooth, uniformly dark matte blobs lack real stone grain or mineral variation and read like simple plastic/stock terrain rocks.",
+        "runs": 1
+      },
+      {
+        "item": "Faceted low-poly evergreen and deciduous trees (c01-canoe-golden.jpg upper background, c02-slips-boathouse-noon.jpg entire treeline and far-left rounded tree, c03-dinghy-wake-dawn.jpg upper-left and upper-right skylines)",
+        "reason": "Flat-shaded, SmoothPlastic-looking geometric cones and lumpy foliage blobs read as standard Roblox low-poly trees and clash with the textured wood boats and boathouse.",
+        "runs": 1
+      },
+      {
+        "item": "Shoreline sand, mud, and grass base terrain (c02-slips-boathouse-noon.jpg center bank between boathouse and right dock, c01-canoe-golden.jpg upper-left and center-back shoreline)",
+        "reason": "Unmistakable default Roblox Terrain smooth sand-to-grass blends and stock ground textures.",
+        "runs": 1
+      },
+      {
+        "item": "Midday sky and wispy clouds (c02-slips-boathouse-noon.jpg top third, c01-canoe-golden.jpg upper center)",
+        "reason": "Default Roblox blue sky gradient paired with stock volumetric Clouds, especially obvious in bright flat noon lighting.",
+        "runs": 1
+      },
+      {
+        "item": "White-and-grey blocky motorboat behind the canoe (c03-dinghy-wake-dawn.jpg mid-right background)",
+        "reason": "Reads as plain untextured SmoothPlastic hull parts with a boxy solid grey block for the motor, far less finished than the foreground boats.",
+        "runs": 1
+      },
+      {
+        "item": "Distant bridge spanning the lake (c03-dinghy-wake-dawn.jpg upper-center background)",
+        "reason": "Reads as simple flat, untextured grey block parts rather than real wood, concrete, or steel.",
+        "runs": 1
+      },
+      {
+        "item": "Dock and stall lantern glass (c01-canoe-golden.jpg upper right and upper left, c03-dinghy-wake-dawn.jpg top left)",
+        "reason": "Solid flat glowing blocks inside dark frames read as default Roblox Neon parts rather than glass around a bulb or flame.",
+        "runs": 1
+      },
+      {
+        "item": "Low-poly faceted pine trees (c01-canoe-golden.jpg upper background, c02-slips-boathouse-noon.jpg entire background treeline, c03-dinghy-wake-dawn.jpg far shoreline left and right).",
+        "reason": "Flat-shaded, SmoothPlastic-like stacked cones read immediately as typical Roblox toolbox conifers rather than textured Real-ish pines.",
+        "runs": 1
+      },
+      {
+        "item": "Blobby deciduous trees (c01-canoe-golden.jpg center background, c02-slips-boathouse-noon.jpg far left behind boathouse, c03-dinghy-wake-dawn.jpg right background).",
+        "reason": "Lumpy untextured SmoothPlastic green foliage blobs clash with the detailed wood and rubber materials in the foreground.",
+        "runs": 1
+      },
+      {
+        "item": "Shoreline sand and grass ground (c02-slips-boathouse-noon.jpg center bank between boathouse and dock, c01-canoe-golden.jpg shore behind dock).",
+        "reason": "Smooth blotchy blends between default Roblox Smooth Terrain Sand and Grass read unmistakably as stock terrain.",
+        "runs": 1
+      },
+      {
+        "item": "Midday sky and clouds (c02-slips-boathouse-noon.jpg top third, c01-canoe-golden.jpg top center).",
+        "reason": "Default Roblox blue sky and wispy stock Clouds make the noon shot look like a standard Roblox baseplate atmosphere.",
+        "runs": 1
+      },
+      {
+        "item": "Shoreline rock clusters (c02-slips-boathouse-noon.jpg center shore and far right shore, c01-canoe-golden.jpg center shore).",
+        "reason": "Smooth matte dark-grey low-poly lumps look like untextured plastic or clay props resting on top of the terrain rather than real stone.",
+        "runs": 1
+      },
+      {
+        "item": "Blocky white-and-grey boat (c03-dinghy-wake-dawn.jpg midground right, directly behind the wooden canoe).",
+        "reason": "Plain untextured SmoothPlastic rectangular hull and flat black box motor read as raw default Roblox parts.",
+        "runs": 1
+      },
+      {
+        "item": "Freestanding mooring posts (c02-slips-boathouse-noon.jpg four posts in center water, c03-dinghy-wake-dawn.jpg single post on left midground).",
+        "reason": "Uniform smooth brown Cylinder parts with sharp rims and no waterline wear contrast with the weathered planked dock pilings.",
+        "runs": 1
+      },
+      {
+        "item": "Distant bridge (c03-dinghy-wake-dawn.jpg center background across the lake).",
+        "reason": "Thin, smooth untextured grey arch reads as simple placeholder block geometry with no real material detail.",
+        "runs": 1
+      }
+    ],
+    "weather": {
+      "c01-canoe-golden": "Clear",
+      "c02-slips-boathouse-noon": "Clear",
+      "c03-dinghy-wake-dawn": "Clear"
+    },
+    "session": {
+      "c01-canoe-golden": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      },
+      "c02-slips-boathouse-noon": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      },
+      "c03-dinghy-wake-dawn": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1519,
+          787
+        ]
+      }
+    }
   }
 ]
