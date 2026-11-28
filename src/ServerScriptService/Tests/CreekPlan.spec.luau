@@ -544,6 +544,111 @@ return function(t, Shared)
 		end
 	end)
 
+	-- White water, take 2 (after the N3 final critic): soft beams and pillows.
+	t.test("foam beams: same seed same beams, inside the budget, over the water at one height", function()
+		local a, b = CreekPlan.foamBeams(CreekPlan.SEED), CreekPlan.foamBeams(CreekPlan.SEED)
+		t.eq(#a, #b, "same count")
+		for i, x in a do
+			t.ok(x.x0 == b[i].x0 and x.z1 == b[i].z1 and x.w0 == b[i].w0, "beam " .. i)
+		end
+		t.ok(#a >= 30 and #a <= CreekPlan.FOAM_BEAM_MAX, "beams: " .. #a)
+		local kinds: { [string]: number } = {}
+		for _, bm in a do
+			kinds[bm.kind] = (kinds[bm.kind] or 0) + 1
+			for i = 0, 16 do
+				local s = i / 16
+				local x, y, z = CreekPlan.foamBeamPoint(bm, s)
+				t.eq(y, CreekPlan.FOAM_Y, "one height")
+				t.ok(CreekPlan.D(x, z) < -CreekPlan.foamBeamWidth(bm, s) / 2, string.format("beam over water at %.1f, %.1f", x, z))
+			end
+			local x0, _, z0 = CreekPlan.foamBeamPoint(bm, 0)
+			local x1, _, z1 = CreekPlan.foamBeamPoint(bm, 1)
+			t.ok(math.abs(x0 - bm.x0) < 1e-9 and math.abs(z0 - bm.z0) < 1e-9, "starts on Attachment0")
+			t.ok(math.abs(x1 - bm.x1) < 1e-9 and math.abs(z1 - bm.z1) < 1e-9, "ends on Attachment1")
+			t.ok(z1 < z0, "runs downstream (-z)")
+			t.ok(bm.w0 > 0 and bm.w1 > 0 and bm.w0 ~= bm.w1, "tapers")
+			t.ok(bm.speed > 0 and CreekPlan.foamTextureSpeed(bm.speed) > 0, "scrolls Attachment0 to 1 (downstream)")
+		end
+		t.ok((kinds.riffle or 0) >= 20, "riffle beams: " .. tostring(kinds.riffle))
+		t.ok((kinds.drop or 0) >= 3, "drop beams: " .. tostring(kinds.drop))
+		t.ok((kinds.boulder or 0) >= 6, "boulder trails: " .. tostring(kinds.boulder))
+		t.ok((kinds.rock or 0) >= 8, "rock trails: " .. tostring(kinds.rock))
+		t.ok(CreekPlan.FOAM_Y > 0.06 and CreekPlan.FOAM_Y <= 0.15, "just over the water and its chop")
+		t.ok(CreekPlan.FOAM_ZOFFSET > 0 and CreekPlan.FOAM_ZOFFSET <= 0.1, "a small pull toward the camera")
+	end)
+
+	t.test("foam beams have no hard edges: faded at both ends, never fully opaque", function()
+		for _, bm in CreekPlan.foamBeams(CreekPlan.SEED) do
+			local f = CreekPlan.foamBeamFade(bm)
+			t.eq(f[1][1], 0, "first keypoint at the head")
+			t.eq(f[1][2], 1, "clear at the head")
+			t.eq(f[#f][1], 1, "last keypoint at the tail")
+			t.eq(f[#f][2], 1, "clear at the tail")
+			for i = 2, #f do
+				t.ok(f[i][1] > f[i - 1][1], "keypoints in order")
+			end
+			t.ok(bm.fadeIn >= 0.15 and bm.fadeOut >= 0.25, "long soft fades")
+			t.ok(bm.base >= 0.1 and bm.base < 0.5, "translucent in the middle")
+		end
+	end)
+
+	t.test("riffle and drop beams keep clear of the rocks; every rock trails a beam from under it", function()
+		local beams = CreekPlan.foamBeams(CreekPlan.SEED)
+		local rocks = CreekPlan.emergentRocks(CreekPlan.SEED)
+		for _, bm in beams do
+			if bm.kind == "riffle" or bm.kind == "drop" then
+				for i = 0, 8 do
+					local x, _, z = CreekPlan.foamBeamPoint(bm, i / 8)
+					for _, k in rocks do
+						t.ok((x - k.x) ^ 2 + (z - k.z) ^ 2 >= k.r ^ 2, "beam clear of a rock")
+					end
+				end
+			end
+		end
+		local trailed = 0
+		for _, k in rocks do
+			for _, bm in beams do
+				if bm.kind == "rock" and (bm.x0 - k.x) ^ 2 + (bm.z0 - k.z) ^ 2 < k.r ^ 2 then
+					trailed += 1
+					break
+				end
+			end
+		end
+		t.ok(trailed >= 8, "rocks trailing a beam from under them: " .. trailed)
+	end)
+
+	t.test("the beams' attachments lie level, their Axis along the flow", function()
+		for _, yaw in { -0.3, 0, 0.2 } do
+			local right, up = CreekPlan.foamFrame(yaw)
+			t.ok(math.abs(right[2]) < 1e-9, "Axis level")
+			t.ok(right[3] < -0.9, "Axis downstream")
+			t.ok(math.abs(right[1] * up[1] + right[2] * up[2] + right[3] * up[3]) < 1e-9, "up square to Axis")
+			if CreekPlan.FOAM_BEAM_NORMAL == "Y" then
+				t.eq(up[2], 1, "SecondaryAxis up")
+			else
+				t.ok(math.abs(up[2]) < 1e-9, "SecondaryAxis across the flow")
+			end
+		end
+	end)
+
+	t.test("pillows and spray: one pillow per rock and boulder, over water, inside the budget", function()
+		local puffs = CreekPlan.foamPuffs(CreekPlan.SEED)
+		local pillows = 0
+		for _, p in puffs do
+			t.ok(CreekPlan.D(p.x, p.z) < 0, string.format("%s over water at %.1f, %.1f", p.kind, p.x, p.z))
+			t.ok(p.rate > 0 and p.rate <= 10 and p.life[2] <= 1.5, "low rate, short life")
+			if p.kind == "pillow" then
+				pillows += 1
+				t.ok(p.speed[2] <= 1, "a slow pillow")
+				t.ok(p.transparency[1] >= 0.5, "a soft pillow")
+			end
+		end
+		t.eq(pillows, #CreekPlan.emergentRocks(CreekPlan.SEED) + #CreekPlan.BOULDERS, "pillows")
+		t.ok(#puffs <= CreekPlan.FOAM_PUFF_MAX, "emitters: " .. #puffs)
+		local n = CreekPlan.foamParticleMax(puffs)
+		t.ok(n <= CreekPlan.FOAM_PARTICLE_MAX, "particles alive at most: " .. n)
+	end)
+
 	t.test("the creek's look: clear tea water, cool shade, a floor under the exposure", function()
 		local c = LookPresets.AREAS.creek :: any
 		local w = c.water

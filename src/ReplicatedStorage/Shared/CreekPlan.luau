@@ -1470,6 +1470,265 @@ function CreekPlan.foam(seed: number?): { Strip }
 end
 
 ---------------------------------------------------------------------------------------------
+-- White water, take 2 (11/28/2026, after the N3 final critic): soft beams and pillows
+---------------------------------------------------------------------------------------------
+-- The critic read the textured strips above as "hard-edged rectangular whitewater foam patches".
+-- A flat part has four straight edges and four corners however its map fades, so the foam is now
+-- drawn with Beams: each one runs downstream between two attachments, its Transparency fades in
+-- at the head and out at the tail (no straight ends), the foam map's faded V rows sit on its two
+-- long sides (no straight sides), it tapers (Width0 to Width1) and bends a little (CurveSize0/1
+-- with the two attachments turned apart). Several narrow, overlapping beams with seeded offsets
+-- make each tongue, so no two match. Behind each emergent rock and boulder a soft pillow of the
+-- spray map (a small, slow ParticleEmitter) and a short trail beam starting under the rock.
+-- Off (false): ClientModules/WhiteWater draws the old strips (CreekPlan.foam) as before.
+CreekPlan.FOAM_BEAMS_ON = true
+CreekPlan.FOAM_Y = 0.1 -- every beam's height: over the water (y 0) and its 0.06 chop, ZOffset does the rest
+CreekPlan.FOAM_ZOFFSET = 0.05 -- studs toward the camera, so the chop's crests never cut a beam
+CreekPlan.FOAM_SEGMENTS = 8
+CreekPlan.FOAM_BEAM_MAX = 64 -- budget: beams
+CreekPlan.FOAM_PUFF_MAX = 20 -- budget: emitters
+CreekPlan.FOAM_PARTICLE_MAX = 100 -- budget: particles alive at once (rate x longest life, summed)
+-- Which attachment axis is the ribbon's normal with FaceCamera off. "Y": the attachments' Y
+-- (SecondaryAxis) points up and the width lies along their Z, across the flow. If a capture shows
+-- the foam standing on edge like a fence, set "Z" (the width then lies along Y, Z points up).
+CreekPlan.FOAM_BEAM_NORMAL = "Y"
+
+export type FoamBeam = {
+	x0: number,
+	z0: number,
+	x1: number,
+	z1: number,
+	yaw0: number, -- the attachments' flow directions (0 is straight down the creek, -z)
+	yaw1: number,
+	w0: number, -- Width0 (head) and Width1 (tail), studs
+	w1: number,
+	curve: number, -- CurveSize0 = CurveSize1 (studs along each attachment's flow direction)
+	speed: number, -- studs a second downstream
+	base: number, -- the transparency in the beam's middle
+	fadeIn: number, -- share of the length to fade in over at the head
+	fadeOut: number, -- and out over at the tail
+	kind: string, -- "riffle", "drop", "boulder", "rock"
+}
+
+export type FoamPuff = {
+	x: number,
+	z: number,
+	y: number,
+	kind: string, -- "pillow" (behind a rock or boulder) or "spray"
+	w: number, -- the emitter's footprint across the flow (spray only; a pillow is a point)
+	rate: number,
+	life: { number }, -- min, max seconds
+	speed: { number },
+	size: { number }, -- at birth, at death
+	transparency: { number }, -- at birth, at death
+	rise: number, -- Acceleration's y
+	drift: number, -- Acceleration downstream
+}
+
+local function flowDir(yaw: number): (number, number)
+	return math.sin(yaw), -math.cos(yaw)
+end
+
+-- A point on a beam's curve, t 0 (head, Attachment0) to 1 (tail): Roblox's cubic Bezier with
+-- P1 = P0 + dir0 * CurveSize0 and P2 = P3 - dir1 * CurveSize1, all at FOAM_Y.
+function CreekPlan.foamBeamPoint(b: FoamBeam, t: number): (number, number, number)
+	local d0x, d0z = flowDir(b.yaw0)
+	local d1x, d1z = flowDir(b.yaw1)
+	local p1x, p1z = b.x0 + d0x * b.curve, b.z0 + d0z * b.curve
+	local p2x, p2z = b.x1 - d1x * b.curve, b.z1 - d1z * b.curve
+	local u = 1 - t
+	local a, c, d, e = u * u * u, 3 * u * u * t, 3 * u * t * t, t * t * t
+	return a * b.x0 + c * p1x + d * p2x + e * b.x1, CreekPlan.FOAM_Y, a * b.z0 + c * p1z + d * p2z + e * b.z1
+end
+
+function CreekPlan.foamBeamWidth(b: FoamBeam, t: number): number
+	return b.w0 + (b.w1 - b.w0) * t
+end
+
+-- The beam's Transparency keypoints { t, value }: clear at both ends, `base` in the middle.
+function CreekPlan.foamBeamFade(b: FoamBeam): { { number } }
+	return { { 0, 1 }, { b.fadeIn, b.base }, { 1 - b.fadeOut, b.base }, { 1, 1 } }
+end
+
+-- TextureSpeed (texture cycles a second, positive runs Attachment0 to Attachment1, downstream).
+-- With TextureMode Wrap one cycle travels TextureLength studs (FOAM_TILE_U).
+function CreekPlan.foamTextureSpeed(speed: number): number
+	return speed / CreekPlan.FOAM_TILE_U
+end
+
+-- The attachments' frame at an end: its flow direction (Axis, X) and the up and across vectors as
+-- FOAM_BEAM_NORMAL says. Returns rightVector, upVector for CFrame.fromMatrix (both unit, level).
+function CreekPlan.foamFrame(yaw: number): ({ number }, { number })
+	local fx, fz = flowDir(yaw)
+	if CreekPlan.FOAM_BEAM_NORMAL == "Z" then
+		return { fx, 0, fz }, { -fz, 0, fx } -- Y across the flow, so Z (X cross Y) is vertical
+	end
+	return { fx, 0, fz }, { 0, 1, 0 }
+end
+
+local function foamRocks(seed: number?): { { number } }
+	local out = {}
+	for _, b in CreekPlan.BOULDERS do
+		table.insert(out, { b[1], b[2], b[3] })
+	end
+	for _, k in CreekPlan.emergentRocks(seed) do
+		table.insert(out, { k.x, k.z, k.r })
+	end
+	return out
+end
+
+-- Every beam: sampled every eighth of its length, the whole width (and 0.3 more) over the drawn
+-- water; riffle and drop beams also keep their middle line 0.2 off every rock and boulder (a
+-- trail starts under its own rock, so the rock hides its head).
+function CreekPlan.foamBeamFits(b: FoamBeam, rocks: { { number } }): boolean
+	for i = 0, 8 do
+		local t = i / 8
+		local x, _, z = CreekPlan.foamBeamPoint(b, t)
+		if CreekPlan.D(x, z) > -(CreekPlan.foamBeamWidth(b, t) / 2 + 0.3) then
+			return false
+		end
+		if b.kind == "riffle" or b.kind == "drop" then
+			for _, k in rocks do
+				if (x - k[1]) ^ 2 + (z - k[2]) ^ 2 < (k[3] + 0.2) ^ 2 then
+					return false
+				end
+			end
+		end
+	end
+	return true
+end
+
+function CreekPlan.foamBeams(seed: number?): { FoamBeam }
+	local r = Scatter.rng((seed or CreekPlan.SEED) + 29)
+	local rocks = foamRocks(seed)
+	local out: { FoamBeam } = {}
+	local function beam(kind: string, x0: number, z0: number, len: number, angle: number, w0: number, w1: number, speed: number): boolean
+		local fx, fz = flowDir(angle)
+		local bend = Scatter.range(r, -0.14, 0.14)
+		local b: FoamBeam = {
+			x0 = x0,
+			z0 = z0,
+			x1 = x0 + fx * len,
+			z1 = z0 + fz * len,
+			yaw0 = angle + bend,
+			yaw1 = angle - bend * Scatter.range(r, -0.6, 1), -- an arc or a slight S
+			w0 = w0,
+			w1 = w1,
+			curve = len * 0.3,
+			speed = speed,
+			base = Scatter.range(r, 0.12, 0.34),
+			fadeIn = Scatter.range(r, 0.16, 0.3),
+			fadeOut = Scatter.range(r, 0.3, 0.45),
+			kind = kind,
+		}
+		if #out < CreekPlan.FOAM_BEAM_MAX and CreekPlan.foamBeamFits(b, rocks) then
+			table.insert(out, b)
+			return true
+		end
+		return false
+	end
+	-- The riffle: tongues down the chute, two or three narrow beams each, offset and overlapping.
+	-- The emergent rocks stand every few studs, so a beam that would run into one is tried again
+	-- (up to TRIES times, a little shorter each time) somewhere else in its tongue.
+	local TRIES = 8
+	local z = 73
+	while z > 36 do
+		local cx = -230 + Scatter.range(r, -2.6, 2.6)
+		local n = if z > 64 or z < 42 then 3 else 2
+		for _ = 1, n do
+			local w = Scatter.range(r, 0.6, 1.5)
+			local len = Scatter.range(r, 5, 9)
+			for try = 0, TRIES - 1 do
+				local spread = 1 + try * 0.5 -- wander further from the tongue's line on each retry
+				if beam("riffle", cx + Scatter.range(r, -spread, spread), z + Scatter.range(r, -0.7, 0.7), len * (1 - 0.07 * try), Scatter.range(r, -0.12, 0.12), w * Scatter.range(r, 0.45, 0.7), w, Scatter.range(r, 3, 5)) then
+					break
+				end
+			end
+		end
+		z -= Scatter.range(r, 2.4, 3.4)
+	end
+	-- Where the riffle drops into the rocky run: wider at the lip, narrowing as it spreads out.
+	for _ = 1, 6 do
+		local w = Scatter.range(r, 1.2, 2.4)
+		local len = Scatter.range(r, 3.5, 6)
+		for try = 0, TRIES - 1 do -- the run's boulders stand just below the lip: shorter on each retry
+			if beam("drop", Scatter.range(r, -235, -225), Scatter.range(r, 31.5, 34), len * (1 - 0.08 * try), Scatter.range(r, -0.25, 0.25), w * 0.85, w * Scatter.range(r, 0.5, 0.8), Scatter.range(r, 2, 3)) then
+				break
+			end
+		end
+	end
+	-- Two trails below each boulder, a little apart, starting under it.
+	for _, b in CreekPlan.BOULDERS do
+		for side = -1, 1, 2 do
+			local w = Scatter.range(r, 0.5, 1)
+			local _ = beam("boulder", b[1] + side * b[3] * 0.45, b[2] - b[3] * 0.7, Scatter.range(r, 3, 5.5), side * Scatter.range(r, 0.05, 0.18), w * 0.6, w, Scatter.range(r, 2, 3.5))
+		end
+	end
+	-- One trail below each emergent rock, starting under it and narrowing downstream.
+	for _, k in CreekPlan.emergentRocks(seed) do
+		local w = k.r * Scatter.range(r, 0.6, 0.9)
+		local len = Scatter.range(r, 2.5, 4.5)
+		for try = 0, 3 do -- near a bank: narrower and shorter, then turned a little toward the middle
+			local s = 1 - 0.15 * try
+			local lean = if k.x > -230 then -0.08 * try else 0.08 * try
+			if beam("rock", k.x + Scatter.range(r, -0.2, 0.2), k.z - k.r * 0.6, len * s, Scatter.range(r, -0.1, 0.1) + lean, w * 0.85 * s, w * 0.5 * s, Scatter.range(r, 3, 4.5)) then
+				break
+			end
+		end
+	end
+	return out
+end
+
+-- The pillows (one behind each emergent rock and boulder, at its downstream foot) and the two
+-- sprays (CreekPlan.SPRAY): low rate, short life, slow, soft.
+function CreekPlan.foamPuffs(seed: number?): { FoamPuff }
+	local out: { FoamPuff } = {}
+	for _, k in foamRocks(seed) do
+		local big = k[3] > 2.2 -- a boulder
+		table.insert(out, {
+			x = k[1],
+			z = k[2] - k[3] * 0.75,
+			y = CreekPlan.FOAM_Y + 0.05,
+			kind = "pillow",
+			w = 0,
+			rate = if big then 4 else 3,
+			life = { 0.7, 1.2 },
+			speed = { 0.3, 0.8 },
+			size = { 0.3, 0.9 + 0.2 * k[3] },
+			transparency = { 0.55, 1 },
+			rise = -0.8,
+			drift = 1.2,
+		})
+	end
+	for _, sp in CreekPlan.SPRAY do
+		table.insert(out, {
+			x = sp.x,
+			z = sp.z,
+			y = 0.1,
+			kind = "spray",
+			w = sp.w,
+			rate = 10,
+			life = { 0.5, 0.9 },
+			speed = { 1.5, 3.5 },
+			size = { 0.25, 0.7 },
+			transparency = { 0.45, 1 },
+			rise = -9,
+			drift = 0,
+		})
+	end
+	return out
+end
+
+-- Particles alive at once, at most: rate x the longest life, summed.
+function CreekPlan.foamParticleMax(puffs: { FoamPuff }): number
+	local n = 0
+	for _, p in puffs do
+		n += p.rate * p.life[2]
+	end
+	return n
+end
+
+---------------------------------------------------------------------------------------------
 -- The creek kit (Neon Pass 2, 11/28/2026): the gate arch, the hero fence and the lantern posts
 ---------------------------------------------------------------------------------------------
 

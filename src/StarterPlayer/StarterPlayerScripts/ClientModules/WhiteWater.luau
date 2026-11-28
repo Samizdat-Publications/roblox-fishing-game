@@ -11,6 +11,12 @@
 -- The foam and spray maps come from art/textures/white_water/ once uploaded: put their ids in
 -- TEXTURES. Until then (nil) the strips are pale translucent parts that shimmer, and the spray
 -- uses the stock particle.
+--
+-- 11/28/2026, after the N3 final critic ("hard-edged rectangular whitewater foam patches"): with
+-- CreekPlan.FOAM_BEAMS_ON the strips give way to soft Beams (CreekPlan.foamBeams: faded at both
+-- ends by Transparency, at both sides by the map's faded rows, tapered and slightly bent) and a
+-- small soft pillow emitter behind every emergent rock and boulder (CreekPlan.foamPuffs). All of
+-- it hangs from one invisible anchored part. Off: the strips, as before.
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
@@ -50,9 +56,133 @@ local function asset(id: number?): string
 	return if id then "rbxassetid://" .. tostring(id) else ""
 end
 
+local function v3(t: { number }): Vector3
+	return Vector3.new(t[1], t[2], t[3])
+end
+
+local function sequence(points: { { number } }): NumberSequence
+	local kps = {}
+	for _, p in points do
+		table.insert(kps, NumberSequenceKeypoint.new(p[1], p[2]))
+	end
+	return NumberSequence.new(kps)
+end
+
+-- An attachment on `holder` at (x, y, z), its Axis (X) along the flow at `yaw`.
+local function anchorAt(holder: BasePart, name: string, x: number, y: number, z: number, yaw: number): Attachment
+	local right, up = CreekPlan.foamFrame(yaw)
+	local a = Instance.new("Attachment")
+	a.Name = name
+	a.Parent = holder -- parent first: WorldCFrame is read against the holder
+	a.WorldCFrame = CFrame.fromMatrix(Vector3.new(x, y, z), v3(right), v3(up))
+	return a
+end
+
+local function sprayEmitter(p: CreekPlan.FoamPuff, downstream: Vector3): ParticleEmitter
+	local e = Instance.new("ParticleEmitter")
+	e.Texture = if WhiteWater.TEXTURES.spray then asset(WhiteWater.TEXTURES.spray) else e.Texture
+	e.Color = ColorSequence.new(WhiteWater.FOAM_COLOR)
+	e.LightEmission = 0.15
+	e.LightInfluence = 1
+	e.Rate = p.rate
+	e.Lifetime = NumberRange.new(p.life[1], p.life[2])
+	e.Speed = NumberRange.new(p.speed[1], p.speed[2])
+	e.EmissionDirection = Enum.NormalId.Top
+	e.Acceleration = Vector3.new(0, p.rise, 0) + downstream * p.drift
+	e.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, p.size[1]), NumberSequenceKeypoint.new(1, p.size[2]) })
+	e.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 1), -- fades in too: no particle pops on at full strength
+		NumberSequenceKeypoint.new(0.15, p.transparency[1]),
+		NumberSequenceKeypoint.new(1, p.transparency[2]),
+	})
+	if p.kind == "pillow" then
+		e.SpreadAngle = Vector2.new(70, 70)
+		e.Drag = 2
+		e.Rotation = NumberRange.new(0, 360)
+		e.RotSpeed = NumberRange.new(-20, 20)
+	else
+		e.SpreadAngle = Vector2.new(25, 25)
+		e.Drag = 1.5
+	end
+	return e
+end
+
+-- The soft version (CreekPlan.FOAM_BEAMS_ON): beams and pillows on one invisible holder.
+local function buildBeams(f: Folder)
+	local holder = Instance.new("Part")
+	holder.Name = "FoamHolder"
+	holder.Anchored = true
+	holder.CanCollide = false
+	holder.CanQuery = false
+	holder.CanTouch = false
+	holder.CastShadow = false
+	holder.Transparency = 1
+	holder.Size = Vector3.new(0.2, 0.2, 0.2)
+	holder.CFrame = CFrame.new(WhiteWater.CENTRE)
+	holder.Parent = f
+	local foamId = WhiteWater.TEXTURES.foam
+	for i, b in CreekPlan.foamBeams(CreekPlan.SEED) do
+		local a0 = anchorAt(holder, "Foam" .. i .. "A", b.x0, CreekPlan.FOAM_Y, b.z0, b.yaw0)
+		local a1 = anchorAt(holder, "Foam" .. i .. "B", b.x1, CreekPlan.FOAM_Y, b.z1, b.yaw1)
+		local beam = Instance.new("Beam")
+		beam.Name = "Foam" .. i
+		beam.Attachment0 = a0
+		beam.Attachment1 = a1
+		beam.FaceCamera = false
+		beam.Segments = CreekPlan.FOAM_SEGMENTS
+		beam.CurveSize0 = b.curve
+		beam.CurveSize1 = b.curve
+		beam.Width0 = b.w0
+		beam.Width1 = b.w1
+		beam.Color = ColorSequence.new(WhiteWater.FOAM_COLOR)
+		beam.Transparency = sequence(CreekPlan.foamBeamFade(b))
+		beam.LightInfluence = 1 -- lit like the water round it, so it never glows at dawn or night
+		beam.LightEmission = 0
+		beam.ZOffset = CreekPlan.FOAM_ZOFFSET
+		if foamId then
+			beam.Texture = asset(foamId)
+			beam.TextureMode = Enum.TextureMode.Wrap
+			beam.TextureLength = CreekPlan.FOAM_TILE_U
+			beam.TextureSpeed = CreekPlan.foamTextureSpeed(b.speed)
+		else
+			beam.Texture = ""
+		end
+		beam.Parent = holder
+	end
+	for i, p in CreekPlan.foamPuffs(CreekPlan.SEED) do
+		local down = Vector3.new(0, 0, -1) -- the creek runs to -z
+		local e = sprayEmitter(p, down)
+		if p.kind == "pillow" then
+			local a = Instance.new("Attachment")
+			a.Name = "Pillow" .. i
+			a.Parent = holder
+			a.WorldCFrame = CFrame.new(p.x, p.y, p.z)
+			e.Parent = a
+		else
+			local s = Instance.new("Part")
+			s.Name = "Spray" .. i
+			s.Anchored = true
+			s.CanCollide = false
+			s.CanQuery = false
+			s.CanTouch = false
+			s.CastShadow = false
+			s.Transparency = 1
+			s.Size = Vector3.new(p.w, 0.2, 1.5)
+			s.CFrame = CFrame.new(p.x, p.y, p.z)
+			e.Parent = s
+			s.Parent = f
+		end
+		table.insert(emitters, e)
+	end
+end
+
 local function build(): Folder
 	local f = Instance.new("Folder")
 	f.Name = "WhiteWater"
+	if CreekPlan.FOAM_BEAMS_ON then
+		buildBeams(f)
+		return f
+	end
 	local foamId = WhiteWater.TEXTURES.foam
 	for i, s in CreekPlan.foam(CreekPlan.SEED) do
 		-- N3 review 3: the part's +X runs downstream so the map's U (its streaks) lies along the
