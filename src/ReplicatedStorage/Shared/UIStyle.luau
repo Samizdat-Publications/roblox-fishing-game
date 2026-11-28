@@ -269,6 +269,59 @@ end
 -- tint of the exact colour (this is how much of the colour shows).
 UIStyle.STAMP_TINT = 0.12
 
+-- The weight on the catch card's hanging tag (N2 review 2: the second line was cut off on a
+-- phone). The weight goes on two set lines ("3 lb" over "5 oz", "12.5" over "lb"), never
+-- wrapped, and the tag grows from its drawn size (k = 0.6 of the 96 by 128 art) until both
+-- lines fit its text area at the floored text size. line: line spacing as a share of the text
+-- size (the label's LineHeight is set to lineHeight, and Nunito runs about 1.36 tall at 1).
+-- em: a conservative width per character (Nunito Bold digits run about 0.55).
+UIStyle.WEIGHT_TAG = { k = 0.6, base = "small", lineHeight = 0.9, line = 1.25, em = 0.5 }
+
+-- The weight text set on its two lines.
+function UIStyle.weightTagLines(text: string): string
+	local words = {}
+	for w in string.gmatch(text, "%S+") do
+		table.insert(words, w)
+	end
+	if #words == 4 then
+		return words[1] .. " " .. words[2] .. "\n" .. words[3] .. " " .. words[4]
+	elseif #words == 2 then
+		return words[1] .. "\n" .. words[2]
+	end
+	return text
+end
+
+-- The tag for a weight at an interface scale: its lines, the art scale k, the text size
+-- (interface units) and the text box (interface units, the art's text area at k).
+function UIStyle.weightTagFit(text: string, scale: number): (string, number, number, number, number)
+	local W = UIStyle.WEIGHT_TAG
+	local a = UIStyle.IMAGES.weightTag.textArea :: { number }
+	local areaW, areaH = a[3] - a[1], a[4] - a[2]
+	local lines = UIStyle.weightTagLines(text)
+	local count, longest = 0, 0
+	for l in string.gmatch(lines, "[^\n]+") do
+		count += 1
+		longest = math.max(longest, utf8.len(l) or #l)
+	end
+	local size = UIStyle.textSize(W.base, scale)
+	local k = math.max(W.k, longest * W.em * size / areaW, math.max(count, 1) * W.line * size / areaH)
+	return lines, k, size, areaW * k, areaH * k
+end
+
+-- Which prompts to print (N2 review 2): "gamepad", "touch" or "mouse". lastInput is the name
+-- of UserInputService:GetLastInputType(). A touch screen with no keyboard is touch, and so is
+-- a touch screen on the phone layout (Studio's Device Simulator keeps the keyboard on), unless
+-- a gamepad was the last thing used.
+function UIStyle.inputKind(lastInput: string, touch: boolean, keyboard: boolean, phoneTier: boolean): string
+	if string.match(lastInput, "^Gamepad") then
+		return "gamepad"
+	end
+	if touch and (lastInput == "Touch" or not keyboard or phoneTier) then
+		return "touch"
+	end
+	return "mouse"
+end
+
 -- Roblox objects from the plain values above (client only: Font and Rect exist there).
 function UIStyle.font(role: string): Font
 	local f = UIStyle.FONTS[role] or UIStyle.FONTS.body

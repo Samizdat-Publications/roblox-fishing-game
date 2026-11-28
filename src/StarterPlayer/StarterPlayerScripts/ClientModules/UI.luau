@@ -50,6 +50,17 @@ local lastState: any = nil
 local openPanel: string? = nil
 local locked = false -- true from a bite until the fight ends: no panels, no side buttons
 local hasGoals = false -- today's goals are on (the Goals button shows outside fights)
+local tabsShown = true -- the side tabs are out (no panel is open; sideTabs)
+local benchOpen = false -- the bait bench is on screen (its own ScreenGui, watched in init)
+
+-- The top bar (new look only): steps aside while the bait bench is open, at every size, and
+-- on a short screen while a panel takes the whole height (N2 review 2: the bench sat over it).
+local function updateTop()
+	if not STYLED or not refs.top then
+		return
+	end
+	refs.top.Visible = not benchOpen and not (refs.phone and (not tabsShown or openPanel ~= nil))
+end
 local cardSpin: RBXScriptConnection? = nil -- turns the fish in the catch card
 
 -- In the new look, the old palette's colours stand for these (a background, or text on paper).
@@ -190,7 +201,10 @@ function UI.inputName(): string
 	if last.Name:match("^Gamepad") then
 		return "R2"
 	end
-	if UserInputService.TouchEnabled and (last == Enum.UserInputType.Touch or not UserInputService.KeyboardEnabled) then
+	-- One rule for every prompt (UIStyle.inputKind): the phone layout on a touch screen counts
+	-- as touch even with a keyboard attached (Studio's Device Simulator keeps it on).
+	local kind = UIStyle.inputKind(last.Name, UserInputService.TouchEnabled, UserInputService.KeyboardEnabled, refs.phone == true)
+	if kind == "touch" then
 		return "the Fish button"
 	end
 	return "click"
@@ -243,6 +257,7 @@ function UI.init(cbs: { [string]: (...any) -> () })
 		-- look a short screen gets the whole height, and the top bar steps aside (sideTabs).
 		local h = gui.AbsoluteSize.Y / scale.Scale
 		refs.phone = STYLED and h < UIStyle.PHONE_PANEL_H
+		Skin.phone = refs.phone == true
 		for _, panel in { refs.shop, refs.journal, refs.pond, refs.tackle } do
 			if panel then
 				if refs.phone then
@@ -254,16 +269,55 @@ function UI.init(cbs: { [string]: (...any) -> () })
 				end
 			end
 		end
-		if STYLED and refs.top then
-			refs.top.Visible = not (refs.phone and openPanel ~= nil)
-		end
 		if refs.boardCard then
 			BoardCard.fit(h)
+		end
+		if refs.fitWeightTag then
+			refs.fitWeightTag()
+		end
+		updateTop()
+		if refs.refreshPrompts then
+			refs.refreshPrompts()
 		end
 	end
 	refs.rescale = rescale
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(rescale)
 	gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(rescale)
+
+	-- Key hints follow the device (N2 review 2): reprint them when the input changes.
+	UserInputService.LastInputTypeChanged:Connect(function()
+		if refs.refreshPrompts then
+			refs.refreshPrompts()
+		end
+	end)
+	for _, prop in { "TouchEnabled", "KeyboardEnabled", "GamepadEnabled" } do
+		pcall(function()
+			UserInputService:GetPropertyChangedSignal(prop):Connect(function()
+				if refs.refreshPrompts then
+					refs.refreshPrompts()
+				end
+			end)
+		end)
+	end
+
+	-- The bait bench is its own ScreenGui (BaitBench, built on first open): while it is on
+	-- screen the top bar steps aside (N2 review 2). The bench itself does not move.
+	local function watchBench(child: Instance)
+		if child.Name == "BaitBench" and child:IsA("ScreenGui") then
+			local g = child :: ScreenGui
+			local function sync()
+				benchOpen = g.Enabled and g.Parent ~= nil
+				updateTop()
+			end
+			g:GetPropertyChangedSignal("Enabled"):Connect(sync)
+			g.AncestryChanged:Connect(sync)
+			sync()
+		end
+	end
+	for _, child in playerGui:GetChildren() do
+		watchBench(child)
+	end
+	playerGui.ChildAdded:Connect(watchBench)
 
 	-- Top bar: coins, clock, bag. Sits below Roblox's top buttons.
 	if STYLED then
@@ -638,12 +692,34 @@ local function reelHowTo(): string
 	return "Hold anywhere on the screen."
 end
 
+local lastDrag: string? = nil
+
+-- Reprints every key hint for the device in use now (N2 review 2): the Journal tab, the drag
+-- button and the reel hint. Runs when the input, the touch or keyboard state, or the layout
+-- changes, so a phone never shows a keyboard key.
+local function refreshPrompts()
+	if not refs.journalBtn then
+		return
+	end
+	local name = UI.inputName()
+	refs.journalBtn.Text = if name == "R2" then "Journal (Y)" elseif name == "click" then "Journal (J)" else "Journal"
+	if refs.dragBox and refs.dragBox.Visible and lastDrag then
+		local key = if name == "R2" then " (Y)" elseif name == "click" then " (Q)" else ""
+		refs.dragBtn.Text = "Drag: " .. lastDrag .. key
+	end
+	if refs.fight and refs.fight.Visible and refs.reelSub then
+		refs.reelSub.Text = reelHowTo()
+	end
+end
+refs.refreshPrompts = refreshPrompts
+
 -- The drag button's text (L4d): the setting, the key for this device, and the line rating.
 function UI.showDrag(drag: string?, lineLb: number?)
 	if not drag then
 		refs.dragBox.Visible = false
 		return
 	end
+	lastDrag = drag
 	local name = UI.inputName()
 	local key = if name == "R2" then " (Y)" elseif name == "click" then " (Q)" else ""
 	refs.dragBtn.Text = "Drag: " .. drag .. key
@@ -841,6 +917,28 @@ end
 ----------------------------------------------------------------------------------------
 -- The new look (Config.UI_STYLE_ON): the top bar, the catch plate and the dressing of the
 -- rest. Nothing below runs in the old look.
+
+-- The weight tag at the current scale: the weight on two lines, the tag grown so both fit
+-- (UIStyle.weightTagFit). Only the drawn tag; the plain fallback keeps one line.
+local function fitWeightTag()
+	local tag = refs.cardWeightTag :: Frame?
+	local label = refs.cardWeight :: TextLabel?
+	if not tag or not label then
+		return
+	end
+	local text = (string.gsub(label.Text, "
+", " "))
+	local cam = workspace.CurrentCamera
+	local scale = if cam then UIStyle.uiScale(cam.ViewportSize.X, cam.ViewportSize.Y) else Skin.scale()
+	local a = UIStyle.IMAGES.weightTag.textArea :: { number }
+	local lines, k, size, w, h = UIStyle.weightTagFit(text, scale)
+	tag.Size = UDim2.fromOffset(96 * k, 128 * k)
+	label.Size = UDim2.fromOffset(w, h)
+	label.Position = UDim2.fromOffset(a[1] * k, a[2] * k)
+	label.Text = lines
+	label.TextSize = size
+end
+refs.fitWeightTag = fitWeightTag
 
 local function styledLabel(parent: Instance, name: string, text: string, size: UDim2, pos: UDim2, face: string, base: string | number, color: Color3): TextLabel
 	local l = Instance.new("TextLabel")
@@ -1058,7 +1156,12 @@ function UI.buildPlate()
 		tag.Position = UDim2.new(1, -30, 0, -20)
 		Skin.surface(tag, "weightTag", "tag")
 		local a = tagArt.textArea :: { number }
-		refs.cardWeight = styledLabel(tag, "Weight", "", UDim2.fromOffset((a[3] - a[1]) * k, (a[4] - a[2]) * k), UDim2.fromOffset(a[1] * k, a[2] * k), "bodyBold", "body", K.ink)
+		refs.cardWeight = styledLabel(tag, "Weight", "", UDim2.fromOffset((a[3] - a[1]) * k, (a[4] - a[2]) * k), UDim2.fromOffset(a[1] * k, a[2] * k), "bodyBold", UIStyle.WEIGHT_TAG.base, K.ink)
+		-- Two set lines, never wrapped (a wrapped line that does not fit is dropped, which cut
+		-- "5 oz" on a phone); fitWeightTag grows the tag until both fit (N2 review 2).
+		refs.cardWeight.TextWrapped = false
+		refs.cardWeight.LineHeight = UIStyle.WEIGHT_TAG.lineHeight
+		refs.cardWeightTag = tag
 	else
 		local cord = Skin.rule(inner, "TagString", UDim2.fromOffset(2, 22), UDim2.new(1, -30, 0, -8), K.inkSoft)
 		cord.ZIndex = 4
@@ -1135,6 +1238,7 @@ function UI.fillPlate(payload: any)
 	refs.cardNote.Text = if payload.first then ("New in your journal: " .. payload.habit) else ("Caught at " .. (FishLogic.SPOT_NAMES[f.spot] or f.spot) .. " on " .. ((BaitData.byId[f.bait] and BaitData.byId[f.bait].name) or f.bait) .. ".")
 	refs.cardLength.Text = Units.length(f.cm)
 	refs.cardWeight.Text = Units.weight(f.kg)
+	fitWeightTag()
 	if refs.cardRibbon then
 		Skin.tint(refs.cardRibbon, exact)
 	end
@@ -1392,9 +1496,8 @@ local function sideTabs(show: boolean)
 		refs.status.Visible = show
 	end
 	-- On a short screen a panel takes the whole height: the top bar steps aside too.
-	if refs.top then
-		refs.top.Visible = show or not refs.phone
-	end
+	tabsShown = show
+	updateTop()
 end
 UI.sideTabs = sideTabs
 

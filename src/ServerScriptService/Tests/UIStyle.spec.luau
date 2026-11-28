@@ -182,6 +182,44 @@ return function(t, Shared)
 		end
 	end)
 
+	t.test("the weight tag holds both lines at 14 px or more, on a phone and a desktop", function()
+		local W = UIStyle.WEIGHT_TAG
+		for _, s in { UIStyle.uiScale(667, 375), UIStyle.uiScale(1280, 720), UIStyle.SCALE.max } do
+			for _, text in { "3 lb 5 oz", "15 oz", "12.5 lb", "105.3 lb", "3.25 kg", "12.5 kg", "1 lb 0 oz" } do
+				local lines, k, size, w, h = UIStyle.weightTagFit(text, s)
+				local what = string.format("%q at scale %.2f", text, s)
+				t.ok(size * s >= UIStyle.PHONE_MIN_PX, what .. ": text under 14 px")
+				t.ok(k >= W.k, what .. ": tag shrank below its drawn size")
+				local count, longest = 0, 0
+				for l in string.gmatch(lines, "[^\n]+") do
+					count += 1
+					longest = math.max(longest, #l)
+				end
+				t.ok(count <= 2, what .. ": more than two lines")
+				t.ok(count * W.line * size <= h + 1e-6, what .. ": lines taller than the text area")
+				t.ok(longest * W.em * size <= w + 1e-6, what .. ": a line wider than the text area")
+			end
+		end
+		t.eq(UIStyle.weightTagLines("3 lb 5 oz"), "3 lb\n5 oz", "pounds and ounces")
+		t.eq(UIStyle.weightTagLines("12.5 lb"), "12.5\nlb", "pounds")
+		-- At the drawn size the desktop tag stays close to the art (not blown up).
+		local _, kDesk = UIStyle.weightTagFit("3 lb 5 oz", UIStyle.uiScale(1280, 720))
+		t.ok(kDesk <= 0.7, "desktop tag grew past 0.7")
+		-- The old phone case: two lines of 20 units in a 36 unit box dropped "5 oz".
+		local _, _, sizeP, _, hP = UIStyle.weightTagFit("3 lb 5 oz", UIStyle.uiScale(667, 375))
+		t.ok(hP >= 2 * sizeP, "phone tag text box under two lines")
+	end)
+
+	t.test("prompts follow the device: gamepad, touch (also on the phone layout), else mouse", function()
+		t.eq(UIStyle.inputKind("Gamepad1", true, true, true), "gamepad", "gamepad wins")
+		t.eq(UIStyle.inputKind("MouseMovement", true, false, false), "touch", "touch, no keyboard")
+		t.eq(UIStyle.inputKind("MouseMovement", true, true, true), "touch", "touch on the phone layout")
+		t.eq(UIStyle.inputKind("Touch", true, true, false), "touch", "last input a touch")
+		t.eq(UIStyle.inputKind("MouseMovement", true, true, false), "mouse", "touch laptop at desktop size")
+		t.eq(UIStyle.inputKind("MouseButton1", false, true, true), "mouse", "no touch screen")
+		t.eq(UIStyle.inputKind("Keyboard", false, true, false), "mouse", "desktop")
+	end)
+
 	t.test("every font role names a family and a weight", function()
 		for _, role in { "title", "body", "bodyBold", "hand" } do
 			local f = UIStyle.FONTS[role]

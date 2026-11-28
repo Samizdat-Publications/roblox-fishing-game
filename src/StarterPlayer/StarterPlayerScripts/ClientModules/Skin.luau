@@ -60,6 +60,10 @@ local function start()
 	end)
 end
 
+-- True while the interface is on its phone layout (UI sets it from its short-screen rule), so
+-- prompt hints outside UI pick touch wording the same way (UIStyle.inputKind).
+Skin.phone = false
+
 function Skin.scale(): number
 	start()
 	return scale

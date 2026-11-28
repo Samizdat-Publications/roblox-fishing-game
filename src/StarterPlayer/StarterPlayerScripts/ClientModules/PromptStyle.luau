@@ -24,7 +24,10 @@ local ACTION_PX = 20
 local OBJECT_PX = 16
 
 local function keyText(prompt: ProximityPrompt, inputType: Enum.ProximityPromptInputType): string
-	if inputType == Enum.ProximityPromptInputType.Touch then
+	-- The same device rule as every other hint (UIStyle.inputKind): a touch screen on the phone
+	-- layout shows Tap even when the engine reports a keyboard (N2 review 2).
+	local kind = UIStyle.inputKind(UserInputService:GetLastInputType().Name, UserInputService.TouchEnabled, UserInputService.KeyboardEnabled, Skin.phone)
+	if inputType == Enum.ProximityPromptInputType.Touch or (kind == "touch" and inputType ~= Enum.ProximityPromptInputType.Gamepad) then
 		return "Tap"
 	elseif inputType == Enum.ProximityPromptInputType.Gamepad then
 		local name = prompt.GamepadKeyCode.Name:gsub("^Button", "")
