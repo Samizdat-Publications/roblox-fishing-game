@@ -1,0 +1,109 @@
+{
+  "what": "Hero maps baked for the Cedar Canoe and its paddle by art/scripts/cedar_canoe.py (the same maps are embedded in the GLBs)",
+  "grain_source": "ambientCG Planks 021 (CC0), https://ambientcg.com/a/Planks021; everything else is drawn by the script",
+  "CedarCanoe": {
+    "size": [
+      1024,
+      1024
+    ],
+    "outside_mean_rgb": [
+      165,
+      102,
+      50
+    ],
+    "rectangles": {
+      "outer": [
+        3,
+        3,
+        1016,
+        236
+      ],
+      "innerS": [
+        3,
+        245,
+        1016,
+        196
+      ],
+      "innerP": [
+        3,
+        447,
+        1016,
+        196
+      ],
+      "gunTop": [
+        3,
+        649,
+        1016,
+        28
+      ],
+      "gunSide": [
+        3,
+        683,
+        1016,
+        16
+      ],
+      "gunIn": [
+        3,
+        705,
+        1016,
+        14
+      ],
+      "cane": [
+        3,
+        725,
+        264,
+        150
+      ],
+      "deck": [
+        273,
+        725,
+        180,
+        180
+      ],
+      "thwart": [
+        459,
+        725,
+        250,
+        46
+      ],
+      "rail": [
+        459,
+        777,
+        256,
+        20
+      ],
+      "stem": [
+        459,
+        803,
+        256,
+        22
+      ],
+      "under": [
+        459,
+        831,
+        128,
+        30
+      ]
+    }
+  },
+  "CanoePaddle": {
+    "size": [
+      512,
+      256
+    ],
+    "rectangles": {
+      "faceA": [
+        3,
+        3,
+        506,
+        110
+      ],
+      "faceB": [
+        3,
+        119,
+        506,
+        110
+      ]
+    }
+  }
+}

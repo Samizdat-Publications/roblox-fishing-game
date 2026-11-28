@@ -227,3 +227,70 @@ A drooping western red cedar spray for the bank cedars, to hang out over the str
 
 Rebuild: `python art/scripts/plant_kit.py` (the models, the manifest entries and the sheet; `--no-render` for the models only). The previews read the real `bark` and `leaf_needle` maps from `art/textures/` when they are there, or from the folder in `PLANT_KIT_TEXTURES`. To re-measure the cedar from a PlantFactory export: `blender -b -P art/scripts/plant_kit.py -- --measure <file.fbx>`.
 
+## The boathouse set: the dock slips (N4, 11/28/2026)
+
+![The boathouse set](previews/boathouse_set.png)
+
+Built by `scripts/boathouse.py` for leg 3, N4: the Boathouse, the PriceBoard and the MooringFloat. Uploaded 11/28/2026 (ids in `models/boathouse_ids.json`) and composed as `ServerStorage.Art.Boathouse`, `Art.PriceBoard` and `Art.MooringFloat`, pivots at the base centre; not yet placed in the world. They are split by family (Layer B), not baked as one hero texture, because the three families they need already exist: the plank walls and frame wear `WeatheredPlank`, the roof wears `TinRoofRust`, and the boards the game writes on wear `PaintedWood`. That costs no new images, falls back cleanly on the phone tier, and a painted board can be recoloured later without a re-bake. Upload the copies in `models/roblox/`. First pass against final: [Boathouse-before-after.png](previews/Boathouse-before-after.png).
+
+| Mesh | Wears | Size (studs, X x Y x Z) | Triangles |
+|---|---|---|---|
+| [Boathouse_wood](previews/Boathouse.png) | `WeatheredPlank` (neutral map, colours stored 1.25 times lighter) | 17.95 x 11.38 x 14.7 | 2038 |
+| Boathouse_tin | `TinRoofRust` (the colour map, so the vertex colours are near white) | same box | 606 |
+| Boathouse_paint | `PaintedWood` (neutral map, 1.25 times lighter) | same box | 326 |
+| Boathouse_metal | stock `Metal` (dark iron and galvanised steel in the vertex colours) | same box | 164 |
+| [PriceBoard_paint](previews/PriceBoard.png) | `PaintedWood` | 3.28 x 4.72 x 1.6 | 168 |
+| [MooringFloat_wood](previews/MooringFloat.png) | `WeatheredPlank` | 4.15 x 1.28 x 4 | 246 |
+| MooringFloat_metal | stock `Metal` | same box | 74 |
+
+Boathouse 3,134 triangles of 4,000; PriceBoard 168 of 300; MooringFloat 320 of 400. Seven meshes, no textures of their own.
+
+**Placing.** Every mesh of a set goes at the same CFrame. The pivot is the base centre and the front is Roblox -Z, with no turn needed (built like the stands: Roblox x, y, z is Blender -x, z, y). Each mesh carries two specks at opposite corners of its set's box, so the box and its centre are the same for every mesh of the set. Positions below are in studs from the pivot.
+
+- **Boathouse.** The body is 16 wide by 12 deep to the outer faces of the four corner posts, and the pivot is the centre of that. The tin overhangs it: 8.97 to each side, 7.25 to the front, 6.62 to the back. The ridge is 11.38 up (the brief said about 11), the eaves 7.26, the roof slope 23.7 degrees. The deck top is 0.4 up. The open front is 14.2 wide between the posts and 6.0 clear above the deck under the tie beam.
+- **The shop board** (the flat face for the Boats shop's SurfaceGui): 4 wide by 3 tall, centre (-4.5, 4.15, -3.6), facing -Z. It stands behind a low counter at the right-hand front corner (top at 2.46, centre (-4.5, 2.46, -4.16)), where a player in the opening reads it with the camera still outside the roof.
+- **The lantern bracket** is on the front right-hand post: a timber arm, an iron hook, cap, cage and base, with no glass. The game's own lantern glass (0.65 x 0.85 x 0.65) and its light go at (-7.55, 4.945, -6.9).
+- **The canoe rack** is on the back wall: two uprights with two arms each, so two berths, one above the other, both empty. Arms at x = -2.5 and 4.1 (6.6 apart). A canoe lies along X with its middle at (0.8, 2.4, 3.4) on the lower berth or (0.8, 5.0, 3.4) on the upper (those heights are where the hull rests). Each berth takes a hull up to 13 long, 3.4 wide and 2.0 high at the arms. The rack sits off centre so the shop board hides less of it from the water.
+- **PriceBoard.** One mesh, reused for every boat. The flat face for the price is 3 wide by 2 tall, centre (0, 3.1, -0.2), facing -Z. Stand it on a float at the float's (0, 0.78, 1.1).
+- **MooringFloat.** The deck top is 0.78 up. Put the pivot 0.35 below the water line so the deck rides 0.43 above the water. The cleat is at the front edge, centre (0, 0.98, -1.25).
+
+**The tin.** The roof is real corrugation, a rib every 0.533 stud, and its UVs run at 2 studs per UV unit so that the `tin_roof` map (15 ribs per tile, 4 studs per tile) lays one rib on each real rib. If the ribs in Studio look doubled, that UV rule is the thing to check. `TinRoof` (the neutral map) also works, for a roof with no brown in its rust.
+
+**Not in the set:** the canoe (its own model), the lantern glass and light, rope (the rope family would be one more mesh), and any lettering. The tie beam over the opening has a clear front face 15 wide by 0.8 tall, centred (0, 6.8, -5.98), for a painted name board.
+
+Rebuild: `python art/scripts/boathouse.py` (models, manifest entries, previews and the two sheets; `--no-render` for the models only; `--views golden,front` for some of the previews). The previews read the real family maps from `art/textures/`.
+
+## The Cedar Canoe: a hero set with its paddle (N4, 11/28/2026)
+
+![Cedar Canoe at golden hour](previews/CedarCanoe-golden.png)
+
+Built by `scripts/cedar_canoe.py` for leg 3, N4. Uploaded 11/28/2026 (ids in `models/canoe_ids.json`; the maps came in with the GLB as a SurfaceAppearance) and composed in `ServerStorage.Art` as `CedarCanoe`, `CanoePaddle` and the plain twins, material Wood, pivot on the waterline at the origin. A two-seat cedar-strip canoe: varnished strips from honey to red-brown with a thin feature stripe, bent ribs inside, darker hardwood gunwales and stems, small decks at both ends, two cane seats in ash frames and a carrying thwart. It is a hero set (Layer C, like DockHero): the ribs, strips, tacks and cane weave are in the baked maps, the mesh stays simple. Our own design, no maker's marks.
+
+| File | Size (studs, X x Y up x Z) | Triangles | Maps | What it is |
+|---|---|---|---|---|
+| [CedarCanoe](previews/CedarCanoe.png) | 3.18 x 1.97 x 12.52 | 2,608 | colour, normal, roughness at 1024, embedded | The hull, one mesh, one SurfaceAppearance |
+| [CanoePaddle](previews/CanoePaddle.png) | 0.66 x 0.16 x 4.6 | 152 | colour, normal, roughness at 512 x 256, embedded | One paddle, its own mesh, for the avatar's hands |
+| [CedarCanoePlain](previews/CedarCanoePlain.png) | 3.18 x 1.96 x 12.5 | 1,224 | none (vertex colours) | The phone tier's twin, as Dock is to DockHero: same lines, pivot and seats, seven real ribs |
+| CanoePaddlePlain | 0.66 x 0.16 x 4.6 | 152 | none (vertex colours) | The paddle's plain twin |
+
+Upload the copies in `models/roblox/`. The two hero files are byte for byte the same as in `models/` (no `roblox_colors.py` step); the two plain files have their vertex colours converted. The loose maps are in `textures/cedar_canoe/`, in case the importer does not make the SurfaceAppearance by itself (ColorMap, NormalMap, RoughnessMap; no metalness).
+
+**Placing the canoe.** The file's origin is the **middle of the hull on the waterline**, not the bottom centre, so the pivot goes at the water level. The bow points along **Roblox -Z** and starboard is +X (the model is the same fore and aft, so a half turn only swaps the seats). If the importer puts the pivot on the middle of the box instead, the waterline pivot is 0.763 studs below the middle of the MeshPart (`PivotOffset = CFrame.new(0, -0.763, 0)`). Heights above the pivot:
+
+| What | Roblox position from the pivot (studs) |
+|---|---|
+| Keel | y = -0.22 (the draft) |
+| Lowest point of the inside (bottom boards amidships) | y = +0.22 |
+| Bow seat, top centre | (0, 0.64, -2.30); cane 1.45 wide by 0.58 long, frame 1.75 by 0.88 |
+| Stern seat, top centre | (0, 0.64, 3.00); cane 1.27 wide by 0.58 long, frame 1.57 by 0.88 |
+| Thwart, top centre | (0, 0.87, 0) |
+| Gunwale top amidships | y = +1.04 |
+| Stem heads | y = +1.75 at z = -6.2 and +6.2 |
+
+**Why it floats high.** Roblox draws the lake inside any hull that dips below the water, so the canoe is drawn as an empty canoe floats (keel 0.22 under) and the inside never comes below 0.22 above the waterline: the bottom is thicker than a real one, which cannot be seen. Keep the bob and the wave size together under about 0.2 studs for this boat, or water will show through the bottom boards. Not yet checked in Studio.
+
+**The paddle.** Its origin is the middle of the **top grip**; the shaft runs 4.6 studs toward Roblox -Z and the blade lies flat (its faces look up and down, Roblox Y). The lower hand holds the shaft about 2.2 studs down, at (0, 0, -2.2). The previews show two lying across the thwart with their blades on the bow seat (`STOW` in the script has the two poses).
+
+**Checked.** No face mirrors its picture (the script counts them), and a back-face render from above, below, both ends and inside shows none, so the files are marked single-sided. Judged against `docs/looks/leg3-references/n4-cedar-canoe-and-boathouse-golden.jpg`: [beside the reference](previews/CedarCanoe-vs-reference.png), [first pass and final](previews/CedarCanoe-before-after.png), [high three-quarter](previews/CedarCanoe-threequarter.png), [at 22 studs](previews/CedarCanoe-ingame.png), [looking in](previews/CedarCanoe-inside.png), [from the water](previews/CedarCanoe-low.png), [the maps](previews/CedarCanoe-atlas.png). It differs from the reference on purpose in three ways: it is longer and slimmer (the plan's 12 by 3 studs), its gunwales are darker than the planking, and it carries no rope.
+
+Rebuild (Windows PowerShell): `cd "C:\Users\stewa\Documents\Claude\Roblox"; & "C:\Program Files\Blender Foundation\Blender 5.1\blender.exe" -b --factory-startup -P "C:\Users\stewa\Documents\Claude\Roblox\art\scripts\cedar_canoe.py"` (models, maps, manifest entries and previews; add `-- --no-render` for the models and maps only, or `-- --views golden,match` for some of the previews). The grain comes from the board scan in `artifacts/textures_src/Planks021/` (see `textures/SOURCES.md`); without it the script draws the grain by noise.
