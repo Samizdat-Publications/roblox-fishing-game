@@ -10,7 +10,8 @@ P the prime shots for the making-of (docs/looks/prime-shots.md; score refuses se
   graded, area-aware look itself. The old pin re-applied the plain LookPresets.apply(clock) every
   Heartbeat over LookDirector, so frames before this were mostly ungraded (rebaseline A and B).
   It also hides the cursor, retries hiding the top bar for 10 s (its result is in the pin's
-  line: "topbar hidden" or "topbar failed"), and hides the avatar unless a shot has "avatar": true.
+  line: "topbar hidden" or "topbar failed"), hides the avatar unless a shot has "avatar": true, and
+  (N4 review 1) turns ProximityPromptService off so no prompt shows in a frame ("prompts off").
   Each shot uses its own "fov" when it has one (set P's lenses), else the global one.
   Set P, per shot (pending ones are skipped unless --include-pending):
     1. execute_luau (Client) "snippet <id> --set P"; record its line as for set A
@@ -112,6 +113,22 @@ bait = "PlasticWorm" }, tier "Rare", best true) and then set the CatchCard's "To
 zonePos = 0.55, fishPos = 0.6, progress = 0.45, strain = 0.1 }, "Big runs, then rests.", true),
 UI.showDrag("Medium", 8); "bench" openBench().
 
+Scripted shots (N4 review 1): a shot with a "run" entry (c03, the dinghy under way) needs the boat
+moving when it is captured. Per capture:
+    1. execute_luau (Server) "snippet c03run": puts the player's dinghy at (start_x, z) heading east,
+       seats the player at the helm and holds full throttle, straight, until stop_x (the server
+       drives it; DebugCoop "run", Studio only). The player must own the dinghy and have it out.
+    2. at once, execute_luau (Client) "snippet c03-dinghy-wake-dawn --set C [--lead N]": it waits
+       until the hull passes capture_x - N (N studs of lead for the capture's own delay, default 0)
+       and returns the usual line plus "hull x <x>".
+    3. capture-studio.ps1 -ViewportOnly -Out <run>/<id>.jpg, then record the line as usual.
+    4. execute_luau (Server) "snippet c03log"; save the log string it returns, then
+       python tools/shots/shots.py runcheck <run>/<id>.jpg "<log>"
+       says where the hull was when the file was written (its time against the log's unix
+       milliseconds) and exits 1 outside capture_x +- tolerance (44 +- 4): then run 1 again and
+       redo 2 with --lead set to how far past it went.
+  python tools/shots/shots.py snippet c03run | c03log  the Server Luau for steps 1 and 4
+
 Runs live under artifacts/ (not committed). Copy a sheet worth keeping into docs/critic/ or the making-of.
 Standard library plus Pillow.
 """
@@ -202,6 +219,9 @@ end
 pcall(function() SG:SetCoreGuiEnabled(Enum.CoreGuiType.All, false) end)
 -- The mouse cursor was in every frame of round 3.
 UIS.MouseIconEnabled = false
+-- N4 review 1: no ProximityPrompt in any frame (Drive, Ride, the boards, the bait shop).
+local PPS = game:GetService("ProximityPromptService")
+local prompts = if pcall(function() PPS.Enabled = false end) then "off" else "failed"
 -- The Roblox top bar (menu and chat buttons) is not covered by CoreGuiType.All; SetCore can fail
 -- until the core scripts have registered it, so retry for up to 10 s.
 local topbar = "failed"
@@ -270,6 +290,7 @@ end
 local function pin()
 \tlocal s = _G.__shot
 \tif not s then return end
+\tif PPS.Enabled then pcall(function() PPS.Enabled = false end) end
 \tL.ClockTime = s.clock
 \tif P:GetAttribute("DebugClock") ~= s.clock then P:SetAttribute("DebugClock", s.clock) end
 \tlocal cam = workspace.CurrentCamera
@@ -288,9 +309,9 @@ end)
 pcall(function() RS:UnbindFromRenderStep("ShotPin") end)
 RS:BindToRenderStep("ShotPin", Enum.RenderPriority.First.Value, pin)
 local v = workspace.CurrentCamera.ViewportSize
-return string.format("pin ready tier %s touch %s viewport %dx%d topbar %s coretopbar %d cursor %s clock via DebugClock",
+return string.format("pin ready tier %s touch %s viewport %dx%d topbar %s coretopbar %d cursor %s prompts %s clock via DebugClock",
 \ttostring(P:GetAttribute("LookTierActive")), tostring(UIS.TouchEnabled), math.round(v.X), math.round(v.Y),
-\ttopbar, coreTopbar, if UIS.MouseIconEnabled then "shown" else "hidden")
+\ttopbar, coreTopbar, if UIS.MouseIconEnabled then "shown" else "hidden", prompts)
 """.replace("{topbar_px}", str(TOPBAR_PX))
 
 # Runs before every screen's own luau (set U): the background view, the HUD back on, and the
@@ -457,6 +478,52 @@ UI_CONTEXT = ("Files ending -1280 are the desktop: the Studio viewport as it is,
               "top bar, not ours: do not judge their look, but our layout must clear them.")
 
 
+# Scripted runs (N4 review 1, shot c03): the Server drives the player's boat; the shot's own
+# snippet waits for the hull to pass the capture point.
+def run_of(sid: str = "c03-dinghy-wake-dawn") -> dict:
+    s = shot(sid)
+    if "run" not in s:
+        sys.exit(f"{sid} has no scripted run")
+    return s["run"]
+
+
+def run_server_luau() -> str:
+    r = run_of()
+    return (f"-- Server, during Play (Studio only): shot c03's straight run east along z {r['z']} from x {r['start_x']},\n"
+            f"-- full throttle until x {r['stop_x']}. Then run the shot's snippet on the Client at once.\n"
+            "local F = game:GetService(\"ServerStorage\"):WaitForChild(\"DebugCoop\")\n"
+            "local me = game:GetService(\"Players\"):GetPlayers()[1]\n"
+            f"return tostring(F:Invoke(\"run\", me.Name, {r['z']}, {r['start_x']}, {r['stop_x']}))\n")
+
+
+RUN_LOG = """-- Server, during Play (Studio only): the scripted run's log, "unixms:x,..." (for shots.py runcheck).
+local F = game:GetService("ServerStorage"):WaitForChild("DebugCoop")
+local me = game:GetService("Players"):GetPlayers()[1]
+local r = F:Invoke("runlog", me.Name)
+return if type(r) == "table" and r.log then r.log else "no run log"
+"""
+
+
+def run_wait_luau(s: dict, lead: float) -> str:
+    r = s["run"]
+    trigger = r["capture_x"] - lead
+    return (f"-- Scripted run: wait (up to 30 s) for the hull to pass x {trigger:g} (capture_x {r['capture_x']} less {lead:g} lead).\n"
+            "local P = game:GetService(\"Players\").LocalPlayer\n"
+            "local function hullX(): number?\n"
+            "\tlocal ch = P.Character\n"
+            "\tlocal hum = ch and ch:FindFirstChildOfClass(\"Humanoid\")\n"
+            "\tlocal seat = hum and hum.SeatPart\n"
+            "\tlocal hull = seat and seat.Parent and seat.Parent:FindFirstChild(\"Hull\")\n"
+            "\treturn if hull and hull:IsA(\"BasePart\") then hull.Position.X else nil\n"
+            "end\n"
+            "local t0 = os.clock()\n"
+            "local hx = hullX()\n"
+            f"while (hx == nil or hx < {trigger:g}) and os.clock() - t0 < 30 do\n"
+            "\ttask.wait()\n"
+            "\thx = hullX()\n"
+            "end\n")
+
+
 def shot_line(s: dict) -> str:
     e, l = s["eye"], s["look"]
     crop = "true" if set_of(s) == PRIME else "false"
@@ -465,11 +532,16 @@ def shot_line(s: dict) -> str:
             f"eye = Vector3.new({e[0]}, {e[1]}, {e[2]}), look = Vector3.new({l[0]}, {l[1]}, {l[2]})}}\n")
 
 
-def luau_for(s: dict) -> str:
+def luau_for(s: dict, lead: float = 0) -> str:
     if is_screen(s):
         sizes = " and ".join(f"{w}x{h}" for w, h in SCREEN_SIZES)
         return (f"-- screen {s['id']}: {s['what']} (capture at {sizes}; run pin first)\n"
                 + shot_line(s) + SCREEN_PRELUDE + "\n".join(s["luau"]) + "\n")
+    if "run" in s:
+        tail = SESSION_TAIL.replace("{id}", s["id"]).rstrip("\n")
+        # The usual line, then where the hull was when the snippet let go.
+        tail = tail.replace("math.round(v.X), math.round(v.Y))", "math.round(v.X), math.round(v.Y)) .. string.format(\" hull x %.1f\", hx or -1)")
+        return (f"-- shot {s['id']}: {s['what']}\n" + shot_line(s) + run_wait_luau(s, lead) + tail + "\n")
     return (f"-- shot {s['id']}: {s['what']}\n" + shot_line(s) + "task.wait(1.5)\n" + SESSION_TAIL.replace("{id}", s["id"]))
 
 
@@ -509,11 +581,43 @@ def cmd_snippet(a):
         print(UICHECK)
     elif a.id == "weather":
         print(WEATHER)
+    elif a.id == "c03run":
+        print(run_server_luau())
+    elif a.id == "c03log":
+        print(RUN_LOG)
     elif a.id == "all":
         for s in need_set(a.set, a.include_pending):
             print(luau_for(s))
     else:
-        print(luau_for(shot(a.id)))
+        print(luau_for(shot(a.id), a.lead))
+
+
+def cmd_runcheck(a):
+    """Where the scripted run's hull was when a capture file was written (its time against the log)."""
+    r = run_of(a.shot)
+    img = Path(a.image)
+    if not img.exists():
+        sys.exit(f"no such file: {img}")
+    at_ms = img.stat().st_mtime * 1000
+    entries = []
+    for part in " ".join(a.log).replace('"', "").split(","):
+        if ":" in part:
+            t, x = part.split(":", 1)
+            try:
+                entries.append((float(t), float(x)))
+            except ValueError:
+                pass
+    if not entries:
+        sys.exit("the log is empty (run snippet c03log on the Server after the capture)")
+    t, x = min(entries, key=lambda e: abs(e[0] - at_ms))
+    off = abs(t - at_ms)
+    lo, hi = r["capture_x"] - r["tolerance"], r["capture_x"] + r["tolerance"]
+    ok = lo <= x <= hi and off <= 500
+    print(f"{img.name}: written at {at_ms:.0f} ms, nearest log entry {off:.0f} ms away: hull x {x:.1f} "
+          f"({'inside' if lo <= x <= hi else 'OUTSIDE'} {lo:g} to {hi:g})")
+    if off > 500:
+        print("  the log does not cover the file's time: was the run log read after this capture?")
+    sys.exit(0 if ok else 1)
 
 
 def cmd_newrun(a):
@@ -1089,7 +1193,11 @@ def main():
     p = sub.add_parser("list"); p.add_argument("--set", choices=SETS, default="A")
     p.add_argument("--include-pending", action="store_true", help=pend); p.set_defaults(fn=cmd_list)
     p = sub.add_parser("snippet"); p.add_argument("id"); p.add_argument("--set", choices=SETS, default="A")
+    p.add_argument("--lead", type=float, default=0, help="scripted shots (c03): studs before capture_x to let go")
     p.add_argument("--include-pending", action="store_true", help=pend); p.set_defaults(fn=cmd_snippet)
+    p = sub.add_parser("runcheck", help="scripted shots: where the hull was when a capture file was written")
+    p.add_argument("image"); p.add_argument("log", nargs="+", help="the string snippet c03log returned")
+    p.add_argument("--shot", default="c03-dinghy-wake-dawn"); p.set_defaults(fn=cmd_runcheck)
     p = sub.add_parser("newrun"); p.add_argument("--set", choices=SETS, default="A")
     p.add_argument("--include-pending", action="store_true", help=pend); p.set_defaults(fn=cmd_newrun)
     p = sub.add_parser("primecrop", help="set P: centre-crop every <id>-raw.jpg/png to 16:9, Lanczos to 1280x720 as <id>.jpg (raw kept)")

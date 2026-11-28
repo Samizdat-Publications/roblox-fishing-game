@@ -145,4 +145,30 @@ function BoatLogic.paddlers(boatId: string, aboard: number): number
 	return if b.paddle then math.clamp(aboard, 0, b.seats) else 0
 end
 
+-- The bottom hint for someone sitting in a boat (N4 review 1): at the helm and moving faster than
+-- the boat may cast from, the drive keys for this input ("mouse" for a keyboard, "gamepad",
+-- "touch"); a rider under way, when to cast; stopped (or slow enough) in any seat, the cast line without "Face the water" (a boat
+-- can't turn round to face it the way a player on foot does). `castWith` names the cast input
+-- ("click", "R2", "the Fish button"). Nil when not in a boat (boatId nil): the usual line.
+function BoatLogic.seatHint(boatId: string?, atHelm: boolean, speed: number, kind: string, castWith: string): string?
+	if not boatId then
+		return nil
+	end
+	local b = BoatData.byId[boatId]
+	if not b then
+		return nil
+	end
+	if atHelm and math.abs(speed) > b.castSpeed then
+		if kind == "touch" then
+			return "Steer with the thumbstick. Slow down to cast."
+		elseif kind == "gamepad" then
+			return "Left stick to steer and go. Slow down to cast."
+		end
+		return "W and S to go, A and D to steer. Slow down to cast."
+	elseif math.abs(speed) > b.castSpeed then
+		return "Cast when the boat slows down." -- a rider under way (the builder's wording)
+	end
+	return "Hold " .. castWith .. " and let go to cast."
+end
+
 return BoatLogic

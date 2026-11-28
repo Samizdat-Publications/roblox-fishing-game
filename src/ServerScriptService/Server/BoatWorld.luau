@@ -162,9 +162,13 @@ local function buildSlips(parent: Instance)
 	for _, z in zs do
 		table.insert(edges, z + gap / 2)
 	end
+	-- Round posts (N4 review 1: the square ones read as gray-box): a cylinder's axis is its X, so
+	-- each is turned upright.
+	local upright = CFrame.Angles(0, 0, math.rad(90))
+	local postProps = { Material = Enum.Material.Wood, Shape = Enum.PartType.Cylinder }
 	for i, z in edges do
-		part(slips, "Post" .. i, Vector3.new(0.8, 6, 0.8), CFrame.new(BoatRules.SLIP_X_EDGE + 0.5, -1, z), COLORS.darkWood, { Material = Enum.Material.Wood })
-		part(slips, "FarPost" .. i, Vector3.new(0.8, 6, 0.8), CFrame.new(BoatRules.SLIP_X_EDGE + 18, -1, z), COLORS.darkWood, { Material = Enum.Material.Wood })
+		part(slips, "Post" .. i, Vector3.new(6, 0.8, 0.8), CFrame.new(BoatRules.SLIP_X_EDGE + 0.5, -1, z) * upright, COLORS.darkWood, postProps)
+		part(slips, "FarPost" .. i, Vector3.new(6, 0.8, 0.8), CFrame.new(BoatRules.SLIP_X_EDGE + 18, -1, z) * upright, COLORS.darkWood, postProps)
 	end
 	for i, z in zs do
 		local marker = part(slips, "Slip" .. i, Vector3.new(1, 0.2, 2), CFrame.new(3.4, 1.55, z), COLORS.buoy, { CanCollide = false, CanQuery = false })

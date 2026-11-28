@@ -41,6 +41,7 @@ local BoatService = {}
 local CHECK_EVERY = 0.5 -- seconds between the server's position checks
 local EMPTY_RETURN = 60 -- an empty boat away from its slip goes back after this long
 local HINT_GAP = 3 -- seconds between repeats of the same hint to one player
+local STOP_QUIET = 0.75 -- seconds of free movement before a new stop may toast again
 local BEACH_KEEP = 80 -- a landed boat waits for its owner while they are within this many studs
 local SEND_HOME_GAP = 2 -- seconds between "Send my boat home" presses the server looks at
 
@@ -75,6 +76,11 @@ type Boat = {
 	quiet: Quiet.State, -- its last arrival, for the quiet approach
 	throttle: number, -- the helm's throttle this frame
 	chumAt: number?, -- os.clock() of the last toss
+	stopToasted: boolean, -- a stop's toast was sent; no more until the boat has moved freely again
+	freeFor: number, -- seconds the boat has moved with nothing in the way
+	debugRun: { throttle: number, stopX: number }?, -- Studio only: a scripted straight run (shot c03)
+	runLog: { { number } }?, -- Studio only: { unix ms, hull x } every 0.05 s of the run
+	runLogAt: number?,
 }
 
 local boats: { [Player]: Boat } = {}
@@ -423,6 +429,7 @@ local function returnToSlip(boat: Boat)
 	boat.emptyFor = 0
 	boat.tiePrompt.Enabled = false
 	boat.beachPrompt.Enabled = false
+	boat.debugRun = nil
 end
 
 -- Where someone stands on a shore at (x, z): the ground under it (terrain or a part), never
@@ -595,6 +602,11 @@ function spawnFor(player: Player)
 		quiet = Quiet.new(),
 		throttle = 0,
 		chumAt = nil,
+		stopToasted = false,
+		freeFor = 0,
+		debugRun = nil,
+		runLog = nil,
+		runLogAt = nil,
 	}
 	-- E (gamepad X) like every other prompt: F and the gamepad's face buttons reel in a fight.
 	boat.tiePrompt.Enabled = false
@@ -851,6 +863,14 @@ local function step(dt: number)
 				end
 			end
 		end
+		-- Studio only (shot c03): a scripted run holds the throttle, straight, until stopX.
+		local run = boat.debugRun
+		if run then
+			throttle, steer = run.throttle, 0
+			if boat.hull.Position.X >= run.stopX then
+				run.throttle = 0
+			end
+		end
 		local okCrew, crewMsg = BoatLogic.canDrive(boat.id, n)
 		if not okCrew then
 			if (throttle ~= 0 or steer ~= 0) and crewMsg then
@@ -878,12 +898,44 @@ local function step(dt: number)
 				blocked, why = solid, BoatRules.stopText(boat.id, solid, nil)
 			end
 		end
+		local pushing = (boat.motion.speed > 0 and throttle > 0) or (boat.motion.speed < 0 and throttle < 0)
 		if blocked then
-			local pushing = (boat.motion.speed > 0 and throttle > 0) or (boat.motion.speed < 0 and throttle < 0)
 			boat.motion = { speed = 0, yawRate = boat.motion.yawRate }
+		end
+		-- The whole hull (N4 review 1): the next pose's 8-point footprint against the dock, logs, the
+		-- shore and anything solid, the move and the turn apart (BoatRules.poseCheck).
+		local spin = BoatRules.spinY(boat.motion.yawRate)
+		if boat.motion.speed ~= 0 or spin ~= 0 then
+			local skip = table.clone(chars)
+			table.insert(skip, boat.model)
+			rayParams.FilterDescendantsInstances = skip
+			local function solidAt(p: Vector3): string?
+				return solidAhead(boat, { p }, rayParams)
+			end
+			local moveOk, turnOk, thing = BoatRules.poseCheck(boat.id, pos, boat.yaw, boat.motion.speed, spin, solidAt)
+			if not moveOk or not turnOk then
+				boat.motion = { speed = if moveOk then boat.motion.speed else 0, yawRate = if turnOk then boat.motion.yawRate else 0 }
+				if not blocked and thing then
+					blocked, why = thing, BoatRules.stopText(boat.id, thing, nil)
+				end
+				if not turnOk and steer ~= 0 then
+					pushing = true
+				end
+			end
+		end
+		-- One toast per stop (two stacked toasts were seen): the first stop says why, and nothing
+		-- more is said until the boat has moved freely for STOP_QUIET seconds.
+		if blocked then
+			boat.freeFor = 0
 			local driver = occupantPlayer(boat.helm)
-			if pushing and driver and why then
+			if pushing and driver and why and not boat.stopToasted then
+				boat.stopToasted = true
 				hint(driver, why)
+			end
+		elseif boat.motion.speed ~= 0 then
+			boat.freeFor += dt
+			if boat.freeFor >= STOP_QUIET then
+				boat.stopToasted = false
 			end
 		end
 		Quiet.step(boat.quiet, boat.id, throttle, boat.motion.speed, math.abs(boat.motion.speed) * dt, pos, os.clock())
@@ -894,6 +946,13 @@ local function step(dt: number)
 		boat.movers.ao.CFrame = CFrame.fromOrientation(0, boat.yaw, 0)
 		boat.movers.ap.Position = Vector3.new(pos.X, BoatRules.WATER_Y + boat.hull.Size.Y / 2 - 0.4, pos.Z)
 		boat.wake.Rate = 40 * math.clamp(math.abs(boat.motion.speed) / BoatLogic.fastest(boat.id), 0, 1)
+		if boat.runLog then
+			local t = os.clock()
+			if not boat.runLogAt or t - (boat.runLogAt :: number) >= 0.05 then
+				boat.runLogAt = t
+				table.insert(boat.runLog :: { { number } }, { DateTime.now().UnixTimestampMillis, math.round(pos.X * 100) / 100 })
+			end
+		end
 
 		boat.checkTimer += dt
 		if boat.checkTimer >= CHECK_EVERY then
@@ -986,6 +1045,68 @@ function BoatService.debugSeatSecond(owner: Player, hum: Humanoid): (boolean, st
 	end
 	nav:Sit(hum)
 	return true, nil
+end
+
+-- Studio only (shot c03, tools/shots): a scripted straight run. Puts this owner's boat at
+-- (startX, z) heading east, seats the owner at the helm, and holds full throttle (no steer) until
+-- the hull passes stopX, then lets it coast. Logs the hull's x every 0.05 s with the clock in unix
+-- milliseconds (debugRunLog), so a capture's file time tells where the boat was. False and why
+-- when it can't.
+function BoatService.debugRun(owner: Player, z: number, startX: number, stopX: number): (boolean, string?)
+	if not RunService:IsStudio() then
+		return false, "Studio only"
+	end
+	local boat = boats[owner]
+	if not boat then
+		return false, "no boat"
+	end
+	local hum = owner.Character and owner.Character:FindFirstChildOfClass("Humanoid")
+	if not hum or hum.Health <= 0 then
+		return false, "no character"
+	end
+	if hum.SeatPart and hum.SeatPart ~= boat.helm then
+		hum.Sit = false
+		task.wait(0.2)
+	end
+	castOff(boat)
+	local at = Vector3.new(startX, BoatRules.WATER_Y, z)
+	moveTo(boat, CFrame.lookAt(at, at + Vector3.new(1, 0, 0)))
+	boat.lastGood = boat.hull.Position
+	if hum.SeatPart ~= boat.helm then
+		local root = owner.Character and owner.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if root then
+			root.CFrame = boat.helm.CFrame * CFrame.new(0, 2.5, 0)
+			root.AssemblyLinearVelocity = Vector3.zero
+		end
+		boat.helm:Sit(hum)
+		task.wait(0.3)
+	end
+	boat.stopToasted = false
+	boat.runLog = {}
+	boat.runLogAt = nil
+	boat.debugRun = { throttle = 1, stopX = stopX }
+	return true, nil
+end
+
+-- Studio only: ends a scripted run (the helm's own input takes over again).
+function BoatService.debugEndRun(owner: Player)
+	local boat = boats[owner]
+	if boat then
+		boat.debugRun = nil
+	end
+end
+
+-- Studio only: the run's log as "unixms:x,..." and the hull's x now.
+function BoatService.debugRunLog(owner: Player): (string?, number?)
+	local boat = boats[owner]
+	if not boat or not boat.runLog then
+		return nil, nil
+	end
+	local parts = {}
+	for _, e in boat.runLog :: { { number } } do
+		table.insert(parts, string.format("%d:%.2f", e[1], e[2]))
+	end
+	return table.concat(parts, ","), boat.hull.Position.X
 end
 
 -- For FishingService: the boat this player sits in (as driver or rider), and its speed.

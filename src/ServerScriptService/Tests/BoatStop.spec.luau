@@ -177,4 +177,85 @@ return function(t, Shared)
 		send = BoatInput.decide(s, false, 0, 0, 1.04)
 		t.ok(not send, "and only once")
 	end)
+
+	-- N4 review 1: the logs sink at their west ends; a boat bumps only the part above the water.
+	t.test("log 3's sunk end is clear for boats and its dry end blocks; snags unchanged", function()
+		local Cover = require(Shared.Cover)
+		local function onLog3(x: number): Vector3
+			local yaw = 1.1
+			return Vector3.new(62 + x * math.cos(yaw), 0, 28 - x * math.sin(yaw))
+		end
+		local from, to = Cover.logBlockSpan(-1.2)
+		t.ok(from ~= nil and to ~= nil, "log 3 has a dry stretch")
+		t.ok((from :: number) > -5 and (from :: number) < -3, "it starts near x -3.8 (" .. tostring(from) .. ")")
+		t.ok(to == Cover.LOG_HALF, "and runs to the raised east end")
+		t.eq(BoatRules.blockedAt("Dinghy", onLog3(-9)), nil, "the sunk end: open water to a boat")
+		t.eq(BoatRules.blockedAt("Dinghy", onLog3(8)), "log", "the dry end blocks")
+		t.ok(Cover.snagAt(onLog3(-9)), "a cast on the sunk end still snags")
+		-- Log 5 (y -1.6) is dry only on its east half.
+		local f5 = Cover.logBlockSpan(-1.6)
+		t.ok(f5 ~= nil and (f5 :: number) > -1 and (f5 :: number) < 0, "log 5 dry from about x -0.5")
+		-- Log 1 (y -0.4) is out of the water almost all along.
+		local f1 = Cover.logBlockSpan(-0.4)
+		t.ok(f1 ~= nil and (f1 :: number) < -10, "log 1 blocks nearly all its length")
+		t.eq(BoatRules.blockedAt("Dinghy", Vector3.new(70, 0, 55)), "log", "on log 1")
+	end)
+
+	t.test("the footprint: 8 points on a box 1.1 times the boat (the dinghy's is 8.8 by 4.4)", function()
+		local pts = BoatRules.footprint("Dinghy", Vector3.new(0, 0, 0), EAST)
+		t.eq(#pts, 8, "eight points")
+		local minX, maxX, minZ, maxZ = math.huge, -math.huge, math.huge, -math.huge
+		for _, p in pts do
+			minX, maxX = math.min(minX, p.X), math.max(maxX, p.X)
+			minZ, maxZ = math.min(minZ, p.Z), math.max(maxZ, p.Z)
+		end
+		t.ok(math.abs((maxX - minX) - 8.8) < 1e-6, "8.8 long")
+		t.ok(math.abs((maxZ - minZ) - 4.4) < 1e-6, "4.4 wide")
+	end)
+
+	t.test("at its slip a boat touches nothing and pulls out; the dinghy turns round in place (SLIP_X_EDGE 6.5)", function()
+		t.eq(BoatRules.SLIP_X_EDGE, 6.5, "slip edge 6.5")
+		for _, b in BoatData.list do
+			for i = 1, #BoatRules.SLIP_ZS do
+				local cf = BoatRules.slipCFrame(i, b.id)
+				local yaw = math.atan2(-cf.LookVector.X, -cf.LookVector.Z)
+				t.eq((BoatRules.footprintHits(b.id, cf.Position, cf.LookVector)), 0, b.id .. " at slip " .. i .. " touches nothing")
+				-- It can always pull straight out. (A long boat can't spin round at every slip: the
+				-- canoe at slip 1 finds the end deck by a 40 degree swing to the north, so it goes out
+				-- before it turns.)
+				local moveOk = BoatRules.poseCheck(b.id, cf.Position, yaw, b.maxSpeed, 0)
+				t.ok(moveOk, b.id .. " at slip " .. i .. " pulls straight out")
+			end
+		end
+		-- The dinghy (the boat the stern was seen under the deck in) turns all the way round.
+		for i = 1, #BoatRules.SLIP_ZS do
+			local cf = BoatRules.slipCFrame(i, "Dinghy")
+			local yaw = math.atan2(-cf.LookVector.X, -cf.LookVector.Z)
+			for k = 0, 35 do
+				local look = CFrame.fromOrientation(0, yaw + math.rad(k * 10), 0).LookVector
+				local hits, kind = BoatRules.footprintHits("Dinghy", cf.Position, look)
+				t.ok(hits == 0, string.format("Dinghy slip %d heading +%d: %s", i, k * 10, tostring(kind)))
+			end
+		end
+	end)
+
+	t.test("a stern beside the dock: the turn is refused, going straight on is not", function()
+		-- The dinghy heading east with its stern 0.7 off the deck's edge (x 4) along the walkway.
+		local half = BoatData.byId.Dinghy.length * BoatRules.FOOTPRINT_PAD / 2
+		local pos = Vector3.new(4 + 0.7 + half, 0, 60)
+		local yaw = math.atan2(-EAST.X, -EAST.Z)
+		t.eq((BoatRules.footprintHits("Dinghy", pos, EAST)), 0, "clear where it is")
+		local moveOk, turnOk, kind = BoatRules.poseCheck("Dinghy", pos, yaw, 6, 1)
+		t.ok(moveOk, "forward is fine")
+		t.ok(not turnOk, "but the stern would swing under the deck")
+		t.eq(kind, "dock", "the dock is in the way")
+		local backOk, turn2 = BoatRules.poseCheck("Dinghy", pos, yaw, -3, 0)
+		t.ok(not backOk and turn2, "backing into the deck is refused (no turn asked)")
+		local m3, t3 = BoatRules.poseCheck("Dinghy", pos, yaw, 0, 0)
+		t.ok(m3 and t3, "standing still is always fine")
+		-- Already touching (a stern 0.2 off the deck): moving away is never refused.
+		local close = Vector3.new(4 + 0.2 + half, 0, 60)
+		local away = BoatRules.poseCheck("Dinghy", close, yaw, 6, 0)
+		t.ok(away, "a boat against the dock can always pull away")
+	end)
 end

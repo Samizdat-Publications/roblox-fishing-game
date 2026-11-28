@@ -21,6 +21,9 @@
 --   F:Invoke("assists", "PlayerName")                       -- { count, coins, last }
 --   F:Invoke("seat", "PlayerName")                          -- a dummy in their boat's second seat
 --   F:Invoke("clear")                                       -- removes every dummy
+--   F:Invoke("run", "PlayerName", 47, 12, 60)               -- shot c03: a straight run east at full throttle
+--   F:Invoke("runlog", "PlayerName")                        -- { log = "unixms:x,...", x = hull x now }
+--   F:Invoke("endrun", "PlayerName")                        -- hands the helm back
 -- docs/DECISIONS.md ("Studio test helper for the N4 two-player checks") has the full check.
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -219,6 +222,28 @@ local function invoke(cmd: string, a: any, b: any, c: any, d: any): any
 		return if m then m:GetFullName() else why
 	elseif cmd == "clear" then
 		DebugCoop.clear()
+		return true
+	elseif cmd == "run" then
+		-- Shot c03: F:Invoke("run", "PlayerName", z, startX, stopX), e.g. ("run", name, 47, 12, 60).
+		local p = playerNamed(a)
+		if not p then
+			return "no such player"
+		end
+		local ok, why = BoatService.debugRun(p, b or 47, c or 12, d or 60)
+		return if ok then "running" else why
+	elseif cmd == "runlog" then
+		-- { log = "unixms:x,...", x = the hull's x now }
+		local p = playerNamed(a)
+		if not p then
+			return "no such player"
+		end
+		local log, x = BoatService.debugRunLog(p)
+		return { log = log, x = x }
+	elseif cmd == "endrun" then
+		local p = playerNamed(a)
+		if p then
+			BoatService.debugEndRun(p)
+		end
 		return true
 	end
 	return "unknown command: " .. tostring(cmd)

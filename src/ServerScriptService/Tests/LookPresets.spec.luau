@@ -551,6 +551,29 @@ return function(t, Shared)
 		near(w.WaterWaveSize, 0.08, "night water wave size 0.08")
 	end)
 
+	t.test("N4 review 1: dusk is no longer the darkest hour", function()
+		local function near(a, b, what)
+			t.ok(math.abs(a - b) < 1e-9, string.format("%s: %.3f want %.3f", what, a, b))
+		end
+		local dusk = LookPresets.at(18.7)
+		near(dusk.Lighting.ExposureCompensation, 0.9, "dusk exposure 0.9")
+		near(dusk.Lighting.EnvironmentSpecularScale, 0.3, "dusk specular 0.3")
+		t.ok(dusk.Lighting.OutdoorAmbient == Color3.fromRGB(136, 128, 170), "dusk outdoor ambient 136,128,170")
+		t.ok(dusk.Lighting.Ambient == Color3.fromRGB(72, 68, 98), "dusk ambient 72,68,98")
+		local w = LookPresets.homeWaterAt(18.7)
+		near(w.WaterReflectance, 0.3, "dusk reflectance 0.3")
+		near(w.WaterWaveSize, 0.04, "dusk wave size 0.04")
+		near(w.WaterWaveSpeed, 3, "dusk wave speed 3")
+		-- Under the grade, dusk's net exposure is 0.75 (was 0.15), next to night's 0.8.
+		local g = LookPresets.REALISTIC_GRADE
+		local gd = LookPresets.at(18.7, nil, nil, nil, g).Lighting.ExposureCompensation
+		near(gd, 0.75, "graded dusk exposure 0.75")
+		-- Golden and dawn as they were (set A closed on them).
+		near(LookPresets.at(17.5).Lighting.ExposureCompensation, 0, "golden exposure unchanged")
+		near(LookPresets.homeWaterAt(17.5).WaterReflectance, 0.55, "golden water unchanged")
+		near(LookPresets.homeWaterAt(6.6).WaterReflectance, 0.75, "dawn water unchanged")
+	end)
+
 	t.test("grade: blends between presets with their weights, and stays in range", function()
 		local g = LookPresets.REALISTIC_GRADE
 		-- Half way from day (to 15.5) into golden (from 16.75): the mean of the two offsets.
@@ -578,7 +601,9 @@ return function(t, Shared)
 		for i = 0, 2400 do
 			local now = LookPresets.at(i * 0.01, nil, nil, nil, g)
 			local d = math.abs(now.Lighting.ExposureCompensation - prev.Lighting.ExposureCompensation)
-			t.ok(d < 0.03, string.format("graded exposure step at %.2f", i * 0.01))
+			-- 0.035 a hundredth of an hour (was 0.03): since N4 review 1 lifted dusk (net 0.75), golden
+			-- (net -0.4) to dusk crosses 1.15 of exposure in its 0.55 hour blend.
+			t.ok(d < 0.035, string.format("graded exposure step at %.2f", i * 0.01))
 			prev = now
 		end
 	end)

@@ -215,4 +215,13 @@ return function(t, Shared)
 			t.ok(ok2, "a first pick from no boat at the slip")
 		end)
 	end)
+
+	t.test("N4 review 1: a day fill light inside the shed (0.6, range 14)", function()
+		local Plan = require(Shared.BoathousePlan)
+		local f = Plan.FILL
+		t.ok(math.abs(f.brightness - 0.6) < 1e-9 and f.range == 14, "brightness 0.6, range 14")
+		local b = Plan.BODY
+		t.ok(math.abs(f.at.X) < b.halfX and f.at.Z > -b.front and f.at.Z < b.back, "inside the body")
+		t.ok(f.at.Y > Plan.DECK_TOP and f.at.Y < Plan.DECK_TOP + 6, "between the deck and the tie beam")
+	end)
 end

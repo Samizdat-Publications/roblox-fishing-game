@@ -143,18 +143,18 @@ return function(t, Shared)
 	t.test("wake: two soft arms that fade in at the stern, widen and fade out; the canoe's a hairline; lighter on a phone", function()
 		local w0, a0 = BoatFeel.wakePiece("Dinghy", 0, 1)
 		local wPeak, aPeak = BoatFeel.wakePiece("Dinghy", 0.5, 1)
-		local w1, a1 = BoatFeel.wakePiece("Dinghy", 2.2, 1)
-		t.ok(near(w0 :: number, 0.35) and near(a0 :: number, 1), "starts 0.35 wide and clear (it fades in at the stern)")
-		t.ok(near(aPeak :: number, 0.6), "its peak is faint: 0.6 transparent at full speed (" .. tostring(aPeak) .. ")")
+		local w1, a1 = BoatFeel.wakePiece("Dinghy", 3.4, 1)
+		t.ok(near(w0 :: number, 0.5) and near(a0 :: number, 1), "starts 0.5 wide and clear (it fades in at the stern)")
+		t.ok(near(aPeak :: number, 0.38), "its peak: 0.38 transparent at full speed (N4 review 1; " .. tostring(aPeak) .. ")")
 		t.ok((w1 :: number) > (wPeak :: number) and (wPeak :: number) > (w0 :: number), "widens")
 		t.ok((a1 :: number) > (aPeak :: number), "fades out")
 		local _, aIn = BoatFeel.wakePiece("Dinghy", 0.1, 1)
 		t.ok((aIn :: number) > (aPeak :: number) and (aIn :: number) < 1, "still fading in at 0.1 s")
-		for age = 0, 2.39, 0.05 do
+		for age = 0, 3.59, 0.05 do
 			local _, tr = BoatFeel.wakePiece("Dinghy", age, 1)
-			t.ok((tr :: number) >= 0.6 - 1e-9 and (tr :: number) <= 1, "never brighter than the peak")
+			t.ok((tr :: number) >= 0.38 - 1e-9 and (tr :: number) <= 1, "never brighter than the peak")
 		end
-		t.eq(BoatFeel.wakePiece("Dinghy", 2.4, 1), nil, "gone at 2.4 s")
+		t.eq(BoatFeel.wakePiece("Dinghy", 3.6, 1), nil, "gone at 3.6 s")
 		t.eq(BoatFeel.wakePiece("Dinghy", 0.2, 0.05), nil, "none when crawling")
 		local _, aSlow = BoatFeel.wakePiece("Dinghy", 0.5, 0.3)
 		t.ok((aSlow :: number) > (aPeak :: number), "fainter when slow")
@@ -164,18 +164,88 @@ return function(t, Shared)
 		local cw, ca = BoatFeel.wakePiece("Canoe", 1.0, 1)
 		t.ok((cw :: number) < 0.3, "the canoe's is a hairline (" .. tostring(cw) .. ")")
 		t.ok((ca :: number) >= 0.72 - 1e-9, "and fainter than a motor boat's")
-		t.eq(BoatFeel.wakePiece("Dinghy", 1.5, 1, "phone"), nil, "shorter on a phone")
-		t.ok(BoatFeel.wakePieces("Dinghy", "phone") < BoatFeel.wakePieces("Dinghy", "desktop"), "fewer points on a phone")
-		t.eq(BoatFeel.wakePieces("Dinghy", "desktop"), 20, "20 points an arm")
-		t.eq(BoatFeel.wakePieces("Dinghy", "phone"), 6, "6 on a phone")
-		t.ok(near(BoatFeel.wakeEvery("Dinghy", "phone"), 0.24), "a point every 0.24 s on a phone")
+		t.eq(BoatFeel.wakePiece("Dinghy", 2.2, 1, "phone"), nil, "shorter on a phone")
+		local top = BoatData.byId.Dinghy.maxSpeed
+		t.ok(BoatFeel.wakePieces("Dinghy", "phone", top) < BoatFeel.wakePieces("Dinghy", "desktop", top), "fewer points on a phone")
+		t.eq(BoatFeel.wakePieces("Dinghy", "desktop", top), 15, "15 points an arm (3.6 s at 12 studs a second, one every 3)")
+		t.eq(BoatFeel.wakePieces("Dinghy", "phone", top), 5, "5 on a phone")
+		t.eq(BoatFeel.wakeStep("Dinghy", "desktop"), 3, "a point every 3 studs")
+		t.eq(BoatFeel.wakeStep("Dinghy", "phone"), 6, "every 6 on a phone")
 		t.ok(near(BoatFeel.wakeSpread(10, 1), 10 * math.tan(math.rad(19.47))), "arms spread at the Kelvin angle")
 		local st = BoatFeel.wakeStart(BoatFeel.ART.Dinghy, 1)
 		t.ok(st.X > 0 and st.X < BoatFeel.ART.Dinghy.halfBeam and st.Z < BoatFeel.ART.Dinghy.stern.Z, "starts inside the stern's starboard quarter")
 		t.ok(BoatFeel.wakeStart(BoatFeel.ART.Canoe, -1).X < 0, "port arm to port")
 		t.eq(BoatFeel.wakeTextureSpeed(0), 0, "no drift when stopped")
-		t.ok(near(BoatFeel.wakeTextureSpeed(1), 0.15), "0.15 tiles a second at full speed")
+		t.ok(near(BoatFeel.wakeTextureSpeed(1), 0.2), "0.2 tiles a second at full speed")
 		t.ok(BoatFeel.WAKE_Y > 0.06, "over the chop")
+	end)
+
+	t.test("N4 review 1: wake points every 3 studs travelled, one whole foam tile per beam, lying flat", function()
+		t.eq(BoatFeel.WAKE_TEX.length, BoatFeel.WAKE.motor.step, "TextureLength equals the step (3)")
+		t.eq(BoatFeel.WAKE_TEX.length, 3, "TextureLength 3")
+		local m = BoatFeel.WAKE.motor
+		t.ok(near(m.base, 0.38) and near(m.life, 3.6) and near(m.w0, 0.5) and near(m.w1, 1.2) and near(m.w1Speed, 1.6), "the motor wake's numbers")
+		-- Not on a timer: nothing until the stern has gone a whole step.
+		local a = Vector3.new(0, 0.1, 0)
+		local none, last0 = BoatFeel.wakeDrops(a, Vector3.new(2.9, 0.1, 0), 3)
+		t.eq(#none, 0, "under a step: no point")
+		t.ok(last0 == a, "and the last point stays")
+		-- 7.5 studs in one go: two points, exactly 3 apart along the path, the rest carried over.
+		local drops, last = BoatFeel.wakeDrops(a, Vector3.new(7.5, 0.1, 0), 3)
+		t.eq(#drops, 2, "two points in 7.5 studs")
+		t.ok(near((drops[1] - a).Magnitude, 3) and near((drops[2] - drops[1]).Magnitude, 3), "3 studs apart")
+		t.ok(last == drops[2], "the last point is the newest")
+		local more = BoatFeel.wakeDrops(last, Vector3.new(9.1, 0.1, 0), 3)
+		t.eq(#more, 1, "the next comes at 9")
+		-- Each wake attachment's Y points straight up (its own setting, not the creek's).
+		t.eq(BoatFeel.WAKE_BEAM_NORMAL, "Y", "the wake's own beam normal")
+		for _, along in { Vector3.new(1, 0, 0), Vector3.new(-3, 0.4, 2), Vector3.new(0, 0, 0) } do
+			local right, up = BoatFeel.wakeAxes(along)
+			t.ok(up == Vector3.yAxis, "the attachment's Y is up")
+			t.ok(near(right.Y, 0) and near(right.Magnitude, 1), "X level along the arm")
+		end
+	end)
+
+	t.test("N4 review 1: soft side lights, a brighter stern light, dark housings", function()
+		t.ok(near(BoatFeel.LIGHT.red.brightness, 0.35) and BoatFeel.LIGHT.red.range == 4, "red 0.35, range 4")
+		t.ok(near(BoatFeel.LIGHT.green.brightness, 0.35) and BoatFeel.LIGHT.green.range == 4, "green 0.35, range 4")
+		t.ok(near(BoatFeel.LIGHT.white.brightness, 0.8) and BoatFeel.LIGHT.white.range == 7, "white 0.8, range 7")
+		t.ok(BoatFeel.LIGHT_COLORS.red == Color3.fromRGB(232, 70, 52), "red 232,70,52")
+		t.ok(BoatFeel.LIGHT_COLORS.green == Color3.fromRGB(70, 200, 120), "green 70,200,120")
+		local h = BoatFeel.LAMP_HOUSING.color
+		t.ok(h.R < 0.2 and h.G < 0.2 and h.B < 0.2, "the housing is dark")
+	end)
+
+	t.test("N4 review 1: every lamp sits on its hull (gap to the art's box under 0.05)", function()
+		local d = BoatFeel.ART.Dinghy.lights
+		t.ok(d.red == Vector3.new(-0.45, 1.34, -3.4) and d.green == Vector3.new(0.45, 1.34, -3.4), "the dinghy's side lights on the tube crown")
+		for _, id in { "Canoe", "Dinghy", "DeepV" } do
+			for key, pos in BoatFeel.ART[id].lights :: any do
+				local gap = BoatFeel.lampGap(id, pos)
+				t.ok(gap < BoatFeel.LAMP_GAP, string.format("%s %s gap %.3f", id, key, gap))
+			end
+		end
+		-- The old Deep-V stern light at y 3.6 was over its box: the check catches that.
+		t.ok(BoatFeel.lampGap("DeepV", Vector3.new(0, 3.6, 8.0)) > 0.05, "a floating lamp fails")
+	end)
+
+	t.test("N4 review 1: knees straighten from 70 degrees until no leg is under the floor", function()
+		t.eq(BoatFeel.KNEE_START, 70, "starts at 70")
+		for _, id in { "Canoe", "Dinghy" } do
+			local a = BoatFeel.ART[id]
+			for name, seat in a.seats :: any do
+				local k = BoatFeel.kneeStraighten(seat.Y, a.floor.y)
+				t.ok(k >= 70 and k <= BoatFeel.KNEE_MAX, id .. " " .. name .. " " .. k)
+				t.ok(BoatFeel.legLow(seat.Y, k) >= a.floor.y - 1e-9, id .. " " .. name .. ": legs over the floor")
+			end
+		end
+		-- The canoe's seats (0.64 over a 0.22 floor) need more than the starting 70.
+		local c = BoatFeel.ART.Canoe
+		t.ok(BoatFeel.legLow(0.64, 0) < c.floor.y, "the plain sit pokes through the canoe floor")
+		t.ok(BoatFeel.legLow(0.64, 70) < c.floor.y, "70 is not enough in the canoe")
+		t.eq(BoatFeel.kneeStraighten(0.64, c.floor.y), 75, "75 clears it")
+		-- The dinghy's passenger sits on the floor boards (0.309): straight legs.
+		t.eq(BoatFeel.kneeStraighten(0.309, BoatFeel.ART.Dinghy.floor.y), 90, "legs out straight on the floor")
 	end)
 
 	t.test("the wash and swirls are soft: faint puffs that end clear", function()

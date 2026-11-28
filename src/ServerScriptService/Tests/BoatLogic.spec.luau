@@ -123,4 +123,18 @@ return function(t, Shared)
 		end
 		t.ok(BoatData.byId.Dinghy.price < BoatData.byId.DeepV.price, "dinghy first, then the big boat")
 	end)
+
+	t.test("N4 review 1: the bottom hint in a boat (drive keys under way, the cast line when stopped)", function()
+		t.eq(BoatLogic.seatHint(nil, false, 0, "mouse", "click"), nil, "on foot: the usual line")
+		local drive = BoatLogic.seatHint("Dinghy", true, 8, "mouse", "click") :: string
+		t.ok(string.find(drive, "W and S", 1, true) ~= nil and string.find(drive, "A and D", 1, true) ~= nil, "the drive keys at the helm under way")
+		t.ok(string.find(BoatLogic.seatHint("Dinghy", true, 8, "touch", "the Fish button") :: string, "thumbstick", 1, true) ~= nil, "touch wording")
+		t.ok(string.find(BoatLogic.seatHint("Dinghy", true, 8, "gamepad", "R2") :: string, "stick", 1, true) ~= nil, "gamepad wording")
+		local stopped = BoatLogic.seatHint("Dinghy", true, 1, "mouse", "click") :: string
+		t.eq(stopped, "Hold click and let go to cast.", "stopped at the helm: the cast line")
+		t.ok(string.find(stopped, "Face the water", 1, true) == nil, "without Face the water")
+		t.eq(BoatLogic.seatHint("Canoe", false, 8, "mouse", "click"), "Cast when the boat slows down.", "a rider under way: no drive keys")
+		t.eq(BoatLogic.seatHint("Canoe", false, 0, "mouse", "click"), "Hold click and let go to cast.", "a rider stopped: the cast line")
+		t.eq(BoatLogic.seatHint("Dinghy", true, BoatData.byId.Dinghy.castSpeed, "mouse", "click"), "Hold click and let go to cast.", "at the cast speed: cast")
+	end)
 end

@@ -46,6 +46,7 @@ export type Feature = {
 	radius: number?, -- circles (boulders)
 	snag: boolean,
 	margin: number, -- how far outside the shape still snags (logs)
+	blockX: { number }?, -- logs: the stretch of local x (from, to) a boat bumps into; nil blocks it all
 }
 
 local function box(kind: string, x: number, z: number, yaw: number, hx: number, hz: number, snag: boolean, margin: number): Feature
@@ -62,14 +63,48 @@ local function circle(kind: string, x: number, z: number, r: number): Feature
 	return { kind = kind, cframe = CFrame.new(x, 0, z), radius = r, snag = false, margin = 0 }
 end
 
--- WorldBuilder: logs are 22 x 2.2 x 2.2 cylinders along their X, at these spots and yaws.
+-- WorldBuilder: logs are 22 x 2.2 x 2.2 cylinders along their X, at these spots and yaws:
+-- { x, z, yaw, y (the axis's middle) }, each tilted LOG_TILT radians about its own Z after the yaw,
+-- so its +X end rises and its -X end sinks (WorldBuilder: CFrame.Angles(0, yaw, 0.12)).
 local LOGS = {
-	{ 70, 55, 0.5 },
-	{ 90, 40, -0.3 },
-	{ 62, 28, 1.1 },
-	{ 96, 62, 0.9 },
-	{ 80, 20, -0.8 },
+	{ 70, 55, 0.5, -0.4 },
+	{ 90, 40, -0.3, -0.8 },
+	{ 62, 28, 1.1, -1.2 },
+	{ 96, 62, 0.9, -0.6 },
+	{ 80, 20, -0.8, -1.6 },
 }
+Cover.LOG_HALF = 11 -- half the length
+Cover.LOG_RADIUS = 1.1
+Cover.LOG_TILT = 0.12
+-- A log blocks boats only where its top is above this (N4 review 1: the west ends of logs 3 and 5
+-- are fully under water, but every log blocked all 22 studs and the driver got "A log is in the
+-- way" over open water). Fishing snags use the whole log, as before.
+Cover.BOAT_LOG_TOP = -0.55
+
+-- The stretch of a log's own x (from, to) where its top is above BOAT_LOG_TOP, or nil when none.
+-- Local x here is flat (along the log's yaw, as edgeDistance measures it): the top there is the
+-- axis (y + x tan(tilt)) plus the radius measured straight up through the tilted round
+-- (radius / cos(tilt)).
+function Cover.logBlockSpan(y: number, tilt: number?, half: number?, radius: number?): (number?, number?)
+	local tl = tilt or Cover.LOG_TILT
+	local h = half or Cover.LOG_HALF
+	local r = (radius or Cover.LOG_RADIUS) / math.cos(tl)
+	local sn = math.tan(tl)
+	if math.abs(sn) < 1e-9 then
+		return if y + r > Cover.BOAT_LOG_TOP then -h else nil, if y + r > Cover.BOAT_LOG_TOP then h else nil
+	end
+	local x0 = (Cover.BOAT_LOG_TOP - y - r) / sn -- the top crosses the line here
+	local from, to
+	if sn > 0 then
+		from, to = math.max(-h, x0), h
+	else
+		from, to = -h, math.min(h, x0)
+	end
+	if from >= to then
+		return nil, nil
+	end
+	return from, to
+end
 -- WorldBuilder: boulders in the creek's rocky run, { x, z, radius }.
 local BOULDERS = {
 	{ -233, -2, 3.5 },
@@ -84,7 +119,10 @@ Cover.WEED_CORE = { x = -78, z = 38, hx = 14, hz = 16 }
 
 Cover.features = {} :: { Feature }
 for _, l in LOGS do
-	table.insert(Cover.features, box("Log", l[1], l[2], l[3], 11, 1.1, true, Cover.SNAG_MARGIN))
+	local f = box("Log", l[1], l[2], l[3], Cover.LOG_HALF, Cover.LOG_RADIUS, true, Cover.SNAG_MARGIN)
+	local from, to = Cover.logBlockSpan(l[4])
+	f.blockX = if from and to then { from, to } else {}
+	table.insert(Cover.features, f)
 end
 -- The dock: the deck (x -4..4, z 35..81) and the wider end deck (x -8..8, z 34..42).
 table.insert(Cover.features, box("Dock", 0, 58, 0, 4, 23, false, 0))
@@ -102,6 +140,23 @@ function Cover.edgeDistance(f: Feature, point: Vector3): number
 	end
 	local half = f.half :: Vector3
 	local dx = math.max(math.abs(p.X) - half.X, 0)
+	local dz = math.max(math.abs(p.Z) - half.Z, 0)
+	return math.sqrt(dx * dx + dz * dz)
+end
+
+-- Flat distance from a point to the part of a feature a boat bumps into (a log's dry stretch,
+-- blockX; anything else whole). math.huge when a log is under water all along.
+function Cover.boatEdgeDistance(f: Feature, point: Vector3): number
+	local span = f.blockX
+	if not span then
+		return Cover.edgeDistance(f, point)
+	end
+	if #span < 2 then
+		return math.huge
+	end
+	local p = f.cframe:PointToObjectSpace(Vector3.new(point.X, 0, point.Z))
+	local half = f.half :: Vector3
+	local dx = math.max(span[1] - p.X, 0, p.X - span[2])
 	local dz = math.max(math.abs(p.Z) - half.Z, 0)
 	return math.sqrt(dx * dx + dz * dz)
 end

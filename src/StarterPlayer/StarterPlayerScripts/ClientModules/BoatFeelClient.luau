@@ -13,15 +13,20 @@
 --    and their streaks drifting outward (11/28/2026, the creek's white-water method; it was a
 --    chain of flat textured parts that read as a hard white bar with square tiles). Soft puffs of
 --    wash at the stern; spray at the bow above 60 percent (motor boats); the canoe's is a
---    hairline with two soft swirl rings per paddle stroke. Lighter on the phone tier.
+--    hairline with two soft swirl rings per paddle stroke. Lighter on the phone tier. Since N4
+--    review 1 a point is left every 3 studs travelled, the foam tile is 3 studs, and each beam
+--    runs from its older point, so the foam reads as one continuous band.
 --  * Lights: red and green at the bow, white at the stern, on from dusk (SignLayout.lanternsOn,
---    as the sign lanterns). No PointLights on the phone tier, the lamps glow only.
+--    as the sign lanterns). No PointLights on the phone tier, the lamps glow only. Each lamp sits
+--    in a dark housing; the side lights are soft (0.35, range 4), the stern light 0.8, range 7.
 --  * The horn on H (gamepad DPadUp, the touch Horn button): heard here at once, and by everyone
 --    else through the BoatHorn remote. A paddle dip at each stroke.
 --  * Poses for everyone seated in a boat (each screen poses every boat it draws): paddling in
 --    the canoe while it moves (a simple arm pose, the paddle in the lower hand, sides changing
---    each stroke) and holding the rod forward in a seat. Sitting itself is Roblox's sit.
---  * The camera eases back and up with speed and widens up to 6 degrees, and comes back when slow.
+--    each stroke) and holding the rod forward in a seat. Sitting itself is Roblox's sit, with the
+--    R15 knees straightened so no leg pokes through the floor.
+--  * The camera eases back and up with speed and widens up to 6 degrees, and comes back when slow;
+--    a spherecast keeps the moved eye 0.5 short of anything solid behind it.
 -- The helm's input is untouched (BoatClient sends it as before), so nothing here adds lag.
 -- Written 11/28/2026 in a worktree. UNVERIFIED in Studio.
 local Players = game:GetService("Players")
@@ -40,7 +45,6 @@ local SoundIds = require(Shared.SoundIds)
 local SoundSheets = require(Shared.SoundSheets)
 local Remotes = require(Shared.Remotes)
 local WhiteWater = require(script.Parent.WhiteWater) -- its foam and spray maps only
-local CreekPlan = require(Shared.CreekPlan) -- FOAM_BEAM_NORMAL only: the wake's beams lie as the creek's do
 
 local BoatFeelClient = {}
 
@@ -48,9 +52,22 @@ local LIGHT_EVERY = 0.5 -- seconds between dusk checks
 local WAKE_Y = BoatFeel.WAKE_Y
 
 type Piece = { pos: Vector3, out: Vector3, born: number, speed: number, frac: number }
-type Arm = { pieces: { Piece }, atts: { Attachment }, beams: { Beam } }
+type Arm = { pieces: { Piece }, atts: { Attachment }, beams: { Beam }, last: Vector3? }
 type Stroke = { phase: number, side: number, paddle: Instance?, wasPull: boolean }
-type Rig = { r15: boolean, rs: Motor6D?, ls: Motor6D?, re: Motor6D?, le: Motor6D? }
+type Rig = {
+	r15: boolean,
+	rs: Motor6D?,
+	ls: Motor6D?,
+	re: Motor6D?,
+	le: Motor6D?,
+	rk: Motor6D?, -- R15 knees (nil on R6)
+	lk: Motor6D?,
+	legs: { BasePart }, -- R15 upper and lower legs and feet, for the floor check
+	knee: number?, -- degrees the knees are straightened in this seat
+	kneeSeat: Instance?, -- the seat that was worked out for
+	kneeBase: { [Motor6D]: CFrame }?, -- each knee's pose before the turn, and what was written
+	kneeWrote: { [Motor6D]: CFrame }?,
+}
 type Feel = {
 	model: Model,
 	hull: BasePart,
@@ -63,12 +80,12 @@ type Feel = {
 	folder: Folder,
 	arms: { Arm },
 	wakeHolder: BasePart?,
-	emitClock: number,
 	spray: { ParticleEmitter },
 	wash: ParticleEmitter,
 	swirl: ParticleEmitter,
 	swirlAt: Attachment,
 	lamps: { [string]: BasePart },
+	housings: { BasePart },
 	lights: { PointLight },
 	horn: Sound?,
 	dip: Sound?,
@@ -242,7 +259,26 @@ local function buildLights(f: Feel)
 		p:Destroy()
 		f.lamps[key] = nil
 	end
+	for _, h in f.housings do
+		h:Destroy()
+	end
+	table.clear(f.housings)
+	local H = BoatFeel.LAMP_HOUSING
 	for key, pos in f.art.lights :: any do
+		-- The dark cup the lamp sits in: a flat cylinder (axis turned upright), its top at the
+		-- ball's middle (N4 review 1).
+		local housing = Instance.new("Part")
+		housing.Name = "LampHousing_" .. key
+		housing.Shape = Enum.PartType.Cylinder
+		housing.Size = Vector3.new(H.height, H.diameter, H.diameter)
+		housing.Color = H.color
+		housing.Material = Enum.Material.SmoothPlastic
+		housing.CastShadow = false
+		quiet(housing)
+		housing.CFrame = f.root.CFrame * CFrame.new(pos - Vector3.new(0, H.height / 2, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		weldTo(f.root, housing)
+		housing.Parent = f.folder
+		table.insert(f.housings, housing)
 		local lamp = Instance.new("Part")
 		lamp.Name = "Lamp_" .. key
 		lamp.Shape = Enum.PartType.Ball
@@ -258,8 +294,8 @@ local function buildLights(f: Feel)
 		if f.tier ~= "phone" then
 			local l = Instance.new("PointLight")
 			l.Color = BoatFeel.LIGHT_COLORS[key]
-			l.Range = BoatFeel.LIGHT.range
-			l.Brightness = BoatFeel.LIGHT.brightness
+			l.Range = BoatFeel.LIGHT[key].range
+			l.Brightness = BoatFeel.LIGHT[key].brightness
 			l.Shadows = false
 			l.Enabled = false
 			l.Parent = lamp
@@ -280,7 +316,9 @@ end
 
 -- One arm is a chain of attachments on an invisible anchored holder at the world origin (so an
 -- attachment's CFrame is its world CFrame): the first is the live point at the stern, the rest
--- the points the arm has left. Beam k joins attachment k to k + 1.
+-- the points the arm has left. Beam k joins attachment k + 1 (the older point, its Attachment0)
+-- to attachment k (N4 review 1: the foam tile then starts at the older end of every beam and,
+-- with points WAKE.step apart and TextureLength the same, runs on unbroken).
 local function buildWake(f: Feel)
 	if f.wakeHolder then
 		f.wakeHolder:Destroy()
@@ -298,7 +336,7 @@ local function buildWake(f: Feel)
 	holder.CFrame = CFrame.new()
 	holder.Parent = f.folder
 	f.wakeHolder = holder
-	local n = BoatFeel.wakePieces(f.id, f.tier)
+	local n = BoatFeel.wakePieces(f.id, f.tier, BoatLogic.fastest(f.id))
 	local foam = WhiteWater.TEXTURES.foam
 	for side = 1, 2 do
 		local arm: Arm = { pieces = {}, atts = {}, beams = {} }
@@ -311,8 +349,8 @@ local function buildWake(f: Feel)
 		for i = 1, n do
 			local beam = Instance.new("Beam")
 			beam.Name = "Wake" .. side .. "_" .. i
-			beam.Attachment0 = arm.atts[i]
-			beam.Attachment1 = arm.atts[i + 1]
+			beam.Attachment0 = arm.atts[i + 1]
+			beam.Attachment1 = arm.atts[i]
 			beam.FaceCamera = false
 			beam.Segments = 2
 			beam.CurveSize0 = 0
@@ -511,12 +549,12 @@ local function setup(model: Model)
 		folder = folder,
 		arms = {},
 		wakeHolder = nil,
-		emitClock = 0,
 		spray = {},
 		wash = nil :: any,
 		swirl = nil :: any,
 		swirlAt = nil :: any,
 		lamps = {},
+		housings = {},
 		lights = {},
 		horn = nil,
 		dip = nil,
@@ -590,38 +628,39 @@ local function occupants(f: Feel): { [Humanoid]: string }
 	return out
 end
 
--- The attachment frame at a point on an arm: X along the arm (toward the older point), and the
--- beam's normal up as the creek's beams lie (CreekPlan.FOAM_BEAM_NORMAL).
+-- The attachment frame at a point on an arm: X along the arm, and the face normal as the wake's
+-- own setting says (BoatFeel.WAKE_BEAM_NORMAL: "Y" points the attachment's Y straight up, so the
+-- beam lies flat on the water; N4 review 1, apart from the creek's FOAM_BEAM_NORMAL).
 local function wakeFrame(pos: Vector3, along: Vector3): CFrame
-	local fwd = Vector3.new(along.X, 0, along.Z)
-	if fwd.Magnitude < 1e-4 then
-		fwd = Vector3.new(0, 0, 1)
-	end
-	fwd = fwd.Unit
-	local up = if CreekPlan.FOAM_BEAM_NORMAL == "Z" then Vector3.new(-fwd.Z, 0, fwd.X) else Vector3.yAxis
-	return CFrame.fromMatrix(pos, fwd, up)
+	local right, up = BoatFeel.wakeAxes(along)
+	return CFrame.fromMatrix(pos, right, up)
 end
 
 local function updateWake(f: Feel, frame: CFrame, speed: number, frac: number, dt: number, now: number)
 	local w = BoatFeel.WAKE[BoatFeel.kindOf(f.id)]
-	local every = BoatFeel.wakeEvery(f.id, f.tier)
-	local n = BoatFeel.wakePieces(f.id, f.tier)
+	local step = BoatFeel.wakeStep(f.id, f.tier)
+	local n = #f.arms > 0 and #f.arms[1].beams or 0
+	local life = BoatFeel.WAKE[BoatFeel.kindOf(f.id)].life * (if f.tier == "phone" then BoatFeel.WAKE_PHONE.life else 1)
 	local y = BoatRules.WATER_Y + WAKE_Y
-	f.emitClock += dt
-	local emit = f.emitClock >= every
-	if emit then
-		f.emitClock = 0
-	end
-	local texSpeed = BoatFeel.wakeTextureSpeed(frac)
+	-- The foam drifts away from the boat; each beam's Attachment0 is its older point, so minus.
+	local texSpeed = -BoatFeel.wakeTextureSpeed(frac)
 	for i, arm in f.arms do
 		local sx = if i == 1 then -1 else 1
 		local st = frame:PointToWorldSpace(BoatFeel.wakeStart(f.art, sx))
 		local head = Vector3.new(st.X, y, st.Z)
-		if emit and math.abs(frac) >= w.from then
-			table.insert(arm.pieces, 1, { pos = head, out = frame.RightVector * sx, born = now, speed = speed, frac = frac })
-			while #arm.pieces > n do
-				table.remove(arm.pieces)
+		-- A point every `step` studs the stern travels (N4 review 1; it was every 0.12 s), laid
+		-- exactly `step` apart along the stern's path so each beam shows one whole foam tile.
+		if math.abs(frac) >= w.from and arm.last then
+			local drops, last = BoatFeel.wakeDrops(arm.last :: Vector3, head, step)
+			arm.last = last
+			for _, at in drops do
+				table.insert(arm.pieces, 1, { pos = at, out = frame.RightVector * sx, born = now, speed = speed, frac = frac })
 			end
+		else
+			arm.last = head -- slow or just started: the next point is a step from here
+		end
+		while #arm.pieces > n or (#arm.pieces > 0 and now - arm.pieces[#arm.pieces].born >= life) do
+			table.remove(arm.pieces)
 		end
 		-- The points, newest first: the live one at the stern (age 0, so clear), then those left
 		-- behind, each spread out at the Kelvin angle since it was left.
@@ -645,12 +684,13 @@ local function updateWake(f: Feel, frame: CFrame, speed: number, frac: number, d
 			end
 		end
 		for k, beam in arm.beams do
-			local w0, w1 = ws[k], ws[k + 1]
+			-- Attachment0 is the older point (k + 1), Attachment1 the newer (k).
+			local wNew, wOld = ws[k], ws[k + 1]
 			local a, b = pts[k], pts[k + 1]
-			if w0 and w1 and a and b and (a - b).Magnitude > 0.05 then
-				beam.Width0 = w0
-				beam.Width1 = w1
-				beam.Transparency = NumberSequence.new(ts[k], ts[k + 1])
+			if wNew and wOld and a and b and (a - b).Magnitude > 0.05 then
+				beam.Width0 = wOld
+				beam.Width1 = wNew
+				beam.Transparency = NumberSequence.new(ts[k + 1], ts[k])
 				beam.TextureSpeed = texSpeed
 				beam.Enabled = true
 			else
@@ -860,13 +900,29 @@ local function rigOf(char: Model): Rig?
 	end
 	local rs = m("RightUpperArm", "RightShoulder")
 	if rs then
-		r = { r15 = true, rs = rs, ls = m("LeftUpperArm", "LeftShoulder"), re = m("RightLowerArm", "RightElbow"), le = m("LeftLowerArm", "LeftElbow") }
+		local legs: { BasePart } = {}
+		for _, n in { "RightUpperLeg", "RightLowerLeg", "RightFoot", "LeftUpperLeg", "LeftLowerLeg", "LeftFoot" } do
+			local part = char:FindFirstChild(n)
+			if part and part:IsA("BasePart") then
+				table.insert(legs, part)
+			end
+		end
+		r = {
+			r15 = true,
+			rs = rs,
+			ls = m("LeftUpperArm", "LeftShoulder"),
+			re = m("RightLowerArm", "RightElbow"),
+			le = m("LeftLowerArm", "LeftElbow"),
+			rk = m("RightLowerLeg", "RightKnee"),
+			lk = m("LeftLowerLeg", "LeftKnee"),
+			legs = legs,
+		}
 	else
 		local rs6 = m("Torso", "Right Shoulder")
 		if not rs6 then
 			return nil
 		end
-		r = { r15 = false, rs = rs6, ls = m("Torso", "Left Shoulder"), re = nil, le = nil }
+		r = { r15 = false, rs = rs6, ls = m("Torso", "Left Shoulder"), re = nil, le = nil, legs = {} }
 	end
 	rigs[char] = r :: Rig
 	return r
@@ -891,9 +947,70 @@ local function elbow(motor: Motor6D?, deg: number)
 	end
 end
 
+-- The lowest point of a part (its box's lowest corner), in world y.
+local function partLow(p: BasePart): number
+	local cf, sz = p.CFrame, p.Size
+	local r = cf.RightVector
+	local u = cf.UpVector
+	local b = -cf.LookVector
+	return cf.Position.Y - (math.abs(r.Y) * sz.X + math.abs(u.Y) * sz.Y + math.abs(b.Y) * sz.Z) / 2
+end
+
+-- N4 review 1: straighten the R15 knees so no leg sits under the boat's floor. Starts at the pure
+-- estimate (BoatFeel.kneeStraighten: from 70 degrees up) for this seat, then, if a leg part is still
+-- under the drawn floor (checked on the parts as last drawn), 5 more each frame up to KNEE_MAX.
+-- Composed onto the sit animation's own knee pose (the Animator writes it each frame before
+-- PreSimulation), so Roblox's sit stays.
+local function straightenKnees(f: Feel, hum: Humanoid, seatName: string, r: Rig)
+	if not r.r15 or not (r.rk or r.lk) then
+		return
+	end
+	local seatPart = hum.SeatPart
+	if r.kneeSeat ~= seatPart or r.knee == nil then
+		local top: number
+		local listed = f.art.seats and (f.art.seats :: any)[seatName] :: Vector3?
+		if listed then
+			top = listed.Y
+		elseif seatPart then
+			top = seatPart.Position.Y + seatPart.Size.Y / 2 - BoatRules.WATER_Y
+		else
+			top = f.art.floor.y + 0.5
+		end
+		r.knee = BoatFeel.kneeStraighten(top, f.art.floor.y)
+		r.kneeSeat = seatPart
+	end
+	local floorY = f.root.Position.Y + f.art.floor.y
+	for _, leg in r.legs do
+		if leg.Parent and partLow(leg) < floorY - 0.02 then
+			r.knee = math.min((r.knee :: number) + BoatFeel.KNEE_STEP, BoatFeel.KNEE_MAX)
+			break
+		end
+	end
+	local turn = CFrame.Angles(math.rad(r.knee :: number), 0, 0)
+	local bases: { [Motor6D]: CFrame } = r.kneeBase or {}
+	local wrotes: { [Motor6D]: CFrame } = r.kneeWrote or {}
+	r.kneeBase = bases
+	r.kneeWrote = wrotes
+	for _, k in { r.rk, r.lk } do
+		if k then
+			-- If the Animator did not write this knee since our last frame (no track on it), start
+			-- from the pose it had then, so the turn never piles up frame after frame.
+			local base = k.Transform
+			local wrote = wrotes[k]
+			if wrote and base:FuzzyEq(wrote, 1e-5) then
+				base = bases[k] or base
+			end
+			bases[k] = base
+			local out = base * turn
+			k.Transform = out
+			wrotes[k] = out
+		end
+	end
+end
+
 local function poseAll()
 	for _, f in feels do
-		for hum in occupants(f) do
+		for hum, seatName in occupants(f) do
 			local char = hum.Parent :: Model?
 			if not char then
 				continue
@@ -902,6 +1019,7 @@ local function poseAll()
 			if not r then
 				continue
 			end
+			straightenKnees(f, hum, seatName, r)
 			local st = f.strokes[hum]
 			if st then
 				local lower, upper = BoatFeel.paddleArms(st.phase)
@@ -920,6 +1038,30 @@ end
 
 ----------------------------------------------------------------------------------------
 -- Camera
+
+local CAM_RADIUS = 0.4 -- the spherecast's radius
+local CAM_STOP = 0.5 -- studs short of a hit the eye stops
+
+-- What the speed camera's spherecast ignores: every character, every boat model and the art drawn
+-- over them, and anything that does not collide (reeds, leaves) or is water.
+local function camParams(): RaycastParams
+	local skip: { Instance } = {}
+	for _, p in Players:GetPlayers() do
+		if p.Character then
+			table.insert(skip, p.Character)
+		end
+	end
+	for m, f in feels do
+		table.insert(skip, m)
+		table.insert(skip, f.folder)
+	end
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = skip
+	params.IgnoreWater = true
+	params.RespectCanCollide = true
+	return params
+end
 
 local function cameraStep(dt: number)
 	local cam = workspace.CurrentCamera
@@ -947,7 +1089,18 @@ local function cameraStep(dt: number)
 	local back, up, fov = BoatFeel.cameraFor(camW)
 	-- Only from behind the player (not in first person, where moving back would show the head).
 	if (cam.CFrame.Position - cam.Focus.Position).Magnitude > 2 then
-		cam.CFrame = cam.CFrame + cam.CFrame.LookVector * -back + Vector3.new(0, up, 0)
+		local eye = cam.CFrame.Position + cam.CFrame.LookVector * -back + Vector3.new(0, up, 0)
+		-- N4 review 1: never through a wall or a bank. Spherecast from the Focus to the moved eye
+		-- and stop CAM_STOP short of whatever it hits (the boats, the characters and water ignored).
+		local from = cam.Focus.Position
+		local toEye = eye - from
+		if toEye.Magnitude > 1e-3 then
+			local hit = workspace:Spherecast(from, CAM_RADIUS, toEye, camParams())
+			if hit then
+				eye = from + toEye.Unit * math.max(0, hit.Distance - CAM_STOP)
+			end
+		end
+		cam.CFrame = CFrame.new(eye) * cam.CFrame.Rotation
 	end
 	if not baseFov then
 		baseFov = cam.FieldOfView

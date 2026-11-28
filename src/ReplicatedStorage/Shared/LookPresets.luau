@@ -141,14 +141,18 @@ LookPresets.PRESETS = {
 		to = 19.0,
 		look = {
 			Lighting = {
-				Ambient = rgb(54, 50, 72),
-				OutdoorAmbient = rgb(112, 106, 140),
+				-- N4 review 1 (11/28/2026): dusk was the darkest hour (net exposure 0.15 under the
+				-- grade against night's 0.8, a 0.6 mirror and 0.8 specular), so it is lifted:
+				-- exposure 0.3 to 0.9, OutdoorAmbient 112,106,140 to 136,128,170, Ambient 54,50,72
+				-- to 72,68,98, specular 0.8 to 0.3 (with WATER_BY_TIME.dusk below).
+				Ambient = rgb(72, 68, 98),
+				OutdoorAmbient = rgb(136, 128, 170),
 				Brightness = 1.85, -- a storm at dusk must still clear the readable-night floor (spec)
 				ColorShift_Top = rgb(255, 176, 196),
 				ColorShift_Bottom = rgb(48, 44, 78),
 				EnvironmentDiffuseScale = 0.55,
-				EnvironmentSpecularScale = 0.8,
-				ExposureCompensation = 0.3,
+				EnvironmentSpecularScale = 0.3,
+				ExposureCompensation = 0.9,
 			},
 			Atmosphere = {
 				Density = 0.32,
@@ -917,7 +921,7 @@ LookPresets.WATER_BY_TIME = {
 	dawn =   { WaterWaveSize = 0.03, WaterWaveSpeed = 3, WaterReflectance = 0.75, WaterTransparency = 0.38 }, -- glass
 	day =    { WaterWaveSize = 0.09, WaterWaveSpeed = 6, WaterReflectance = 0.28, WaterTransparency = 0.42 }, -- fine noon chop (N1 close-out)
 	golden = { WaterWaveSize = 0.08, WaterWaveSpeed = 6, WaterReflectance = 0.55, WaterTransparency = 0.42 }, -- settling, glints
-	dusk =   { WaterWaveSize = 0.05, WaterWaveSpeed = 4, WaterReflectance = 0.6,  WaterTransparency = 0.4 },
+	dusk =   { WaterWaveSize = 0.04, WaterWaveSpeed = 3, WaterReflectance = 0.3,  WaterTransparency = 0.4 }, -- N4 review 1: less mirror (was 0.6, 0.05, 4)
 	night =  { WaterWaveSize = 0.08, WaterWaveSpeed = 3, WaterReflectance = 0.25, WaterTransparency = 0.42 }, -- calm, holds the moon (N1 review 2: less mirror, more break-up, against the tan reflection band)
 } :: { [string]: TimeWater }
 

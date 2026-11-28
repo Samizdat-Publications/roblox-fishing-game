@@ -38,6 +38,7 @@ local BaitData = require(Shared.BaitData)
 local Approach = require(Shared.Approach)
 local FightFeel = require(Shared.FightFeel)
 local Retrieve = require(Shared.Retrieve)
+local BoatLogic = require(Shared.BoatLogic)
 
 local UI = require(script.Parent.UI)
 local PondView = require(script.Parent.PondView)
@@ -187,8 +188,33 @@ local function freezeCharacter(on: boolean)
 	end
 end
 
+-- In a boat (N4 review 1): the seat's boat, whether it is the helm, and the boat's speed.
+local function seatedBoat(): (string?, boolean, number)
+	local char = Players.LocalPlayer.Character
+	local hum = char and char:FindFirstChildOfClass("Humanoid")
+	local seat = hum and hum.SeatPart
+	local model = seat and seat.Parent
+	local id = model and model:GetAttribute("BoatId")
+	if not seat or type(id) ~= "string" then
+		return nil, false, 0
+	end
+	local v = seat.AssemblyLinearVelocity
+	return id, seat.Name == "Helm", Vector3.new(v.X, 0, v.Z).Magnitude
+end
+
+-- The bottom line while idle: in a boat, BoatLogic.seatHint (the drive keys at the helm under way,
+-- the cast line without "Face the water" when stopped); on foot, as before.
+local lastIdleHint: string? = nil
+local function idleText(): string
+	local cast = UI.inputName()
+	local id, atHelm, speed = seatedBoat()
+	local kind = if cast == "R2" then "gamepad" elseif cast == "the Fish button" then "touch" else "mouse"
+	return BoatLogic.seatHint(id, atHelm, speed, kind, cast) or ("Face the water. Hold " .. cast .. " and let go to cast.")
+end
+
 local function idleStatus()
-	UI.status("Face the water. Hold " .. UI.inputName() .. " and let go to cast.")
+	lastIdleHint = idleText()
+	UI.status(lastIdleHint :: string)
 end
 
 -- What a press does while waiting (L4).
@@ -1004,6 +1030,11 @@ function Controller.start()
 
 	RunService.RenderStepped:Connect(function(dt)
 		UI.setClock(Lighting.ClockTime)
+		-- Idle in a boat, the bottom line follows the boat (drive keys under way, the cast line
+		-- stopped); it is rewritten only when that line changes, so other idle messages stay.
+		if state == "Idle" and lastIdleHint ~= nil and idleText() ~= lastIdleHint then
+			idleStatus()
+		end
 		BaitBench.step()
 		BaitView.update(onHookNow(), state)
 		if state == "Baiting" and not BaitBench.isOpen() then

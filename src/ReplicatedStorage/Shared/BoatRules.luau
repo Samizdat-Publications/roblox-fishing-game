@@ -63,7 +63,10 @@ BoatRules.SPOT_NAMES = {
 
 -- Boat slips: on the east side of the dock walkway (the deck is x -4..4, z 35..81). Boats
 -- lie side by side with the bow pointing east, out into the lake.
-BoatRules.SLIP_X_EDGE = 5 -- the near end of each boat, one stud off the deck
+-- N4 review 1 (11/28/2026): 6.5 (was 5), so a boat at its slip can swing its stern without the
+-- footprint check (below) finding the deck: the dinghy's 8.8 stud footprint then clears the deck's
+-- edge (x 4) by more than OBSTACLE_CLEAR at any heading.
+BoatRules.SLIP_X_EDGE = 6.5 -- the near end of each boat, 2.5 studs off the deck
 BoatRules.SLIP_ZS = { 47, 56, 65, 74 }
 
 -- Every box a boat may be over: the lake, the channel and the Big Lake around the island.
@@ -245,7 +248,8 @@ function BoatRules.blockedAt(boatId: string, point: Vector3): (string?, string?)
 		return "shore", nil
 	end
 	for _, f in Cover.features do
-		if (f.kind == "Log" or f.kind == "Dock") and Cover.edgeDistance(f, point) <= BoatRules.OBSTACLE_CLEAR then
+		-- A log only where it is above the water line (Cover.boatEdgeDistance, N4 review 1).
+		if (f.kind == "Log" or f.kind == "Dock") and Cover.boatEdgeDistance(f, point) <= BoatRules.OBSTACLE_CLEAR then
 			return string.lower(f.kind), nil
 		end
 	end
@@ -265,6 +269,89 @@ function BoatRules.stopAhead(boatId: string, pos: Vector3, look: Vector3, speed:
 		end
 	end
 	return nil, nil
+end
+
+-- The whole hull, not only what is ahead (N4 review 1): the look-ahead only looks past the leading
+-- end, so a stern swinging in a turn went under the dock deck. Each frame the server tests the
+-- boat's next pose (FOOTPRINT_LOOK seconds on) all round: 8 points on a box FOOTPRINT_PAD times the
+-- boat's length and width (the dinghy's 8 by 4 is 8.8 by 4.4), against the shore, the dock, logs
+-- above the water and (the server's own probe) anything else solid. The turn and the move are
+-- tested apart, so a boat that may not turn can still go straight, and one that may not go on can
+-- still turn. A pose is refused only if it touches more than the boat touches now, so a boat that
+-- is already against something can always get out.
+BoatRules.FOOTPRINT_PAD = 1.1
+BoatRules.FOOTPRINT_LOOK = 0.1 -- seconds of travel and turn the next pose is taken at
+
+-- The 8 points round a boat's footprint at this place and heading: the four corners, the middle of
+-- the bow and the stern, and the middle of each side.
+function BoatRules.footprint(boatId: string, pos: Vector3, look: Vector3): { Vector3 }
+	local b = assert(BoatData.byId[boatId], "unknown boat")
+	local flat = Vector3.new(look.X, 0, look.Z)
+	if flat.Magnitude < 1e-6 then
+		flat = Vector3.new(0, 0, -1)
+	end
+	flat = flat.Unit
+	local side = Vector3.new(-flat.Z, 0, flat.X)
+	local hl = b.length * BoatRules.FOOTPRINT_PAD / 2
+	local hw = b.width * BoatRules.FOOTPRINT_PAD / 2
+	local c = Vector3.new(pos.X, BoatRules.WATER_Y, pos.Z)
+	local out = {}
+	for _, u in { { 1, 1 }, { 1, 0 }, { 1, -1 }, { 0, 1 }, { 0, -1 }, { -1, 1 }, { -1, 0 }, { -1, -1 } } do
+		table.insert(out, c + flat * (u[1] * hl) + side * (u[2] * hw))
+	end
+	return out
+end
+
+-- How many footprint points touch something, and the first thing touched: the shore, the dock or a
+-- log (blockedAt's kinds; water a boat may not use is the half-second check's job), or what the
+-- optional `solid` probe says ("shore" for terrain, "thing" for a part).
+function BoatRules.footprintHits(boatId: string, pos: Vector3, look: Vector3, solid: ((Vector3) -> string?)?): (number, string?)
+	local n, first = 0, nil
+	for _, p in BoatRules.footprint(boatId, pos, look) do
+		local kind = BoatRules.blockedAt(boatId, p)
+		if kind == "water" then
+			kind = nil
+		end
+		if not kind and solid then
+			kind = solid(p)
+		end
+		if kind then
+			n += 1
+			first = first or kind
+		end
+	end
+	return n, first
+end
+
+-- May the boat turn and may it move this frame? From its place, heading (yaw, radians about +Y, as
+-- CFrame.fromOrientation), speed (studs a second along the bow) and spin (radians a second about
+-- +Y, BoatRules.spinY). Returns moveOk, turnOk, and the thing in the way (nil when both are fine).
+function BoatRules.poseCheck(boatId: string, pos: Vector3, yaw: number, speed: number, spin: number, solid: ((Vector3) -> string?)?): (boolean, boolean, string?)
+	local t = BoatRules.FOOTPRINT_LOOK
+	local look = CFrame.fromOrientation(0, yaw, 0).LookVector
+	local moving = math.abs(speed) > 1e-3
+	local turning = math.abs(spin) > 1e-4
+	if not moving and not turning then
+		return true, true, nil
+	end
+	local now = BoatRules.footprintHits(boatId, pos, look, solid)
+	local moveOk, turnOk, why = true, true, nil
+	if moving then
+		local flat = Vector3.new(look.X, 0, look.Z).Unit
+		local n, kind = BoatRules.footprintHits(boatId, pos + flat * (speed * t), look, solid)
+		if n > now then
+			moveOk, why = false, kind
+		end
+	end
+	if turning then
+		local turned = CFrame.fromOrientation(0, yaw + spin * t, 0).LookVector
+		local n, kind = BoatRules.footprintHits(boatId, pos, turned, solid)
+		if n > now then
+			turnOk = false
+			why = why or kind
+		end
+	end
+	return moveOk, turnOk, why
 end
 
 -- The toast for a stop. "thing" is anything else solid the server's own look finds.

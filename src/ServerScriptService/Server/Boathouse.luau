@@ -14,6 +14,7 @@
 --   * the Boathouse art on the east flank of PondPoint, with invisible floor, walls and counter to
 --     walk on and bump into (the art itself never collides), a plank apron along its open front
 --     and a walkway down its east side to the shore, on piles;
+--   * a day fill PointLight in the middle of the shed (N4 review 1);
 --   * the Cedar Canoe on the lower rack berth, and lantern glass in the bracket on the front
 --     post with a warm PointLight tagged "Lantern" (ClientModules/Lanterns lights it at night);
 --   * "Boats" painted on the shop board (Signs), with the BoatShopPrompt that opens the boat
@@ -299,6 +300,23 @@ local function buildShed(root: Model, missing: { string }): number
 	light.Enabled = false
 	light.Parent = glass
 	CollectionService:AddTag(light, Signs.LANTERN_TAG)
+
+	-- The day fill (N4 review 1): a soft light in the middle of the shed, always on.
+	local fillHost = part(root, "FillLight", Vector3.new(0.2, 0.2, 0.2), CFrame.new(Plan.world(Plan.FILL.at)), {
+		Transparency = 1,
+		CanCollide = false,
+		CanQuery = false,
+		CanTouch = false,
+		CastShadow = false,
+	})
+	local fill = Instance.new("PointLight")
+	fill.Name = "DayFill"
+	fill.Color = Color3.fromRGB(255, 240, 220)
+	fill.Brightness = Plan.FILL.brightness
+	fill.Range = Plan.FILL.range
+	fill.Shadows = false
+	fill.Enabled = true
+	fill.Parent = fillHost
 
 	-- The shop board: "Boats" painted on the art's own board, and the prompt there.
 	local signs = Instance.new("Folder")

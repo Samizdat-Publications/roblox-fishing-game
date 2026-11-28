@@ -699,19 +699,19 @@
       "place": "lake",
       "clock": 17.4,
       "eye": [
-        -1,
-        5,
-        40
+        -2.5,
+        5.2,
+        45.5
       ],
       "look": [
-        25,
-        1,
-        55.3
+        30,
+        1.2,
+        60
       ],
       "fov": 39.8,
       "lens_mm": 28,
       "what": "From the dock end, past the canoe in slip 1 (three-quarter, lower third) to the boathouse on PondPoint behind it (upper middle)",
-      "why": "Varnished cedar in three-quarter light with the boathouse on the same line. Re-aimed 11/28/2026 once the boathouse stood at (55, 1.1, 73): the old look (15, 1.5, 62) pointed past it. Eye on the dock deck, near 03's, so nothing new to keep clear."
+      "why": "Varnished cedar in three-quarter light with the boathouse on the same line. Re-aimed 11/28/2026 once the boathouse stood at (55, 1.1, 73): the old look (15, 1.5, 62) pointed past it. Eye on the dock deck, near 03's, so nothing new to keep clear. N4 review 1 (11/28/2026): eye (-2.5, 5.2, 45.5), look (30, 1.2, 60), the advisor's framing (was eye (-1, 5, 40), look (25, 1, 55.3))."
     },
     {
       "id": "p10-buoyline-dusk",
@@ -805,17 +805,18 @@
       "place": "lake",
       "clock": 12.0,
       "eye": [
-        2,
-        7,
-        28
+        31,
+        5,
+        13
       ],
       "look": [
-        27,
-        1.5,
-        60
+        29,
+        2,
+        50
       ],
-      "fov": 39.8,
-      "what": "From the water just off the dock end, south-east down the slips (boats at their slips, the dock on the left) to the boathouse on PondPoint behind them, at noon"
+      "fov": 45.7,
+      "what": "From the water north of the slips, looking south at the boats in their slips with the boathouse on PondPoint behind them, at noon",
+      "why": "N4 review 1 (11/28/2026): eye (31, 5, 13), look (29, 2, 50), fov 45.7, the advisor's framing (was eye (2, 7, 28), look (27, 1.5, 60), fov 39.8)."
     },
     {
       "id": "c03-dinghy-wake-dawn",
@@ -824,17 +825,26 @@
       "place": "lake",
       "clock": 6.6,
       "eye": [
-        60,
-        2.5,
-        58
+        62,
+        6,
+        55
       ],
       "look": [
-        50,
-        0.5,
-        47
+        38,
+        0,
+        46.5
       ],
       "fov": 39.8,
-      "what": "The dinghy under way at dawn, wake behind it, past a fixed eye. Timing: boat tied at its slip (x 9) with the player seated, full throttle held straight east (about 12 studs a second); capture started about 5 s after the throttle, when it is at x 55 to 65"
+      "what": "The dinghy under way at dawn with the player at the helm, its wake behind it, from a fixed eye ahead and to the side. Scripted: tools/shots/shots.py snippet c03run (Server) runs it straight east along z 47 at full throttle from x 12; the shot's own snippet waits for the hull to pass x 44 (capture within 40 to 48), and the throttle is off by x 60",
+      "avatar": true,
+      "run": {
+        "z": 47,
+        "start_x": 12,
+        "capture_x": 44,
+        "tolerance": 4,
+        "stop_x": 60
+      },
+      "why": "N4 review 1 (11/28/2026): eye (62, 6, 55), look (38, 0, 46.5), the avatar shown, and a scripted run so every round captures the same moment (was eye (60, 2.5, 58), look (50, 0.5, 47), driven by hand)."
     },
     {
       "id": "c04-deepv-dusk",

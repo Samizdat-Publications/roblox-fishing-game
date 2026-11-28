@@ -35,6 +35,10 @@ BoathousePlan.COUNTER = Vector3.new(-4.5, 2.46, -4.16) -- its top centre
 BoathousePlan.LANTERN = Vector3.new(-7.55, 4.945, -6.9) -- the glass (0.65 x 0.85 x 0.65) goes here
 BoathousePlan.LANTERN_SIZE = Vector3.new(0.65, 0.85, 0.65)
 BoathousePlan.RACK_LOW = Vector3.new(0.8, 2.4, 3.4) -- where a hull rests on the lower berth
+-- N4 review 1 (11/28/2026): a day fill inside the shed, so its back wall and the rack canoe are not
+-- a black hole in daylight: a PointLight in the middle under the tie beam (deck 0.4 + 6 clear),
+-- always on, no shadows.
+BoathousePlan.FILL = { at = Vector3.new(0, 4.6, 1), brightness = 0.6, range = 14 }
 -- "Your boat": a painted board fixed to the east wall, facing the walkway (+X).
 BoathousePlan.CHOICE_BOARD = Vector3.new(8.2, 3.6, 0.5)
 BoathousePlan.CHOICE_BOARD_SIZE = { w = 3.6, h = 1.8 }

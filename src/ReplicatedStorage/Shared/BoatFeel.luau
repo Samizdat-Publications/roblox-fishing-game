@@ -50,7 +50,8 @@ BoatFeel.ART = {
 		bow = Vector3.new(0, 0.05, -6.0),
 		stern = Vector3.new(0, 0.05, 6.0),
 		halfBeam = 0.9,
-		-- On the stem heads' inner faces, just under the 1.75 tips.
+		-- On the stem heads' inner faces, just under the 1.75 tips (checked against the mesh, N4
+		-- review 1: each ball touches the stem, 0.02 to 0.05 from its surface).
 		lights = { red = Vector3.new(-0.18, 1.45, -5.9), green = Vector3.new(0.18, 1.45, -5.9), white = Vector3.new(0, 1.45, 5.9) },
 		seats = { Helm = Vector3.new(0, 0.64, 3.0), Bow = Vector3.new(0, 0.64, -2.3) },
 		paddle = { hero = "CanoePaddle", plain = "CanoePaddlePlain", hand = Vector3.new(0, 0, -2.2) },
@@ -68,7 +69,13 @@ BoatFeel.ART = {
 		bow = Vector3.new(0, 0.1, -4.1),
 		stern = Vector3.new(0, 0.05, 4.6),
 		halfBeam = 1.7,
-		lights = { red = Vector3.new(-0.6, 1.25, -3.9), green = Vector3.new(0.6, 1.25, -3.9), white = Vector3.new(0, 1.9, 4.5) },
+		-- N4 review 1 (11/28/2026): the side lights on the tube crown (they floated 0.15 off the bow
+		-- at (+-0.6, 1.25, -3.9)), the stern light on the outboard's cowl top (2.18 at z 3.45; it
+		-- floated 1.4 behind the motor at (0, 1.9, 4.5)). Measured against the meshes in
+		-- art/models (DinghyHero.glb plus DinghyOutboard.glb at its pivot): every lamp's ball is
+		-- within 0.05 of the surface (side lights 0.066 from it, the stern light 0.114, its housing
+		-- resting on the cowl).
+		lights = { red = Vector3.new(-0.45, 1.34, -3.4), green = Vector3.new(0.45, 1.34, -3.4), white = Vector3.new(0, 2.29, 3.45) },
 		seats = { Helm = Vector3.new(0, 0.8, 0.7) }, -- on the bench (the passenger keeps the server's seat)
 	},
 	DeepV = {
@@ -87,9 +94,35 @@ BoatFeel.ART = {
 		bow = Vector3.new(0, 0.3, -8.6),
 		stern = Vector3.new(0, 0.05, 8.6),
 		halfBeam = 3.0,
-		lights = { red = Vector3.new(-0.9, 2.4, -7.6), green = Vector3.new(0.9, 2.4, -7.6), white = Vector3.new(0, 3.6, 8.0) },
+		-- N4 review 1: on the hull. The side lights sit on the foredeck behind the stem (its top 2.07
+		-- at z -7.2 to -7.4), the stern light on the motor's top (2.17 at z 8.2); they floated
+		-- 0.24 and 1.36 off it (the old white at y 3.6 was over the model's box).
+		lights = { red = Vector3.new(-0.9, 2.18, -7.3), green = Vector3.new(0.9, 2.18, -7.3), white = Vector3.new(0, 2.28, 8.2) },
 	},
 } :: { [string]: Art }
+
+-- Each boat's drawn art as a box in boat space (min, max), from art/models/manifest.json and the
+-- GLBs: the canoe's box (3.18 x 1.97 x 12.52, waterline 0.22 over its keel); the dinghy's hull box
+-- (4 x 1.52 x 8, waterline 0.22 over its tubes' bottom) grown to hold its outboard placed at
+-- (0, 1.00, 3.38) (the motor reaches y -1.12 to 2.18, z 1.61 to 4.40); the Deep-V's box (7.19 x
+-- 4.14 x 17.75) about its pivot, 1.24 over the water (lift). A lamp outside its boat's box floats
+-- in the air (the spec checks every lamp's gap to the box is under LAMP_GAP).
+BoatFeel.ART_BOX = {
+	Canoe = { min = Vector3.new(-1.59, -0.22, -6.258), max = Vector3.new(1.59, 1.747, 6.258) },
+	Dinghy = { min = Vector3.new(-2, -1.12, -4), max = Vector3.new(2, 2.18, 4.4) },
+	DeepV = { min = Vector3.new(-3.595, -0.83, -8.875), max = Vector3.new(3.595, 3.31, 8.875) },
+} :: { [string]: { min: Vector3, max: Vector3 } }
+BoatFeel.LAMP_RADIUS = 0.08 -- the lamp ball (0.16 across)
+BoatFeel.LAMP_GAP = 0.05
+
+-- How far a lamp's ball is from its boat's box (0 when it touches or is inside it).
+function BoatFeel.lampGap(boatId: string, pos: Vector3): number
+	local b = BoatFeel.ART_BOX[boatId]
+	local dx = math.max(b.min.X - pos.X, 0, pos.X - b.max.X)
+	local dy = math.max(b.min.Y - pos.Y, 0, pos.Y - b.max.Y)
+	local dz = math.max(b.min.Z - pos.Z, 0, pos.Z - b.max.Z)
+	return math.max(0, math.sqrt(dx * dx + dy * dy + dz * dz) - BoatFeel.LAMP_RADIUS)
+end
 
 -- Every model name the client may draw (the server copies these to ReplicatedStorage.BoatArt).
 function BoatFeel.artNames(): { string }
@@ -308,6 +341,38 @@ end
 BoatFeel.ROD_ARM = 40
 BoatFeel.ROD_ELBOW = 30
 
+-- Legs in a boat (N4 review 1, 11/28/2026): Roblox's sit hangs the shins straight down from the
+-- knee, and in the canoe (seat 0.64 over the water, floor 0.22) they poked through the floor.
+-- Each R15 knee is straightened from the sit's bend, starting at KNEE_START degrees and going
+-- up in KNEE_STEP until no leg part sits under the boat's floor.y (legLow below; the client also
+-- checks the real leg parts each frame and straightens further if one is still under).
+-- A plain R15 model of a seated leg: the thigh lies level forward from the hip, its middle LEG.half
+-- over the seat top; the sit bends the knee LEG.sitBend degrees; the shin and foot hang from the
+-- knee, LEG.shin + LEG.foot long and LEG.half thick (R15 blocky: lower leg 1.19, foot 0.3, 1 wide).
+BoatFeel.LEG = { half = 0.5, shin = 1.2, foot = 0.3, sitBend = 90 }
+BoatFeel.KNEE_START = 70
+BoatFeel.KNEE_STEP = 5
+BoatFeel.KNEE_MAX = 100 -- past straight by 10, for a sit that bends the knee more than 90
+
+-- The lowest point of the shin and foot (studs, boat space) for a seat top at seatY with the knee
+-- straightened by `straighten` degrees from the sit.
+function BoatFeel.legLow(seatY: number, straighten: number): number
+	local L = BoatFeel.LEG
+	local kneeY = seatY + L.half
+	local bend = math.rad(math.clamp(L.sitBend - straighten, 0, 180))
+	return kneeY - (L.shin + L.foot) * math.sin(bend) - L.half * math.abs(math.cos(bend))
+end
+
+-- How far to straighten the knees (degrees) so the legs clear a floor at floorY: from KNEE_START
+-- up by KNEE_STEP until legLow is at or over the floor, at most KNEE_MAX.
+function BoatFeel.kneeStraighten(seatY: number, floorY: number): number
+	local s = BoatFeel.KNEE_START
+	while s < BoatFeel.KNEE_MAX and BoatFeel.legLow(seatY, s) < floorY do
+		s += BoatFeel.KNEE_STEP
+	end
+	return math.min(s, BoatFeel.KNEE_MAX)
+end
+
 ----------------------------------------------------------------------------------------
 -- Wake
 
@@ -320,15 +385,26 @@ BoatFeel.KELVIN = math.tan(math.rad(19.47)) -- the wake's arms spread at this sh
 -- then fades out; the foam map's faded rows soften both long edges and its streaks scroll slowly
 -- away from the boat. On a calm lake a wake is a soft pair of lines, so the peak is faint:
 -- `base` is the transparency at the peak at full speed, `baseSlow` more at a crawl.
+-- N4 review 1 (11/28/2026): set C's c03 read the wake as a fence of vertical ticks. A point is
+-- now left every `step` studs the stern travels (not on a timer), the foam map repeats every
+-- WAKE_TEX.length studs (the same 3), and each beam's Attachment0 is the older point, so every
+-- beam shows one whole tile and the foam runs on unbroken from beam to beam. The motor wake is
+-- brighter and longer (base 0.6 to 0.38, life 2.4 to 3.6, w0 0.35 to 0.5, w1 0.9 to 1.2,
+-- w1Speed 1.2 to 1.6). The beams lie flat by their own setting, WAKE_BEAM_NORMAL.
 BoatFeel.WAKE = {
-	motor = { from = 0.08, life = 2.4, every = 0.12, w0 = 0.35, w1 = 0.9, w1Speed = 1.2, base = 0.6, baseSlow = 0.2, fadeIn = 0.25, hold = 0.3 },
-	paddle = { from = 0.08, life = 1.8, every = 0.15, w0 = 0.08, w1 = 0.22, w1Speed = 0.12, base = 0.72, baseSlow = 0.15, fadeIn = 0.3, hold = 0.3 },
+	motor = { from = 0.08, life = 3.6, step = 3, w0 = 0.5, w1 = 1.2, w1Speed = 1.6, base = 0.38, baseSlow = 0.2, fadeIn = 0.25, hold = 0.3 },
+	paddle = { from = 0.08, life = 1.8, step = 3, w0 = 0.08, w1 = 0.22, w1Speed = 0.12, base = 0.72, baseSlow = 0.15, fadeIn = 0.3, hold = 0.3 },
 }
-BoatFeel.WAKE_PHONE = { life = 0.6, every = 2 } -- the phone tier: 60 percent of the life, half as many points
+BoatFeel.WAKE_PHONE = { life = 0.6, step = 2 } -- the phone tier: 60 percent of the life, a point every 6 studs (half as many)
+-- Which attachment axis is the wake beams' face normal (FaceCamera off). The wake's own setting,
+-- apart from CreekPlan.FOAM_BEAM_NORMAL (the creek foam, which Studio showed lying flat with "Y"):
+-- "Y" points every wake attachment's Y straight up and lays the width along its Z, so the beam
+-- lies flat on the water. If a capture shows the wake on edge, set "Z" (one edit, wake only).
+BoatFeel.WAKE_BEAM_NORMAL = "Y"
 BoatFeel.WAKE_Y = 0.1 -- the beams' height over the water (y 0, its chop about 0.06), as the creek's
 BoatFeel.WAKE_ZOFFSET = 0.05 -- studs toward the camera, so the chop's crests never cut a beam
 BoatFeel.WAKE_START = { beam = 0.8, aft = 0.5 } -- an arm starts at this share of halfBeam out, this far forward of the stern
-BoatFeel.WAKE_TEX = { length = 4, drift = 0.6 } -- studs per tile of the foam map; studs a second it scrolls at full speed
+BoatFeel.WAKE_TEX = { length = 3, drift = 0.6 } -- studs per tile of the foam map (= WAKE.step); studs a second it scrolls at full speed
 BoatFeel.SPRAY_FROM = 0.6 -- spray at the bow above this share of top speed (motor boats only)
 BoatFeel.SPRAY_RATE = 30 -- particles a second at full speed (desktop)
 BoatFeel.WASH_RATE = 16 -- the stern's churn, particles a second at full speed (desktop)
@@ -345,15 +421,49 @@ local function wakeLife(boatId: string, tier: string?): number
 	return BoatFeel.WAKE[kindOf(boatId)].life * (if tier == "phone" then BoatFeel.WAKE_PHONE.life else 1)
 end
 
--- Seconds between the points an arm leaves, on this tier.
-function BoatFeel.wakeEvery(boatId: string, tier: string?): number
-	return BoatFeel.WAKE[kindOf(boatId)].every * (if tier == "phone" then BoatFeel.WAKE_PHONE.every else 1)
+-- Studs the stern travels between the points an arm leaves, on this tier.
+function BoatFeel.wakeStep(boatId: string, tier: string?): number
+	return BoatFeel.WAKE[kindOf(boatId)].step * (if tier == "phone" then BoatFeel.WAKE_PHONE.step else 1)
 end
 
--- How many points each arm keeps on this tier (each arm draws this many beams: one from the
--- live point at the stern to the newest, then one between each pair).
-function BoatFeel.wakePieces(boatId: string, tier: string?): number
-	return math.max(2, math.ceil(wakeLife(boatId, tier) / BoatFeel.wakeEvery(boatId, tier)))
+-- How many points each arm keeps on this tier at this top speed (each arm draws this many beams:
+-- one from the live point at the stern to the newest, then one between each pair): enough for a
+-- whole life at top speed.
+function BoatFeel.wakePieces(boatId: string, tier: string?, topSpeed: number): number
+	return math.max(2, math.ceil(wakeLife(boatId, tier) * topSpeed / BoatFeel.wakeStep(boatId, tier)))
+end
+
+-- Where the next wake points go along the stern's path: from the last point `last` toward the
+-- stern's point now `head`, one every `step` studs. Returns the new points (oldest first) and the
+-- new last point. Exactly `step` apart, so each beam is one whole tile of the foam map.
+function BoatFeel.wakeDrops(last: Vector3, head: Vector3, step: number): ({ Vector3 }, Vector3)
+	local out: { Vector3 } = {}
+	local d = head - last
+	local dist = d.Magnitude
+	if step <= 0 or dist < step then
+		return out, last
+	end
+	local dir = d / dist
+	local n = math.min(math.floor(dist / step), 32)
+	for i = 1, n do
+		table.insert(out, last + dir * (step * i))
+	end
+	return out, last + dir * (step * n)
+end
+
+-- A wake attachment's frame axes (rightVector, upVector for CFrame.fromMatrix) at a point whose
+-- arm runs along `along`: X level along the arm, and the face normal as WAKE_BEAM_NORMAL says
+-- ("Y": the attachment's Y straight up, so the beam lies flat).
+function BoatFeel.wakeAxes(along: Vector3): (Vector3, Vector3)
+	local fwd = Vector3.new(along.X, 0, along.Z)
+	if fwd.Magnitude < 1e-4 then
+		fwd = Vector3.new(0, 0, 1)
+	end
+	fwd = fwd.Unit
+	if BoatFeel.WAKE_BEAM_NORMAL == "Z" then
+		return fwd, Vector3.new(-fwd.Z, 0, fwd.X) -- Y across the arm, so Z (X cross Y) is vertical
+	end
+	return fwd, Vector3.yAxis
 end
 
 -- One wake point's width and transparency at `age` seconds, left by a boat at speedFrac.
@@ -383,7 +493,8 @@ function BoatFeel.wakeStart(a: Art, side: number): Vector3
 	return Vector3.new(side * a.halfBeam * st.beam, 0, a.stern.Z - st.aft)
 end
 
--- The beams' TextureSpeed (cycles a second; positive runs from the stern outward along the arm).
+-- How fast the foam map drifts (cycles a second) away from the boat along the arm. Each beam's
+-- Attachment0 is the older point, so the client sets the beams' TextureSpeed to minus this.
 function BoatFeel.wakeTextureSpeed(speedFrac: number): number
 	local t = BoatFeel.WAKE_TEX
 	return t.drift * math.clamp(math.abs(speedFrac), 0, 1) / t.length
@@ -438,12 +549,22 @@ end
 ----------------------------------------------------------------------------------------
 -- Lights, horn and sounds
 
-BoatFeel.LIGHT = { range = 8, brightness = 1.2 }
+-- N4 review 1 (11/28/2026): the side lights were too strong (1.2, range 8, saturated 255,40,30
+-- and 40,255,90) and lit the water round the bow. Now each light has its own numbers, softer
+-- colours, and the lamps sit in dark housings.
+BoatFeel.LIGHT = {
+	red = { brightness = 0.35, range = 4 },
+	green = { brightness = 0.35, range = 4 },
+	white = { brightness = 0.8, range = 7 },
+}
 BoatFeel.LIGHT_COLORS = {
-	red = Color3.fromRGB(255, 40, 30),
-	green = Color3.fromRGB(40, 255, 90),
+	red = Color3.fromRGB(232, 70, 52),
+	green = Color3.fromRGB(70, 200, 120),
 	white = Color3.fromRGB(255, 244, 220),
 }
+-- The housing: a dark cup the lamp ball sits in (a flat cylinder, its top at the ball's middle),
+-- so the lamp reads as a fitting on the boat, not a loose glowing bead.
+BoatFeel.LAMP_HOUSING = { color = Color3.fromRGB(34, 34, 36), diameter = 0.22, height = 0.1 }
 BoatFeel.HORN_SOUND = "server-horn" -- the stand-in in SoundSheets (no upload)
 BoatFeel.HORN_GAP = 1.5 -- seconds between horns
 BoatFeel.DIP_SOUND = "bobber-plop" -- a slowed, quiet plop for each paddle dip
