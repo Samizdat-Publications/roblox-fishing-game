@@ -4,6 +4,72 @@ A Roblox fishing game where real fishing knowledge matters: the right bait, spot
 
 Newest first. The live page with before and after sliders is `docs/making-of/index.html` (published as a Claude artifact).
 
+## N1: The home lake look pass (in progress)
+
+2026-11-27 19:58 · in progress
+
+Leg 3 is taking the whole home lake to the quality of the proof corner, in five rounds so far. The light now uses Roblox's Realistic mode with its own grade for dawn, noon, golden hour and night, and the wind moves the grass and trees. The lawns are real sloped ground with our own grass, the paths wander narrow through them, and the shore has a dressed sand ring. New front and back rows of trees, a far treeline, a bank kit of reeds, roots and rocks, logs with torn, water-soaked ends, a painted-wood buoy, and lanterns that light the dock at night without washing out the water. The look critic's median went from 6.5 at the start of the day to 7.0 on these shots (one of the three runs gave 7.4), and its separate score for how much the lake looks like its own place, not stock Roblox, went from 4.5 to 5.5. Still to do: a last review by the Fable advisor, and the flat-looking tree tops and stand awnings the critic pointed at.
+
+**Down the path to the dock at golden hour**
+
+| Before | After |
+|---|---|
+| ![before](stills/2026-11-27-n1-02-dock-golden-before.jpg) | ![after](stills/2026-11-27-n1-02-dock-golden-after.jpg) |
+
+**The stands from the dock at noon**
+
+| Before | After |
+|---|---|
+| ![before](stills/2026-11-27-n1-08-stands-noon-before.jpg) | ![after](stills/2026-11-27-n1-08-stands-noon-after.jpg) |
+
+**The whole home lake from above at golden hour**
+
+| Before | After |
+|---|---|
+| ![before](stills/2026-11-27-n1-07-overview-golden-before.jpg) | ![after](stills/2026-11-27-n1-07-overview-golden-after.jpg) |
+
+**Off the dock end at night**
+
+| Before | After |
+|---|---|
+| ![before](stills/2026-11-27-n1-04-dockend-night-before.jpg) | ![after](stills/2026-11-27-n1-04-dockend-night-after.jpg) |
+
+![The creek riffle at dawn](stills/2026-11-27-n1-riffle-dawn.jpg)
+*The creek riffle at dawn*
+
+![The creek pool at night](stills/2026-11-27-n1-pool-night.jpg)
+*The creek pool at night*
+
+## Sound: Real sounds for the boat, frenzies, goals and storms
+
+2026-11-27 18:42 · commit `8815662`
+
+With the account's age verification done, Roblox's monthly cap on sound uploads lifted, and the sounds that had been waiting went in: two motor loops for the dinghy (the pitch follows the boat's speed), the boil of a feeding frenzy and the music that bursts in when it starts, a chime for a finished goal, storm rain, and new sheets of water and button sounds. They were made with ElevenLabs and the best of each was picked by the Gemini Hydrogen critic. All of them load in a playtest with no errors; nobody has listened to them in the game yet.
+
+## Art: A plant kit for Cedar Creek and the first island
+
+2026-11-27 17:44 · commit `f797777`
+
+Twelve new plant models for two places that come later in this leg. For Cedar Creek: a western red cedar whose crown follows the shape measured from a real cedar model, a mossy log, creek roots, two ferns and a moss mat. For the first island in the Big Lake: a lone wind-bent pine as its landmark, two junipers, heather and lichen. Each is split into bark and leaf parts so they take the game's own materials, about 8,000 triangles in all. They are not in the game yet.
+
+![The Cedar Creek plants, with a player for scale](stills/2026-11-27-plant-kit-creek.jpg)
+*The Cedar Creek plants, with a player for scale*
+
+![The island plants: the lone pine, junipers, heather and lichen](stills/2026-11-27-plant-kit-island.jpg)
+*The island plants: the lone pine, junipers, heather and lichen*
+
+## N2: A field-guide look for the screens
+
+2026-11-27 17:08 · commit `b7dec8d`
+
+The game's screens are getting their own look, like a fisherman's field guide and tackle box: paper catch cards with a weight tag on a string, a ruler under the fish, a rarity ribbon, brass buttons and leather panels. 21 pieces of art were drawn and uploaded, and the code that dresses every screen in them is written. It is built behind a switch that is still off, so the game looks the same until the look pass is finished and the switch is flipped. These are the mockups it is aiming for.
+
+![Mockup: the new catch card](stills/2026-11-27-n2-mock-catch.jpg)
+*Mockup: the new catch card*
+
+![Mockup: the new screen bar](stills/2026-11-27-n2-mock-hud.jpg)
+*Mockup: the new screen bar*
+
 ## N0: The proof corner: real wood, painted signs, light on every screen
 
 2026-11-27 21:40

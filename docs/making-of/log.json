@@ -1,710 +1,803 @@
 {
- "project": "Fishing Game",
- "pitch": "A Roblox fishing game where real fishing knowledge matters: the right bait, spot and time of day decide what bites.",
- "status": "in-development",
- "updated": "2026-11-27",
- "entries": [
-  {
-   "id": "start",
-   "tag": "Start",
-   "date": "2026-11-25",
-   "time": "18:07",
-   "commit": "32f4cd8",
-   "title": "Design approved, empty Baseplate",
-   "summary": "The plan: one lake that plays well before anything else, built from plain gray blocks. Eight real lake fish with real habits, a bar minigame that starts easy, a sell stand, a bait shop, a fish journal, and saving. The research behind it found that the biggest Roblox fishing games reward collecting but never real fishing knowledge, so that became the hook. Built by Claude Opus 5.5 working inside Roblox Studio through Studio's MCP server.",
-   "pairs": [],
-   "stills": []
-  },
-  {
-   "id": "m0",
-   "tag": "M0",
-   "date": "2026-11-25",
-   "time": "18:29",
-   "commit": "af16abb",
-   "title": "Pipeline: code in Git, pushed into Studio",
-   "summary": "All game code lives as files in the repo and is pushed into Studio script by script, then checked byte for byte. A test script made the full round trip: created, read back, run in a playtest, logged, deleted. 22 scripts and 23 unit tests went in.",
-   "pairs": [],
-   "stills": []
-  },
-  {
-   "id": "m1",
-   "tag": "M1",
-   "date": "2026-11-25",
-   "time": "18:29",
-   "commit": "af16abb",
-   "title": "Gray-box lake",
-   "summary": "A lake built entirely by script: terrain water, a dock from the south shore, a weed bed, five fallen logs, a deep hole marked by a red buoy, a shore path, and two stands. Players spawn on the dock with a rod. A 16 minute day runs from dawn to night.",
-   "pairs": [],
-   "stills": [
+  "project": "Fishing Game",
+  "pitch": "A Roblox fishing game where real fishing knowledge matters: the right bait, spot and time of day decide what bites.",
+  "status": "in-development",
+  "updated": "2026-11-27",
+  "entries": [
     {
-     "src": "stills/2026-11-25-m1-lake-overview.jpg",
-     "caption": "The whole lake from above: dock, weed bed, logs, deep hole buoy, and the two stands"
+      "id": "start",
+      "tag": "Start",
+      "date": "2026-11-25",
+      "time": "18:07",
+      "commit": "32f4cd8",
+      "title": "Design approved, empty Baseplate",
+      "summary": "The plan: one lake that plays well before anything else, built from plain gray blocks. Eight real lake fish with real habits, a bar minigame that starts easy, a sell stand, a bait shop, a fish journal, and saving. The research behind it found that the biggest Roblox fishing games reward collecting but never real fishing knowledge, so that became the hook. Built by Claude Opus 5.5 working inside Roblox Studio through Studio's MCP server.",
+      "pairs": [],
+      "stills": []
     },
     {
-     "src": "stills/2026-11-25-m1-spawn-dock.jpg",
-     "caption": "First spawn, rod in hand"
-    }
-   ]
-  },
-  {
-   "id": "m2",
-   "tag": "M2",
-   "date": "2026-11-25",
-   "time": "18:29",
-   "commit": "af16abb",
-   "title": "Cast and catch",
-   "summary": "Hold and release to cast, wait for a bite, hook it, then keep the fish in the green zone until the bar fills. A cast onto dry ground is refused with a hint. The first fish landed was a 19.2 cm pumpkinseed worth 6 coins. The hook window went from 1.6 to 2 seconds to be kinder to young players and touch screens.",
-   "pairs": [],
-   "stills": [
-    {
-     "src": "stills/2026-11-25-m2-waiting-for-bite.jpg",
-     "caption": "Line in the water, waiting for a bite at the dock"
+      "id": "m0",
+      "tag": "M0",
+      "date": "2026-11-25",
+      "time": "18:29",
+      "commit": "af16abb",
+      "title": "Pipeline: code in Git, pushed into Studio",
+      "summary": "All game code lives as files in the repo and is pushed into Studio script by script, then checked byte for byte. A test script made the full round trip: created, read back, run in a playtest, logged, deleted. 22 scripts and 23 unit tests went in.",
+      "pairs": [],
+      "stills": []
     },
     {
-     "src": "stills/2026-11-25-m2-first-catch.jpg",
-     "caption": "First catch: a new species card for a pumpkinseed"
-    }
-   ]
-  },
-  {
-   "id": "m3",
-   "tag": "M3",
-   "date": "2026-11-25",
-   "time": "18:35",
-   "commit": "33e0c7f",
-   "title": "Real fish habits",
-   "summary": "Eight species, each with its own spots, feeding times, baits, sizes and fight. Tested by fishing them the real way: perch and bluegill at the dock at dawn on worms, largemouth bass at the weed bed at dawn on minnows, channel catfish in the deep hole at 10 PM on stinkbait. The wrong bait at the wrong spot gets a hint instead of a bite.",
-   "pairs": [],
-   "stills": [
-    {
-     "src": "stills/2026-11-25-m3-night-deep-hole.jpg",
-     "caption": "10 PM at the end of the dock, stinkbait in the deep hole: catfish time"
-    }
-   ]
-  },
-  {
-   "id": "m4",
-   "tag": "M4",
-   "date": "2026-11-25",
-   "time": "18:35",
-   "commit": "33e0c7f",
-   "title": "Money and the bait shop",
-   "summary": "The Fish Buyer pays coins, worked out on the server so nobody can cheat it. Bait and Tackle sells worms, crickets, minnows, stinkbait and a spinner, and the bait on your hook changes what bites. Six fish sold for 27 coins in the first test.",
-   "pairs": [],
-   "stills": [
-    {
-     "src": "stills/2026-11-25-m4-sell-stand.jpg",
-     "caption": "The Fish Buyer stand"
+      "id": "m1",
+      "tag": "M1",
+      "date": "2026-11-25",
+      "time": "18:29",
+      "commit": "af16abb",
+      "title": "Gray-box lake",
+      "summary": "A lake built entirely by script: terrain water, a dock from the south shore, a weed bed, five fallen logs, a deep hole marked by a red buoy, a shore path, and two stands. Players spawn on the dock with a rod. A 16 minute day runs from dawn to night.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-25-m1-lake-overview.jpg",
+          "caption": "The whole lake from above: dock, weed bed, logs, deep hole buoy, and the two stands"
+        },
+        {
+          "src": "stills/2026-11-25-m1-spawn-dock.jpg",
+          "caption": "First spawn, rod in hand"
+        }
+      ]
     },
     {
-     "src": "stills/2026-11-25-m4-bait-shop.jpg",
-     "caption": "Bait and Tackle: each bait says which fish it suits"
-    }
-   ]
-  },
-  {
-   "id": "m5",
-   "tag": "M5",
-   "date": "2026-11-25",
-   "time": "18:35",
-   "commit": "33e0c7f",
-   "title": "Fish journal and saving",
-   "summary": "Press J for the journal: every species with its count, best weight and length, the bait and spot it was caught on, and a habit tip once you've caught one. Undiscovered fish show as question marks. Coins, bait and the journal save to Roblox and come back after leaving.",
-   "pairs": [],
-   "stills": [
-    {
-     "src": "stills/2026-11-25-m5-journal.jpg",
-     "caption": "The fish journal, 5 of 8 species found"
-    }
-   ]
-  },
-  {
-   "id": "m6",
-   "tag": "M6",
-   "date": "2026-11-25",
-   "time": "18:43",
-   "commit": "04d3e64",
-   "title": "Phone and controller",
-   "summary": "On the smallest phone in Studio's simulator, the first pass found a tiny touch button sitting on top of jump, a fight panel over the top bar, and a journal taller than the screen. All fixed: a big Fish button, a moved and shorter fight panel, panels that shrink to fit. Gamepad works too: R2 to cast and reel, Y for the journal. Version 1 complete.",
-   "pairs": [
-    {
-     "before": "stills/2026-11-25-m6-phone-before.jpg",
-     "after": "stills/2026-11-25-m6-phone-after.jpg",
-     "caption": "Phone layout: the tiny touch button, then the big Fish button"
-    }
-   ],
-   "stills": [
-    {
-     "src": "stills/2026-11-25-m6-phone-fight.jpg",
-     "caption": "Fighting a fish on a phone"
+      "id": "m2",
+      "tag": "M2",
+      "date": "2026-11-25",
+      "time": "18:29",
+      "commit": "af16abb",
+      "title": "Cast and catch",
+      "summary": "Hold and release to cast, wait for a bite, hook it, then keep the fish in the green zone until the bar fills. A cast onto dry ground is refused with a hint. The first fish landed was a 19.2 cm pumpkinseed worth 6 coins. The hook window went from 1.6 to 2 seconds to be kinder to young players and touch screens.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-25-m2-waiting-for-bite.jpg",
+          "caption": "Line in the water, waiting for a bite at the dock"
+        },
+        {
+          "src": "stills/2026-11-25-m2-first-catch.jpg",
+          "caption": "First catch: a new species card for a pumpkinseed"
+        }
+      ]
     },
     {
-     "src": "stills/2026-11-25-m6-console-journal.jpg",
-     "caption": "The journal on a console screen"
-    }
-   ]
-  },
-  {
-   "id": "reel",
-   "tag": "Fix",
-   "date": "2026-11-25",
-   "time": "19:06",
-   "commit": "6198609",
-   "title": "The reel always answers",
-   "summary": "The first playtest found that clicking sometimes barely moved the catch zone, and clicks on some parts of the screen lost the fish. Now any click or hold anywhere on screen reels, the player's pull always beats the fish's, buttons step aside during a fight, and a big REELING! prompt shows that it is working.",
-   "pairs": [
-    {
-     "before": "stills/2026-11-25-reel-before.jpg",
-     "after": "stills/2026-11-25-reel-after.jpg",
-     "caption": "The fight: before, and after with the hold-anywhere REELING! prompt"
-    }
-   ],
-   "stills": [
-    {
-     "src": "stills/2026-11-25-reel-phone.jpg",
-     "caption": "The same fight on a phone, with a big REEL button"
-    }
-   ]
-  },
-  {
-   "id": "polish",
-   "tag": "Polish",
-   "date": "2026-11-25",
-   "time": "19:11",
-   "commit": "34d1104",
-   "title": "Fish shadows, the catch on the line, night lamps",
-   "summary": "Fish shadows now swim where the bite rules say fish should be, a landed fish hangs on the line before it goes in the bag, and lamps on the dock light up the water at night.",
-   "pairs": [
-    {
-     "before": "stills/2026-11-25-m3-night-deep-hole.jpg",
-     "after": "stills/2026-11-25-polish-night-after.jpg",
-     "caption": "Night at the dock, before and after the lamps"
-    }
-   ],
-   "stills": [
-    {
-     "src": "stills/2026-11-25-polish-catch-on-line.jpg",
-     "caption": "A bluegill held on the line"
+      "id": "m3",
+      "tag": "M3",
+      "date": "2026-11-25",
+      "time": "18:35",
+      "commit": "33e0c7f",
+      "title": "Real fish habits",
+      "summary": "Eight species, each with its own spots, feeding times, baits, sizes and fight. Tested by fishing them the real way: perch and bluegill at the dock at dawn on worms, largemouth bass at the weed bed at dawn on minnows, channel catfish in the deep hole at 10 PM on stinkbait. The wrong bait at the wrong spot gets a hint instead of a bite.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-25-m3-night-deep-hole.jpg",
+          "caption": "10 PM at the end of the dock, stinkbait in the deep hole: catfish time"
+        }
+      ]
     },
     {
-     "src": "stills/2026-11-25-polish-sell-sign.jpg",
-     "caption": "The Sell Fish sign"
+      "id": "m4",
+      "tag": "M4",
+      "date": "2026-11-25",
+      "time": "18:35",
+      "commit": "33e0c7f",
+      "title": "Money and the bait shop",
+      "summary": "The Fish Buyer pays coins, worked out on the server so nobody can cheat it. Bait and Tackle sells worms, crickets, minnows, stinkbait and a spinner, and the bait on your hook changes what bites. Six fish sold for 27 coins in the first test.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-25-m4-sell-stand.jpg",
+          "caption": "The Fish Buyer stand"
+        },
+        {
+          "src": "stills/2026-11-25-m4-bait-shop.jpg",
+          "caption": "Bait and Tackle: each bait says which fish it suits"
+        }
+      ]
     },
     {
-     "src": "stills/2026-11-25-polish-dock-lamp.jpg",
-     "caption": "A dock lamp by day"
+      "id": "m5",
+      "tag": "M5",
+      "date": "2026-11-25",
+      "time": "18:35",
+      "commit": "33e0c7f",
+      "title": "Fish journal and saving",
+      "summary": "Press J for the journal: every species with its count, best weight and length, the bait and spot it was caught on, and a habit tip once you've caught one. Undiscovered fish show as question marks. Coins, bait and the journal save to Roblox and come back after leaving.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-25-m5-journal.jpg",
+          "caption": "The fish journal, 5 of 8 species found"
+        }
+      ]
+    },
+    {
+      "id": "m6",
+      "tag": "M6",
+      "date": "2026-11-25",
+      "time": "18:43",
+      "commit": "04d3e64",
+      "title": "Phone and controller",
+      "summary": "On the smallest phone in Studio's simulator, the first pass found a tiny touch button sitting on top of jump, a fight panel over the top bar, and a journal taller than the screen. All fixed: a big Fish button, a moved and shorter fight panel, panels that shrink to fit. Gamepad works too: R2 to cast and reel, Y for the journal. Version 1 complete.",
+      "pairs": [
+        {
+          "before": "stills/2026-11-25-m6-phone-before.jpg",
+          "after": "stills/2026-11-25-m6-phone-after.jpg",
+          "caption": "Phone layout: the tiny touch button, then the big Fish button"
+        }
+      ],
+      "stills": [
+        {
+          "src": "stills/2026-11-25-m6-phone-fight.jpg",
+          "caption": "Fighting a fish on a phone"
+        },
+        {
+          "src": "stills/2026-11-25-m6-console-journal.jpg",
+          "caption": "The journal on a console screen"
+        }
+      ]
+    },
+    {
+      "id": "reel",
+      "tag": "Fix",
+      "date": "2026-11-25",
+      "time": "19:06",
+      "commit": "6198609",
+      "title": "The reel always answers",
+      "summary": "The first playtest found that clicking sometimes barely moved the catch zone, and clicks on some parts of the screen lost the fish. Now any click or hold anywhere on screen reels, the player's pull always beats the fish's, buttons step aside during a fight, and a big REELING! prompt shows that it is working.",
+      "pairs": [
+        {
+          "before": "stills/2026-11-25-reel-before.jpg",
+          "after": "stills/2026-11-25-reel-after.jpg",
+          "caption": "The fight: before, and after with the hold-anywhere REELING! prompt"
+        }
+      ],
+      "stills": [
+        {
+          "src": "stills/2026-11-25-reel-phone.jpg",
+          "caption": "The same fight on a phone, with a big REEL button"
+        }
+      ]
+    },
+    {
+      "id": "polish",
+      "tag": "Polish",
+      "date": "2026-11-25",
+      "time": "19:11",
+      "commit": "34d1104",
+      "title": "Fish shadows, the catch on the line, night lamps",
+      "summary": "Fish shadows now swim where the bite rules say fish should be, a landed fish hangs on the line before it goes in the bag, and lamps on the dock light up the water at night.",
+      "pairs": [
+        {
+          "before": "stills/2026-11-25-m3-night-deep-hole.jpg",
+          "after": "stills/2026-11-25-polish-night-after.jpg",
+          "caption": "Night at the dock, before and after the lamps"
+        }
+      ],
+      "stills": [
+        {
+          "src": "stills/2026-11-25-polish-catch-on-line.jpg",
+          "caption": "A bluegill held on the line"
+        },
+        {
+          "src": "stills/2026-11-25-polish-sell-sign.jpg",
+          "caption": "The Sell Fish sign"
+        },
+        {
+          "src": "stills/2026-11-25-polish-dock-lamp.jpg",
+          "caption": "A dock lamp by day"
+        }
+      ]
+    },
+    {
+      "id": "pond",
+      "tag": "Next",
+      "date": "2026-11-25",
+      "time": "19:25",
+      "commit": "2b41b0e",
+      "title": "Your own pond",
+      "summary": "A stone pond next to the shop where you keep fish from your bag, up to 6 at a time. They grow toward full size while you play and while you're away (up to 8 hours), two grown fish of a kind can have babies, and you sell them later at their bigger size or let them go. Each player sees their own fish swimming in it. In the playtest a bass worth 34 coins when caught sold for 50 after three hours of pond time, and the pond kept all its fish after a restart. Breeding was then slowed down after four babies arrived in three hours.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-25-pond-full.jpg",
+          "caption": "Five bass swimming in the pond"
+        },
+        {
+          "src": "stills/2026-11-25-pond-stand-close.jpg",
+          "caption": "The pond sign and its Check pond prompt"
+        },
+        {
+          "src": "stills/2026-11-25-pond-keep-fish.jpg",
+          "caption": "Choosing which fish from the bag to keep"
+        },
+        {
+          "src": "stills/2026-11-25-pond-stand.jpg",
+          "caption": "A kept bass swimming in the pond"
+        },
+        {
+          "src": "stills/2026-11-25-pond-babies.jpg",
+          "caption": "Baby bass in the pond panel after three hours of pond time"
+        }
+      ]
+    },
+    {
+      "id": "rods",
+      "tag": "Next",
+      "date": "2026-11-25",
+      "time": "19:55",
+      "commit": "dc2dd04",
+      "title": "Better rods",
+      "summary": "Bait and Tackle now sells rods. Everyone starts with the Willow Rod; the Fiberglass Rod (120 coins) casts 8 studs further and gives a bigger catch zone, and the Graphite Rod (350 coins) casts 16 studs further, has the biggest zone and takes half the pull out of heavy fish. The rod in your hands changes to match. In the playtest a full-power cast went 40 studs with the Willow Rod and 48 with the Fiberglass Rod.",
+      "pairs": [
+        {
+          "before": "stills/2026-11-25-rods-before.jpg",
+          "after": "stills/2026-11-25-rods-after.jpg",
+          "caption": "Bait and Tackle before and after the Rods section"
+        }
+      ],
+      "stills": [
+        {
+          "src": "stills/2026-11-25-rods-in-hand.jpg",
+          "caption": "The yellow Fiberglass Rod in hand"
+        }
+      ]
+    },
+    {
+      "id": "creek",
+      "tag": "Next",
+      "date": "2026-11-25",
+      "time": "20:20",
+      "commit": "cb022b1",
+      "title": "Cedar Creek",
+      "summary": "A stream west of the lake behind a tall fence. A 250 coin Creek Pass opens the gate. Its riffle, rocks and deep pool each hold a new fish: rainbow trout at dawn, smallmouth bass by day, walleye after dark. In the playtest the gate blocked the way until the pass was bought, then three trout, three walleye (up to 70 cm and 72 coins) and two smallmouth came out of the creek. The first look found the riffle's water missing; it was too thin for Roblox terrain and now fills properly.",
+      "pairs": [
+        {
+          "before": "stills/2026-11-25-creek-before.jpg",
+          "after": "stills/2026-11-25-creek-after.jpg",
+          "caption": "The west side before and after Cedar Creek"
+        }
+      ],
+      "stills": [
+        {
+          "src": "stills/2026-11-25-creek-riffle.jpg",
+          "caption": "The riffle and the rocks, looking upstream"
+        }
+      ]
+    },
+    {
+      "id": "art-preview",
+      "tag": "Art preview",
+      "date": "2026-11-26",
+      "time": "01:50",
+      "commit": "368c415",
+      "title": "Our own models, first set (Blender previews)",
+      "summary": "An art preview, not yet in the game. Thirty-two low-poly models built by script in Blender overnight: the dock, both market stands, the pond's stone rim, logs, a buoy, reeds, lily pads, pines, a leafy tree, rocks, all eleven fish in their real colours and at true relative size, the three rods with reels, the bobber, and a Jon boat for the boat to come. Each is one mesh with baked colours, sized in studs to drop onto the gray box it replaces. These are renders from Blender; they still need to be imported and checked in Studio.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-26-art-contact-sheet.jpg",
+          "caption": "All 32 models (Blender renders, not in the game yet)"
+        },
+        {
+          "src": "stills/2026-11-26-art-bluegill.jpg",
+          "caption": "Bluegill, with its dark ear flap and orange belly"
+        },
+        {
+          "src": "stills/2026-11-26-art-dock.jpg",
+          "caption": "The new dock, the same size as the gray-box one"
+        }
+      ]
+    },
+    {
+      "id": "fish-feel",
+      "tag": "Fix",
+      "date": "2026-11-26",
+      "time": "10:30",
+      "commit": "c0f7a77",
+      "title": "Every fish bites and fights its own way",
+      "summary": "Panfish now nibble the bobber before they take it, perch and trout tap, bass and pike slam it under, and catfish pull it slowly down. On the bar each kind moves differently: bass run back and forth, pike make huge jumps and dive, catfish stay low and steady, trout sit low and then leap. A fish left alone slips the hook, and the bar flashes KEEP REELING! once you stop. Prices were rebalanced so a good spot pays and the Creek Pass now costs 500. The playtest also found that the best rod cast too far to fish the narrow creek; soft casts are short again with any rod.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-26-fish-feel-keep-reeling.jpg",
+          "caption": "Stop reeling and the bar warns you before the fish slips away"
+        },
+        {
+          "src": "stills/2026-11-26-fish-feel-shop.jpg",
+          "caption": "Bait and Tackle with the new prices"
+        }
+      ]
+    },
+    {
+      "id": "sound",
+      "tag": "Sound",
+      "date": "2026-11-26",
+      "time": "11:30",
+      "commit": "f132de3",
+      "title": "The lake comes alive with sound",
+      "summary": "Twenty-seven sounds made with ElevenLabs are now in the game. Birds at dawn, a loon at dusk, frogs at night, and running water that gets louder as you walk to the creek. While you wait, the world goes quiet and the bobber ticks; every kind of bite has its own sound, from a light tap to a deep pull for a catfish. The reel clicks faster when a fish is about to get away, the drag zips when it runs, and a catch ends on a splash sized by the fish and a little tune. A critic model listened to playtest clips and scored it 6 out of 10; after fixing the heavy cast splash, the quiet bites and a late chime it scored 7.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-26-sound-wait.jpg",
+          "caption": "The quiet wait at dawn, where the bobber ticking does the work"
+        }
+      ]
+    },
+    {
+      "id": "models",
+      "tag": "Art",
+      "date": "2026-11-26",
+      "time": "13:30",
+      "commit": "c4041a7",
+      "title": "Our first models in the game",
+      "summary": "The dock, the Bait and Tackle stand and the bluegill, built by script in Blender, are now in the game. The dock has planks, posts, bollards and two lanterns at the far end; the shop has a striped awning, bait tubs and a rod rack. A landed bluegill now hangs on the line as the real fish. The first import came in nearly black because Blender and Roblox store colours differently, so a small converter now fixes every model before upload. Everything still walks, casts and shops exactly as before, because the old gray blocks stay underneath as invisible floors and walls.",
+      "pairs": [
+        {
+          "before": "stills/2026-11-26-models-dock-before.jpg",
+          "after": "stills/2026-11-26-models-dock-after.jpg",
+          "caption": "The dock, gray box and model"
+        },
+        {
+          "before": "stills/2026-11-26-models-shop-before.jpg",
+          "after": "stills/2026-11-26-models-shop-after.jpg",
+          "caption": "Bait and Tackle, gray box and model"
+        }
+      ],
+      "stills": [
+        {
+          "src": "stills/2026-11-26-models-dock-end.jpg",
+          "caption": "Standing at the end of the new dock"
+        },
+        {
+          "src": "stills/2026-11-26-models-bluegill-on-line.jpg",
+          "caption": "A bluegill as it hangs on the line"
+        }
+      ]
+    },
+    {
+      "id": "all-models",
+      "tag": "Art",
+      "date": "2026-11-26",
+      "time": "16:30",
+      "commit": "f883e07",
+      "title": "The whole lake in our own models",
+      "summary": "The rest of the art is in: a Fish Buyer stand, a stone rim for the home pond, mossy logs half sunk in the water, a red and white buoy over the deep hole, reed clumps and lily pads in the weed bed, leafy trees round the lake, pines and rocks along Cedar Creek, a new bobber, and every fish hangs on the line as itself. While checking, the whole lake turned out to have been knocked 55 studs sideways and 10 up in Studio, away from its own water; it is back in place. Walking, casting, selling and the pond all work as before.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-26-all-models-overview.jpg",
+          "caption": "The lake with every model in"
+        },
+        {
+          "src": "stills/2026-11-26-all-models-bobber-bite.jpg",
+          "caption": "Night at the deep hole: a catfish pulls the new bobber under, the new buoy behind"
+        },
+        {
+          "src": "stills/2026-11-26-all-models-creek.jpg",
+          "caption": "Pines and rocks along Cedar Creek"
+        },
+        {
+          "src": "stills/2026-11-26-all-models-logs.jpg",
+          "caption": "Mossy logs in the east shallows"
+        }
+      ]
+    },
+    {
+      "id": "aim",
+      "tag": "Play",
+      "date": "2026-11-26",
+      "time": "20:59",
+      "commit": "ece97a0",
+      "title": "Aim your cast, and a reason to aim",
+      "summary": "Hold to cast and a ring rides out across the water to show where the bobber will land, with the spot's name on it; let go when it's where you want it. The water now gives you reasons to aim: land on a fallen log or in the thick of the weeds and you snag (four wiggles to free it), a fish dimpling the surface somewhere means a quick bite if you land close, and cover-loving fish like bass and crappie are likelier near logs, the dock and the weed edge.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-cast-ring.jpg",
+          "caption": "The cast ring, out over the water with the spot's name"
+        },
+        {
+          "src": "stills/2026-11-27-ring-at-the-logs.jpg",
+          "caption": "Amber over a log: a snag warning before you let go"
+        }
+      ]
+    },
+    {
+      "id": "wait-fight",
+      "tag": "Play",
+      "date": "2026-11-26",
+      "time": "22:34",
+      "commit": "52d538f",
+      "title": "The wait, and the fight",
+      "summary": "When the bobber lands the camera eases onto it, and a fish's shadow swims in, circles and noses the bait before it bites; a quick tap twitches the bait to tempt it. In the fight each kind of fish warns you before its big move: a runner screams the drag, a jumper splashes, a diver bends the rod tip down. The line turns white, orange, then red as it strains.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-bobber-camera.jpg",
+          "caption": "The bobber camera while you wait"
+        },
+        {
+          "src": "stills/2026-11-27-fight.jpg",
+          "caption": "A fight, with the line showing the strain"
+        }
+      ]
+    },
+    {
+      "id": "bait",
+      "tag": "Play",
+      "date": "2026-11-26",
+      "time": "23:29",
+      "commit": "b499f9e",
+      "title": "Bait the hook yourself",
+      "summary": "Every bait has its own short rigging minigame, done the real way: thread a worm with three taps, hook a cricket behind the collar, a minnow through both lips, pack stinkbait. Spinners get a clinch knot and plastic worms a Texas rig. Okay, Good or Perfect changes how fast fish bite and how the fight starts, and the hook size has to suit the fish's mouth. Skip it any time and you get Okay, which is the old game.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-bait-bench.jpg",
+          "caption": "The bait bench: hook, bait, three hook sizes and a timing track"
+        },
+        {
+          "src": "stills/2026-11-27-lure-bench.jpg",
+          "caption": "Tying a spinner on"
+        }
+      ]
+    },
+    {
+      "id": "living-lake",
+      "tag": "World",
+      "date": "2026-11-27",
+      "time": "00:12",
+      "commit": "7ababd4",
+      "title": "Weather, feeding frenzies and daily goals",
+      "summary": "Each day has weather that changes the light and the fishing: fog in the morning, storms with rain, cold fronts. Now and then a school of fish boils at a spot with gulls overhead and bites come almost at once. Three goals a day pay a few coins; missing a day costs nothing.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-fog-dawn.jpg",
+          "caption": "A foggy dawn"
+        },
+        {
+          "src": "stills/2026-11-27-storm.jpg",
+          "caption": "A storm rolls in"
+        },
+        {
+          "src": "stills/2026-11-27-frenzy-dock.jpg",
+          "caption": "A frenzy at the dock"
+        }
+      ]
+    },
+    {
+      "id": "lures-drag",
+      "tag": "Play",
+      "date": "2026-11-27",
+      "time": "02:05",
+      "commit": "b7a82ac",
+      "title": "Work the lure, mind the line",
+      "summary": "Lures are fished like lures now: no bobber. Reel a spinner back at a steady speed (a little meter shows too slow, just right, too fast) or hop a plastic worm and let it fall; fish strike while it moves. Every rod has a line rating (6, 10 and 15 pounds) and you choose the drag: Tight lands fish faster but a big one running will snap the line unless you ease off.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-reel-meter.jpg",
+          "caption": "Keeping a spinner in the green"
+        }
+      ]
+    },
+    {
+      "id": "postcard",
+      "tag": "Art",
+      "date": "2026-11-27",
+      "time": "03:29",
+      "commit": "9f8fc8b",
+      "title": "A lake that looks real",
+      "summary": "One long night of light and land. The sky and light now change with the clock: a cool misty dawn, a clear day, a warm golden hour, a violet blue hour and a moonlit night. The water is real water, the land rolls out to the horizon with clumps of trees, the shore curves with points you can walk out on, Cedar Creek meanders between soft banks, and the home pond is round and ringed with rocks. Our look critic scored the twelve fixed views 3 out of 10 at the start of the night and 7 out of 10 at the end.",
+      "pairs": [
+        {
+          "before": "stills/2026-11-26-all-models-overview.jpg",
+          "after": "stills/2026-11-27-round-pond-overview.jpg",
+          "caption": "The same lake, before and after the night"
+        }
+      ],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-hills-dock-golden.jpg",
+          "caption": "Golden hour from the dock"
+        },
+        {
+          "src": "stills/2026-11-27-dusk-blue-hour.jpg",
+          "caption": "Blue hour"
+        },
+        {
+          "src": "stills/2026-11-27-riffle-meadow.jpg",
+          "caption": "The riffle at dawn"
+        },
+        {
+          "src": "stills/2026-11-27-buoy-night.jpg",
+          "caption": "Night, with the deep-hole buoy lit"
+        }
+      ]
+    },
+    {
+      "id": "catch-moment",
+      "tag": "Fix",
+      "date": "2026-11-27",
+      "time": "03:55",
+      "commit": "9502095",
+      "title": "A real rod, and a better catch moment",
+      "summary": "The rods in your hands are the real models now, with a cork grip, a reel and guides. When you land a fish the card pops in with the fish itself turning in a little window, and Rare or better fish get a badge and a sweep of their tier's colour.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-rod-in-hand.jpg",
+          "caption": "The real rod in hand"
+        },
+        {
+          "src": "stills/2026-11-27-rare-card.jpg",
+          "caption": "A Rare largemouth bass on the catch card"
+        }
+      ]
+    },
+    {
+      "id": "come-back",
+      "tag": "World",
+      "date": "2026-11-27",
+      "time": "04:07",
+      "commit": "1c09e83",
+      "title": "Reasons to come back tomorrow",
+      "summary": "A chalkboard by the bait shop shows today's forecast, a fish of the day and a rumour about a Legendary. The shopkeeper hands out a small tackle box once a day. When you come back, a card tells you which of your pond fish grew while you were away. And behind your pond, a trophy wall mounts your six best catches, monsters first.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-chalkboard.jpg",
+          "caption": "Today on the Lake"
+        },
+        {
+          "src": "stills/2026-11-27-away-card.jpg",
+          "caption": "While You Were Away"
+        },
+        {
+          "src": "stills/2026-11-27-trophy-wall.jpg",
+          "caption": "The trophy wall behind the home pond"
+        }
+      ]
+    },
+    {
+      "id": "braided-line",
+      "tag": "Play",
+      "date": "2026-11-27",
+      "time": "04:25",
+      "commit": "a38e4b7",
+      "title": "Braided line, and a dressed creek bank",
+      "summary": "Bait and Tackle now sells braided line: 120 coins once, and every rod's line gets 4 pounds stronger (the Willow goes from 6 to 10, the Graphite from 15 to 19). Since a big fish running on a tight drag can snap the line, it's a cheaper step than saving for the next rod. In the playtest a bass hooked on the Graphite rod fought on the 19 pound braided line. The creek pool's long bare sand bank also got a few reeds, rocks and bushes.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-braided-line-shop.jpg",
+          "caption": "Bait and Tackle with braided line owned: the rods show their stronger line"
+        },
+        {
+          "src": "stills/2026-11-27-pool-bank.jpg",
+          "caption": "The creek pool's bank at golden hour"
+        }
+      ]
+    },
+    {
+      "id": "big-lake",
+      "tag": "L7",
+      "date": "2026-11-27",
+      "time": "10:29",
+      "commit": "41d835c",
+      "title": "The Big Lake, through a channel in the north shore",
+      "summary": "North of the home lake there is now a second, much bigger lake (about 400 by 300 studs) that you can only reach by boat. A 30 stud channel cuts through the north shore, with a wooden footbridge so the shore path still goes all the way round. The Big Lake follows the same shore rules as the home lake: rounded corners, three wooded headlands, a sandy point, and a round island whose little east tip is the weedy island point where muskie hide. Its water is terrain, written one voxel at a time from those shore numbers, so the sand shallows, the mud bed 7 studs down and the darker bed 14 down past the line of orange buoys all match what the fishing rules think is there. Hills and stands of trees ring its banks, and invisible walls keep swimmers from climbing out into the land beyond.",
+      "pairs": [
+        {
+          "before": "stills/2026-11-27-big-lake-before.jpg",
+          "after": "stills/2026-11-27-big-lake-after.jpg",
+          "caption": "Looking north from over the dock: open grass before, the channel, the footbridge and the Big Lake after"
+        }
+      ],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-big-lake-shore.jpg",
+          "caption": "A rounded corner of the Big Lake: beach, reeds and the buoy line"
+        }
+      ]
+    },
+    {
+      "id": "dinghy",
+      "tag": "L7",
+      "date": "2026-11-27",
+      "time": "10:29",
+      "commit": "41d835c",
+      "title": "An inflatable dinghy you can buy and drive",
+      "summary": "Bait and Tackle has a new Boats heading. The Inflatable Dinghy costs 1,200 coins, once, and then waits at slip 1 beside the dock every time you play. Walk up and press E to take the helm; W and S drive and A and D steer. In the playtest it reached 12 studs a second and eased to a stop when let go, stopped against the fallen logs instead of driving through them, went through the channel onto the Big Lake, and was turned back at the buoys with a message that it is too small for the blue water. Pressing E by the slip ties it up and stands you on the dock. Jump out on the water and the empty boat sails home by itself a minute later; reset at the helm and it goes home straight away. Two bugs found and fixed on the way: sitting down dragged the boat onto the dock, and tying up left the player in the water. The two-seat Deep-V shows as coming soon.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-dinghy-shop.jpg",
+          "caption": "Bought: 1,300 coins to 100, and the dinghy is waiting at the slip"
+        },
+        {
+          "src": "stills/2026-11-27-dinghy-slip.jpg",
+          "caption": "The dinghy at slip 1, beside the dock"
+        },
+        {
+          "src": "stills/2026-11-27-dinghy-big-lake.jpg",
+          "caption": "Out on the Big Lake, with the buoy line ahead"
+        },
+        {
+          "src": "stills/2026-11-27-dinghy-buoy-line.jpg",
+          "caption": "Turned back at the buoys at night"
+        }
+      ]
+    },
+    {
+      "id": "boat-fishing",
+      "tag": "L7",
+      "date": "2026-11-27",
+      "time": "10:29",
+      "commit": "41d835c",
+      "title": "Fishing from the boat seat",
+      "summary": "Everything about casting works from the dinghy: the landing ring, the bait bench, the lures, the wait and the reel. You can only cast when the boat is nearly stopped, so no trolling at full speed. The first catch on the Big Lake was a Lake Whitefish in the open basin on worms, then a White Bass at dusk on a spinner, the fish the basin is known for. The playtest caught two more problems: a long spinner cast from the Graphite rod lands 65 studs out, past the 60 stud limit where a boat's line came free, so the limit is now the longest possible cast plus 15; and the camera followed the boat's seat instead of the player, so the bobber camera never started. Now it frames the bobber from the boat just as it does from the dock.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-boat-cast-ring.jpg",
+          "caption": "The cast ring from the seat at dusk: The open basin"
+        },
+        {
+          "src": "stills/2026-11-27-boat-bobber-cam.jpg",
+          "caption": "The bobber camera, from the boat"
+        },
+        {
+          "src": "stills/2026-11-27-boat-slow-down.jpg",
+          "caption": "Casting at full speed: Slow the boat down to cast (and the wake behind)"
+        }
+      ]
+    },
+    {
+      "id": "lighthouse",
+      "tag": "Polish",
+      "date": "2026-11-27",
+      "time": "10:34",
+      "commit": "b9b7a0d",
+      "title": "A tiny lighthouse on the island",
+      "summary": "An easter egg from a real lake the family fishes, where a miniature lighthouse about 6 feet tall stands on a little island. Now the Big Lake's island has one too, on its sandy point: red and white bands, a railed gallery and a lantern that glows warm. It is a little taller than a player, so it reads as a toy-sized lighthouse rather than a real one, and the reeds keep back from it so you can spot it from a boat.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-lighthouse.jpg",
+          "caption": "The miniature lighthouse on the island's point, seen from the water"
+        }
+      ]
+    },
+    {
+      "id": "n0-proof-corner",
+      "tag": "N0",
+      "date": "2026-11-27",
+      "time": "21:40",
+      "commit": "",
+      "title": "The proof corner: real wood, painted signs, light on every screen",
+      "summary": "The start of leg 3, the look and the boats. First, eight facts about the engine were tested before anything was built on them, and all eight held: our own materials work on the ground, on the models and as baked sets, and the light can be set for each player on their own screen. Then one corner of the lake was rebuilt at full quality as the proof: a new dock with silver-brown planks, nail heads, rope coils and two lanterns that burn at night; both stands rebuilt in real wood and canvas; painted boards hung under the eaves instead of labels floating in the air; our own meadow grass on every lawn and hill. The look critic moved from 6.5 to 7.0 on the three corner shots and Fable's review passed it, with three fixes (the light, the waterline and the old lamp globes) as the first job of the next step. A surprise along the way: Studio had been drawing the game at a low quality level whenever its window was behind other windows, so every look check now forces full quality.",
+      "pairs": [
+        {
+          "before": "stills/2026-11-27-n0-stands-before.jpg",
+          "after": "stills/2026-11-27-n0-stands-after.jpg",
+          "caption": "The stands from the dock at noon"
+        },
+        {
+          "before": "stills/2026-11-27-n0-dock-golden-before.jpg",
+          "after": "stills/2026-11-27-n0-dock-golden-after.jpg",
+          "caption": "Down the dock at golden hour"
+        }
+      ],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-n0-bait-stand.jpg",
+          "caption": "The bait stand up close: weathered boards, canvas awning and its painted sign"
+        }
+      ]
+    },
+    {
+      "id": "n2-ui-style",
+      "tag": "N2",
+      "date": "2026-11-27",
+      "time": "17:08",
+      "commit": "b7dec8d",
+      "title": "A field-guide look for the screens",
+      "summary": "The game's screens are getting their own look, like a fisherman's field guide and tackle box: paper catch cards with a weight tag on a string, a ruler under the fish, a rarity ribbon, brass buttons and leather panels. 21 pieces of art were drawn and uploaded, and the code that dresses every screen in them is written. It is built behind a switch that is still off, so the game looks the same until the look pass is finished and the switch is flipped. These are the mockups it is aiming for.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-n2-mock-catch.jpg",
+          "caption": "Mockup: the new catch card"
+        },
+        {
+          "src": "stills/2026-11-27-n2-mock-hud.jpg",
+          "caption": "Mockup: the new screen bar"
+        }
+      ]
+    },
+    {
+      "id": "plant-kit",
+      "tag": "Art",
+      "date": "2026-11-27",
+      "time": "17:44",
+      "commit": "f797777",
+      "title": "A plant kit for Cedar Creek and the first island",
+      "summary": "Twelve new plant models for two places that come later in this leg. For Cedar Creek: a western red cedar whose crown follows the shape measured from a real cedar model, a mossy log, creek roots, two ferns and a moss mat. For the first island in the Big Lake: a lone wind-bent pine as its landmark, two junipers, heather and lichen. Each is split into bark and leaf parts so they take the game's own materials, about 8,000 triangles in all. They are not in the game yet.",
+      "pairs": [],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-plant-kit-creek.jpg",
+          "caption": "The Cedar Creek plants, with a player for scale"
+        },
+        {
+          "src": "stills/2026-11-27-plant-kit-island.jpg",
+          "caption": "The island plants: the lone pine, junipers, heather and lichen"
+        }
+      ]
+    },
+    {
+      "id": "sounds-2",
+      "tag": "Sound",
+      "date": "2026-11-27",
+      "time": "18:42",
+      "commit": "8815662",
+      "title": "Real sounds for the boat, frenzies, goals and storms",
+      "summary": "With the account's age verification done, Roblox's monthly cap on sound uploads lifted, and the sounds that had been waiting went in: two motor loops for the dinghy (the pitch follows the boat's speed), the boil of a feeding frenzy and the music that bursts in when it starts, a chime for a finished goal, storm rain, and new sheets of water and button sounds. They were made with ElevenLabs and the best of each was picked by the Gemini Hydrogen critic. All of them load in a playtest with no errors; nobody has listened to them in the game yet.",
+      "pairs": [],
+      "stills": []
+    },
+    {
+      "id": "n1-home-lake",
+      "tag": "N1",
+      "date": "2026-11-27",
+      "time": "19:58",
+      "commit": "",
+      "inProgress": true,
+      "title": "The home lake look pass (in progress)",
+      "summary": "Leg 3 is taking the whole home lake to the quality of the proof corner, in five rounds so far. The light now uses Roblox's Realistic mode with its own grade for dawn, noon, golden hour and night, and the wind moves the grass and trees. The lawns are real sloped ground with our own grass, the paths wander narrow through them, and the shore has a dressed sand ring. New front and back rows of trees, a far treeline, a bank kit of reeds, roots and rocks, logs with torn, water-soaked ends, a painted-wood buoy, and lanterns that light the dock at night without washing out the water. The look critic's median went from 6.5 at the start of the day to 7.0 on these shots (one of the three runs gave 7.4), and its separate score for how much the lake looks like its own place, not stock Roblox, went from 4.5 to 5.5. Still to do: a last review by the Fable advisor, and the flat-looking tree tops and stand awnings the critic pointed at.",
+      "pairs": [
+        {
+          "before": "stills/2026-11-27-n1-02-dock-golden-before.jpg",
+          "after": "stills/2026-11-27-n1-02-dock-golden-after.jpg",
+          "caption": "Down the path to the dock at golden hour"
+        },
+        {
+          "before": "stills/2026-11-27-n1-08-stands-noon-before.jpg",
+          "after": "stills/2026-11-27-n1-08-stands-noon-after.jpg",
+          "caption": "The stands from the dock at noon"
+        },
+        {
+          "before": "stills/2026-11-27-n1-07-overview-golden-before.jpg",
+          "after": "stills/2026-11-27-n1-07-overview-golden-after.jpg",
+          "caption": "The whole home lake from above at golden hour"
+        },
+        {
+          "before": "stills/2026-11-27-n1-04-dockend-night-before.jpg",
+          "after": "stills/2026-11-27-n1-04-dockend-night-after.jpg",
+          "caption": "Off the dock end at night"
+        }
+      ],
+      "stills": [
+        {
+          "src": "stills/2026-11-27-n1-riffle-dawn.jpg",
+          "caption": "The creek riffle at dawn"
+        },
+        {
+          "src": "stills/2026-11-27-n1-pool-night.jpg",
+          "caption": "The creek pool at night"
+        }
+      ]
     }
-   ]
-  },
-  {
-   "id": "pond",
-   "tag": "Next",
-   "date": "2026-11-25",
-   "time": "19:25",
-   "commit": "2b41b0e",
-   "title": "Your own pond",
-   "summary": "A stone pond next to the shop where you keep fish from your bag, up to 6 at a time. They grow toward full size while you play and while you're away (up to 8 hours), two grown fish of a kind can have babies, and you sell them later at their bigger size or let them go. Each player sees their own fish swimming in it. In the playtest a bass worth 34 coins when caught sold for 50 after three hours of pond time, and the pond kept all its fish after a restart. Breeding was then slowed down after four babies arrived in three hours.",
-   "pairs": [],
-   "stills": [
-    {
-     "src": "stills/2026-11-25-pond-full.jpg",
-     "caption": "Five bass swimming in the pond"
-    },
-    {
-     "src": "stills/2026-11-25-pond-stand-close.jpg",
-     "caption": "The pond sign and its Check pond prompt"
-    },
-    {
-     "src": "stills/2026-11-25-pond-keep-fish.jpg",
-     "caption": "Choosing which fish from the bag to keep"
-    },
-    {
-     "src": "stills/2026-11-25-pond-stand.jpg",
-     "caption": "A kept bass swimming in the pond"
-    },
-    {
-     "src": "stills/2026-11-25-pond-babies.jpg",
-     "caption": "Baby bass in the pond panel after three hours of pond time"
-    }
-   ]
-  },
-  {
-   "id": "rods",
-   "tag": "Next",
-   "date": "2026-11-25",
-   "time": "19:55",
-   "commit": "dc2dd04",
-   "title": "Better rods",
-   "summary": "Bait and Tackle now sells rods. Everyone starts with the Willow Rod; the Fiberglass Rod (120 coins) casts 8 studs further and gives a bigger catch zone, and the Graphite Rod (350 coins) casts 16 studs further, has the biggest zone and takes half the pull out of heavy fish. The rod in your hands changes to match. In the playtest a full-power cast went 40 studs with the Willow Rod and 48 with the Fiberglass Rod.",
-   "pairs": [
-    {
-     "before": "stills/2026-11-25-rods-before.jpg",
-     "after": "stills/2026-11-25-rods-after.jpg",
-     "caption": "Bait and Tackle before and after the Rods section"
-    }
-   ],
-   "stills": [
-    {
-     "src": "stills/2026-11-25-rods-in-hand.jpg",
-     "caption": "The yellow Fiberglass Rod in hand"
-    }
-   ]
-  },
-  {
-   "id": "creek",
-   "tag": "Next",
-   "date": "2026-11-25",
-   "time": "20:20",
-   "commit": "cb022b1",
-   "title": "Cedar Creek",
-   "summary": "A stream west of the lake behind a tall fence. A 250 coin Creek Pass opens the gate. Its riffle, rocks and deep pool each hold a new fish: rainbow trout at dawn, smallmouth bass by day, walleye after dark. In the playtest the gate blocked the way until the pass was bought, then three trout, three walleye (up to 70 cm and 72 coins) and two smallmouth came out of the creek. The first look found the riffle's water missing; it was too thin for Roblox terrain and now fills properly.",
-   "pairs": [
-    {
-     "before": "stills/2026-11-25-creek-before.jpg",
-     "after": "stills/2026-11-25-creek-after.jpg",
-     "caption": "The west side before and after Cedar Creek"
-    }
-   ],
-   "stills": [
-    {
-     "src": "stills/2026-11-25-creek-riffle.jpg",
-     "caption": "The riffle and the rocks, looking upstream"
-    }
-   ]
-  },
-  {
-   "id": "art-preview",
-   "tag": "Art preview",
-   "date": "2026-11-26",
-   "time": "01:50",
-   "commit": "368c415",
-   "title": "Our own models, first set (Blender previews)",
-   "summary": "An art preview, not yet in the game. Thirty-two low-poly models built by script in Blender overnight: the dock, both market stands, the pond's stone rim, logs, a buoy, reeds, lily pads, pines, a leafy tree, rocks, all eleven fish in their real colours and at true relative size, the three rods with reels, the bobber, and a Jon boat for the boat to come. Each is one mesh with baked colours, sized in studs to drop onto the gray box it replaces. These are renders from Blender; they still need to be imported and checked in Studio.",
-   "pairs": [],
-   "stills": [
-    {
-     "src": "stills/2026-11-26-art-contact-sheet.jpg",
-     "caption": "All 32 models (Blender renders, not in the game yet)"
-    },
-    {
-     "src": "stills/2026-11-26-art-bluegill.jpg",
-     "caption": "Bluegill, with its dark ear flap and orange belly"
-    },
-    {
-     "src": "stills/2026-11-26-art-dock.jpg",
-     "caption": "The new dock, the same size as the gray-box one"
-    }
-   ]
-  },
-  {
-   "id": "fish-feel",
-   "tag": "Fix",
-   "date": "2026-11-26",
-   "time": "10:30",
-   "commit": "c0f7a77",
-   "title": "Every fish bites and fights its own way",
-   "summary": "Panfish now nibble the bobber before they take it, perch and trout tap, bass and pike slam it under, and catfish pull it slowly down. On the bar each kind moves differently: bass run back and forth, pike make huge jumps and dive, catfish stay low and steady, trout sit low and then leap. A fish left alone slips the hook, and the bar flashes KEEP REELING! once you stop. Prices were rebalanced so a good spot pays and the Creek Pass now costs 500. The playtest also found that the best rod cast too far to fish the narrow creek; soft casts are short again with any rod.",
-   "pairs": [],
-   "stills": [
-    {
-     "src": "stills/2026-11-26-fish-feel-keep-reeling.jpg",
-     "caption": "Stop reeling and the bar warns you before the fish slips away"
-    },
-    {
-     "src": "stills/2026-11-26-fish-feel-shop.jpg",
-     "caption": "Bait and Tackle with the new prices"
-    }
-   ]
-  },
-  {
-   "id": "sound",
-   "tag": "Sound",
-   "date": "2026-11-26",
-   "time": "11:30",
-   "commit": "f132de3",
-   "title": "The lake comes alive with sound",
-   "summary": "Twenty-seven sounds made with ElevenLabs are now in the game. Birds at dawn, a loon at dusk, frogs at night, and running water that gets louder as you walk to the creek. While you wait, the world goes quiet and the bobber ticks; every kind of bite has its own sound, from a light tap to a deep pull for a catfish. The reel clicks faster when a fish is about to get away, the drag zips when it runs, and a catch ends on a splash sized by the fish and a little tune. A critic model listened to playtest clips and scored it 6 out of 10; after fixing the heavy cast splash, the quiet bites and a late chime it scored 7.",
-   "pairs": [],
-   "stills": [
-    {
-     "src": "stills/2026-11-26-sound-wait.jpg",
-     "caption": "The quiet wait at dawn, where the bobber ticking does the work"
-    }
-   ]
-  },
-  {
-   "id": "models",
-   "tag": "Art",
-   "date": "2026-11-26",
-   "time": "13:30",
-   "commit": "c4041a7",
-   "title": "Our first models in the game",
-   "summary": "The dock, the Bait and Tackle stand and the bluegill, built by script in Blender, are now in the game. The dock has planks, posts, bollards and two lanterns at the far end; the shop has a striped awning, bait tubs and a rod rack. A landed bluegill now hangs on the line as the real fish. The first import came in nearly black because Blender and Roblox store colours differently, so a small converter now fixes every model before upload. Everything still walks, casts and shops exactly as before, because the old gray blocks stay underneath as invisible floors and walls.",
-   "pairs": [
-    {
-     "before": "stills/2026-11-26-models-dock-before.jpg",
-     "after": "stills/2026-11-26-models-dock-after.jpg",
-     "caption": "The dock, gray box and model"
-    },
-    {
-     "before": "stills/2026-11-26-models-shop-before.jpg",
-     "after": "stills/2026-11-26-models-shop-after.jpg",
-     "caption": "Bait and Tackle, gray box and model"
-    }
-   ],
-   "stills": [
-    {
-     "src": "stills/2026-11-26-models-dock-end.jpg",
-     "caption": "Standing at the end of the new dock"
-    },
-    {
-     "src": "stills/2026-11-26-models-bluegill-on-line.jpg",
-     "caption": "A bluegill as it hangs on the line"
-    }
-   ]
-  },
-  {
-   "id": "all-models",
-   "tag": "Art",
-   "date": "2026-11-26",
-   "time": "16:30",
-   "commit": "f883e07",
-   "title": "The whole lake in our own models",
-   "summary": "The rest of the art is in: a Fish Buyer stand, a stone rim for the home pond, mossy logs half sunk in the water, a red and white buoy over the deep hole, reed clumps and lily pads in the weed bed, leafy trees round the lake, pines and rocks along Cedar Creek, a new bobber, and every fish hangs on the line as itself. While checking, the whole lake turned out to have been knocked 55 studs sideways and 10 up in Studio, away from its own water; it is back in place. Walking, casting, selling and the pond all work as before.",
-   "pairs": [],
-   "stills": [
-    {
-     "src": "stills/2026-11-26-all-models-overview.jpg",
-     "caption": "The lake with every model in"
-    },
-    {
-     "src": "stills/2026-11-26-all-models-bobber-bite.jpg",
-     "caption": "Night at the deep hole: a catfish pulls the new bobber under, the new buoy behind"
-    },
-    {
-     "src": "stills/2026-11-26-all-models-creek.jpg",
-     "caption": "Pines and rocks along Cedar Creek"
-    },
-    {
-     "src": "stills/2026-11-26-all-models-logs.jpg",
-     "caption": "Mossy logs in the east shallows"
-    }
-   ]
-  },
-  {
-   "id": "aim",
-   "tag": "Play",
-   "date": "2026-11-26",
-   "time": "20:59",
-   "commit": "ece97a0",
-   "title": "Aim your cast, and a reason to aim",
-   "summary": "Hold to cast and a ring rides out across the water to show where the bobber will land, with the spot's name on it; let go when it's where you want it. The water now gives you reasons to aim: land on a fallen log or in the thick of the weeds and you snag (four wiggles to free it), a fish dimpling the surface somewhere means a quick bite if you land close, and cover-loving fish like bass and crappie are likelier near logs, the dock and the weed edge.",
-   "pairs": [],
-   "stills": [
-    {
-     "src": "stills/2026-11-27-cast-ring.jpg",
-     "caption": "The cast ring, out over the water with the spot's name"
-    },
-    {
-     "src": "stills/2026-11-27-ring-at-the-logs.jpg",
-     "caption": "Amber over a log: a snag warning before you let go"
-    }
-   ]
-  },
-  {
-   "id": "wait-fight",
-   "tag": "Play",
-   "date": "2026-11-26",
-   "time": "22:34",
-   "commit": "52d538f",
-   "title": "The wait, and the fight",
-   "summary": "When the bobber lands the camera eases onto it, and a fish's shadow swims in, circles and noses the bait before it bites; a quick tap twitches the bait to tempt it. In the fight each kind of fish warns you before its big move: a runner screams the drag, a jumper splashes, a diver bends the rod tip down. The line turns white, orange, then red as it strains.",
-   "pairs": [],
-   "stills": [
-    {
-     "src": "stills/2026-11-27-bobber-camera.jpg",
-     "caption": "The bobber camera while you wait"
-    },
-    {
-     "src": "stills/2026-11-27-fight.jpg",
-     "caption": "A fight, with the line showing the strain"
-    }
-   ]
-  },
-  {
-   "id": "bait",
-   "tag": "Play",
-   "date": "2026-11-26",
-   "time": "23:29",
-   "commit": "b499f9e",
-   "title": "Bait the hook yourself",
-   "summary": "Every bait has its own short rigging minigame, done the real way: thread a worm with three taps, hook a cricket behind the collar, a minnow through both lips, pack stinkbait. Spinners get a clinch knot and plastic worms a Texas rig. Okay, Good or Perfect changes how fast fish bite and how the fight starts, and the hook size has to suit the fish's mouth. Skip it any time and you get Okay, which is the old game.",
-   "pairs": [],
-   "stills": [
-    {
-     "src": "stills/2026-11-27-bait-bench.jpg",
-     "caption": "The bait bench: hook, bait, three hook sizes and a timing track"
-    },
-    {
-     "src": "stills/2026-11-27-lure-bench.jpg",
-     "caption": "Tying a spinner on"
-    }
-   ]
-  },
-  {
-   "id": "living-lake",
-   "tag": "World",
-   "date": "2026-11-27",
-   "time": "00:12",
-   "commit": "7ababd4",
-   "title": "Weather, feeding frenzies and daily goals",
-   "summary": "Each day has weather that changes the light and the fishing: fog in the morning, storms with rain, cold fronts. Now and then a school of fish boils at a spot with gulls overhead and bites come almost at once. Three goals a day pay a few coins; missing a day costs nothing.",
-   "pairs": [],
-   "stills": [
-    {
-     "src": "stills/2026-11-27-fog-dawn.jpg",
-     "caption": "A foggy dawn"
-    },
-    {
-     "src": "stills/2026-11-27-storm.jpg",
-     "caption": "A storm rolls in"
-    },
-    {
-     "src": "stills/2026-11-27-frenzy-dock.jpg",
-     "caption": "A frenzy at the dock"
-    }
-   ]
-  },
-  {
-   "id": "lures-drag",
-   "tag": "Play",
-   "date": "2026-11-27",
-   "time": "02:05",
-   "commit": "b7a82ac",
-   "title": "Work the lure, mind the line",
-   "summary": "Lures are fished like lures now: no bobber. Reel a spinner back at a steady speed (a little meter shows too slow, just right, too fast) or hop a plastic worm and let it fall; fish strike while it moves. Every rod has a line rating (6, 10 and 15 pounds) and you choose the drag: Tight lands fish faster but a big one running will snap the line unless you ease off.",
-   "pairs": [],
-   "stills": [
-    {
-     "src": "stills/2026-11-27-reel-meter.jpg",
-     "caption": "Keeping a spinner in the green"
-    }
-   ]
-  },
-  {
-   "id": "postcard",
-   "tag": "Art",
-   "date": "2026-11-27",
-   "time": "03:29",
-   "commit": "9f8fc8b",
-   "title": "A lake that looks real",
-   "summary": "One long night of light and land. The sky and light now change with the clock: a cool misty dawn, a clear day, a warm golden hour, a violet blue hour and a moonlit night. The water is real water, the land rolls out to the horizon with clumps of trees, the shore curves with points you can walk out on, Cedar Creek meanders between soft banks, and the home pond is round and ringed with rocks. Our look critic scored the twelve fixed views 3 out of 10 at the start of the night and 7 out of 10 at the end.",
-   "pairs": [
-    {
-     "before": "stills/2026-11-26-all-models-overview.jpg",
-     "after": "stills/2026-11-27-round-pond-overview.jpg",
-     "caption": "The same lake, before and after the night"
-    }
-   ],
-   "stills": [
-    {
-     "src": "stills/2026-11-27-hills-dock-golden.jpg",
-     "caption": "Golden hour from the dock"
-    },
-    {
-     "src": "stills/2026-11-27-dusk-blue-hour.jpg",
-     "caption": "Blue hour"
-    },
-    {
-     "src": "stills/2026-11-27-riffle-meadow.jpg",
-     "caption": "The riffle at dawn"
-    },
-    {
-     "src": "stills/2026-11-27-buoy-night.jpg",
-     "caption": "Night, with the deep-hole buoy lit"
-    }
-   ]
-  },
-  {
-   "id": "catch-moment",
-   "tag": "Fix",
-   "date": "2026-11-27",
-   "time": "03:55",
-   "commit": "9502095",
-   "title": "A real rod, and a better catch moment",
-   "summary": "The rods in your hands are the real models now, with a cork grip, a reel and guides. When you land a fish the card pops in with the fish itself turning in a little window, and Rare or better fish get a badge and a sweep of their tier's colour.",
-   "pairs": [],
-   "stills": [
-    {
-     "src": "stills/2026-11-27-rod-in-hand.jpg",
-     "caption": "The real rod in hand"
-    },
-    {
-     "src": "stills/2026-11-27-rare-card.jpg",
-     "caption": "A Rare largemouth bass on the catch card"
-    }
-   ]
-  },
-  {
-   "id": "come-back",
-   "tag": "World",
-   "date": "2026-11-27",
-   "time": "04:07",
-   "commit": "1c09e83",
-   "title": "Reasons to come back tomorrow",
-   "summary": "A chalkboard by the bait shop shows today's forecast, a fish of the day and a rumour about a Legendary. The shopkeeper hands out a small tackle box once a day. When you come back, a card tells you which of your pond fish grew while you were away. And behind your pond, a trophy wall mounts your six best catches, monsters first.",
-   "pairs": [],
-   "stills": [
-    {
-     "src": "stills/2026-11-27-chalkboard.jpg",
-     "caption": "Today on the Lake"
-    },
-    {
-     "src": "stills/2026-11-27-away-card.jpg",
-     "caption": "While You Were Away"
-    },
-    {
-     "src": "stills/2026-11-27-trophy-wall.jpg",
-     "caption": "The trophy wall behind the home pond"
-    }
-   ]
-  },
-  {
-   "id": "braided-line",
-   "tag": "Play",
-   "date": "2026-11-27",
-   "time": "04:25",
-   "commit": "a38e4b7",
-   "title": "Braided line, and a dressed creek bank",
-   "summary": "Bait and Tackle now sells braided line: 120 coins once, and every rod's line gets 4 pounds stronger (the Willow goes from 6 to 10, the Graphite from 15 to 19). Since a big fish running on a tight drag can snap the line, it's a cheaper step than saving for the next rod. In the playtest a bass hooked on the Graphite rod fought on the 19 pound braided line. The creek pool's long bare sand bank also got a few reeds, rocks and bushes.",
-   "pairs": [],
-   "stills": [
-    {
-     "src": "stills/2026-11-27-braided-line-shop.jpg",
-     "caption": "Bait and Tackle with braided line owned: the rods show their stronger line"
-    },
-    {
-     "src": "stills/2026-11-27-pool-bank.jpg",
-     "caption": "The creek pool's bank at golden hour"
-    }
-   ]
-  },
-  {
-   "id": "big-lake",
-   "tag": "L7",
-   "date": "2026-11-27",
-   "time": "10:29",
-   "commit": "41d835c",
-   "title": "The Big Lake, through a channel in the north shore",
-   "summary": "North of the home lake there is now a second, much bigger lake (about 400 by 300 studs) that you can only reach by boat. A 30 stud channel cuts through the north shore, with a wooden footbridge so the shore path still goes all the way round. The Big Lake follows the same shore rules as the home lake: rounded corners, three wooded headlands, a sandy point, and a round island whose little east tip is the weedy island point where muskie hide. Its water is terrain, written one voxel at a time from those shore numbers, so the sand shallows, the mud bed 7 studs down and the darker bed 14 down past the line of orange buoys all match what the fishing rules think is there. Hills and stands of trees ring its banks, and invisible walls keep swimmers from climbing out into the land beyond.",
-   "pairs": [
-    {
-     "before": "stills/2026-11-27-big-lake-before.jpg",
-     "after": "stills/2026-11-27-big-lake-after.jpg",
-     "caption": "Looking north from over the dock: open grass before, the channel, the footbridge and the Big Lake after"
-    }
-   ],
-   "stills": [
-    {
-     "src": "stills/2026-11-27-big-lake-shore.jpg",
-     "caption": "A rounded corner of the Big Lake: beach, reeds and the buoy line"
-    }
-   ]
-  },
-  {
-   "id": "dinghy",
-   "tag": "L7",
-   "date": "2026-11-27",
-   "time": "10:29",
-   "commit": "41d835c",
-   "title": "An inflatable dinghy you can buy and drive",
-   "summary": "Bait and Tackle has a new Boats heading. The Inflatable Dinghy costs 1,200 coins, once, and then waits at slip 1 beside the dock every time you play. Walk up and press E to take the helm; W and S drive and A and D steer. In the playtest it reached 12 studs a second and eased to a stop when let go, stopped against the fallen logs instead of driving through them, went through the channel onto the Big Lake, and was turned back at the buoys with a message that it is too small for the blue water. Pressing E by the slip ties it up and stands you on the dock. Jump out on the water and the empty boat sails home by itself a minute later; reset at the helm and it goes home straight away. Two bugs found and fixed on the way: sitting down dragged the boat onto the dock, and tying up left the player in the water. The two-seat Deep-V shows as coming soon.",
-   "pairs": [],
-   "stills": [
-    {
-     "src": "stills/2026-11-27-dinghy-shop.jpg",
-     "caption": "Bought: 1,300 coins to 100, and the dinghy is waiting at the slip"
-    },
-    {
-     "src": "stills/2026-11-27-dinghy-slip.jpg",
-     "caption": "The dinghy at slip 1, beside the dock"
-    },
-    {
-     "src": "stills/2026-11-27-dinghy-big-lake.jpg",
-     "caption": "Out on the Big Lake, with the buoy line ahead"
-    },
-    {
-     "src": "stills/2026-11-27-dinghy-buoy-line.jpg",
-     "caption": "Turned back at the buoys at night"
-    }
-   ]
-  },
-  {
-   "id": "boat-fishing",
-   "tag": "L7",
-   "date": "2026-11-27",
-   "time": "10:29",
-   "commit": "41d835c",
-   "title": "Fishing from the boat seat",
-   "summary": "Everything about casting works from the dinghy: the landing ring, the bait bench, the lures, the wait and the reel. You can only cast when the boat is nearly stopped, so no trolling at full speed. The first catch on the Big Lake was a Lake Whitefish in the open basin on worms, then a White Bass at dusk on a spinner, the fish the basin is known for. The playtest caught two more problems: a long spinner cast from the Graphite rod lands 65 studs out, past the 60 stud limit where a boat's line came free, so the limit is now the longest possible cast plus 15; and the camera followed the boat's seat instead of the player, so the bobber camera never started. Now it frames the bobber from the boat just as it does from the dock.",
-   "pairs": [],
-   "stills": [
-    {
-     "src": "stills/2026-11-27-boat-cast-ring.jpg",
-     "caption": "The cast ring from the seat at dusk: The open basin"
-    },
-    {
-     "src": "stills/2026-11-27-boat-bobber-cam.jpg",
-     "caption": "The bobber camera, from the boat"
-    },
-    {
-     "src": "stills/2026-11-27-boat-slow-down.jpg",
-     "caption": "Casting at full speed: Slow the boat down to cast (and the wake behind)"
-    }
-   ]
-  },
-  {
-   "id": "lighthouse",
-   "tag": "Polish",
-   "date": "2026-11-27",
-   "time": "10:34",
-   "commit": "b9b7a0d",
-   "title": "A tiny lighthouse on the island",
-   "summary": "An easter egg from a real lake the family fishes, where a miniature lighthouse about 6 feet tall stands on a little island. Now the Big Lake's island has one too, on its sandy point: red and white bands, a railed gallery and a lantern that glows warm. It is a little taller than a player, so it reads as a toy-sized lighthouse rather than a real one, and the reeds keep back from it so you can spot it from a boat.",
-   "pairs": [],
-   "stills": [
-    {
-     "src": "stills/2026-11-27-lighthouse.jpg",
-     "caption": "The miniature lighthouse on the island's point, seen from the water"
-    }
-   ]
-  },
-  {
-   "id": "n0-proof-corner",
-   "tag": "N0",
-   "date": "2026-11-27",
-   "time": "21:40",
-   "commit": "",
-   "title": "The proof corner: real wood, painted signs, light on every screen",
-   "summary": "The start of leg 3, the look and the boats. First, eight facts about the engine were tested before anything was built on them, and all eight held: our own materials work on the ground, on the models and as baked sets, and the light can be set for each player on their own screen. Then one corner of the lake was rebuilt at full quality as the proof: a new dock with silver-brown planks, nail heads, rope coils and two lanterns that burn at night; both stands rebuilt in real wood and canvas; painted boards hung under the eaves instead of labels floating in the air; our own meadow grass on every lawn and hill. The look critic moved from 6.5 to 7.0 on the three corner shots and Fable's review passed it, with three fixes (the light, the waterline and the old lamp globes) as the first job of the next step. A surprise along the way: Studio had been drawing the game at a low quality level whenever its window was behind other windows, so every look check now forces full quality.",
-   "pairs": [
-    {
-     "before": "stills/2026-11-27-n0-stands-before.jpg",
-     "after": "stills/2026-11-27-n0-stands-after.jpg",
-     "caption": "The stands from the dock at noon"
-    },
-    {
-     "before": "stills/2026-11-27-n0-dock-golden-before.jpg",
-     "after": "stills/2026-11-27-n0-dock-golden-after.jpg",
-     "caption": "Down the dock at golden hour"
-    }
-   ],
-   "stills": [
-    {
-     "src": "stills/2026-11-27-n0-bait-stand.jpg",
-     "caption": "The bait stand up close: weathered boards, canvas awning and its painted sign"
-    }
-   ]
-  }
- ]
+  ]
 }
