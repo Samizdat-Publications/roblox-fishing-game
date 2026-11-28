@@ -8,9 +8,12 @@
 --    the gray box showing. The art hangs from one anchored, invisible root moved every frame to
 --    the hull's level waterline frame, so it is exactly where the hull is and can never push it.
 --  * Trim, lean and bob are drawn on the art only; the server's hull never tilts.
---  * The wake: two foam ribbons from the bow's shoulders that spread at the Kelvin angle, widen
---    and fade; wash at the stern; spray at the bow above 60 percent (motor boats); the canoe's is
---    a hairline with two swirl rings per paddle stroke. Lighter on the phone tier.
+--  * The wake: two soft arms of foam Beams from the stern's quarters that spread at the Kelvin
+--    angle, fade in at the stern, widen and fade out, their edges soft (the foam map's faded rows)
+--    and their streaks drifting outward (11/28/2026, the creek's white-water method; it was a
+--    chain of flat textured parts that read as a hard white bar with square tiles). Soft puffs of
+--    wash at the stern; spray at the bow above 60 percent (motor boats); the canoe's is a
+--    hairline with two soft swirl rings per paddle stroke. Lighter on the phone tier.
 --  * Lights: red and green at the bow, white at the stern, on from dusk (SignLayout.lanternsOn,
 --    as the sign lanterns). No PointLights on the phone tier, the lamps glow only.
 --  * The horn on H (gamepad DPadUp, the touch Horn button): heard here at once, and by everyone
@@ -37,14 +40,15 @@ local SoundIds = require(Shared.SoundIds)
 local SoundSheets = require(Shared.SoundSheets)
 local Remotes = require(Shared.Remotes)
 local WhiteWater = require(script.Parent.WhiteWater) -- its foam and spray maps only
+local CreekPlan = require(Shared.CreekPlan) -- FOAM_BEAM_NORMAL only: the wake's beams lie as the creek's do
 
 local BoatFeelClient = {}
 
 local LIGHT_EVERY = 0.5 -- seconds between dusk checks
-local WAKE_Y = 0.06 -- the ribbons' height over the water, clear of the small chop
+local WAKE_Y = BoatFeel.WAKE_Y
 
 type Piece = { pos: Vector3, out: Vector3, born: number, speed: number, frac: number }
-type Arm = { pieces: { Piece }, parts: { BasePart }, texes: { Texture? } }
+type Arm = { pieces: { Piece }, atts: { Attachment }, beams: { Beam } }
 type Stroke = { phase: number, side: number, paddle: Instance?, wasPull: boolean }
 type Rig = { r15: boolean, rs: Motor6D?, ls: Motor6D?, re: Motor6D?, le: Motor6D? }
 type Feel = {
@@ -58,6 +62,7 @@ type Feel = {
 	hidden: { [BasePart]: boolean },
 	folder: Folder,
 	arms: { Arm },
+	wakeHolder: BasePart?,
 	emitClock: number,
 	spray: { ParticleEmitter },
 	wash: ParticleEmitter,
@@ -273,44 +278,59 @@ local function setLit(f: Feel, on: boolean)
 	end
 end
 
+-- One arm is a chain of attachments on an invisible anchored holder at the world origin (so an
+-- attachment's CFrame is its world CFrame): the first is the live point at the stern, the rest
+-- the points the arm has left. Beam k joins attachment k to k + 1.
 local function buildWake(f: Feel)
-	for _, arm in f.arms do
-		for _, p in arm.parts do
-			p:Destroy()
-		end
+	if f.wakeHolder then
+		f.wakeHolder:Destroy()
 	end
 	table.clear(f.arms)
+	local holder = Instance.new("Part")
+	holder.Name = "WakeHolder"
+	holder.Anchored = true
+	holder.CanCollide = false
+	holder.CanQuery = false
+	holder.CanTouch = false
+	holder.CastShadow = false
+	holder.Transparency = 1
+	holder.Size = Vector3.new(0.2, 0.2, 0.2)
+	holder.CFrame = CFrame.new()
+	holder.Parent = f.folder
+	f.wakeHolder = holder
 	local n = BoatFeel.wakePieces(f.id, f.tier)
 	local foam = WhiteWater.TEXTURES.foam
-	for _ = 1, 2 do
-		local arm: Arm = { pieces = {}, parts = {}, texes = {} }
-		for i = 1, n - 1 do
-			local p = Instance.new("Part")
-			p.Name = "Wake" .. i
-			p.Anchored = true
-			p.CanCollide = false
-			p.CanQuery = false
-			p.CanTouch = false
-			p.CastShadow = false
-			p.Material = Enum.Material.SmoothPlastic
-			p.Color = WhiteWater.FOAM_COLOR
-			p.Size = Vector3.new(0.5, 0.05, 1)
-			p.Transparency = 1
-			local tex: Texture? = nil
+	for side = 1, 2 do
+		local arm: Arm = { pieces = {}, atts = {}, beams = {} }
+		for i = 1, n + 1 do
+			local at = Instance.new("Attachment")
+			at.Name = "Wake" .. side .. "_" .. i
+			at.Parent = holder
+			table.insert(arm.atts, at)
+		end
+		for i = 1, n do
+			local beam = Instance.new("Beam")
+			beam.Name = "Wake" .. side .. "_" .. i
+			beam.Attachment0 = arm.atts[i]
+			beam.Attachment1 = arm.atts[i + 1]
+			beam.FaceCamera = false
+			beam.Segments = 2
+			beam.CurveSize0 = 0
+			beam.CurveSize1 = 0
+			beam.Color = ColorSequence.new(WhiteWater.FOAM_COLOR)
+			beam.LightInfluence = 1 -- lit like the water round it, so it never glows at dawn or night
+			beam.LightEmission = 0
+			beam.ZOffset = BoatFeel.WAKE_ZOFFSET
 			if foam then
-				local t = Instance.new("Texture")
-				t.Texture = asset(foam)
-				t.Face = Enum.NormalId.Top
-				t.StudsPerTileU = 2
-				t.StudsPerTileV = 4
-				t.Color3 = WhiteWater.FOAM_COLOR
-				t.Transparency = 1
-				t.Parent = p
-				tex = t
+				beam.Texture = asset(foam)
+				beam.TextureMode = Enum.TextureMode.Wrap
+				beam.TextureLength = BoatFeel.WAKE_TEX.length
+			else
+				beam.Texture = ""
 			end
-			p.Parent = f.folder
-			table.insert(arm.parts, p)
-			table.insert(arm.texes, tex)
+			beam.Enabled = false
+			beam.Parent = holder
+			table.insert(arm.beams, beam)
 		end
 		table.insert(f.arms, arm)
 	end
@@ -343,32 +363,44 @@ local function buildFx(f: Feel)
 			e.Acceleration = Vector3.new(0, -18, 0)
 			e.Drag = 1
 			e.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.3), NumberSequenceKeypoint.new(1, 0.9) })
-			e.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.4), NumberSequenceKeypoint.new(1, 1) })
+			e.Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 1),
+				NumberSequenceKeypoint.new(0.12, 0.5),
+				NumberSequenceKeypoint.new(1, 1),
+			})
 			table.insert(f.spray, e)
 		end
 	end
-	-- Wash: flat foam churned up at the stern (particles lying on the water).
+	-- Wash: soft puffs churned up at the stern, lying on the water (the spray map: round and soft,
+	-- where the foam map's square tiles showed their edges).
 	local washAt = Instance.new("Attachment")
 	washAt.Name = "Wash"
 	washAt.Position = f.art.stern + Vector3.new(0, WAKE_Y, 0.4)
 	washAt.Parent = f.root
-	local wash = emitter(washAt, WhiteWater.TEXTURES.foam)
+	local wash = emitter(washAt, WhiteWater.TEXTURES.spray)
+	wash.LightEmission = 0
 	wash.Orientation = Enum.ParticleOrientation.VelocityPerpendicular
 	wash.EmissionDirection = Enum.NormalId.Top
 	wash.Speed = NumberRange.new(0.05)
 	wash.SpreadAngle = Vector2.new(0, 0)
-	wash.Lifetime = NumberRange.new(1.0, 1.5)
+	wash.Lifetime = NumberRange.new(BoatFeel.WASH.life[1], BoatFeel.WASH.life[2])
 	wash.Rotation = NumberRange.new(0, 360)
 	wash.RotSpeed = NumberRange.new(-30, 30)
 	local big = if BoatFeel.kindOf(f.id) == "paddle" then 0.4 else 1
-	wash.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.8 * big), NumberSequenceKeypoint.new(1, 2.6 * big) })
-	wash.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.35), NumberSequenceKeypoint.new(1, 1) })
+	local W = BoatFeel.WASH
+	wash.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, W.size[1] * big), NumberSequenceKeypoint.new(1, W.size[2] * big) })
+	wash.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 1), -- fades in: no puff pops on at full strength
+		NumberSequenceKeypoint.new(0.2, W.transparency[1]),
+		NumberSequenceKeypoint.new(1, W.transparency[2]),
+	})
 	f.wash = wash
 	-- Swirl rings: emitted where a paddle stroke ends.
 	local swirlAt = Instance.new("Attachment")
 	swirlAt.Name = "Swirl"
 	swirlAt.Parent = f.root
-	local swirl = emitter(swirlAt, WhiteWater.TEXTURES.foam)
+	local swirl = emitter(swirlAt, WhiteWater.TEXTURES.spray)
+	swirl.LightEmission = 0
 	swirl.Orientation = Enum.ParticleOrientation.VelocityPerpendicular
 	swirl.EmissionDirection = Enum.NormalId.Top
 	swirl.Speed = NumberRange.new(0.05)
@@ -377,7 +409,11 @@ local function buildFx(f: Feel)
 	swirl.Rotation = NumberRange.new(0, 360)
 	swirl.RotSpeed = NumberRange.new(60, 120)
 	swirl.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, BoatFeel.SWIRL_SIZE[1]), NumberSequenceKeypoint.new(1, BoatFeel.SWIRL_SIZE[2]) })
-	swirl.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.3), NumberSequenceKeypoint.new(1, 1) })
+	swirl.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 1),
+		NumberSequenceKeypoint.new(0.15, BoatFeel.SWIRL_TRANSPARENCY[1]),
+		NumberSequenceKeypoint.new(1, BoatFeel.SWIRL_TRANSPARENCY[2]),
+	})
 	swirl.LockedToPart = false
 	f.swirl = swirl
 	f.swirlAt = swirlAt
@@ -474,6 +510,7 @@ local function setup(model: Model)
 		hidden = {},
 		folder = folder,
 		arms = {},
+		wakeHolder = nil,
 		emitClock = 0,
 		spray = {},
 		wash = nil :: any,
@@ -553,67 +590,73 @@ local function occupants(f: Feel): { [Humanoid]: string }
 	return out
 end
 
+-- The attachment frame at a point on an arm: X along the arm (toward the older point), and the
+-- beam's normal up as the creek's beams lie (CreekPlan.FOAM_BEAM_NORMAL).
+local function wakeFrame(pos: Vector3, along: Vector3): CFrame
+	local fwd = Vector3.new(along.X, 0, along.Z)
+	if fwd.Magnitude < 1e-4 then
+		fwd = Vector3.new(0, 0, 1)
+	end
+	fwd = fwd.Unit
+	local up = if CreekPlan.FOAM_BEAM_NORMAL == "Z" then Vector3.new(-fwd.Z, 0, fwd.X) else Vector3.yAxis
+	return CFrame.fromMatrix(pos, fwd, up)
+end
+
 local function updateWake(f: Feel, frame: CFrame, speed: number, frac: number, dt: number, now: number)
 	local w = BoatFeel.WAKE[BoatFeel.kindOf(f.id)]
-	local every = w.every * (if f.tier == "phone" then BoatFeel.WAKE_PHONE.every else 1)
+	local every = BoatFeel.wakeEvery(f.id, f.tier)
 	local n = BoatFeel.wakePieces(f.id, f.tier)
+	local y = BoatRules.WATER_Y + WAKE_Y
 	f.emitClock += dt
-	if f.emitClock >= every then
+	local emit = f.emitClock >= every
+	if emit then
 		f.emitClock = 0
-		if math.abs(frac) >= w.from then
-			for i, arm in f.arms do
-				local sx = if i == 1 then -1 else 1
-				local local_ = Vector3.new(sx * f.art.halfBeam, 0, f.art.bow.Z + 0.8)
-				local pos = frame:PointToWorldSpace(local_)
-				table.insert(arm.pieces, 1, {
-					pos = Vector3.new(pos.X, BoatRules.WATER_Y + WAKE_Y, pos.Z),
-					out = frame.RightVector * sx,
-					born = now,
-					speed = speed,
-					frac = frac,
-				})
-				while #arm.pieces > n do
-					table.remove(arm.pieces)
-				end
+	end
+	local texSpeed = BoatFeel.wakeTextureSpeed(frac)
+	for i, arm in f.arms do
+		local sx = if i == 1 then -1 else 1
+		local st = frame:PointToWorldSpace(BoatFeel.wakeStart(f.art, sx))
+		local head = Vector3.new(st.X, y, st.Z)
+		if emit and math.abs(frac) >= w.from then
+			table.insert(arm.pieces, 1, { pos = head, out = frame.RightVector * sx, born = now, speed = speed, frac = frac })
+			while #arm.pieces > n do
+				table.remove(arm.pieces)
 			end
 		end
-	end
-	local parts: { BasePart } = {}
-	local cfs: { CFrame } = {}
-	for _, arm in f.arms do
-		for k, part in arm.parts do
-			local a, b = arm.pieces[k], arm.pieces[k + 1]
-			local wa, ta = nil, nil
-			if a and b then
-				wa, ta = BoatFeel.wakePiece(f.id, now - b.born, b.frac, f.tier)
-			end
-			local tex = arm.texes[k]
-			if wa and ta and a and b then
-				local pa = a.pos + a.out * BoatFeel.wakeSpread(a.speed, now - a.born)
-				local pb = b.pos + b.out * BoatFeel.wakeSpread(b.speed, now - b.born)
-				local len = (pa - pb).Magnitude
-				if len > 0.05 then
-					local mid = (pa + pb) / 2
-					part.Size = Vector3.new(wa, 0.05, len + 0.1)
-					table.insert(parts, part)
-					table.insert(cfs, CFrame.lookAt(mid, pb))
-					if tex then
-						tex.Transparency = ta
-						tex.StudsPerTileU = math.max(0.3, wa)
-					else
-						part.Transparency = 0.5 + 0.5 * ta
-					end
-					continue
-				end
-			end
-			if tex then
-				tex.Transparency = 1
-			end
-			part.Transparency = 1
+		-- The points, newest first: the live one at the stern (age 0, so clear), then those left
+		-- behind, each spread out at the Kelvin angle since it was left.
+		local pts: { Vector3 } = { head }
+		local ws: { [number]: number? } = {}
+		local ts: { number } = { 1 }
+		ws[1] = (BoatFeel.wakePiece(f.id, 0, frac, f.tier))
+		for _, pc in arm.pieces do
+			local age = now - pc.born
+			local wd, tr = BoatFeel.wakePiece(f.id, age, pc.frac, f.tier)
+			table.insert(pts, pc.pos + pc.out * BoatFeel.wakeSpread(pc.speed, age))
+			ws[#pts] = wd
+			table.insert(ts, tr or 1)
 		end
-	end
-	if #parts > 0 then
-		workspace:BulkMoveTo(parts, cfs, Enum.BulkMoveMode.FireCFrameChanged)
+		for k, att in arm.atts do
+			local p = pts[k]
+			if p then
+				local after, before = pts[k + 1], pts[k - 1]
+				local along = if after then after - p elseif before then p - before else -frame.LookVector
+				att.CFrame = wakeFrame(p, along)
+			end
+		end
+		for k, beam in arm.beams do
+			local w0, w1 = ws[k], ws[k + 1]
+			local a, b = pts[k], pts[k + 1]
+			if w0 and w1 and a and b and (a - b).Magnitude > 0.05 then
+				beam.Width0 = w0
+				beam.Width1 = w1
+				beam.Transparency = NumberSequence.new(ts[k], ts[k + 1])
+				beam.TextureSpeed = texSpeed
+				beam.Enabled = true
+			else
+				beam.Enabled = false
+			end
+		end
 	end
 	for _, e in f.spray do
 		e.Rate = BoatFeel.sprayRate(f.id, frac, f.tier)

@@ -312,35 +312,56 @@ BoatFeel.ROD_ELBOW = 30
 -- Wake
 
 BoatFeel.KELVIN = math.tan(math.rad(19.47)) -- the wake's arms spread at this share of the speed
+-- 11/28/2026, after set C's dawn shot (c03: "a hard, straight, bright white ribbon with
+-- rectangular tiles"): the arms are now soft Beams, as the creek's white water was redone
+-- (CreekPlan.foamBeams). Each arm is a chain of points left at the stern's quarters; a Beam joins
+-- each point to the next, so width and transparency run on without a seam. A point fades in over
+-- `fadeIn` seconds (no hard head at the stern), holds its faint peak until `hold` of its life,
+-- then fades out; the foam map's faded rows soften both long edges and its streaks scroll slowly
+-- away from the boat. On a calm lake a wake is a soft pair of lines, so the peak is faint:
+-- `base` is the transparency at the peak at full speed, `baseSlow` more at a crawl.
 BoatFeel.WAKE = {
-	motor = { from = 0.08, life = 1.6, every = 0.1, w0 = 0.6, w1 = 1.2, w1Speed = 2.6, alpha0 = 0.35, alphaSlow = 0.4 },
-	paddle = { from = 0.08, life = 1.2, every = 0.12, w0 = 0.12, w1 = 0.4, w1Speed = 0.2, alpha0 = 0.55, alphaSlow = 0.25 },
+	motor = { from = 0.08, life = 2.4, every = 0.12, w0 = 0.35, w1 = 0.9, w1Speed = 1.2, base = 0.6, baseSlow = 0.2, fadeIn = 0.25, hold = 0.3 },
+	paddle = { from = 0.08, life = 1.8, every = 0.15, w0 = 0.08, w1 = 0.22, w1Speed = 0.12, base = 0.72, baseSlow = 0.15, fadeIn = 0.3, hold = 0.3 },
 }
-BoatFeel.WAKE_PHONE = { life = 0.6, every = 2 } -- the phone tier: 60 percent of the life, half as many pieces
+BoatFeel.WAKE_PHONE = { life = 0.6, every = 2 } -- the phone tier: 60 percent of the life, half as many points
+BoatFeel.WAKE_Y = 0.1 -- the beams' height over the water (y 0, its chop about 0.06), as the creek's
+BoatFeel.WAKE_ZOFFSET = 0.05 -- studs toward the camera, so the chop's crests never cut a beam
+BoatFeel.WAKE_START = { beam = 0.8, aft = 0.5 } -- an arm starts at this share of halfBeam out, this far forward of the stern
+BoatFeel.WAKE_TEX = { length = 4, drift = 0.6 } -- studs per tile of the foam map; studs a second it scrolls at full speed
 BoatFeel.SPRAY_FROM = 0.6 -- spray at the bow above this share of top speed (motor boats only)
 BoatFeel.SPRAY_RATE = 30 -- particles a second at full speed (desktop)
-BoatFeel.WASH_RATE = 25 -- the stern's churn, particles a second at full speed (desktop)
+BoatFeel.WASH_RATE = 16 -- the stern's churn, particles a second at full speed (desktop)
+-- The wash and the swirl rings are soft round puffs (the spray map) lying on the water, never
+-- the foam map's square tiles; each fades in and ends clear.
+BoatFeel.WASH = { life = { 0.9, 1.5 }, size = { 0.6, 2.2 }, transparency = { 0.72, 1 } }
 BoatFeel.PHONE_RATE = 0.4 -- the phone tier's share of each particle rate
 BoatFeel.SWIRLS = 2 -- swirl rings per paddle stroke
 BoatFeel.SWIRL_LIFE = 1.6
 BoatFeel.SWIRL_SIZE = { 0.3, 1.4 }
+BoatFeel.SWIRL_TRANSPARENCY = { 0.65, 1 }
 
--- How many wake pieces each arm keeps on this tier.
-function BoatFeel.wakePieces(boatId: string, tier: string?): number
-	local w = BoatFeel.WAKE[kindOf(boatId)]
-	local life, every = w.life, w.every
-	if tier == "phone" then
-		life *= BoatFeel.WAKE_PHONE.life
-		every *= BoatFeel.WAKE_PHONE.every
-	end
-	return math.max(2, math.ceil(life / every))
+local function wakeLife(boatId: string, tier: string?): number
+	return BoatFeel.WAKE[kindOf(boatId)].life * (if tier == "phone" then BoatFeel.WAKE_PHONE.life else 1)
 end
 
--- One wake piece's width and transparency at `age` seconds, left by a boat at speedFrac.
--- nil once it has faded out (or when the boat was too slow to leave one).
+-- Seconds between the points an arm leaves, on this tier.
+function BoatFeel.wakeEvery(boatId: string, tier: string?): number
+	return BoatFeel.WAKE[kindOf(boatId)].every * (if tier == "phone" then BoatFeel.WAKE_PHONE.every else 1)
+end
+
+-- How many points each arm keeps on this tier (each arm draws this many beams: one from the
+-- live point at the stern to the newest, then one between each pair).
+function BoatFeel.wakePieces(boatId: string, tier: string?): number
+	return math.max(2, math.ceil(wakeLife(boatId, tier) / BoatFeel.wakeEvery(boatId, tier)))
+end
+
+-- One wake point's width and transparency at `age` seconds, left by a boat at speedFrac.
+-- Transparency is 1 at age 0 (it fades in at the stern), down to the peak by fadeIn, and back to
+-- 1 at the end of its life. nil once it has gone (or when the boat was too slow to leave one).
 function BoatFeel.wakePiece(boatId: string, age: number, speedFrac: number, tier: string?): (number?, number?)
 	local w = BoatFeel.WAKE[kindOf(boatId)]
-	local life = w.life * (if tier == "phone" then BoatFeel.WAKE_PHONE.life else 1)
+	local life = wakeLife(boatId, tier)
 	local s = math.clamp(math.abs(speedFrac), 0, 1)
 	if s < w.from or age >= life or age < 0 then
 		return nil, nil
@@ -348,9 +369,24 @@ function BoatFeel.wakePiece(boatId: string, age: number, speedFrac: number, tier
 	local k = age / life
 	local wEnd = w.w1 + w.w1Speed * s
 	local width = w.w0 + (wEnd - w.w0) * k
-	local a0 = w.alpha0 + w.alphaSlow * (1 - s)
-	local alpha = a0 + (1 - a0) * k
+	local base = math.min(1, w.base + w.baseSlow * (1 - s))
+	local kIn = smooth(0, w.fadeIn, age)
+	local kOut = smooth(life * w.hold, life, age)
+	local alpha = 1 - (1 - base) * kIn * (1 - kOut)
 	return width, alpha
+end
+
+-- Where an arm starts, in boat space: at the stern's quarter on this side (1 starboard, -1 port),
+-- a little forward of the stern so the hull hides the fade-in.
+function BoatFeel.wakeStart(a: Art, side: number): Vector3
+	local st = BoatFeel.WAKE_START
+	return Vector3.new(side * a.halfBeam * st.beam, 0, a.stern.Z - st.aft)
+end
+
+-- The beams' TextureSpeed (cycles a second; positive runs from the stern outward along the arm).
+function BoatFeel.wakeTextureSpeed(speedFrac: number): number
+	local t = BoatFeel.WAKE_TEX
+	return t.drift * math.clamp(math.abs(speedFrac), 0, 1) / t.length
 end
 
 -- How far a wake piece has spread out from where it was left, after `age` seconds at speed.

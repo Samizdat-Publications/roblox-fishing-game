@@ -697,22 +697,21 @@
       "set": "P",
       "group": "boats",
       "place": "lake",
-      "pending": "N4",
       "clock": 17.4,
       "eye": [
-        6,
-        5.5,
-        39
+        -1,
+        5,
+        40
       ],
       "look": [
-        15,
-        1.5,
-        62
+        25,
+        1,
+        55.3
       ],
-      "fov": 32.3,
-      "lens_mm": 35,
-      "what": "From the dock end down the slips: canoe in slip 1, boathouse and tackle shop behind",
-      "why": "Varnished cedar in three-quarter light. Finalise when the boathouse is placed."
+      "fov": 39.8,
+      "lens_mm": 28,
+      "what": "From the dock end, past the canoe in slip 1 (three-quarter, lower third) to the boathouse on PondPoint behind it (upper middle)",
+      "why": "Varnished cedar in three-quarter light with the boathouse on the same line. Re-aimed 11/28/2026 once the boathouse stood at (55, 1.1, 73): the old look (15, 1.5, 62) pointed past it. Eye on the dock deck, near 03's, so nothing new to keep clear."
     },
     {
       "id": "p10-buoyline-dusk",
@@ -806,17 +805,17 @@
       "place": "lake",
       "clock": 12.0,
       "eye": [
-        4,
+        2,
         7,
-        35
+        28
       ],
       "look": [
-        38,
+        27,
         1.5,
-        4
+        60
       ],
-      "fov": 45,
-      "what": "From the dock end across the water to the boathouse moorings (canoe, dinghy, Deep-V) at noon, the slips at the dock side"
+      "fov": 39.8,
+      "what": "From the water just off the dock end, south-east down the slips (boats at their slips, the dock on the left) to the boathouse on PondPoint behind them, at noon"
     },
     {
       "id": "c03-dinghy-wake-dawn",
