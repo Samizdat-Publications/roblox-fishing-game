@@ -13,6 +13,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared.Config)
 local Daily = require(Shared.Daily)
 local Weather = require(Shared.Weather)
+local BoardText = require(Shared.BoardText)
 local Today = require(script.Parent.Today)
 
 local Chalkboard = {}
@@ -33,6 +34,10 @@ local CHALK = Color3.fromRGB(238, 238, 228)
 local CHALK_YELLOW = Color3.fromRGB(246, 226, 140)
 local HEAD_FONT = Enum.Font.PermanentMarker
 local BODY_FONT = Enum.Font.PatrickHand
+
+-- The readable board (leg 3, N2): a short slate in big chalk, and the prompt that opens the
+-- field-guide card. Only with both switches on; otherwise the board is exactly as before.
+local READABLE = Config.BOARD_CARD_ON == true and Config.UI_STYLE_ON == true
 
 local function part(parent: Instance, name: string, size: Vector3, cf: CFrame, color: Color3, material: Enum.Material?): Part
 	local p = Instance.new("Part")
@@ -158,6 +163,86 @@ local function lines(m: Model): { [string]: TextLabel }?
 	return out
 end
 
+-- The short slate: a sibling of the old Lines in the same SurfaceGui (576 x 400 px, 80 px a
+-- stud, so the big lines are about 0.65 studs tall: readable from the path 10 to 15 studs off).
+local function slateLabel(parent: Instance, name: string, order: number, height: number, color: Color3, maxSize: number, minSize: number): TextLabel
+	local l = text(parent, name, order, height, BODY_FONT, color, maxSize)
+	l.TextTransparency = 0 -- full-strength chalk
+	l.TextYAlignment = Enum.TextYAlignment.Center
+	local limit = l:FindFirstChildOfClass("UITextSizeConstraint")
+	if limit then
+		limit.MinTextSize = minSize
+	end
+	return l
+end
+
+local function summary(m: Model): { [string]: TextLabel }?
+	local slate = m:FindFirstChild("Slate")
+	local gui = slate and slate:FindFirstChild("Writing")
+	if not (gui and gui:IsA("SurfaceGui")) then
+		return nil
+	end
+	local old = gui:FindFirstChild("Lines")
+	if old and old:IsA("GuiObject") then
+		old.Visible = false
+	end
+	gui.LightInfluence = 0.35 -- stays bright enough to read at dusk
+	local holder = gui:FindFirstChild("Summary")
+	if not holder then
+		local f = Instance.new("Frame")
+		f.Name = "Summary"
+		f.Size = UDim2.fromScale(1, 1)
+		f.BackgroundTransparency = 1
+		local pad = Instance.new("UIPadding")
+		pad.PaddingLeft = UDim.new(0, 20)
+		pad.PaddingRight = UDim.new(0, 20)
+		pad.PaddingTop = UDim.new(0, 8)
+		pad.PaddingBottom = UDim.new(0, 8)
+		pad.Parent = f
+		local list = Instance.new("UIListLayout")
+		list.SortOrder = Enum.SortOrder.LayoutOrder
+		list.Padding = UDim.new(0, 0)
+		list.Parent = f
+		local title = slateLabel(f, "Title", 1, 66, CHALK, 60, 40)
+		title.TextXAlignment = Enum.TextXAlignment.Center
+		title.Text = BoardText.TITLE
+		slateLabel(f, "WeatherHead", 2, 32, CHALK_YELLOW, 30, 24).Text = "Weather"
+		slateLabel(f, "Weather", 3, 62, CHALK, 56, 36)
+		slateLabel(f, "FishHead", 4, 32, CHALK_YELLOW, 30, 24).Text = "Fish of the Day"
+		slateLabel(f, "Fish", 5, 62, CHALK, 56, 36)
+		slateLabel(f, "Teaser", 6, 90, CHALK_YELLOW, 42, 30)
+		f.Parent = gui
+		holder = f
+	end
+	local out: { [string]: TextLabel } = {}
+	for _, n in { "Weather", "Fish", "Teaser" } do
+		local l = (holder :: Instance):FindFirstChild(n)
+		if not (l and l:IsA("TextLabel")) then
+			return nil
+		end
+		out[n] = l
+	end
+	return out
+end
+
+-- "Read today's board": opens the card on the player's own screen (ClientModules/BoardCard).
+local function addPrompt(m: Model)
+	local slate = m:FindFirstChild("Slate")
+	if not slate or slate:FindFirstChild("BoardPrompt") then
+		return
+	end
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.Name = "BoardPrompt"
+	prompt.ActionText = "Read today's board"
+	prompt.ObjectText = BoardText.TITLE
+	prompt.HoldDuration = 0
+	prompt.MaxActivationDistance = 10
+	prompt.RequiresLineOfSight = false
+	prompt.KeyboardKeyCode = Enum.KeyCode.E
+	prompt.GamepadKeyCode = Enum.KeyCode.ButtonX
+	prompt.Parent = slate
+end
+
 local function write(m: Model, day: number)
 	local l = lines(m)
 	if not l then
@@ -171,6 +256,16 @@ local function write(m: Model, day: number)
 	l.Fish.Text = b.fish .. ". " .. b.fishNote
 	l.Rumour.Text = b.rumour
 	workspace:SetAttribute("FishOfDay", Daily.fishOfDay(day)) -- for anything client-side that wants it
+	if READABLE then
+		local s = BoardText.slate(day, Config.BIG_LAKE_ON)
+		local sl = summary(m)
+		if sl then
+			sl.Weather.Text = s.weather
+			sl.Fish.Text = s.fish
+			sl.Teaser.Text = s.teaser
+		end
+		workspace:SetAttribute("BoardDay", day) -- the card builds itself from this (Shared/BoardText)
+	end
 	print(string.format("[Chalkboard] day %d: %s | %s | %s", day, b.weather, b.fish, b.rumour))
 end
 
@@ -181,6 +276,9 @@ function Chalkboard.start()
 		m = build(lake)
 	end
 	local board = m :: Model
+	if READABLE then
+		addPrompt(board)
+	end
 	local day = Today.day()
 	write(board, day)
 	task.spawn(function()

@@ -112,6 +112,11 @@ Config.UI_STYLE_ON = false
 -- studs is hidden, and every second reed, stone group (past 80) and tree (past 150). It does
 -- nothing on the desktop tier, so it is on. Off, foliage is never touched on the client.
 Config.FOLIAGE_TIER_ON = true
+-- The readable chalkboard (leg 3, N2, from Gemini's review): bigger hand-lettered chalk on the
+-- board (the weather in a few words, the fish of the day, a teaser) and a "Read today's board"
+-- prompt that opens a field-guide card (Shared/BoardText, ClientModules/BoardCard). Needs
+-- UI_STYLE_ON too; with either off, the board and the screens are exactly as before.
+Config.BOARD_CARD_ON = false
 
 function Config.boatsOn(): boolean
 	return Config.BOATS_ON and Config.BIG_LAKE_ON

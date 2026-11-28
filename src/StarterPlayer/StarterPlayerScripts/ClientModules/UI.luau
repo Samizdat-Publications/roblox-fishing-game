@@ -21,6 +21,7 @@ local Units = require(Shared.Units)
 local BaitRig = require(Shared.BaitRig)
 local UIStyle = require(Shared.UIStyle)
 local Skin = require(script.Parent.Skin)
+local BoardCard = require(script.Parent.BoardCard)
 
 local UI = {}
 
@@ -242,6 +243,9 @@ function UI.init(cbs: { [string]: (...any) -> () })
 			if panel then
 				panel.Size = UDim2.fromOffset(640, math.min(470, h - 70))
 			end
+		end
+		if refs.boardCard then
+			BoardCard.fit(h)
 		end
 	end
 	refs.rescale = rescale
@@ -484,6 +488,18 @@ function UI.init(cbs: { [string]: (...any) -> () })
 	UI.buildJournal()
 	UI.buildPond()
 	UI.buildTackle()
+	-- The readable chalkboard's card (leg 3, N2): only with BOARD_CARD_ON and UI_STYLE_ON.
+	if STYLED and BoardCard.enabled then
+		BoardCard.build(gui, function()
+			UI.closePanels()
+		end)
+		refs.boardCard = true
+		game:GetService("ProximityPromptService").PromptTriggered:Connect(function(prompt)
+			if prompt.Name == "BoardPrompt" then
+				UI.openBoard()
+			end
+		end)
+	end
 	if STYLED then
 		UI.dressScreen()
 		require(script.Parent.PromptStyle).start() -- brass key caps on the button prompts
@@ -1919,6 +1935,9 @@ function UI.closePanels()
 	if refs.tackle then
 		refs.tackle.Visible = false
 	end
+	if refs.boardCard then
+		BoardCard.hide()
+	end
 	openPanel = nil
 	GuiService.SelectedObject = nil
 	sideTabs(true)
@@ -1936,6 +1955,17 @@ function UI.openShop()
 	if UI.inputName() == "R2" then
 		GuiService.SelectedObject = refs.shopRows[BaitData.list[1].id].buy
 	end
+end
+
+-- The chalkboard's card (BoardCard): opens like the shop, never during a fight.
+function UI.openBoard()
+	if locked or not refs.boardCard then
+		return
+	end
+	UI.closePanels()
+	openPanel = "Board"
+	sideTabs(false)
+	BoardCard.show(UI.inputName() == "R2")
 end
 
 function UI.toggleJournal()
