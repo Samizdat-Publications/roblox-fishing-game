@@ -221,7 +221,7 @@ Built by `scripts/plant_kit.py` for leg 3, N3 (Cedar Creek) and N6 (the first is
 | LichenTufts | Island | 3.26 x 0.68 x 2.71 | 404 leaf = 404 | 0.1 | Pale reindeer-lichen cushions: on thin soil and in the dips of the granite, near the heath. | leaf 91237021151038 |
 | LichenCrust | Island | 4.75 x 0.1 x 3.02 | 300 leaf = 300 | 0.04 | Orange and grey-green crust on the granite itself: lay it on a rock face (tilt it to the slope; it is 0.1 studs thick), mostly on the sunny, bird-perch tops. | leaf 107634350418508 |
 
-**CedarBough (added 11/27/2026, not uploaded yet).** ![CedarBough](previews/CedarBough.png)
+**CedarBough (added 11/27/2026, uploaded 11/28/2026: bark 98689591828069, leaf 93142512095077).** ![CedarBough](previews/CedarBough.png)
 
 A drooping western red cedar spray for the bank cedars, to hang out over the stream: 12.31 x 5.4 x 3.97 studs, 42 bark + 214 leaf = 256 triangles, same Layer B rules. It is the one model whose pivot is **not** the bottom centre: the pivot is the branch base (the file's origin), the bough runs 12 studs toward Blender +X (**Roblox -X**) and hangs 4.3 studs below the pivot. Put the pivot on the trunk's centre line, 6 to 10 studs up (times the tree's scale), and turn its -X toward the water: `CFrame.new(base) * CFrame.Angles(0, Scatter.yawMinusX(dx, dz), 0)`, or on a placed Cedar `foot * CFrame.new(0, height, 0)`, since the Cedar's own -X already faces the water. Both meshes share one box and go at the same CFrame. Not yet checked in Studio: whether the importer keeps the file's origin as the pivot (the manifest entry has the offset to set if it does not). Rebuild just this one: `python art/scripts/plant_kit.py --only CedarBough`.
 
@@ -294,3 +294,46 @@ Upload the copies in `models/roblox/`. The two hero files are byte for byte the 
 **Checked.** No face mirrors its picture (the script counts them), and a back-face render from above, below, both ends and inside shows none, so the files are marked single-sided. Judged against `docs/looks/leg3-references/n4-cedar-canoe-and-boathouse-golden.jpg`: [beside the reference](previews/CedarCanoe-vs-reference.png), [first pass and final](previews/CedarCanoe-before-after.png), [high three-quarter](previews/CedarCanoe-threequarter.png), [at 22 studs](previews/CedarCanoe-ingame.png), [looking in](previews/CedarCanoe-inside.png), [from the water](previews/CedarCanoe-low.png), [the maps](previews/CedarCanoe-atlas.png). It differs from the reference on purpose in three ways: it is longer and slimmer (the plan's 12 by 3 studs), its gunwales are darker than the planking, and it carries no rope.
 
 Rebuild (Windows PowerShell): `cd "C:\Users\stewa\Documents\Claude\Roblox"; & "C:\Program Files\Blender Foundation\Blender 5.1\blender.exe" -b --factory-startup -P "C:\Users\stewa\Documents\Claude\Roblox\art\scripts\cedar_canoe.py"` (models, maps, manifest entries and previews; add `-- --no-render` for the models and maps only, or `-- --views golden,match` for some of the previews). The grain comes from the board scan in `artifacts/textures_src/Planks021/` (see `textures/SOURCES.md`); without it the script draws the grain by noise.
+
+## The Inflatable Dinghy: a hero set with its outboard (N4, 11/28/2026)
+
+Uploaded 11/28/2026 (ids in `models/dinghy_ids.json`; maps embedded in the GLB, imported as a SurfaceAppearance) and composed in `ServerStorage.Art` as `DinghyHero`, `DinghyOutboard`, `DinghyPlain` and `DinghyOutboardPlain`, pivots at the origin. The outboard sits at (0, 1.00, 3.38) from the boat's pivot.
+
+![Inflatable Dinghy at golden hour, the Cedar Canoe beyond](previews/DinghyHero-golden.png)
+
+Built by `scripts/dinghy_hero.py` for leg 3, N4. **Not yet uploaded or seen in Studio.** The re-skin of the dinghy that is in the game: the same 8 by 4 stud hull, now two seats. Orange hypalon tubes (base 204,108,48, as `docs/DECISIONS.md` asks) swept in one U with a cone at each stern end and a bow that lifts 0.4; a fabric floor with nine plywood slats; one plywood bench; a plywood transom; two oarlocks; and a small tiller outboard as a mesh of its own. It is a hero set (Layer C, like DockHero and the canoe): the taped seams, the rubbing strake, the grab line and its holders, the D-rings, valves and slats are in the baked maps, and the mesh stays simple. Our own design, no maker's marks. The old vertex-colour `Dinghy` (from `boats.py`) is left as it was.
+
+| File | Size (studs, X x Y up x Z) | Triangles | Maps | What it is |
+|---|---|---|---|---|
+| [DinghyHero](previews/DinghyHero.png) | 4.0 x 1.52 x 8.0 | 1,886 of 3,000 | colour, normal, roughness at 1024, embedded | The boat, one mesh, one SurfaceAppearance. It carries the outboard's clamp |
+| [DinghyOutboard](previews/DinghyOutboard.png) | 0.88 x 3.3 x 2.79 | 568 of 800 | colour, normal, roughness at 512, embedded | The motor, its own mesh, so it can turn, tilt and buzz |
+| [DinghyPlain](previews/DinghyPlain.png) | 3.99 x 1.52 x 7.99 | 596 | none (vertex colours) | The phone tier's twin of the boat: same lines, pivot and seats, a charcoal strake and nine real slats |
+| DinghyOutboardPlain | 0.88 x 3.3 x 2.79 | 568 | none (vertex colours) | The motor's plain twin, the same mesh |
+
+Upload the copies in `models/roblox/`. The two hero files are byte for byte the same as in `models/` (no `roblox_colors.py` step); the two plain files have their vertex colours converted. The loose maps are in `textures/dinghy/`, in case the importer does not make the SurfaceAppearance by itself (ColorMap, NormalMap, RoughnessMap; no metalness).
+
+**Placing the boat.** The file's origin is the **middle of the hull on the waterline**, as the canoe's is, so the pivot goes at the water level. The bow points along **Roblox -Z** and starboard is +X. If the importer puts the pivot on the middle of the box instead, the waterline pivot is 0.54 studs below the middle of the MeshPart (`PivotOffset = CFrame.new(0, -0.54, 0)`). Positions from the pivot:
+
+| What | Roblox position from the pivot (studs) |
+|---|---|
+| Keel (the draft) | y = -0.22 |
+| Tube bottoms | y = -0.14 |
+| Lowest point of the inside (the floor against the transom) | y = +0.27 |
+| Driver's seat, at the tiller: bench top centre | (0, 0.80, 0.70); the bench is 0.76 fore and aft, 0.12 thick, 2.28 clear between the tubes |
+| Passenger, in the bow: on the floor boards | (0, 0.31, -1.75); about 1.8 wide between the tubes there, and 2.45 studs ahead of the driver |
+| Tube tops | y = +0.90 along the sides, rising to +1.30 at the stem |
+| Transom top | y = +0.96; its outer face is at z = +3.22 |
+| Oarlock tops | (1.45, 1.23, 1.75) and (-1.45, 1.23, 1.75) |
+| Outboard pivot (where DinghyOutboard's origin goes) | (0, 1.00, 3.38) |
+| Propeller, its middle (spray and wake) | (0, -0.62, 4.13); radius 0.37 |
+| Tiller grip end | (-0.21, 1.63, 1.62) |
+
+**The outboard.** Its origin is the top of its swivel column: put it at (0, 1.00, 3.38) from the boat's pivot, with no turn. Steer it about Roblox Y through that point and tilt it about Roblox X; the clamp, its saddle and the two thumb screws are part of the boat, so the motor turns in them. From the outboard's own pivot the propeller is at (0, -1.62, 0.75) and the tiller grip ends at (-0.21, 0.63, -1.76). The cowl top is 2.18 above the water and the skeg reaches 1.12 below it, far deeper than the hull, so tilt the motor up on a beach or in the shallows. With the motor on, the pair is 8.4 studs long (the plate over the propeller ends 0.4 astern of the cones). A dark grey cowl with a cream and an orange pinstripe, a darker pan, a grey alloy leg stained below the water, a three-blade propeller and a rubber twist grip.
+
+**Why it floats high.** Roblox draws the lake inside any hull that dips below the water, so the dinghy is drawn riding light, as the canoe is: the keel 0.22 under, the tubes 0.14, and the floor never below 0.27 above the waterline. The fabric bottom is closed and far thicker than a real one, which cannot be seen. Keep the bob, the trim and the wave size together under about 0.25 studs at the floor, or water will show through the boards. Not yet checked in Studio.
+
+**The seats.** One bench, for the driver. The passenger has room in the bow but no seat of their own (the brief asks for one bench), so the position above is on the floor boards; a perch on top of the bow tube, at the stem, would be at (0, 1.30, -3.45). Sitting poses are the feel layer's job: a stock Roblox sit would put the passenger's legs through the floor.
+
+**Checked.** The hull is 8.0 by 4.0 to the hundredth. No face mirrors its picture (the script counts them), and a back-face render from twelve directions shows none on the boat (a few pixels at the edges of the propeller blades, whose two faces stand 0.006 apart). Judged by eye against `docs/looks/leg3-references/n4-cedar-canoe-and-boathouse-golden.jpg`, whose dinghy is off-white; the plan and `docs/DECISIONS.md` win on colour. No photos of a real boat were used. Sheets: [the old dinghy and this one](previews/DinghyHero-before-after.png), [first pass and final](previews/DinghyHero-first-final.png), [beside the reference](previews/DinghyHero-vs-reference.png). Views: [high three-quarter with the canoe](previews/DinghyHero-threequarter.png), [at 22 studs](previews/DinghyHero-ingame.png), [the driver's camera](previews/DinghyHero-inside.png), [from the water](previews/DinghyHero-low.png), [off the bow](previews/DinghyHero-bow.png), [the reference's framing](previews/DinghyHero-match.png), [the maps](previews/DinghyHero-atlas.png). It differs from the reference on purpose: it is orange, its slats run across the boat (as a real slatted floor does) instead of fore and aft, its tubes are a little slimmer so two avatars fit inside a 4 stud beam, and it carries no oars or coil of rope.
+
+Rebuild (Windows PowerShell): `cd "C:\Users\stewa\Documents\Claude\Roblox"; & "C:\Program Files\Blender Foundation\Blender 5.1\blender.exe" -b --factory-startup -P "C:\Users\stewa\Documents\Claude\Roblox\art\scripts\dinghy_hero.py"` (models, maps, manifest entries and previews, about six minutes; add `-- --no-render` for the models and maps only, or `-- --views golden,inside` for some of the previews). The plywood grain comes from the board scan in `artifacts/textures_src/Planks021/` (see `textures/SOURCES.md`); without it the script draws the grain by noise. The before picture needs `models/Dinghy.glb` and the scale pictures need `models/CedarCanoe.glb`.

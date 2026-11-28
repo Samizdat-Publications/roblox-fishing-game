@@ -1775,6 +1775,228 @@
     "replaces": "The gray-box boat BoatService builds (boat plan Task 2)",
     "notes": "8 x 4 stud inflatable; bow toward -Z. Tubes about 1.2 studs high."
   },
+  "DinghyHero": {
+    "name": "DinghyHero",
+    "studs": [
+      4.0,
+      1.52,
+      8.0
+    ],
+    "triangles": 1886,
+    "parts": 1,
+    "replaces": "Dinghy (the vertex-colour dinghy from boats.py that BoatService shows now): same 8 x 4 hull, new pivot on the waterline",
+    "notes": "Hero set (leg 3, N4): one mesh, one UV set, colour, normal (OpenGL) and roughness maps at 1024 embedded in the GLB; Roblox makes the SurfaceAppearance on import. Upload art/models/roblox/DinghyHero.glb as it is (no roblox_colors.py step). The loose maps are in art/textures/dinghy/. The file's origin is the middle of the hull on the waterline, not the bottom centre: if the importer puts the pivot on the middle of the box, see geometry.pivot_from_box_centre_roblox. Bow toward Roblox -Z, starboard +X. Orange hypalon tubes (204,108,48) with seams, strake, grab line, holders, D-rings and valves in the maps; a slatted ply floor, one ply bench, a ply transom carrying the outboard's clamp, two oarlocks. The outboard is DinghyOutboard, a mesh of its own, placed at geometry.outboard_pivot_roblox.",
+    "glb_bytes": 1790896,
+    "textures": {
+      "size": 1024,
+      "maps": [
+        "color",
+        "normal",
+        "roughness"
+      ],
+      "dry_hypalon_mean_rgb": [
+        183,
+        102,
+        51
+      ],
+      "tube_strip_mean_rgb": [
+        164,
+        93,
+        48
+      ]
+    },
+    "geometry": {
+      "length": 8.0,
+      "beam": 4.0,
+      "height": 1.52,
+      "pivot": "the file's origin: the middle of the 8 x 4 hull on the waterline",
+      "draft": 0.22,
+      "tube_bottom": -0.14,
+      "waterline_above_lowest_point": 0.22,
+      "pivot_from_box_centre_roblox": [
+        0.0,
+        -0.54,
+        -0.0
+      ],
+      "bow": "Roblox -Z (Blender -Y)",
+      "floor_lowest": 0.272,
+      "inside_width_at_floor": 1.876,
+      "tube_radius": 0.52,
+      "tube_top": 0.9,
+      "bow_top": 1.3,
+      "transom_top": 0.96,
+      "driver_seat_top_roblox": [
+        0.0,
+        0.8,
+        0.7
+      ],
+      "bench_roblox": {
+        "centre_top": [
+          0.0,
+          0.8,
+          0.7
+        ],
+        "clear_width": 2.28,
+        "fore_and_aft": 0.76,
+        "thickness": 0.12
+      },
+      "passenger_seat_roblox": [
+        0.0,
+        0.309,
+        -1.75
+      ],
+      "oarlocks_roblox": [
+        [
+          1.447,
+          1.23,
+          1.75
+        ],
+        [
+          -1.447,
+          1.23,
+          1.75
+        ]
+      ],
+      "outboard_pivot_roblox": [
+        0.0,
+        1.0,
+        3.38
+      ],
+      "prop_roblox": [
+        0.0,
+        -0.62,
+        4.13
+      ],
+      "tiller_grip_end_roblox": [
+        -0.21,
+        1.63,
+        1.62
+      ],
+      "transom_outer_face_z_roblox": 3.22
+    }
+  },
+  "DinghyOutboard": {
+    "name": "DinghyOutboard",
+    "studs": [
+      0.88,
+      3.3,
+      2.79
+    ],
+    "triangles": 568,
+    "parts": 1,
+    "replaces": "The block-and-stick motor that was part of the old Dinghy mesh",
+    "notes": "Hero set: one mesh, colour, normal (OpenGL) and roughness maps at 512 embedded. Upload art/models/roblox/DinghyOutboard.glb as it is. A small tiller outboard of our own design, no maker: dark grey cowl with a cream and an orange pinstripe, a darker pan, a grey alloy leg, gearcase, skeg and a three-blade propeller, a tiller with a rubber twist grip. Its origin is the pivot; the clamp that holds it is part of DinghyHero, so the motor can turn and tilt in it.",
+    "glb_bytes": 125292,
+    "textures": {
+      "size": 512,
+      "maps": [
+        "color",
+        "normal",
+        "roughness"
+      ]
+    },
+    "geometry": {
+      "pivot": "the file's origin: the top of the swivel column, where the motor steers (about Roblox Y) and tilts (about Roblox X)",
+      "place_at_roblox_from_boat_pivot": [
+        0.0,
+        1.0,
+        3.38
+      ],
+      "prop_roblox_from_outboard_pivot": [
+        0.0,
+        -1.62,
+        0.75
+      ],
+      "prop_roblox_from_boat_pivot": [
+        0.0,
+        -0.62,
+        4.13
+      ],
+      "prop_radius": 0.37,
+      "skeg_foot_below_waterline": 1.12,
+      "cowl_top_above_waterline": 2.176,
+      "tiller_grip_end_roblox_from_outboard_pivot": [
+        -0.21,
+        0.63,
+        -1.76
+      ],
+      "pivot_from_box_centre_roblox": [
+        0.0,
+        0.472,
+        0.373
+      ],
+      "front": "Roblox -Z (the tiller points at the bow)"
+    }
+  },
+  "DinghyOutboardPlain": {
+    "name": "DinghyOutboardPlain",
+    "studs": [
+      0.88,
+      3.3,
+      2.79
+    ],
+    "triangles": 568,
+    "parts": 1,
+    "replaces": "DinghyOutboard on the phone tier",
+    "notes": "Vertex colours only: the plain twin of DinghyOutboard, same mesh and origin. Upload art/models/roblox/DinghyOutboardPlain.glb.",
+    "glb_bytes": 31532,
+    "lite_of": "DinghyOutboard",
+    "geometry": {
+      "pivot": "the file's origin: the top of the swivel column, where the motor steers (about Roblox Y) and tilts (about Roblox X)",
+      "place_at_roblox_from_boat_pivot": [
+        0.0,
+        1.0,
+        3.38
+      ],
+      "prop_roblox_from_outboard_pivot": [
+        0.0,
+        -1.62,
+        0.75
+      ],
+      "prop_roblox_from_boat_pivot": [
+        0.0,
+        -0.62,
+        4.13
+      ],
+      "prop_radius": 0.37,
+      "skeg_foot_below_waterline": 1.12,
+      "cowl_top_above_waterline": 2.176,
+      "tiller_grip_end_roblox_from_outboard_pivot": [
+        -0.21,
+        0.63,
+        -1.76
+      ],
+      "pivot_from_box_centre_roblox": [
+        0.0,
+        0.472,
+        0.373
+      ],
+      "front": "Roblox -Z (the tiller points at the bow)"
+    }
+  },
+  "DinghyPlain": {
+    "name": "DinghyPlain",
+    "studs": [
+      3.99,
+      1.52,
+      7.99
+    ],
+    "triangles": 596,
+    "parts": 1,
+    "replaces": "DinghyHero on the phone tier (the lighter twin: same lines, pivot, seats and size)",
+    "notes": "Vertex colours only, no maps: the plain twin of DinghyHero, as Dock is to DockHero. Flat colour per face: orange tubes, a charcoal strake and cone caps, a dark fabric floor with nine real slats, ply bench and transom. Upload art/models/roblox/DinghyPlain.glb (colours already converted for Roblox). Same origin (hull centre on the waterline), bow toward Roblox -Z.",
+    "glb_bytes": 36808,
+    "lite_of": "DinghyHero",
+    "geometry": {
+      "pivot_from_box_centre_roblox": [
+        0.0,
+        -0.54,
+        -0.003
+      ],
+      "length": 7.995,
+      "beam": 3.989
+    }
+  },
   "Dock": {
     "name": "Dock",
     "studs": [
