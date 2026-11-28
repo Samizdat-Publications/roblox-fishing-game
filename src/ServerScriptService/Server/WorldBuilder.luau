@@ -532,13 +532,14 @@ local ART: { ArtEntry } = {
 		places = { at(50, 1, 106) },
 		hide = { "HomePond.RimN", "HomePond.RimS", "HomePond.RimW", "HomePond.RimE" },
 	},
-	-- The fallen logs stay the full-length Log1 to Log3 (in the bark family through
+	-- The fallen logs stay full length: Log1b to Log3b (11/27/2026: torn, water-soaked ends in place
+	-- of the flat tan caps; the old Log1 to Log3 stay in ServerStorage.Art as the revert), in the bark family through
 	-- MaterialKit.skinArt): the kit driftwood would be about 8.5 studs inside 22 stud gray boxes,
 	-- and the snags are the whole box, so casts would snag on open water. A proper long fallen
 	-- log model is a follow-up (N3 brings a mossy log). The driftwood option stays in `girth`.
-	{ name = "Log1", places = over({ "Logs.Log1", "Logs.Log4" }, "center"), hide = { "Logs.Log1", "Logs.Log4" }, variant = { material = Enum.Material.Wood, name = "Bark" } },
-	{ name = "Log2", places = over({ "Logs.Log2", "Logs.Log5" }, "center"), hide = { "Logs.Log2", "Logs.Log5" }, variant = { material = Enum.Material.Wood, name = "Bark" } },
-	{ name = "Log3", places = over({ "Logs.Log3" }, "center"), hide = { "Logs.Log3" }, variant = { material = Enum.Material.Wood, name = "Bark" } },
+	{ name = "Log1b", places = over({ "Logs.Log1", "Logs.Log4" }, "center"), hide = { "Logs.Log1", "Logs.Log4" }, variant = { material = Enum.Material.Wood, name = "Bark" } },
+	{ name = "Log2b", places = over({ "Logs.Log2", "Logs.Log5" }, "center"), hide = { "Logs.Log2", "Logs.Log5" }, variant = { material = Enum.Material.Wood, name = "Bark" } },
+	{ name = "Log3b", places = over({ "Logs.Log3" }, "center"), hide = { "Logs.Log3" }, variant = { material = Enum.Material.Wood, name = "Bark" } },
 	-- Floats in the deep hole; painted wood family (N1 review 2: it read as stock plastic).
 	{ name = "Buoy", places = { at(0, -0.6, -25) }, hide = { "DeepHoleBuoy" }, variant = { material = Enum.Material.WoodPlanks, name = "PaintedWood" } },
 	-- Reed clumps replace the weed sticks; lily pads lie on the water round the bed.

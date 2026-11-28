@@ -1575,6 +1575,66 @@
     "replaces": "Workspace.Lake.Logs.Log1 to Log5 (mix the variants)",
     "notes": "Lies along X. The gray box sinks logs 0.4 to 1.6 studs; keep that."
   },
+  "Log1b": {
+    "name": "Log1b",
+    "studs": [
+      22.16,
+      2.81,
+      3.49
+    ],
+    "triangles": 379,
+    "parts": 1,
+    "replaces": "Log1 (asset 89531819976790) over gray-box logs 1 and 4: the same box and pivot to a ten-thousandth of a stud, so it swaps in at the same CFrame",
+    "notes": "Weathered fallen log, Layer B, bark family, one mesh: MaterialVariant bark (Bark on Wood) with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit, grain along the log. Upload art/models/roblox/Log1b.glb. Lies along X, pivot at the bottom centre of the box; two corner specks pin the box to Log1's. Both ends are broken; the richer break is at Blender -X (Roblox +X), the end that shows. The water is painted for the gray boxes as WorldBuilder lays them: CFrame.Angles(0, yaw, 0.12) with the middle 0.5 studs under the water, so the Roblox +X end is up. Soaked wood below the water, a thin green algae line on it, a wet band above, dry bark over that. At that depth the water stands 0.53 studs up the high end. If a log is laid another way the line will not sit on the water.",
+    "model": "Log1b",
+    "family": "bark",
+    "variant": "bark",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "water": {
+      "sink": 0.5,
+      "sink_of_its_own_box": 0.5,
+      "tilt": 0.12,
+      "high_end": "Roblox +X (Blender -X)",
+      "cuts_depth": [
+        0.05,
+        -0.08,
+        -0.34
+      ]
+    },
+    "palette_seen_rgb": {
+      "bark": [
+        110,
+        96,
+        80
+      ],
+      "bark_top": [
+        114,
+        100,
+        84
+      ],
+      "bark_low": [
+        96,
+        83,
+        68
+      ],
+      "end": [
+        60,
+        50,
+        40
+      ],
+      "soak": [
+        70,
+        64,
+        52
+      ],
+      "algae": [
+        72,
+        80,
+        52
+      ]
+    }
+  },
   "Log2": {
     "name": "Log2",
     "studs": [
@@ -1587,6 +1647,66 @@
     "replaces": "Workspace.Lake.Logs.Log1 to Log5 (mix the variants)",
     "notes": "Lies along X. The gray box sinks logs 0.4 to 1.6 studs; keep that."
   },
+  "Log2b": {
+    "name": "Log2b",
+    "studs": [
+      15.26,
+      2.89,
+      3.29
+    ],
+    "triangles": 281,
+    "parts": 1,
+    "replaces": "Log2 (asset 99209213624189) over gray-box logs 2 and 5: the same box and pivot to a ten-thousandth of a stud, so it swaps in at the same CFrame",
+    "notes": "Weathered fallen log, Layer B, bark family, one mesh: MaterialVariant bark (Bark on Wood) with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit, grain along the log. Upload art/models/roblox/Log2b.glb. Lies along X, pivot at the bottom centre of the box; two corner specks pin the box to Log2's. Both ends are broken; the richer break is at Blender -X (Roblox +X), the end that shows. The water is painted for the gray boxes as WorldBuilder lays them: CFrame.Angles(0, yaw, 0.12) with the middle 0.8 studs under the water, so the Roblox +X end is up. Soaked wood below the water, a thin green algae line on it, a wet band above, dry bark over that. At that depth the water stands 1.27 studs up the high end. If a log is laid another way the line will not sit on the water.",
+    "model": "Log2b",
+    "family": "bark",
+    "variant": "bark",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "water": {
+      "sink": 0.8,
+      "sink_of_its_own_box": 0.8,
+      "tilt": 0.12,
+      "high_end": "Roblox +X (Blender -X)",
+      "cuts_depth": [
+        0.05,
+        -0.08,
+        -0.34
+      ]
+    },
+    "palette_seen_rgb": {
+      "bark": [
+        110,
+        96,
+        80
+      ],
+      "bark_top": [
+        114,
+        100,
+        84
+      ],
+      "bark_low": [
+        96,
+        83,
+        68
+      ],
+      "end": [
+        60,
+        50,
+        40
+      ],
+      "soak": [
+        70,
+        64,
+        52
+      ],
+      "algae": [
+        72,
+        80,
+        52
+      ]
+    }
+  },
   "Log3": {
     "name": "Log3",
     "studs": [
@@ -1598,6 +1718,66 @@
     "parts": 15,
     "replaces": "Workspace.Lake.Logs.Log1 to Log5 (mix the variants)",
     "notes": "Lies along X. The gray box sinks logs 0.4 to 1.6 studs; keep that."
+  },
+  "Log3b": {
+    "name": "Log3b",
+    "studs": [
+      18.42,
+      4.29,
+      5.14
+    ],
+    "triangles": 389,
+    "parts": 1,
+    "replaces": "Log3 (asset 92896234828500) over gray-box log 3: the same box and pivot to a ten-thousandth of a stud, so it swaps in at the same CFrame",
+    "notes": "Weathered fallen log, Layer B, bark family, one mesh: MaterialVariant bark (Bark on Wood) with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit, grain along the log. Upload art/models/roblox/Log3b.glb. Lies along X, pivot at the bottom centre of the box; two corner specks pin the box to Log3's. The root plate is at Blender +X (Roblox -X), the broken end at Blender -X (Roblox +X). The water is painted for the gray boxes as WorldBuilder lays them: CFrame.Angles(0, yaw, 0.12) with the middle 0.5 studs under the water, so the Roblox +X end is up. Its own gray box lies 1.2 studs under, which hides all of it but the tip of the trunk (as it hides Log3 now), so it is painted for a box 0.5 under instead: lay it over gray-box log 1 or 4, or raise its box, to show it. Soaked wood below the water, a thin green algae line on it, a wet band above, dry bark over that. At that depth the water stands 1.28 studs up the high end. If a log is laid another way the line will not sit on the water.",
+    "model": "Log3b",
+    "family": "bark",
+    "variant": "bark",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "water": {
+      "sink": 0.5,
+      "sink_of_its_own_box": 1.2,
+      "tilt": 0.12,
+      "high_end": "Roblox +X (Blender -X)",
+      "cuts_depth": [
+        0.05,
+        -0.08,
+        -0.34
+      ]
+    },
+    "palette_seen_rgb": {
+      "bark": [
+        110,
+        96,
+        80
+      ],
+      "bark_top": [
+        114,
+        100,
+        84
+      ],
+      "bark_low": [
+        96,
+        83,
+        68
+      ],
+      "end": [
+        60,
+        50,
+        40
+      ],
+      "soak": [
+        70,
+        64,
+        52
+      ],
+      "algae": [
+        72,
+        80,
+        52
+      ]
+    }
   },
   "Muskellunge": {
     "name": "Muskellunge",
