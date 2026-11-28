@@ -2584,5 +2584,170 @@
       "u05-fight": "Clear",
       "u06-bench": "Clear"
     }
+  },
+  {
+    "date": "2026-11-27",
+    "step": "n3-creek-1",
+    "set": "A",
+    "rubric": "look",
+    "run": "2026-11-27-2307",
+    "commit": "48f3564",
+    "shots": 4,
+    "median": 6.5,
+    "scores": [
+      6.5,
+      6.5,
+      6.5
+    ],
+    "points": {
+      "composition": 6,
+      "light": 7,
+      "water": 6,
+      "mood": 7,
+      "want_to_fish": 6,
+      "phone_readability": 7,
+      "broken_or_ugly": 7
+    },
+    "reports": [
+      "docs\\critic\\2026-11-27-n3-creek-1-neon.md",
+      "docs\\critic\\2026-11-27-n3-creek-1-neon-2.md",
+      "docs\\critic\\2026-11-27-n3-creek-1-neon-3.md"
+    ],
+    "weather": {
+      "09-riffle-dawn": "Clear",
+      "10-pool-golden": "Clear",
+      "11-gate-noon": "Clear",
+      "12-pool-night": "Clear"
+    }
+  },
+  {
+    "date": "2026-11-27",
+    "step": "n3-creek-1",
+    "set": "A",
+    "rubric": "identity",
+    "run": "2026-11-27-2307",
+    "commit": "48f3564",
+    "shots": 4,
+    "median": 4,
+    "scores": [
+      4,
+      4,
+      4
+    ],
+    "points": {
+      "materials": 4,
+      "signature": 3,
+      "cohesion": 5,
+      "stock_free": 3,
+      "identity": 4
+    },
+    "reports": [
+      "docs\\critic\\2026-11-27-n3-creek-1-identity-neon.md",
+      "docs\\critic\\2026-11-27-n3-creek-1-identity-neon-2.md",
+      "docs\\critic\\2026-11-27-n3-creek-1-identity-neon-3.md"
+    ],
+    "stock_items": [
+      {
+        "item": "Default Roblox skybox and clouds (11-gate-noon.jpg upper half; 09-riffle-dawn.jpg top edge behind trees).",
+        "reason": "Instantly recognizable default saturated blue Roblox sky with soft painted cumulus clouds.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox terrain Grass surface texture (09-riffle-dawn.jpg foreground mound; 11-gate-noon.jpg foreground and midground lawn).",
+        "reason": "The bumpy bright-green default terrain base beneath the grass blades reads immediately as untouched Studio terrain.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox terrain Sand path (10-pool-golden.jpg right bank; 12-pool-night.jpg right bank; 11-gate-noon.jpg wide center-right path).",
+        "reason": "Smooth, powdery pale-beige default terrain material with soft blobby edges and no gravel, wheel-rut, or pebble detail.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox terrain Ground and Mud patches (11-gate-noon.jpg left and right dirt areas beside the fence; 09-riffle-dawn.jpg curving path on the right).",
+        "reason": "Flat-looking default terrain paint with unmistakable soft circular voxel-brush transitions.",
+        "runs": 1
+      },
+      {
+        "item": "Stock voxel-terrain shoreline transitions (10-pool-golden.jpg and 12-pool-night.jpg bottom-center gravel strip and far dark-mud bank).",
+        "reason": "Soft, blobby terrain material blending along the bank edge with no physical rocks, roots, or edging to break the default terrain profile.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox sun glare and golden-hour disc (10-pool-golden.jpg top-left behind the trees).",
+        "reason": "Reads as the oversized default Roblox SunRays and skybox sun bloom rather than authored lighting.",
+        "runs": 1
+      },
+      {
+        "item": "Stock bumpy Roblox part material on conifer foliage (09-riffle-dawn.jpg center and right foreground trees; 11-gate-noon.jpg foreground pines).",
+        "reason": "The foliage meshes appear coated in stock Roblox Slate, Rock, or LeafyGrass tiling, making pine branches look like dark green carved stone instead of needles.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox skybox and sun (11-gate-noon.jpg upper half, 09-riffle-dawn.jpg upper sky, 10-pool-golden.jpg upper left sun and upper right sky)",
+        "reason": "Uses the built-in saturated blue sky, default painted clouds, and oversized default sun disc.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox terrain Grass ground texture (11-gate-noon.jpg foreground and sides, 09-riffle-dawn.jpg foreground mound)",
+        "reason": "Reads immediately as default bright green bumpy Roblox voxel terrain beneath the grass blades.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox terrain Sand and Ground paths (11-gate-noon.jpg center-right path, 10-pool-golden.jpg and 12-pool-night.jpg right bank path, 09-riffle-dawn.jpg right trail)",
+        "reason": "Smooth, featureless default terrain textures with blobby voxel transitions instead of gravel, river stones, or packed dirt.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox terrain Mud patches (11-gate-noon.jpg left and right edges along the fence)",
+        "reason": "Flat, uniform brown terrain blobs that read as default painted terrain rather than forest earth or leaf litter.",
+        "runs": 1
+      },
+      {
+        "item": "Generic low-poly trees with smooth cylindrical trunks and faceted foliage pads or blobs (09-riffle-dawn.jpg center and right, 11-gate-noon.jpg left and midground)",
+        "reason": "Read like stock or free-model Roblox low-poly trees built from smooth brown cylinders and faceted Slate/Plastic shapes rather than true bark and pine needles.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox skybox (09-riffle-dawn.jpg top, 11-gate-noon.jpg top center and right, 12-pool-night.jpg top right clouds)",
+        "reason": "Immediately recognizable stock Roblox cobalt-blue sky and wispy default cloud texture.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Grass terrain surface (09-riffle-dawn.jpg bottom-center foreground, 11-gate-noon.jpg foreground and mid-ground)",
+        "reason": "The bare green ground beneath the grass blades shows the bright, smooth default Roblox Grass terrain material.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Sand/Ground trail terrain (10-pool-golden.jpg right foreground, 11-gate-noon.jpg center-to-right path, 12-pool-night.jpg right foreground)",
+        "reason": "Reads as featureless, clay-smooth default Roblox terrain rather than real packed earth, gravel, or sand.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Mud/Ground dirt patches (11-gate-noon.jpg far left and far right under the trees)",
+        "reason": "Smooth, flat brown default terrain patches that look painted on rather than reading as forest soil or pine duff.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Rock/Mud bank and trail terrain (09-riffle-dawn.jpg curving path on the right half, 12-pool-night.jpg lower center-right shoreline)",
+        "reason": "Shows the recognizable mottled default Roblox terrain rock and mud texture.",
+        "runs": 1
+      },
+      {
+        "item": "Smooth untextured brown tree trunks (09-riffle-dawn.jpg center and right foreground trees)",
+        "reason": "Cylindrical brown trunks lack readable bark grain and read like stock SmoothPlastic or flat-colored parts.",
+        "runs": 1
+      },
+      {
+        "item": "Generic low-poly pancake-canopy pine trees (09-riffle-dawn.jpg right side, 11-gate-noon.jpg mid-left and mid-right)",
+        "reason": "Flat horizontal faceted foliage disks stacked on straight poles read like generic Roblox free-model or starter-kit trees and clash with the fuller tiered spruces.",
+        "runs": 1
+      }
+    ],
+    "weather": {
+      "09-riffle-dawn": "Clear",
+      "10-pool-golden": "Clear",
+      "11-gate-noon": "Clear",
+      "12-pool-night": "Clear"
+    }
   }
 ]
