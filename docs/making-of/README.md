@@ -4,6 +4,60 @@ A Roblox fishing game where real fishing knowledge matters: the right bait, spot
 
 Newest first. The live page with before and after sliders is `docs/making-of/index.html` (published as a Claude artifact).
 
+## N3: Cedar Creek becomes a stream in the woods
+
+2026-11-28 04:30
+
+The creek was a square voxel pool and a straight ditch. Now it is a rounded pool and a rocky riffle under a leaning cedar canopy, with roots and ferns on cut banks, moss and forest floor instead of meadow grass, a mossy log, bushes under the trees and far pines closing the woods behind. It has its own light and water through the day: mist at dawn, a darker pool at golden hour, a calm night. The gate is new too: a peeled-log arch with a shingle cap and a hanging board, split-rail fence either side and timber lantern posts with a warm light in the glass. Three rounds of review by Fable and an overnight review by Gemini kept finding things the eye could not miss, and two of them were bugs, not looks: the riffle bed sat too shallow for the game to draw water on it, and the camera harness had been repainting a plain, ungraded picture over most test frames, so earlier scores were judging the wrong image. The critic still scores the creek 5.5, with the white water held back until it stops reading as hard-edged strips. This step also starts the prime shots: eight fixed views with real lens choices, from a 24 mm view over the lake to an 85 mm look through the footbridge, to be retaken at every milestone so the same frames can show the game improving.
+
+**The riffle at dawn**
+
+| Before | After |
+|---|---|
+| ![before](stills/2026-11-28-n3-09-riffle-dawn-before.jpg) | ![after](stills/2026-11-28-n3-09-riffle-dawn-after.jpg) |
+
+**The pool at golden hour**
+
+| Before | After |
+|---|---|
+| ![before](stills/2026-11-28-n3-10-pool-golden-before.jpg) | ![after](stills/2026-11-28-n3-10-pool-golden-after.jpg) |
+
+**The creek gate at noon**
+
+| Before | After |
+|---|---|
+| ![before](stills/2026-11-28-n3-11-gate-noon-before.jpg) | ![after](stills/2026-11-28-n3-11-gate-noon-after.jpg) |
+
+**The pool at night**
+
+| Before | After |
+|---|---|
+| ![before](stills/2026-11-28-n3-12-pool-night-before.jpg) | ![after](stills/2026-11-28-n3-12-pool-night-after.jpg) |
+
+![The home lake from the hill at golden hour (24 mm)](stills/2026-11-28-prime-p01-lake-high-golden.jpg)
+*The home lake from the hill at golden hour (24 mm)*
+
+![Down the dock at dawn (28 mm)](stills/2026-11-28-prime-p02-dock-dawn.jpg)
+*Down the dock at dawn (28 mm)*
+
+![In the cattails at the weed bed (35 mm)](stills/2026-11-28-prime-p03-weedbed-golden.jpg)
+*In the cattails at the weed bed (35 mm)*
+
+![The buoy and the footbridge through a long lens (85 mm)](stills/2026-11-28-prime-p04-channel-golden-tele.jpg)
+*The buoy and the footbridge through a long lens (85 mm)*
+
+![The Sell Fish stand in the morning (50 mm)](stills/2026-11-28-prime-p05-sellstand-morning.jpg)
+*The Sell Fish stand in the morning (50 mm)*
+
+![Both stands at blue hour (28 mm)](stills/2026-11-28-prime-p06-stands-bluehour.jpg)
+*Both stands at blue hour (28 mm)*
+
+![Up the creek riffle (35 mm)](stills/2026-11-28-prime-p07-riffle-morning.jpg)
+*Up the creek riffle (35 mm)*
+
+![The creek pool at golden hour (28 mm)](stills/2026-11-28-prime-p08-pool-golden.jpg)
+*The creek pool at golden hour (28 mm)*
+
 ## N2: Screens like a field guide and a tackle box
 
 2026-11-27 23:59
