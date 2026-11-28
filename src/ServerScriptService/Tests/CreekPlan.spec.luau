@@ -155,7 +155,11 @@ return function(t, Shared)
 		for _, it in withBoughs.items do
 			if it.group ~= "Log" and it.group ~= "Roots" and it.group ~= "Boughs" and it.row ~= "frame" then
 				t.ok(not CreekPlan.inLane(it.x, it.z), bad(it, "in a cast lane"))
-				t.ok(not CreekPlan.kept(it.x, it.z), bad(it, "in a keep-clear"))
+				-- N3 review 2: the pool's edge stones sit on the waterline, where the bank path's
+				-- keep-clear reaches the water (they keep off the lanes and the lantern).
+				if it.group ~= "EdgeStones" then
+					t.ok(not CreekPlan.kept(it.x, it.z), bad(it, "in a keep-clear"))
+				end
 				if it.group == "Trees" then
 					t.ok(CreekPlan.treeShotClear(it.x, it.z, it.model), bad(it, "in a shot"))
 				else
@@ -166,12 +170,16 @@ return function(t, Shared)
 				t.ok(not Scatter.inBox(Scatter.KEEP_BOXES[7], it.x, it.z), bad(it, "at the gate"))
 			end
 		end
-		-- Shot 09's looser clearance is for cedars only: a pine there still keeps Scatter's.
-		t.ok(CreekPlan.treeShotClear(-221, 36, "Cedar") and not CreekPlan.treeShotClear(-221, 36, "ShorePine1"), "09's loose clearance is cedars only")
-		t.ok(not CreekPlan.treeShotClear(-212, 34, "Cedar"), "nothing within 10 of 09's eye")
+		-- Shot 09's looser clearance is for cedars only: a pine there still keeps Scatter's (N3
+		-- review 2: 09's eye at -230.5, 19).
+		t.ok(CreekPlan.treeShotClear(-219, 27, "Cedar") and not CreekPlan.treeShotClear(-219, 27, "ShorePine1"), "09's loose clearance is cedars only")
+		t.ok(not CreekPlan.treeShotClear(-225, 19, "Cedar"), "nothing within 10 of 09's eye")
 	end)
 
-	t.test("shot 09's two frame cedars: on the thirds, foliage in the top quarter", function()
+	-- N3 review 2: the advisor moved them for 09's new eye (low in the run) at scale 1.4. From there
+	-- their crowns' lowest foliage sits about a third of the way down the frame, not in the top
+	-- quarter as review 1 asked: the frame is judged on the new captures.
+	t.test("shot 09's two frame cedars: on the thirds, crowns in the top half", function()
 		local c = CreekPlan.shotCam("09") :: any
 		local eye = Vector3.new(c.eye[1], c.eye[2], c.eye[3])
 		local cf = CFrame.lookAt(eye, Vector3.new(c.look[1], c.look[2], c.look[3]))
@@ -185,16 +193,16 @@ return function(t, Shared)
 		for _, it in plan.items do
 			if it.row == "frame" then
 				found += 1
-				t.ok(it.model == "Cedar" and it.scale == 1.5 and it.tilt == nil, bad(it, "an upright cedar at 1.5"))
+				t.ok(it.model == "Cedar" and it.scale == 1.4 and it.tilt == nil, bad(it, "an upright cedar at 1.4"))
 				t.ok(not CreekPlan.inLane(it.x, it.z) and not CreekPlan.kept(it.x, it.z), bad(it, "out of the lanes and paths"))
 				t.ok(CreekPlan.D(it.x, it.z) > 1, bad(it, "on the bank"))
 				t.ok(math.sqrt((it.x - eye.X) ^ 2 + (it.z - eye.Z) ^ 2) >= CreekPlan.SHOT09.eyeR, bad(it, "clear of 09's eye"))
 				local g = CreekPlan.height(it.x, it.z)
 				local sx = screen(it.x, g, it.z)
 				t.ok(math.abs(sx - 1 / 3) < 0.05 or math.abs(sx - 2 / 3) < 0.05, bad(it, string.format("trunk at %.2f of the frame", sx)))
-				-- The crown's lowest foliage (CROWN: middle minus radius) stays above the frame's top quarter line.
+				-- The crown's lowest foliage (CROWN: middle minus radius) stays in the top half, under 0.4.
 				local _, sy = screen(it.x, g + (crown.h - crown.r) * it.scale, it.z)
-				t.ok(sy < 0.25, bad(it, string.format("crown bottom at %.3f of the frame height", sy)))
+				t.ok(sy < 0.4, bad(it, string.format("crown bottom at %.3f of the frame height", sy)))
 			end
 		end
 		t.eq(found, #CreekPlan.FRAME_CEDARS, "both frame cedars")
@@ -203,7 +211,7 @@ return function(t, Shared)
 	t.test("trunks: the bank row 1 to 9 studs back leaning out, the backing forest behind it", function()
 		local trees = 0
 		local rows: { [string]: number } = {}
-		local back = { west = 0, east = 0, cedar = 0 }
+		local back = { west = 0, east = 0, cedar = 0, near = 0 }
 		local T = CreekPlan.TUNING
 		for _, it in plan.items do
 			if it.group == "Trees" then
@@ -217,8 +225,18 @@ return function(t, Shared)
 					local deg = math.deg(it.tilt or 0)
 					t.ok(deg >= 4 - 1e-6 and deg <= 10 + 1e-6, bad(it, "tilt"))
 					t.ok(it.model ~= "Cedar" or (it.scale >= 1.2 and it.scale <= 1.5), bad(it, "cedar scale"))
-				elseif it.row == "back" then
+				elseif it.row == "back" or it.row == "south" or it.row == "head" or it.row == "gate" then
 					t.ok(it.tilt == nil, bad(it, "the backing forest stands upright"))
+					-- N3 review 2: at D 20 and beyond, far pines; nearer, cedar and shore pine.
+					local far = string.sub(it.model, 1, 7) == "FarPine"
+					t.ok(far == (D >= T.backFarD), bad(it, string.format("far pines from D %d (D %.1f)", T.backFarD, D)))
+				end
+				if it.row == "south" or it.row == "head" or it.row == "gate" then
+					local spec = if it.row == "south" then T.rowSouth elseif it.row == "head" then T.rowHead else T.rowGate
+					t.ok(it.x >= spec.x[1] and it.x <= spec.x[2] and it.z >= spec.z[1] and it.z <= spec.z[2], bad(it, "inside its row's box"))
+					t.ok(CreekPlan.inFence(it.x, it.z), bad(it, "inside the creek fence"))
+					t.ok(not CreekPlan.kept(it.x, it.z) and not CreekPlan.inLane(it.x, it.z), bad(it, "off the paths and the lanes"))
+				elseif it.row == "back" then
 					if it.x <= T.backWestX then
 						back.west += 1
 						t.ok(D >= T.backWestBand[1] and D <= T.backWestBand[2], bad(it, string.format("west backing D %.1f", D)))
@@ -227,10 +245,13 @@ return function(t, Shared)
 						back.east += 1
 						t.ok(it.x >= T.backEastX[1] and it.x <= T.backEastX[2], bad(it, "east backing x"))
 					end
-					if it.model == "Cedar" then
-						back.cedar += 1
+					if D < T.backFarD then
+						back.near += 1
+						if it.model == "Cedar" then
+							back.cedar += 1
+						end
 					end
-				elseif it.row ~= "frame" then
+				elseif it.row ~= "frame" and it.row ~= "bank" and it.row ~= "poolEast" then
 					t.ok(false, bad(it, "a tree with no row"))
 				end
 				t.ok(not CreekPlan.ruleWater(it.x, it.z), bad(it, "in the water"))
@@ -241,8 +262,12 @@ return function(t, Shared)
 		t.ok((rows.bank or 0) >= 36, "bank trees: " .. tostring(rows.bank))
 		t.eq(back.west, T.backWest, "west backing trees")
 		t.eq(back.east, T.backEast, "east backing trees")
-		local share = back.cedar / (back.west + back.east)
-		t.ok(share >= 0.55 and share <= 0.85, string.format("backing forest %.0f%% cedar (70 wanted)", share * 100))
+		-- The near backing trees (under D 20) are about 70 percent cedar (few of them: a loose band).
+		local share = back.cedar / math.max(1, back.near)
+		t.ok(back.near == 0 or (share >= 0.4 and share <= 0.9), string.format("near backing forest %.0f%% cedar of %d (70 wanted)", share * 100, back.near))
+		t.eq(rows.south or 0, T.rowSouth.n, "the south row")
+		t.eq(rows.head or 0, T.rowHead.n, "the head hill's row")
+		t.eq(rows.gate or 0, T.rowGate.n, "the row behind the gate")
 		local pine2 = 0
 		for _, it in plan.items do
 			if it.model == "ShorePine2" then
@@ -267,9 +292,10 @@ return function(t, Shared)
 		t.ok(plan.coverage >= 0.2, string.format("crowns over %.0f%% of the riffle and run water", plan.coverage * 100))
 	end)
 
-	t.test("boughs: off by default; on, 60 percent of the riffle is under crowns or boughs", function()
-		t.eq(CreekPlan.TUNING.boughsPer, 0, "boughs held off until desktop shadows are seen")
-		t.eq(plan.counts.CedarBough or 0, 0, "no boughs placed")
+	t.test("boughs: on (N3 review 2), 60 percent of the riffle is under crowns or boughs", function()
+		t.eq(CreekPlan.TUNING.boughsPer, CreekPlan.BOUGHS_ON, "two boughs per riffle cedar, on")
+		local off = CreekPlan.plan(CreekPlan.SEED, { boughsPer = 0 })
+		t.eq(off.counts.CedarBough or 0, 0, "none with the switch at 0")
 		local on = CreekPlan.plan(CreekPlan.SEED, { boughsPer = CreekPlan.BOUGHS_ON })
 		t.ok(on.riffleCoverage >= 0.6, string.format("riffle %.0f%% covered with the boughs on", on.riffleCoverage * 100))
 		local cedars = 0
@@ -299,7 +325,7 @@ return function(t, Shared)
 			t.ok(CreekPlan.D(k.x, k.z) <= -k.r, string.format("rock at %.1f, %.1f over the water", k.x, k.z))
 			t.ok(not CreekPlan.inLane(k.x, k.z, k.r), string.format("rock at %.1f, %.1f off the lanes", k.x, k.z))
 		end
-		t.eq(plan.counts.RockMedium, #rocks, "placed")
+		t.eq(plan.counts.RockMedium, #rocks + #CreekPlan.edgeStones(CreekPlan.SEED), "placed (with the pool's edge stones)")
 		local foam = CreekPlan.foam(CreekPlan.SEED)
 		local trailed = 0
 		for _, k in rocks do
@@ -311,6 +337,43 @@ return function(t, Shared)
 			end
 		end
 		t.ok(trailed >= 8, "rocks with a foam trail: " .. trailed)
+	end)
+
+	t.test("N3 review 2: ten wet-slate stones along the pool's east edge", function()
+		local st = CreekPlan.edgeStones(CreekPlan.SEED)
+		t.eq(#st, CreekPlan.TUNING.edgeStones, "stones")
+		for _, k in st do
+			t.ok(math.abs(CreekPlan.D(k.x, k.z)) <= 0.4, string.format("stone at %.1f, %.1f on the waterline", k.x, k.z))
+			t.ok(k.x > -216, string.format("stone at %.1f, %.1f on the east side", k.x, k.z))
+			t.ok(not CreekPlan.inLane(k.x, k.z), string.format("stone at %.1f, %.1f off the lanes", k.x, k.z))
+		end
+	end)
+
+	t.test("N3 review 2: no meadow grass in the fence, the gate approach, the path slot", function()
+		local S = CreekPlan.SLOT
+		-- Inside the fence: moss to D 30, then grass becomes the hill forest floor; the paths stay.
+		t.eq(CreekPlan.fenceSlot(-262, 40, CreekPlan.D(-262, 40), 2), S.MOSS, "moss 25 studs west of the riffle")
+		t.eq(CreekPlan.fenceSlot(-290, 100, CreekPlan.D(-290, 100), 2), CreekPlan.FOREST_SLOT, "grass far out is forest floor")
+		t.eq(CreekPlan.fenceSlot(-290, 100, CreekPlan.D(-290, 100), 25), nil, "the forest floor stays")
+		t.eq(CreekPlan.fenceSlot(-203, 40, CreekPlan.D(-203, 40), 24), nil, "the bank path stays")
+		t.eq(CreekPlan.fenceSlot(-150, 40, 50, 2), nil, "outside the fence: left alone")
+		local grassLeft = 0
+		for x = -298, -166, 4 do
+			for z = -110, 124, 4 do
+				local D = CreekPlan.D(x, z)
+				local new = CreekPlan.fenceSlot(x, z, D, 2)
+				if new == nil and not CreekPlan.kept(x, z, 1) and D >= 7 then
+					grassLeft += 1
+				end
+			end
+		end
+		t.eq(grassLeft, 0, "no grass left inside the fence past the banks")
+		-- The gate approach: lawn five studs each side of the walk, forest floor beyond.
+		t.eq(CreekPlan.approachSlot(-140, 7, 25), CreekPlan.LAWN_SLOT, "lawn beside the walk")
+		t.eq(CreekPlan.approachSlot(-140, 9, 25), CreekPlan.FOREST_SLOT, "forest floor past the band")
+		t.eq(CreekPlan.approachSlot(-140, 20, 2), nil, "meadow out in the approach stays")
+		t.eq(CreekPlan.approachSlot(-170, 0, 25), nil, "inside the fence is not the approach")
+		t.eq(CreekPlan.PATH_SLOT, 32, "the creek paths on their own slot")
 	end)
 
 	t.test("the mossy log lies across the pool's corner, out of the cast lanes", function()
@@ -372,8 +435,14 @@ return function(t, Shared)
 	t.test("the creek's look: clear tea water, cool shade, a floor under the exposure", function()
 		local c = LookPresets.AREAS.creek :: any
 		local w = c.water
-		t.ok(math.abs(w.WaterColor.R * 255 - 64) < 1 and math.abs(w.WaterColor.G * 255 - 84) < 1 and math.abs(w.WaterColor.B * 255 - 58) < 1, "water 64, 84, 58")
-		if LookPresets.REVIEW1_CREEK then
+		if LookPresets.REVIEW2_CREEK_WATER then
+			-- N3 review 2: darker water with a little more surface, its reflectance one constant.
+			t.ok(math.abs(w.WaterColor.R * 255 - 52) < 1 and math.abs(w.WaterColor.G * 255 - 70) < 1 and math.abs(w.WaterColor.B * 255 - 48) < 1, "water 52, 70, 48")
+			t.eq(w.WaterTransparency, 0.65, "transparency 0.65")
+			t.eq(w.WaterReflectance, LookPresets.CREEK_REFLECTANCE, "reflectance from CREEK_REFLECTANCE")
+			t.ok(w.WaterReflectance >= 0.04 and w.WaterReflectance <= 0.14, "inside the sweep")
+			t.eq(w.WaterWaveSize, 0.06, "wave 0.06")
+		elseif LookPresets.REVIEW1_CREEK then
 			-- N3 review 1 (switched on): less glassy, more surface.
 			t.ok(w.WaterTransparency >= 0.55 and w.WaterTransparency <= 0.65, "clear, with a surface")
 			t.ok(w.WaterReflectance <= 0.3, "some reflectance")

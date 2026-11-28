@@ -370,10 +370,13 @@ MaterialKit.SLOTS = {
 	-- N3, Cedar Creek (CreekPlan.SLOT; CreekDress paints them by slot index): the gravel bars and
 	-- the riffle's cobbles, the bed seen through the clear water (the same pebble map, darker),
 	-- wet slate on the rocky run's banks, moss on the bank tops (LeafyGrass: no blades).
-	{ slot = 28, base = Enum.Material.Ground, variant = "CreekPebble", tint = Color3.new(1, 1, 1) },
+	{ slot = 28, base = Enum.Material.Ground, variant = "CreekPebble", tint = Color3.fromRGB(156, 148, 130) }, -- N3 review 2 (was white): the dry bars, duller
 	{ slot = 29, base = Enum.Material.Ground, variant = "CreekPebble", tint = Color3.fromRGB(118, 112, 96) }, -- N3 review 1 (was 170,160,140): the wet bed, darker
 	{ slot = 30, base = Enum.Material.Slate, variant = "WetSlate", tint = Color3.new(1, 1, 1) },
 	{ slot = 31, base = Enum.Material.LeafyGrass, variant = "Moss", tint = Color3.new(1, 1, 1) },
+	-- N3 review 2 (11/28/2026): the creek's paths on their own slot (CreekPlan.PATH_SLOT), the
+	-- path gravel tinted warmer and darker than the lake's; the old path parts take the same colour.
+	{ slot = 32, base = Enum.Material.Ground, variant = "FootpathGravel", tint = Color3.fromRGB(150, 140, 120) },
 } :: { { slot: number, base: Enum.Material, variant: string, tint: Color3 } }
 
 local function asset(id: number?): string

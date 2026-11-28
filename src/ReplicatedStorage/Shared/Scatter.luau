@@ -843,9 +843,11 @@ Scatter.SHOT_CAMS = {
 	{ id = "06-logs-dawn", eye = { 126, 7, 65 }, look = { 76, -1, 46 } },
 	{ id = "07-overview-golden", eye = { 86, 80, 165 }, look = { 0, 0, 0 } },
 	{ id = "08-stands-noon", eye = { 0, 6, 50 }, look = { 11, 4, 100 } },
-	{ id = "09-riffle-dawn", eye = { -210, 7, 28 }, look = { -230, -1, 72 } },
-	{ id = "10-pool-golden, 12-pool-night", eye = { -206, 8, -15 }, look = { -230, -8, -45 } },
-	{ id = "11-gate-noon", eye = { -129, 7, 15 }, look = { -162, 3, 0 } },
+	-- N3 review 2 (the advisor, 11/28/2026): 09 low in the run looking up the riffle, 10 and 12
+	-- from the pool's head bank, 11 square on to the gate.
+	{ id = "09-riffle-dawn", eye = { -230.5, 3.4, 19 }, look = { -230, 1.5, 70 } },
+	{ id = "10-pool-golden, 12-pool-night", eye = { -213, 5, -5 }, look = { -236, 0.5, -50 } },
+	{ id = "11-gate-noon", eye = { -141, 5.5, 1.5 }, look = { -162, 6.5, -0.5 } },
 	{ id = "b01-bridge-dawn", eye = { 12, 5, -48 }, look = { 0, 5, -95 } },
 	{ id = "b02-basin-boat-noon", eye = { -20, 4, -180 }, look = { -90, 3, -245 } },
 	{ id = "b03-lighthouse-golden", eye = { -32, 5, -224 }, look = { -72, 2, -239 } },

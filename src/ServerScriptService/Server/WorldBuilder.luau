@@ -71,6 +71,9 @@ WorldBuilder.LANTERN = {
 	brightness = 2.0,
 	shadows = false, -- every lantern but the dock's two
 	SHADOW_ATTR = "LanternShadows", -- true on a lantern light that may cast shadows
+	-- N3 review 2 (11/28/2026): the creek pool's lantern lit nothing in shot 12. It burns brighter
+	-- and wider than the rest and may cast shadows (WorldBuilder.poolLantern).
+	pool = { brightness = 3, range = 24 },
 }
 
 -- Makes one globe a lantern, in place: safe to run again.
@@ -743,20 +746,62 @@ function WorldBuilder.lanternLamps(lake: Model): number
 	end
 	local n = 0
 	for _, g in globes do
-		if g.Transparency >= 1 then
+		if g.Transparency >= 1 and g:GetAttribute("CreekSwapOrigTransparency") == nil then
 			-- Hidden by the art dress (the old dock-end bulbs under the hero dock, whose own
 			-- DockLanterns light the spot): switch the light off rather than stack shadows.
+			-- N3 review 2: not a ball CreekSwap hid. Its light lives on in the creek lantern's
+			-- glass (or comes back to the ball on CreekSwap.revert), so it must stay on.
 			for _, l in g:GetDescendants() do
 				if l:IsA("Light") then
 					l.Enabled = false
 				end
 			end
-		else
+		elseif g.Transparency < 1 then
 			asLantern(g)
 			n += 1
 		end
 	end
+	WorldBuilder.poolLantern(lake)
 	return n
+end
+
+-- The creek pool lantern's light (N3 review 2), wherever it is now: in Scenery's bulb, or moved
+-- into CreekSwap's lantern glass (an ObjectValue "LightFrom" there points back at the bulb).
+-- Enabled, brightness and range from LANTERN.pool, shadows on and marked SHADOW_ATTR so
+-- ClientModules/Lanterns keeps them (desktop tier only). Safe to run again; lanternLamps runs it.
+-- Returns how many lights it set (1 when all is well).
+--   require(game.ServerScriptService.Server.WorldBuilder).poolLantern(workspace.Lake)
+function WorldBuilder.poolLantern(lake: Instance): number
+	local L = WorldBuilder.LANTERN
+	local bulb = find(lake, "Scenery.PoolLantern.Bulb")
+	local lights: { Light } = {}
+	if bulb then
+		for _, l in bulb:GetChildren() do
+			if l:IsA("Light") then
+				table.insert(lights, l)
+			end
+		end
+		local swap = lake:FindFirstChild("CreekSwap")
+		for _, v in (if swap then swap:GetDescendants() else {}) do
+			if v:IsA("ObjectValue") and v.Name == "LightFrom" and v.Value == bulb and v.Parent then
+				for _, l in (v.Parent :: Instance):GetChildren() do
+					if l:IsA("Light") then
+						table.insert(lights, l)
+					end
+				end
+			end
+		end
+	end
+	for _, l in lights do
+		l.Enabled = true
+		if l:IsA("PointLight") then
+			l.Brightness = L.pool.brightness
+			l.Range = L.pool.range
+		end
+		l.Shadows = true
+		l:SetAttribute(L.SHADOW_ATTR, true)
+	end
+	return #lights
 end
 
 -- Painted signs (leg 3, N2): boards where a painted board would really hang, in place of the
@@ -814,7 +859,7 @@ local LAKEWARD = Vector3.new(0, 0, -1) -- the stands' open fronts face the lake 
 -- Goes live with CREEK_BOARD_REVIEW1_ON (one edit), then rerun paintSigns.
 local CREEK_BOARD = Vector2.new(6, 1.3)
 local CREEK_BOARD_REVIEW1 = Vector2.new(11.2, 2.2)
-local CREEK_BOARD_REVIEW1_ON = false
+local CREEK_BOARD_REVIEW1_ON = true -- N3 review 2 (11/28/2026): on; Scenery raised the arch 0.9 to clear the gate
 
 function WorldBuilder.paintSigns(lake: Model): number
 	local folder = Signs.folder(lake)

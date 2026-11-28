@@ -18,6 +18,7 @@
 -- touches. No fishing rule reads any of it. With the Big Lake switched on (BoatRules.BIG_LAKE)
 -- its ground stays flat, open grass for its water; with it off the land there is dressed too.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local MaterialService = game:GetService("MaterialService")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local BoatRules = require(Shared:WaitForChild("BoatRules"))
 local Config = require(Shared:WaitForChild("Config"))
@@ -148,6 +149,83 @@ local function lampPart(parent: Instance, name: string, size: Vector3, cf: CFram
 	p.BottomSurface = Enum.SurfaceType.Smooth
 	p.Parent = parent
 	return p
+end
+
+-- N3 review 2 (the advisor, 11/28/2026): the creek gate's arch stands ARCH_RAISE taller so the
+-- larger gate board (WorldBuilder.CREEK_BOARD_REVIEW1) clears the gate; the fence, the arch and
+-- the gate are weathered plank in GATE_WOOD; the gate gets two knee braces, diagonals
+-- corner to corner, one on each face, parented to the gate so they open with it
+-- (ClientModules/Controller hides the gate's parts with it).
+Scenery.ARCH_RAISE = 0.9
+Scenery.GATE_WOOD = Color3.fromRGB(122, 104, 86)
+local GATE_ORIG = { "GateOrigMaterial", "GateOrigVariant", "GateOrigColor" }
+
+-- Braces and plank on the fence folder's parts and the gate. Safe to run again. Returns the parts
+-- it skinned.
+function Scenery.dressCreekGate(lake: Instance, fence: Instance): number
+	local creek = lake:FindFirstChild("CedarCreek")
+	local gate = creek and creek:FindFirstChild("CreekGate")
+	local plank = MaterialService:FindFirstChild("WeatheredPlank") ~= nil
+	local n = 0
+	local function skin(p: BasePart)
+		p.Material = Enum.Material.Wood
+		p.MaterialVariant = if plank then "WeatheredPlank" else ""
+		p.Color = Scenery.GATE_WOOD
+		n += 1
+	end
+	for _, d in fence:GetChildren() do
+		if d:IsA("BasePart") then
+			skin(d)
+		end
+	end
+	if gate and gate:IsA("BasePart") then
+		for _, old in gate:GetChildren() do
+			if old.Name == "KneeBrace" then
+				old:Destroy()
+			end
+		end
+		if gate:GetAttribute(GATE_ORIG[1]) == nil then
+			gate:SetAttribute(GATE_ORIG[1], gate.Material.Name)
+			gate:SetAttribute(GATE_ORIG[2], gate.MaterialVariant)
+			gate:SetAttribute(GATE_ORIG[3], gate.Color)
+		end
+		skin(gate)
+		local w, h = gate.Size.Z - 1.2, gate.Size.Y - 1.6
+		local tilt = math.atan2(h, w)
+		for _, face in { 1, -1 } do
+			local cf = gate.CFrame * CFrame.new(face * (gate.Size.X / 2 + 0.11), 0, 0) * CFrame.Angles(tilt, 0, 0)
+			local brace = lampPart(gate, "KneeBrace", Vector3.new(0.22, 0.55, math.sqrt(w * w + h * h)), cf, Scenery.GATE_WOOD, Enum.Material.Wood, false)
+			brace.CanQuery = false
+			brace.CanTouch = false
+			brace.Transparency = gate.Transparency
+			skin(brace)
+		end
+	end
+	return n
+end
+
+-- The same on the saved world, without rebuilding Scenery: raises the arch (once) and dresses
+-- the gate. Then rerun WorldBuilder.paintSigns so the board hangs from the raised beam.
+--   require(game.ServerScriptService.Server.Scenery).creekGateLook(workspace.Lake)
+function Scenery.creekGateLook(lake: Instance): number
+	local folder = lake:FindFirstChild(FOLDER)
+	local fence = folder and folder:FindFirstChild("CreekFence")
+	if not fence then
+		return 0
+	end
+	for _, d in fence:GetChildren() do
+		if d:IsA("BasePart") and (d.Name == "ArchPost" or d.Name == "ArchBeam") and d:GetAttribute("ArchRaised") == nil then
+			local r = Scenery.ARCH_RAISE
+			if d.Name == "ArchPost" then
+				d.Size += Vector3.new(0, r, 0)
+				d.CFrame += Vector3.new(0, r / 2, 0)
+			else
+				d.CFrame += Vector3.new(0, r, 0)
+			end
+			d:SetAttribute("ArchRaised", true)
+		end
+	end
+	return Scenery.dressCreekGate(lake, fence)
 end
 
 -- The old low-poly tree models (N1 round 2). BankDress swaps their copies for the bank kit near
@@ -444,11 +522,15 @@ function Scenery.apply(lake: Model): Result
 	if gate and gate:IsA("BasePart") then
 		local g = gate.Position
 		local half = gate.Size.Z / 2 + 0.6
+		local raise = Scenery.ARCH_RAISE -- N3 review 2
 		for _, dz in { -half, half } do
-			lampPart(fence, "ArchPost", Vector3.new(0.9, 10, 0.9), CFrame.new(g.X, Scenery.GROUND_TOP + 5, g.Z + dz), RAIL, Enum.Material.Wood, false)
+			local post = lampPart(fence, "ArchPost", Vector3.new(0.9, 10 + raise, 0.9), CFrame.new(g.X, Scenery.GROUND_TOP + 5 + raise / 2, g.Z + dz), RAIL, Enum.Material.Wood, false)
+			post:SetAttribute("ArchRaised", true)
 		end
-		lampPart(fence, "ArchBeam", Vector3.new(0.9, 0.9, half * 2 + 2), CFrame.new(g.X, Scenery.GROUND_TOP + 10.2, g.Z), RAIL, Enum.Material.Wood, false)
+		local beam = lampPart(fence, "ArchBeam", Vector3.new(0.9, 0.9, half * 2 + 2), CFrame.new(g.X, Scenery.GROUND_TOP + 10.2 + raise, g.Z), RAIL, Enum.Material.Wood, false)
+		beam:SetAttribute("ArchRaised", true)
 	end
+	Scenery.dressCreekGate(lake, fence) -- N3 review 2: braces, and weathered plank on all of it
 	-- The gray-box sign post stood just in front of the arch's post as a stubby block (critic,
 	-- 11/27/2026). It still carries the "Cedar Creek" sign and the gate prompt, so it stays,
 	-- unseen; the arch is the post now.
@@ -551,10 +633,13 @@ function Scenery.apply(lake: Model): Result
 	bulb.Shape = Enum.PartType.Ball
 	bulb.CastShadow = false
 	local light = Instance.new("PointLight")
-	light.Range = 14
-	light.Brightness = 1.1
+	-- N3 review 2 (11/28/2026): it lit nothing in shot 12. Brighter and wider, and it may cast
+	-- shadows (the LanternShadows attribute; WorldBuilder.LANTERN.pool and poolLantern match).
+	light.Range = 24
+	light.Brightness = 3
 	light.Color = lanternColor
 	light.Shadows = true
+	light:SetAttribute("LanternShadows", true)
 	light.Parent = bulb
 	game:GetService("CollectionService"):AddTag(light, "Lantern")
 	lantern.Parent = folder
@@ -755,6 +840,25 @@ function Scenery.revert(lake: Model)
 		end
 	end
 	local creek = lake:FindFirstChild("CedarCreek")
+	local gate = creek and creek:FindFirstChild("CreekGate")
+	if gate and gate:IsA("BasePart") then
+		for _, d in gate:GetChildren() do
+			if d.Name == "KneeBrace" then
+				d:Destroy()
+			end
+		end
+		local m, v, c = gate:GetAttribute(GATE_ORIG[1]), gate:GetAttribute(GATE_ORIG[2]), gate:GetAttribute(GATE_ORIG[3])
+		if type(m) == "string" then
+			gate.Material = (Enum.Material :: any)[m]
+			gate.MaterialVariant = if type(v) == "string" then v else ""
+			if typeof(c) == "Color3" then
+				gate.Color = c
+			end
+		end
+		for _, k in GATE_ORIG do
+			gate:SetAttribute(k, nil)
+		end
+	end
 	for _, name in { "FenceNorth", "FenceSouth", "GatePost" } do
 		local p = creek and creek:FindFirstChild(name)
 		local was = p and p:GetAttribute("OrigTransparency")

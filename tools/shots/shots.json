@@ -153,16 +153,16 @@
       "place": "creek",
       "clock": 6.6,
       "eye": [
-        -210,
-        7,
-        28
+        -230.5,
+        3.4,
+        19
       ],
       "look": [
         -230,
-        -1,
-        72
+        1.5,
+        70
       ],
-      "what": "Up the riffle to its rocky head at dawn (moved in L5b: the old eye, past the map edge, is now inside the creek head)"
+      "what": "Up the riffle from low in the rocky run at dawn (N3 review 2, 11/28/2026: moved down into the run, framed by two cedars)"
     },
     {
       "id": "10-pool-golden",
@@ -171,16 +171,16 @@
       "place": "creek",
       "clock": 17.4,
       "eye": [
-        -206,
-        8,
-        -15
+        -213,
+        5,
+        -5
       ],
       "look": [
-        -230,
-        -8,
-        -45
+        -236,
+        0.5,
+        -50
       ],
-      "what": "Over the deep pool at golden hour"
+      "what": "Over the deep pool at golden hour (from the pool's head bank since N3 review 2, 11/28/2026)"
     },
     {
       "id": "11-gate-noon",
@@ -189,16 +189,16 @@
       "place": "creek",
       "clock": 12.0,
       "eye": [
-        -129,
-        7,
-        15
+        -141,
+        5.5,
+        1.5
       ],
       "look": [
         -162,
-        3,
-        0
+        6.5,
+        -0.5
       ],
-      "what": "The creek gate and fence from the lake path at noon"
+      "what": "The creek gate and fence from the lake path at noon, square on (N3 review 2, 11/28/2026)"
     },
     {
       "id": "12-pool-night",
@@ -207,16 +207,16 @@
       "place": "creek",
       "clock": 22.0,
       "eye": [
-        -206,
-        8,
-        -15
+        -213,
+        5,
+        -5
       ],
       "look": [
-        -230,
-        -8,
-        -45
+        -236,
+        0.5,
+        -50
       ],
-      "what": "The deep pool at night"
+      "what": "The deep pool at night (from the pool's head bank since N3 review 2, 11/28/2026)"
     },
     {
       "id": "b01-bridge-dawn",

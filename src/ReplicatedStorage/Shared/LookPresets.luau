@@ -718,25 +718,39 @@ LookPresets.AREAS = {
 	},
 } :: { [string]: Area }
 
--- N3 review 1 (the advisor), HELD: the creek captures were taken in the phone simulator, so the
--- advisor's water, exposure and dawn mist wait for a clean desktop capture. Set REVIEW1_CREEK to
--- true (one edit) and these replace the creek's live values when this module loads.
-LookPresets.REVIEW1_CREEK = false
+-- N3 review 1 (the advisor), held until a clean desktop capture: the advisor's exposure and dawn
+-- mist (and water numbers that review 2 replaced). N3 review 2 (11/28/2026): REVIEW1_CREEK is on
+-- for the exposure and the mist only; the water is review 2's (CREEK_WATER_REVIEW2, its own
+-- switch). These replace the creek's live values when this module loads.
+LookPresets.REVIEW1_CREEK = true
 LookPresets.CREEK_REVIEW1 = {
 	exposure = 0, -- from 0.15 (the exposure floor stays)
-	water = { WaterTransparency = 0.6, WaterReflectance = 0.28, WaterWaveSize = 0.1 },
+	water = { WaterTransparency = 0.6, WaterReflectance = 0.28, WaterWaveSize = 0.1 }, -- not used since review 2
 	dawnMist = { density = 0.14, haze = 1.4 },
+}
+-- N3 review 2: the creek water. Reflectance is one number on its own so a sweep (0.04 to 0.14)
+-- is one edit.
+LookPresets.CREEK_REFLECTANCE = 0.06
+LookPresets.REVIEW2_CREEK_WATER = true
+LookPresets.CREEK_WATER_REVIEW2 = {
+	WaterColor = rgb(52, 70, 48),
+	WaterTransparency = 0.65,
+	WaterReflectance = LookPresets.CREEK_REFLECTANCE,
+	WaterWaveSize = 0.06,
 }
 if LookPresets.REVIEW1_CREEK then
 	local creek = LookPresets.AREAS.creek
 	local r1 = LookPresets.CREEK_REVIEW1
 	creek.exposure = r1.exposure
+	creek.dawnMist = table.clone(r1.dawnMist)
+end
+if LookPresets.REVIEW2_CREEK_WATER then
+	local creek = LookPresets.AREAS.creek
 	local water = table.clone(creek.water) :: any
-	for k, v in r1.water do
+	for k, v in LookPresets.CREEK_WATER_REVIEW2 do
 		water[k] = v
 	end
 	creek.water = water
-	creek.dawnMist = table.clone(r1.dawnMist)
 end
 
 -- Where each area is, in world studs (x, z), checked against the code on 11/27/2026: the home

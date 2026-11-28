@@ -27,7 +27,14 @@
 --     CreekPlan.TUNING.boughsPer is above 0, CedarBough sprays hung from the riffle's cedars
 --     (inside each cedar's model, so the phone tier hides them together; skipped while the model
 --     is not in ServerStorage.Art).
--- Slots 28 to 31 get MaterialKit's variant when it is in MaterialService, else the plain base
+--  5. N3 review 2 (the advisor, 11/28/2026): the moss and grass repaint covers the whole creek
+--     fence (CreekPlan.fenceSlot: moss to D 30, then no meadow grass slot, the hill forest floor
+--     instead); the creek paths go on their own slot (CreekPlan.PATH_SLOT, 32) and the old path
+--     parts take its colour; the gate approach outside the fence gets the hill forest floor and a
+--     lawn band along the walk (CreekPlan.approachSlot); backing trees at D 20 on are far pines
+--     (tagged FoliageFar like CreekSwap's); ten wet-slate stones along the pool's east edge.
+--     Each repaint is recorded in SlotRecords like the others.
+-- Slots 28 to 32 get MaterialKit's variant when it is in MaterialService, else the plain base
 -- material with a palette tint (FALLBACK), so the creek reads right before the maps are uploaded.
 -- Everything new is in Lake.CreekDress: anchored, no collision, queries or touches.
 local ServerStorage = game:GetService("ServerStorage")
@@ -45,6 +52,7 @@ CreekDress.FOOTPATH_SLOT = 24
 local CELL = CreekPlan.CELL
 local ORIG_MAT = "CreekDressOrigMaterial"
 local ORIG_VARIANT = "CreekDressOrigVariant"
+local ORIG_COLOR = "CreekDressOrigColor"
 
 -- Palette tints for slots 28 to 31 while their variant is not uploaded (plan: moss 78,104,52,
 -- wet slate 70,78,84; the pebbles a warm grey, darker under the water).
@@ -53,6 +61,7 @@ CreekDress.FALLBACK = {
 	[29] = Color3.fromRGB(96, 88, 70),
 	[30] = Color3.fromRGB(70, 78, 84),
 	[31] = Color3.fromRGB(78, 104, 52),
+	[32] = Color3.fromRGB(150, 140, 120), -- N3 review 2: the creek paths
 } :: { [number]: Color3 }
 
 local VARIANT_BY_SUFFIX = {
@@ -138,11 +147,11 @@ local function q(v: number): number
 	return math.floor(math.clamp(v, 0, 1) * 255 + 0.5)
 end
 
--- Slots 28 to 31: our variant when it exists, else the plain base with the palette tint.
+-- Slots 28 to 32: our variant when it exists, else the plain base with the palette tint.
 local function ensureSlots(): number
 	local n = 0
 	for _, s in MaterialKit.SLOTS do
-		if s.slot >= 28 and s.slot <= 31 then
+		if s.slot >= 28 and s.slot <= 32 then
 			if MaterialService:FindFirstChild(s.variant) then
 				workspace.Terrain:SetMaterialSlot(s.slot, s.base, s.variant, s.tint)
 			else
@@ -372,13 +381,12 @@ local function restoreSlots(folder: Instance): number
 end
 
 -- N3 review 1: the moss band into the backing forest, and the creek paths as slot 14.
-local function paintBands(folder: Folder): (number, number)
+-- N3 review 2: the moss and grass repaint covers the whole fence (CreekPlan.fenceSlot), the paths
+-- go on CreekPlan.PATH_SLOT, and the gate approach outside the fence is repainted too.
+local function paintBands(folder: Folder): (number, number, number)
 	local M = CreekPlan.MOSS_REGION
 	local moss = repaint(folder, "Moss", Vector3.new(M.x1, -16, M.z1), Vector3.new(M.x2, 40, M.z2), 5, function(x: number, z: number, slot: number): number?
-		if CreekPlan.MOSS_OVER[slot] and CreekPlan.mossBand(x, z, CreekPlan.D(x, z)) then
-			return CreekPlan.SLOT.MOSS
-		end
-		return nil
+		return CreekPlan.fenceSlot(x, z, CreekPlan.D(x, z), slot)
 	end)
 	local x1, x2, z1, z2 = math.huge, -math.huge, math.huge, -math.huge
 	for _, b in CreekPlan.PATH_BOXES do
@@ -395,7 +403,11 @@ local function paintBands(folder: Folder): (number, number)
 		end
 		return nil
 	end)
-	return moss, path
+	local A = CreekPlan.APPROACH
+	local approach = repaint(folder, "Approach", Vector3.new(A.x1, -16, A.z1), Vector3.new(A.x2, 40, A.z2), 5, function(x: number, z: number, slot: number): number?
+		return CreekPlan.approachSlot(x, z, slot)
+	end)
+	return moss, path, approach
 end
 
 ---------------------------------------------------------------------------------------------
@@ -498,8 +510,10 @@ export type Result = {
 	triangles: number, -- the plan's estimate (CreekPlan.plan(...).triangles)
 	coverage: number, -- share of the riffle and run water under a crown (CreekPlan.coverage)
 	riffleCoverage: number, -- share of the riffle's water under a crown or a bough (N3 review 1)
-	mossPainted: number, -- voxels of the moss band past D 7 (N3 review 1)
-	pathPainted: number, -- path voxels re-laid as slot 14
+	mossPainted: number, -- voxels of the moss band past D 7 (N3 review 1), and (N3 review 2) the grass past D 30 turned to slot 27
+	pathPainted: number, -- path voxels re-laid on CreekPlan.PATH_SLOT
+	approachPainted: number, -- N3 review 2: gate approach voxels repainted
+	edgeStones: number, -- N3 review 2: wet-slate stones along the pool's east edge
 	pathParts: number, -- old path parts given the FootpathGravel variant
 	boughs: number, -- CedarBough sprays hung
 	emergent: number, -- wet-slate rocks placed on the riffle
@@ -523,8 +537,13 @@ function CreekDress.revert(lake: Instance): RevertResult
 			if type(m) == "string" then
 				d.Material = (Enum.Material :: any)[m]
 				d.MaterialVariant = (d:GetAttribute(ORIG_VARIANT) :: string?) or ""
+				local c = d:GetAttribute(ORIG_COLOR)
+				if typeof(c) == "Color3" then
+					d.Color = c
+				end
 				d:SetAttribute(ORIG_MAT, nil)
 				d:SetAttribute(ORIG_VARIANT, nil)
+				d:SetAttribute(ORIG_COLOR, nil)
 				rocks += 1
 			end
 		end
@@ -533,7 +552,8 @@ function CreekDress.revert(lake: Instance): RevertResult
 end
 
 -- The old straight creek paths (WorldBuilder's PathToCreek and BankPath, Sand): FootpathGravel
--- like the re-laid paths (N3 review 1). Revert puts their material back (ORIG_MAT).
+-- like the re-laid paths (N3 review 1), in the path slot's colour (N3 review 2). Revert puts their
+-- material and colour back (ORIG_MAT, ORIG_COLOR).
 local function skinPaths(lake: Instance): number
 	if not MaterialService:FindFirstChild("FootpathGravel") then
 		return 0
@@ -546,9 +566,12 @@ local function skinPaths(lake: Instance): number
 			if p:GetAttribute(ORIG_MAT) == nil then
 				p:SetAttribute(ORIG_MAT, p.Material.Name)
 				p:SetAttribute(ORIG_VARIANT, p.MaterialVariant)
+				p:SetAttribute(ORIG_COLOR, p.Color)
 			end
 			p.Material = Enum.Material.Ground
 			p.MaterialVariant = "FootpathGravel"
+			local c = CreekPlan.PATH_TINT
+			p.Color = Color3.fromRGB(c[1], c[2], c[3])
 			n += 1
 		end
 	end
@@ -568,7 +591,7 @@ function CreekDress.apply(lake: Instance, seed: number?): Result
 	lakeArt = lake:FindFirstChild("Art")
 	local slots = ensureSlots()
 	local tc = reshape(folder)
-	local mossPainted, pathPainted = paintBands(folder)
+	local mossPainted, pathPainted, approachPainted = paintBands(folder)
 
 	local plan = CreekPlan.plan(s)
 	local params = RaycastParams.new()
@@ -605,6 +628,8 @@ function CreekDress.apply(lake: Instance, seed: number?): Result
 		riffleCoverage = plan.riffleCoverage,
 		mossPainted = mossPainted,
 		pathPainted = pathPainted,
+		approachPainted = approachPainted,
+		edgeStones = 0,
 		pathParts = skinPaths(lake),
 		boughs = 0,
 		emergent = 0,
@@ -630,9 +655,15 @@ function CreekDress.apply(lake: Instance, seed: number?): Result
 		local tag = TAGS[group]
 		if tag then
 			CollectionService:AddTag(m, tag)
-			local c = (alt[tag] or 0) + 1
-			alt[tag] = c
+			-- Far pines (N3 review 2) are marked like CreekSwap's, and alternate among themselves.
+			local far = Scatter.isFar(model)
+			local key = if far then tag .. "Far" else tag
+			local c = (alt[key] or 0) + 1
+			alt[key] = c
 			m:SetAttribute("FoliageAlt", c % 2)
+			if far then
+				m:SetAttribute("FoliageFar", true)
+			end
 		end
 		m.Parent = parent or groupFolder(group)
 		res.placed[model] = (res.placed[model] or 0) + 1
@@ -658,15 +689,20 @@ function CreekDress.apply(lake: Instance, seed: number?): Result
 				end
 			end
 			continue
-		elseif it.group == "Rocks" then
-			-- An emergent rock: its top just out of the water (y 0), wet slate all over.
+		elseif it.group == "Rocks" or it.group == "EdgeStones" then
+			-- An emergent rock: its top just out of the water (y 0), wet slate all over. An edge
+			-- stone (N3 review 2) on the pool's waterline stands a little higher, half in the water.
 			local m = place(it.model, it.group, CFrame.new(it.x, 0, it.z) * CFrame.Angles(0, it.yaw, 0), it.scale, it.shadow)
 			if m then
 				local cf, size = m:GetBoundingBox()
-				local top = 0.3 + 0.2 * (it.r or 1)
+				local top = if it.group == "EdgeStones" then 0.35 + 0.35 * (it.r or 1) else 0.3 + 0.2 * (it.r or 1)
 				m:PivotTo(m:GetPivot() + Vector3.new(0, top - (cf.Position.Y + size.Y / 2), 0))
 				wetSlate(m)
-				res.emergent += 1
+				if it.group == "EdgeStones" then
+					res.edgeStones += 1
+				else
+					res.emergent += 1
+				end
 			end
 			continue
 		elseif it.ends then

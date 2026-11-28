@@ -733,22 +733,31 @@ return function(t, Shared)
 		t.ok((after - shown).Magnitude < 1e-9, "a mid-blend change does not jump")
 	end)
 
-	-- N3 review 1, held: the advisor's creek numbers wait behind one switch.
-	t.test("the creek's review 1 numbers are held behind REVIEW1_CREEK", function()
+	-- N3 review 1: the advisor's creek exposure and dawn mist behind one switch (on since review 2,
+	-- 11/28/2026); review 2's water behind its own, its reflectance one constant for a sweep.
+	t.test("the creek's review 1 and review 2 numbers sit behind their switches", function()
 		local r1 = LookPresets.CREEK_REVIEW1 :: any
 		t.eq(r1.exposure, 0, "exposure 0")
-		t.eq(r1.water.WaterTransparency, 0.6, "transparency 0.6")
-		t.eq(r1.water.WaterReflectance, 0.28, "reflectance 0.28")
-		t.eq(r1.water.WaterWaveSize, 0.1, "wave 0.1")
 		t.eq(r1.dawnMist.density, 0.14, "mist density 0.14")
 		t.eq(r1.dawnMist.haze, 1.4, "mist haze 1.4")
+		local r2 = LookPresets.CREEK_WATER_REVIEW2 :: any
+		t.eq(r2.WaterTransparency, 0.65, "transparency 0.65")
+		t.eq(r2.WaterReflectance, LookPresets.CREEK_REFLECTANCE, "reflectance is the one constant")
+		t.eq(r2.WaterWaveSize, 0.06, "wave 0.06")
+		t.ok(math.abs(r2.WaterColor.G * 255 - 70) < 1, "colour 52, 70, 48")
 		local creek = LookPresets.AREAS.creek :: any
 		if LookPresets.REVIEW1_CREEK then
-			t.eq(creek.water.WaterTransparency, 0.6, "switched on: live")
 			t.eq(creek.exposure, 0, "switched on: exposure")
+			t.eq(creek.dawnMist.density, 0.14, "switched on: mist")
+		else
+			t.eq(creek.exposure, 0.15, "held: the live exposure stays")
+		end
+		if LookPresets.REVIEW2_CREEK_WATER then
+			t.eq(creek.water.WaterTransparency, 0.65, "review 2 water live")
+			t.eq(creek.water.WaterReflectance, LookPresets.CREEK_REFLECTANCE, "review 2 reflectance live")
+			t.eq(creek.water.WaterWaveSpeed, 12, "the wave speed stays")
 		else
 			t.eq(creek.water.WaterTransparency, 0.8, "held: the live water stays")
-			t.eq(creek.exposure, 0.15, "held: the live exposure stays")
 		end
 		t.ok(type(creek.exposureFloor) == "number", "the floor stays either way")
 	end)

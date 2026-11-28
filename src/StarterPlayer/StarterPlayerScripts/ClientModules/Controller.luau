@@ -764,6 +764,12 @@ local function updateCreekGate(s: any)
 		gate.CanCollide = not s.creekPass
 		-- Open means gone (it was 0.85, a faint grey pane in the arch the critic kept naming).
 		gate.Transparency = if s.creekPass then 1 else 0
+		-- N3 review 2: the gate's knee braces (Scenery.dressCreekGate) open with it.
+		for _, d in gate:GetChildren() do
+			if d:IsA("BasePart") then
+				d.Transparency = gate.Transparency
+			end
+		end
 	end
 	if prompt then
 		prompt.Enabled = not s.creekPass
