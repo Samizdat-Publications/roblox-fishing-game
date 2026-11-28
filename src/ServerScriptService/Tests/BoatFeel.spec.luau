@@ -10,8 +10,8 @@ return function(t, Shared)
 		return math.abs(a - b) <= (eps or 1e-6)
 	end
 
-	t.test("the feel layer lands switched off", function()
-		t.eq(Config.BOAT_FEEL_ON, false, "BOAT_FEEL_ON")
+	t.test("the feel layer is on (switched on at the N4 close, 11/28/2026)", function()
+		t.eq(Config.BOAT_FEEL_ON, true, "BOAT_FEEL_ON")
 	end)
 
 	t.test("every boat has art, and the art names list covers every model and paddle", function()

@@ -1,5 +1,33 @@
 # Progress
 
+## N4 report, 11/28/2026 (morning): the fleet (leg 3)
+
+N4 is closed and switched on, saved in the place as version 199 ("N4 closed: the fleet"). 576 tests pass in Studio and with Lune; a fresh Play start with everything on logged no errors.
+
+**What changed in the game**
+- **The Cedar Canoe** (350 coins at the new boathouse): varnished cedar strips, cane seats, a paddle in hand. 7 studs a second alone, 11 with a second paddler in the bow. Either seat can cast. It lands on any sand shore ("Land here") and you re-board from the shore.
+- **The dinghy is new:** orange tubes, a slatted floor, a small tiller outboard, now big enough for a player (11 by 5.5), and a passenger seat.
+- **Boats feel like boats:** the bow lifts with speed and settles, boats lean into turns and bob at rest, a soft wake and spray trail behind and fade when you stop, the camera eases back with speed, red, green and white running lights come on at dusk, and H sounds the horn. The hull itself never tilts: a boat stops with a message before a shore, a log that shows above the water or the dock, and it still steers.
+- **The boathouse** on the point east of the dock: the Boats shop at its painted board, a canoe on its rack, a warm lantern, a "Your boat" board to pick which boat waits at your slip, and a sales mooring off the dock end where each boat floats by its painted price.
+- **Better with two:** "Net it" when a friend's fish is close (a timed press lands it, a miss costs nothing), and the helper earns an assist in the journal plus 10 percent of the fish's price. The angler always keeps the full price.
+- **Quiet approach:** paddle in, or glide the last stretch with the motor low, and wary fish are a little more likely for a minute.
+
+**Proven (with evidence)**
+- Advisor (Fable), three reviews: not yet, not yet, then a last bounded round closed on measured checks. Every item was done (`docs/DECISIONS.md`, N4 reviews 1 to 3).
+- Critic (Neon): set C (the canoe at golden hour, the slips and boathouse at noon, the dinghy's wake at dawn) look 6.5, 7, 7 over three rounds, identity up to 6; the dusk boat clip 6.5, 7.2, 6.5. The advisor set the close on measured checks instead of a fourth critic round.
+- Measured at the close: the wake is 17 brighter than still water while moving and back within 0.5 a second after stopping at dusk; legs no longer show through the canoe; a canoe at the boathouse apron is refused and backs out; turns start in about 81 ms on the 4G network setting (target 200); the canoe is 7.00 studs a second alone and 11 with a bow paddler; net and assist land and pay 10 percent; quiet approach tells paddling and gliding from motoring.
+- The economy sim: the dock kid owns the canoe at 18 minutes (target 20); an expert pair stays inside the coin ceiling.
+
+**Not verified, or carried**
+- Two small misses at night: the wake near the stern measures 40.2 (limit 40) and lingers about a second after a hard stop.
+- The live "wary fish" share was not read (it needs minnows; buying them would have changed your save), only the arrival types; the rule itself is covered by tests.
+- Carried looks: the tiller and the driver's hand, the price boards lining up from some angles, bare slip posts, glossy golden water, dark pines in shade, small sign text, and the Deep-V shot (N5).
+- **Your save:** Studio's test player is your own account. One run changed your coins; they were put back to 213, and runs now use a Studio-only no-save mode. The run left the canoe owned and the dinghy as your slip boat.
+- Still off until the Liam weekend: the rod loan for a passenger, Double Hookup (10 percent) and chum.
+
+**What needs you**
+- **The Liam weekend:** paddle the canoe together, net each other's fish, try the dinghy's second seat; I'll turn on the rod loan, Double Hookup and chum for that session. Try a boat on the phone and a gamepad. Tell me if hidden legs in the canoe bother him.
+
 ## Overnight report, 11/28/2026: N3 closed, the fleet built (switched off), a leg 4 draft (leg 3)
 
 **In one breath:** Cedar Creek (N3) is closed after its last review and saved as place version 180, with a known gap (the critic's look score stayed at 5.5). Two capture bugs were found and fixed, so earlier creek scores had been taken on the wrong picture. The N4 fleet's code and art are built and in the place, all switched off until their playtests. A leg 4 design draft and a fixed set of prime shots for the making-of are in the repo. Everything is pushed to main with the gate passing.

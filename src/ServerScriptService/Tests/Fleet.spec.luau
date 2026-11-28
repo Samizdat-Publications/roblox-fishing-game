@@ -18,11 +18,11 @@ return function(t, Shared)
 
 	local canoe = BoatData.byId.Canoe
 
-	t.test("the fleet lands switched off", function()
-		t.eq(Config.CANOE_ON, false, "canoe")
-		t.eq(Config.NET_ON, false, "net")
-		t.eq(Config.ASSIST_BONUS_ON, false, "assist bonus")
-		t.eq(Config.QUIET_APPROACH_ON, false, "quiet approach")
+	t.test("the N4 close switches: tested systems on, the Liam weekend items off", function()
+		t.eq(Config.CANOE_ON, true, "canoe")
+		t.eq(Config.NET_ON, true, "net")
+		t.eq(Config.ASSIST_BONUS_ON, true, "assist bonus")
+		t.eq(Config.QUIET_APPROACH_ON, true, "quiet approach")
 		t.eq(Config.BUDDY_LOAN_ON, false, "buddy loan")
 		t.eq(Config.DOUBLE_HOOKUP_ON, false, "double hookup")
 		t.eq(Config.CHUM_ON, false, "chum")

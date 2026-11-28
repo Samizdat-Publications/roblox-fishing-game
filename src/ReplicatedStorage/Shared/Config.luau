@@ -129,17 +129,17 @@ Config.WHITE_WATER_ON = false -- held off at the N3 close (11/28/2026): the crit
 -- its passenger seat, every boat keeps to its own waters (BoatData.waters) and the canoe and
 -- dinghy can land at any shore ("Land here") and be re-boarded there. Off, the fleet is the
 -- L7 dinghy exactly. The journal's "Send my boat home" works with boats on, switch or not.
-Config.CANOE_ON = false
+Config.CANOE_ON = true -- on 11/28/2026 at the N4 close (advisor review 3 checks)
 -- NET_ON: a player within 10 studs of someone whose fish is at 70 percent gets "Net it"; a
 -- press while the fish is up lands it (Shared/Net). Off, no prompt and no progress is read.
-Config.NET_ON = false
+Config.NET_ON = true -- on 11/28/2026 at the N4 close (advisor review 3 checks)
 -- ASSIST_BONUS_ON: on a shared catch (a net, or a Deep-V team catch) the angler keeps the full
 -- price and each helper gets an assist in the journal plus 10 percent of it (Shared/Coop).
 -- Off, a team catch is split evenly as in L7 and a net pays the helper nothing.
-Config.ASSIST_BONUS_ON = false
+Config.ASSIST_BONUS_ON = true -- on 11/28/2026 at the N4 close (advisor review 3 checks)
 -- QUIET_APPROACH_ON: arriving under paddle, or gliding the last 25 studs with the motor at
 -- idle, makes wary fish 1.25 times as likely for a minute at that spot (Shared/Quiet).
-Config.QUIET_APPROACH_ON = false
+Config.QUIET_APPROACH_ON = true -- on 11/28/2026 at the N4 close (advisor review 3 checks)
 -- Gemini's co-op items for N4 (Shared/Coop). BUDDY_LOAN_ON: a passenger fishes with the boat
 -- owner's rod and line if they are better, and a player within 20 studs of a Creek Pass holder
 -- may walk through the creek gate and fish the creek. DOUBLE_HOOKUP_ON: two players within 15
@@ -156,7 +156,7 @@ Config.CHUM_ON = false
 -- that eases back with speed, big touch buttons, and the journal's "Send my boat home". The
 -- server copies the art to ReplicatedStorage.BoatArt and seats the canoe on its cane seats.
 -- Off, boats look and work exactly as before. The server's hull never tilts either way.
-Config.BOAT_FEEL_ON = false
+Config.BOAT_FEEL_ON = true -- on 11/28/2026 at the N4 close (advisor review 3 checks)
 
 -- BOATHOUSE_ON (N4, Shared/BoathousePlan, Server/Boathouse): the boathouse on the shore east of
 -- the slips (a canoe on its rack, a lantern), the Boats shop at its painted board (it leaves Bait
@@ -164,7 +164,7 @@ Config.BOAT_FEEL_ON = false
 -- mooring off the dock end: each boat afloat by a float with its price painted on a board. Built
 -- in Edit by Boathouse.build() and saved in the place. Off, the server stores the whole set away
 -- at start and the shop at Bait and Tackle still sells boats, exactly as before.
-Config.BOATHOUSE_ON = false
+Config.BOATHOUSE_ON = true -- on 11/28/2026 at the N4 close (advisor review 3 checks)
 
 function Config.boatsOn(): boolean
 	return Config.BOATS_ON and Config.BIG_LAKE_ON

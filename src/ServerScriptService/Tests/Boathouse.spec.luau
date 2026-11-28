@@ -41,8 +41,8 @@ return function(t, Shared)
 		return a.x1 < b.x2 + pad and b.x1 < a.x2 + pad and a.z1 < b.z2 + pad and b.z1 < a.z2 + pad
 	end
 
-	t.test("the boathouse lands switched off", function()
-		t.eq(Config.BOATHOUSE_ON, false, "BOATHOUSE_ON")
+	t.test("the boathouse is on (switched on at the N4 close, 11/28/2026)", function()
+		t.eq(Config.BOATHOUSE_ON, true, "BOATHOUSE_ON")
 	end)
 
 	t.test("the boathouse stands off the path, out of the cast lanes, the keep-clears and the shot cameras", function()
