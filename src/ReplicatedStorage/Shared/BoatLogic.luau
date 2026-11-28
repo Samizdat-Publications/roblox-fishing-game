@@ -22,7 +22,7 @@ end
 -- Buy a boat. Owning one is saved; the boat itself waits at the slip each session.
 function BoatLogic.buy(data: any, id: string): (boolean, string)
 	local b = BoatData.byId[id]
-	if not b or not b.forSale then
+	if not b or not BoatData.onSale(b) then
 		return false, "That boat isn't for sale yet."
 	end
 	data.boats = data.boats or {}
@@ -41,17 +41,34 @@ function BoatLogic.owns(data: any, id: string): boolean
 	return type(data.boats) == "table" and data.boats[id] == true
 end
 
+-- Top speed now: a paddled boat with a second paddler aboard goes faster (the canoe, 7 to 11).
+function BoatLogic.topSpeed(boatId: string, paddlers: number?): number
+	local b = assert(BoatData.byId[boatId], "unknown boat")
+	if b.paddle and (paddlers or 1) >= 2 then
+		return b.pairSpeed
+	end
+	return b.maxSpeed
+end
+
+-- The fastest this boat can ever go (the server's move check allows for it).
+function BoatLogic.fastest(boatId: string): number
+	local b = assert(BoatData.byId[boatId], "unknown boat")
+	return math.max(b.maxSpeed, b.pairSpeed or 0)
+end
+
 -- Advance the boat's motion by dt seconds from throttle and steer (-1 to 1 each, like a
 -- VehicleSeat's ThrottleFloat and SteerFloat). Exact easing, so frame rate doesn't matter.
-function BoatLogic.step(m: Motion, boatId: string, throttle: any, steer: any, dt: number): Motion
+-- paddlers: people paddling a paddled boat (1 when left out).
+function BoatLogic.step(m: Motion, boatId: string, throttle: any, steer: any, dt: number, paddlers: number?): Motion
 	local b = assert(BoatData.byId[boatId], "unknown boat")
 	local th = clampInput(throttle)
 	local st = clampInput(steer)
-	local target = if th >= 0 then th * b.maxSpeed else th * b.reverseSpeed
+	local top = BoatLogic.topSpeed(boatId, paddlers)
+	local target = if th >= 0 then th * top else th * b.reverseSpeed
 	local speed = target + (m.speed - target) * math.exp(-b.accel * math.max(dt, 0))
 	-- Turning needs water moving past the rudder, but a little works at a standstill so
 	-- nobody gets stuck nose-in to the shore.
-	local moving = math.clamp(math.abs(speed) / b.maxSpeed, 0, 1)
+	local moving = math.clamp(math.abs(speed) / top, 0, 1)
 	local turnShare = b.idleTurn + (1 - b.idleTurn) * moving
 	local dir = if speed < -0.5 then -1 else 1 -- steering flips in reverse, like a real boat
 	return { speed = speed, yawRate = st * b.turnRate * turnShare * dir }
@@ -65,7 +82,7 @@ function BoatLogic.moveOk(fromPos: Vector3, toPos: Vector3, dt: number, boatId: 
 		return false
 	end
 	local flat = Vector3.new(toPos.X - fromPos.X, 0, toPos.Z - fromPos.Z)
-	return flat.Magnitude <= b.maxSpeed * 1.3 * dt + 2
+	return flat.Magnitude <= BoatLogic.fastest(boatId) * 1.3 * dt + 2
 end
 
 -- Will the boat move? A two-person boat needs its whole crew aboard.
@@ -99,6 +116,12 @@ end
 function BoatLogic.canDock(pos: Vector3, slip: Vector3, speed: number): boolean
 	local flat = Vector3.new(pos.X - slip.X, 0, pos.Z - slip.Z)
 	return flat.Magnitude <= 10 and math.abs(speed) <= 4
+end
+
+-- How many are paddling: everyone aboard a paddled boat paddles (a seat each); none on a motor boat.
+function BoatLogic.paddlers(boatId: string, aboard: number): number
+	local b = assert(BoatData.byId[boatId], "unknown boat")
+	return if b.paddle then math.clamp(aboard, 0, b.seats) else 0
 end
 
 return BoatLogic

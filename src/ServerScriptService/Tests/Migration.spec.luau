@@ -67,6 +67,16 @@ return function(t, Shared)
 		if v >= 10 then
 			save.braid = true
 		end
+		if v >= 11 then
+			save.boats = { Dinghy = true, Canoe = true }
+			save.boat = "Canoe"
+			save.assists = {
+				count = 3,
+				coins = 7,
+				recent = { { id = "LargemouthBass", name = "Largemouth Bass", cm = 40, kg = 1.8, price = 31, bonus = 3, how = "net", at = 1700000000 } },
+			}
+			save.doubleHauls = 2
+		end
 		return save
 	end
 
@@ -90,8 +100,8 @@ return function(t, Shared)
 		return true
 	end
 
-	t.test("the code's current save version is 10", function()
-		t.eq(CURRENT, 10, "bump this test (and add the new version below) when the save changes")
+	t.test("the code's current save version is 11", function()
+		t.eq(CURRENT, 11, "bump this test (and add the new version below) when the save changes")
 	end)
 
 	for v = 1, CURRENT do
@@ -134,7 +144,15 @@ return function(t, Shared)
 				t.eq(d.rod, "Willow", "starter rod")
 				t.eq(d.creekPass, false, "no pass yet")
 			end
-			if v >= 5 then
+			if v >= 11 then
+				t.eq(d.boats.Dinghy, true, "dinghy kept")
+				t.eq(d.boats.Canoe, true, "canoe kept")
+				t.eq(d.boat, "Canoe", "canoe at the slip")
+				t.eq(d.assists.count, 3, "assists kept")
+				t.eq(d.assists.coins, 7, "assist coins kept")
+				t.eq(#d.assists.recent, 1, "assist entries kept")
+				t.eq(d.doubleHauls, 2, "stamps kept")
+			elseif v >= 5 then
 				t.eq(d.boats.Dinghy, true, "boat")
 				t.eq(d.boat, "Dinghy", "boat at the slip")
 			else
@@ -178,6 +196,14 @@ return function(t, Shared)
 			t.eq(snap.hook, d.hook, "snapshot hook")
 			t.eq(snap.tackle.perfects, d.tackle.perfects, "snapshot perfects")
 			t.eq(snap.braid, d.braid, "snapshot braid")
+			-- v11: assists and stamps, empty before.
+			if v < 11 then
+				t.eq(d.assists.count, 0, "no assists yet")
+				t.eq(#d.assists.recent, 0, "no assist entries yet")
+				t.eq(d.doubleHauls, 0, "no stamps yet")
+			end
+			t.eq(snap.assists.count, d.assists.count, "snapshot assists")
+			t.eq(snap.doubleHauls, d.doubleHauls, "snapshot stamps")
 		end)
 	end
 
@@ -190,7 +216,7 @@ return function(t, Shared)
 	end)
 
 	t.test("no feature switch changes what a migrated save keeps", function()
-		local SWITCHES = { "WEATHER_ON", "GOALS_ON", "BOATS_ON", "BIG_LAKE_ON", "FRENZIES_ON" }
+		local SWITCHES = { "WEATHER_ON", "GOALS_ON", "BOATS_ON", "BIG_LAKE_ON", "FRENZIES_ON", "CANOE_ON", "NET_ON", "ASSIST_BONUS_ON", "QUIET_APPROACH_ON", "BUDDY_LOAN_ON", "DOUBLE_HOOKUP_ON", "CHUM_ON" }
 		local saved = {}
 		for _, k in SWITCHES do
 			saved[k] = (Config :: any)[k]
@@ -263,9 +289,41 @@ return function(t, Shared)
 
 	t.test("v10: a v9 save loads with no braided line, and a damaged flag is repaired", function()
 		local d = Inventory.reconcile(oldSave(9))
-		t.eq(d.v, 10, "version")
+		t.eq(d.v, CURRENT, "version")
 		t.eq(d.braid, false, "no braid yet")
 		local bad = Inventory.reconcile({ v = 10, braid = "yes" })
 		t.eq(bad.braid, false, "a damaged braid flag goes back to false")
+	end)
+
+	t.test("v11: a v10 save loads with no assists and keeps its boats; damaged fleet fields are repaired", function()
+		local d = Inventory.reconcile(oldSave(10))
+		t.eq(d.v, 11, "version")
+		t.eq(d.boats.Dinghy, true, "the dinghy is still owned")
+		t.eq(d.boat, "Dinghy", "and still at the slip")
+		t.eq(d.assists.count, 0, "no assists")
+		t.eq(d.doubleHauls, 0, "no stamps")
+		local bad = Inventory.reconcile({ v = 11, boats = "lots", boat = 5, assists = { count = "x", recent = 3 }, doubleHauls = "two" })
+		t.eq(type(bad.boats), "table", "boats rebuilt")
+		t.eq(bad.boat, "", "boat back to none")
+		t.eq(bad.assists.count, 0, "count repaired")
+		t.eq(bad.assists.coins, 0, "coins filled in")
+		t.eq(type(bad.assists.recent), "table", "recent repaired")
+		t.eq(bad.doubleHauls, 0, "stamps repaired")
+	end)
+
+	t.test("v11: an assist goes in the helper's journal and pays the bonus straight to coins", function()
+		local d = Inventory.reconcile(oldSave(10))
+		local coins = d.coins
+		local bag = #d.bag
+		local fish = { id = "NorthernPike", name = "Northern Pike", cm = 70, kg = 2.5, price = 50, bait = "Minnow", spot = "WeedBed", period = "Day", at = 1 }
+		for i = 1, Inventory.ASSISTS_KEEP + 3 do
+			Inventory.recordAssist(d, fish, 5, "net", 100 + i)
+		end
+		t.eq(d.coins, coins + 5 * (Inventory.ASSISTS_KEEP + 3), "bonus paid each time")
+		t.eq(#d.bag, bag, "no bag slot taken")
+		t.eq(d.assists.count, Inventory.ASSISTS_KEEP + 3, "counted")
+		t.eq(#d.assists.recent, Inventory.ASSISTS_KEEP, "only the newest kept")
+		t.eq(d.assists.recent[#d.assists.recent].at, 100 + Inventory.ASSISTS_KEEP + 3, "newest last")
+		t.eq(d.journal.counts.NorthernPike, nil, "an assist is not a catch")
 	end)
 end

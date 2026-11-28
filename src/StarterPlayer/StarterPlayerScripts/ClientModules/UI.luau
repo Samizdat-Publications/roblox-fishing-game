@@ -1814,7 +1814,7 @@ function UI.buildShop()
 	boatHeader.LayoutOrder = 200
 	refs.boatRows = {}
 	boatHeader.Visible = Config.boatsOn()
-	for i, b in (if Config.boatsOn() then BoatData.list else {}) do
+	for i, b in (if Config.boatsOn() then BoatData.shown() else {}) do -- a switched-off boat (the canoe before CANOE_ON) isn't listed
 		local row = frame(scroll, "Boat_" .. b.id, UDim2.new(1, -10, 0, 84), UDim2.new(), C.panel2, 0.1)
 		row.LayoutOrder = 200 + i
 		corner(row, 10)
@@ -1830,7 +1830,7 @@ function UI.buildShop()
 			if not st then
 				return
 			end
-			if not b.forSale then
+			if not BoatData.onSale(b) then
 				return
 			end
 			if st.boats and st.boats[b.id] then
@@ -1902,7 +1902,7 @@ function UI.refreshShop()
 		local btn = refs.boatRows and refs.boatRows[b.id]
 		if btn then
 			local owned = s.boats and s.boats[b.id]
-			if not b.forSale then
+			if not BoatData.onSale(b) then
 				btn.Text = "Coming soon"
 				btn.AutoButtonColor = false
 				paint(btn, C.panel)
