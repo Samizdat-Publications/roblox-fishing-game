@@ -23,6 +23,7 @@ local Config = require(Shared.Config)
 local BoatData = require(Shared.BoatData)
 local BoatLogic = require(Shared.BoatLogic)
 local BoatRules = require(Shared.BoatRules)
+local BoatFeel = require(Shared.BoatFeel)
 local Quiet = require(Shared.Quiet)
 local Coop = require(Shared.Coop)
 local Remotes = require(Shared.Remotes)
@@ -149,6 +150,18 @@ local function prompt(parent: BasePart, name: string, action: string, object: st
 	return p
 end
 
+-- Where a seat goes, relative to the hull's centre. With the feel layer on (BOAT_FEEL_ON) a seat
+-- named in BoatFeel.ART[id].seats sits where its art model's seat is (given as the seat top over
+-- the waterline; the hull's centre is hullHeight / 2 - 0.4 above the water, the seat 0.4 thick).
+local function seatAt(b: BoatData.Boat, name: string, hullHeight: number, default: CFrame): CFrame
+	local art = if Config.BOAT_FEEL_ON then BoatFeel.ART[b.id] else nil
+	local top = art and art.seats and art.seats[name]
+	if not top then
+		return default
+	end
+	return CFrame.new(top.X, top.Y - 0.2 - (hullHeight / 2 - 0.4), top.Z)
+end
+
 -- A gray-box boat, bow toward -Z of the hull. The art models in art/models replace the
 -- visible pieces later (boat plan Task 2); the hull part stays as the physics body.
 local function buildModel(owner: Player, b: BoatData.Boat, at: CFrame): (Model, BasePart, VehicleSeat, Seat?)
@@ -185,9 +198,9 @@ local function buildModel(owner: Player, b: BoatData.Boat, at: CFrame): (Model, 
 		piece(model, hull, "SternStem", Vector3.new(b.width * 0.6, hullHeight + 0.4, 1), CFrame.new(0, 0.2, b.length / 2 + 0.3), b.color)
 		piece(model, hull, "SternThwart", Vector3.new(b.width - 0.4, 0.2, 1.2), CFrame.new(0, hullHeight / 2 + 0.1, b.length / 2 - 2), cane)
 		piece(model, hull, "BowThwart", Vector3.new(b.width - 0.4, 0.2, 1.2), CFrame.new(0, hullHeight / 2 + 0.1, -b.length / 2 + 2.5), cane)
-		helm = seat(model, hull, "VehicleSeat", "Helm", CFrame.new(0, hullHeight / 2 + 0.35, b.length / 2 - 2)) :: VehicleSeat
+		helm = seat(model, hull, "VehicleSeat", "Helm", seatAt(b, "Helm", hullHeight, CFrame.new(0, hullHeight / 2 + 0.35, b.length / 2 - 2))) :: VehicleSeat
 		if second then
-			nav = seat(model, hull, "Seat", second, CFrame.new(0, hullHeight / 2 + 0.35, -b.length / 2 + 2.5)) :: Seat
+			nav = seat(model, hull, "Seat", second, seatAt(b, second, hullHeight, CFrame.new(0, hullHeight / 2 + 0.35, -b.length / 2 + 2.5))) :: Seat
 		end
 	elseif b.id == "Dinghy" then
 		-- Round orange tubes on the sides and bow, a wooden floor, a tiny outboard at the stern.
@@ -200,10 +213,10 @@ local function buildModel(owner: Player, b: BoatData.Boat, at: CFrame): (Model, 
 		piece(model, hull, "BowTube", Vector3.new(b.width, tube, tube), CFrame.new(0, hullHeight / 2, -b.length / 2 + tube / 2), b.color, Enum.PartType.Cylinder)
 		piece(model, hull, "Floor", Vector3.new(b.width - tube * 2, 0.2, b.length - tube * 1.5), CFrame.new(0, hullHeight / 2 + 0.05, 0.2), Color3.fromRGB(150, 115, 75))
 		piece(model, hull, "Outboard", Vector3.new(0.8, 2, 0.8), CFrame.new(0, hullHeight / 2 + 0.3, b.length / 2 + 0.3), Color3.fromRGB(40, 40, 45))
-		helm = seat(model, hull, "VehicleSeat", "Helm", CFrame.new(0, hullHeight / 2 + 0.35, b.length / 2 - 1.6)) :: VehicleSeat
+		helm = seat(model, hull, "VehicleSeat", "Helm", seatAt(b, "Helm", hullHeight, CFrame.new(0, hullHeight / 2 + 0.35, b.length / 2 - 1.6))) :: VehicleSeat
 		if second then
 			-- The passenger sits up by the bow tube (the fleet, CANOE_ON).
-			nav = seat(model, hull, "Seat", second, CFrame.new(0, hullHeight / 2 + 0.35, -b.length / 2 + 2)) :: Seat
+			nav = seat(model, hull, "Seat", second, seatAt(b, second, hullHeight, CFrame.new(0, hullHeight / 2 + 0.35, -b.length / 2 + 2))) :: Seat
 		end
 	else
 		-- Deep-V: white hull, a console amidships with the helm behind it, a seat up front.
@@ -964,6 +977,52 @@ function BoatService.start()
 		return
 	end
 	toastEvent = Remotes.event("Toast")
+
+	-- The feel layer (BOAT_FEEL_ON): the client draws each boat's art model, but ServerStorage
+	-- never reaches a client, so the boat models and paddles go to ReplicatedStorage.BoatArt.
+	if Config.BOAT_FEEL_ON then
+		local art = game:GetService("ServerStorage"):FindFirstChild("Art")
+		local out = ReplicatedStorage:FindFirstChild("BoatArt") or Instance.new("Folder")
+		out.Name = "BoatArt"
+		local missing = {}
+		for _, name in BoatFeel.artNames() do
+			local src = art and art:FindFirstChild(name)
+			if src and not out:FindFirstChild(name) then
+				src:Clone().Parent = out
+			elseif not src then
+				table.insert(missing, name)
+			end
+		end
+		out.Parent = ReplicatedStorage
+		if #missing > 0 then
+			warn("[Boats] not in ServerStorage.Art, drawn as the gray box: " .. table.concat(missing, ", "))
+		end
+
+		-- The horn: the driver hears their own at once (no round trip); everyone else hears it
+		-- from here, at that boat's hull.
+		local lastHorn: { [Player]: number } = {}
+		local horn = Remotes.event("BoatHorn")
+		horn.OnServerEvent:Connect(function(player: Player)
+			local now = os.clock()
+			if not BoatFeel.hornReady(lastHorn[player], now) then
+				return
+			end
+			for _, boat in boats do
+				if occupantPlayer(boat.helm) == player then
+					lastHorn[player] = now
+					for _, other in Players:GetPlayers() do
+						if other ~= player then
+							horn:FireClient(other, boat.hull)
+						end
+					end
+					return
+				end
+			end
+		end)
+		Players.PlayerRemoving:Connect(function(p)
+			lastHorn[p] = nil
+		end)
+	end
 
 	Remotes.func("BuyBoat").OnServerInvoke = function(player: Player, boatId: any)
 		local data = PlayerData.get(player)

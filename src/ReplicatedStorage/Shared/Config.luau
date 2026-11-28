@@ -149,6 +149,14 @@ Config.BUDDY_LOAN_ON = false
 Config.DOUBLE_HOOKUP_ON = false
 Config.CHUM_ON = false
 
+-- BOAT_FEEL_ON (N4, the feel layer, Shared/BoatFeel and ClientModules/BoatFeelClient): each screen
+-- draws the boat's art model (hero on desktop, plain on a phone) on the server's flat hull, with
+-- trim, lean, bob, the wake, lights from dusk, the horn on H, paddling and seated poses, a camera
+-- that eases back with speed, big touch buttons, and the journal's "Send my boat home". The
+-- server copies the art to ReplicatedStorage.BoatArt and seats the canoe on its cane seats.
+-- Off, boats look and work exactly as before. The server's hull never tilts either way.
+Config.BOAT_FEEL_ON = false
+
 function Config.boatsOn(): boolean
 	return Config.BOATS_ON and Config.BIG_LAKE_ON
 end

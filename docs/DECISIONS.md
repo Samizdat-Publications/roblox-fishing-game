@@ -323,3 +323,22 @@ fable-advisor, on the clean desktop creek frames of round 2 (shots 09 to 12). Ro
 3. The Deep-V keeps to the Big Lake once `CANOE_ON` is on, but uses the dock slips until N5 builds the marina.
 4. The net's beat: the fish first surfaces 1.2 seconds after the net comes out, then every 2.6 seconds, up for 0.8 seconds each time, with 0.25 seconds of slack for the round trip.
 5. The sim's pair is an upper bound: the partner is free to net whenever they are not fighting, half of the fish that would get away are saved by the net, and the partner's catch is a mirror of the player's own.
+
+## 11/28/2026: N4 feel layer (how a boat feels)
+
+- **Everything lands behind `Config.BOAT_FEEL_ON` (off).** The numbers and the pure maths are in `Shared/BoatFeel` (with its spec); `ClientModules/BoatFeelClient` draws them and `ClientModules/BoatTouch` adds the touch buttons. Off, boats look and work exactly as before.
+- **The art reaches the client through `ReplicatedStorage.BoatArt`.** ServerStorage never replicates, so with the switch on the server copies the boat models and paddles named in `BoatFeel.ART` there at start. Each screen draws the hero model on the desktop tier and the plain twin on the phone tier, and hides the gray box locally (`LocalTransparencyModifier`). A model missing from `ServerStorage.Art` leaves the gray box showing and is named in a warning.
+- **The art is not welded into the server's boat.** It hangs from one anchored, invisible root that each screen moves every frame to the hull's level waterline frame, so it is exactly where the hull is but can never add mass to it or push it. Trim, lean and bob turn that root only; the server's hull never tilts.
+- **One table of model names (`BoatFeel.ART`)**, so the dinghy's re-skin drops in by changing its `hero` and `plain` names (and its `lift`, `floor` and `seats` if its shape changes).
+- **The canoe floats high, so its feel is smaller:** trim peaks at 1.5 degrees (1 on the move), lean 3, a 1 degree roll each stroke, bob 0.12 studs, 0.6 degrees of pitch and 1 degree of roll. The worst combination drops its drawn floor 0.164 studs, under the 0.2 cap (the spec checks it). The bow lifts about the stern, so trim never sinks anything.
+- **No boat ever shows water through its floor:** if a pose would bring the drawn floor within 0.02 studs of the water, the hull is drawn that much higher. The dinghy's hardest lean with a full bob lifts it 0.29 studs.
+- **The canoe's seats move onto its cane seats** with the switch on (stern (0, 0.64, 3.00), bow (0, 0.64, -2.30) over the waterline), and the dinghy's helm onto its bench (0, 0.8, 2.1). The passenger and the Deep-V keep the server's seats.
+- **The horn is heard at once by the driver** and by everyone else through a new `BoatHorn` remote (the server checks the sender is at a helm and allows one every 1.5 seconds). Its sound is the `server-horn` stand-in (a slowed stinger); the paddle dip is a slowed, quiet `bobber-plop`. No uploads.
+
+### Defaults chosen, open to Stewart (N4 feel)
+
+1. Every boat carries red and green bow lights and a white stern light, the canoe included (real canoes carry only a white light).
+2. Paddlers change sides every stroke, as the plan says (a real stern paddler keeps one side).
+3. The horn is H on a keyboard and DPadUp on a gamepad (H is also the bait bench's hook key; the bench is never open at the helm).
+4. A boat sitting on a shore does not bob; one at its slip does.
+5. The dinghy's art sits with its floor 0.2 studs over the water and the Deep-V's numbers are a first guess: both need a look in Studio.
