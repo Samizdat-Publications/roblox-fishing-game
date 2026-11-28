@@ -9,6 +9,7 @@ local BoatData = require(Shared.BoatData)
 local BoatLogic = require(Shared.BoatLogic)
 local Config = require(Shared.Config)
 local Shore = require(Shared.Shore)
+local Cover = require(Shared.Cover)
 
 local BoatRules = {}
 
@@ -194,6 +195,79 @@ function BoatRules.beachAt(boatId: string, pos: Vector3, look: Vector3, speed: n
 		end
 	end
 	return nil
+end
+
+-- Stopping short of the shore (the N4 playtest, 11/28/2026): a boat driven at a bank or a log
+-- used to ride up it and tilt. Now the server looks ahead along the way the boat is moving
+-- (the bow going forward, the stern in reverse) and stops it while there is still water
+-- between it and whatever is ahead. Steering still works when stopped (BoatLogic.idleTurn).
+BoatRules.STOP_CLEAR = 1.5 -- studs of water always kept between the bow (or stern) and the obstacle
+BoatRules.STOP_LOOK = 0.25 -- plus this many seconds of travel at the boat's speed
+BoatRules.OBSTACLE_CLEAR = 0.6 -- a probe this close to a log or the dock counts as hitting it
+
+-- The points checked ahead of a moving boat: the middle of its leading end and its two
+-- corners, pushed out by STOP_CLEAR plus STOP_LOOK seconds of travel. None when it is still.
+function BoatRules.probes(boatId: string, pos: Vector3, look: Vector3, speed: number): { Vector3 }
+	local b = assert(BoatData.byId[boatId], "unknown boat")
+	local flat = Vector3.new(look.X, 0, look.Z)
+	if flat.Magnitude < 1e-6 or math.abs(speed) < 1e-3 then
+		return {}
+	end
+	flat = flat.Unit
+	local dir = if speed > 0 then flat else -flat
+	local side = Vector3.new(-flat.Z, 0, flat.X)
+	local reach = BoatRules.STOP_CLEAR + math.abs(speed) * BoatRules.STOP_LOOK
+	local centre = Vector3.new(pos.X, BoatRules.WATER_Y, pos.Z)
+	local tip = centre + dir * (b.length / 2 + reach)
+	local edge = centre + dir * (b.length / 2 + reach * 0.5)
+	return { tip, edge + side * (b.width / 2), edge - side * (b.width / 2) }
+end
+
+-- What a boat would hit at this point: "shore" (off the water), "log", "dock", "water" (water
+-- this boat may not use, with the reason) or nil when it is clear.
+function BoatRules.blockedAt(boatId: string, point: Vector3): (string?, string?)
+	if not BoatRules.isBoatWater(point) then
+		return "shore", nil
+	end
+	for _, f in Cover.features do
+		if (f.kind == "Log" or f.kind == "Dock") and Cover.edgeDistance(f, point) <= BoatRules.OBSTACLE_CLEAR then
+			return string.lower(f.kind), nil
+		end
+	end
+	local ok, msg = BoatRules.mayBeAt(boatId, point)
+	if not ok then
+		return "water", msg
+	end
+	return nil, nil
+end
+
+-- Should this boat stop now? The first thing ahead (see blockedAt) and what to tell the driver.
+function BoatRules.stopAhead(boatId: string, pos: Vector3, look: Vector3, speed: number): (string?, string?)
+	for _, p in BoatRules.probes(boatId, pos, look, speed) do
+		local kind, msg = BoatRules.blockedAt(boatId, p)
+		if kind then
+			return kind, BoatRules.stopText(boatId, kind, msg)
+		end
+	end
+	return nil, nil
+end
+
+-- The toast for a stop. "thing" is anything else solid the server's own look finds.
+function BoatRules.stopText(boatId: string, kind: string, msg: string?): string
+	local b = assert(BoatData.byId[boatId], "unknown boat")
+	if kind == "shore" then
+		if Config.CANOE_ON and b.lands == "shore" then
+			return "Shore ahead. Turn the boat, or land here."
+		end
+		return "Shore ahead. Turn the boat."
+	elseif kind == "log" then
+		return "A log is in the way. Turn the boat."
+	elseif kind == "dock" then
+		return "The dock is in the way. Turn the boat."
+	elseif kind == "water" then
+		return msg or "The boat can't go there."
+	end
+	return "Something is in the way. Turn the boat."
 end
 
 -- The first free slip, or nil when every slip is taken.

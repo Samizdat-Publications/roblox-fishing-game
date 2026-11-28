@@ -406,3 +406,27 @@ The advisor's last round on Cedar Creek, from the frames in `artifacts/shots/202
 2. The mooring off the dock end to the north-east, canoe nearest the dock, Deep-V farthest.
 3. The rack canoe rests right side up on its keel.
 4. The apron and walkway are plain plank parts in the WeatheredPlank family, not a hero model.
+
+## 11/28/2026: Cedar Creek white water redone as soft beams (still behind `Config.WHITE_WATER_ON`, off)
+
+The N3 final critic read the foam as "hard-edged rectangular whitewater foam patches". A flat part has four straight edges and four corners however its map fades, so the strips are replaced, not tuned.
+
+- **Beams, not parts.** `CreekPlan.foamBeams` lays 60 Beams (34 down the riffle in tongues of two or three narrow, offset, overlapping beams; 6 at the drop into the rocky run; 2 below each of the 5 boulders; 1 below each of the 10 emergent rocks, starting under the rock so the rock hides its head). Each fades in and out along its length (Transparency keypoints clear at both ends, 0.12 to 0.34 in the middle), the foam map's faded rows sit on its two long sides, it tapers (Width0 to Width1) and bends a little (the two attachments turned apart, CurveSize 0.3 of its length, 8 segments). The map wraps every 6 studs and scrolls downstream with TextureSpeed (speed / 6 cycles a second). LightInfluence 1, so the foam is lit like the water and never glows at dawn or night.
+- **Pillows.** A small, slow ParticleEmitter with the spray map at the downstream foot of each emergent rock and boulder (15), plus the two existing sprays: 17 emitters, at most 77 particles alive. All of it hangs from one invisible anchored part.
+- **Height:** every beam at y 0.1 (water at 0, its chop 0.06) with ZOffset 0.05 toward the camera, so crests never cut it and it never floats visibly. Riffle and drop beams keep clear of every rock; all of them stay over the drawn water across their full width (specs in `CreekPlan.spec`).
+- **Reversible:** `CreekPlan.FOAM_BEAMS_ON` false brings the old strips back unchanged. Phone tier: still nothing (WhiteWater's rule is unchanged).
+- **Unverified in Studio:** which attachment axis a Beam with FaceCamera off uses as its face normal is not stated in Roblox's docs. The code assumes the attachments' Y (up) and lays the width along their Z. If the first capture shows the foam standing on edge, set `CreekPlan.FOAM_BEAM_NORMAL = "Z"` (one edit).
+
+## 11/28/2026: N4 playtest fixes (boats tilting, turn delay, re-boarding)
+
+- **The hull never tilts or climbs.** Its AlignOrientation is now rigid (only the heading changes) and its AlignPosition holds the water line hard on Y (1e9, responsiveness 200; was 1e6 at 25). As a backstop, any hull more than 1 degree off upright or 0.15 studs off its water line is set straight at once.
+- **Boats stop short of what they would hit.** Every frame the server looks past the leading end (the bow forward, the stern in reverse), 1.5 studs plus a quarter second of travel, at the middle and both corners (`BoatRules.stopAhead`): land, a log, the dock, or water this boat may not use stops it, and a ray down at the same points catches anything else solid between the keel and the hull's top (a terrain bank, a moored boat; reeds and the bridge are ignored). A stopped boat still steers and can always back away. The driver gets a toast: "Shore ahead. Turn the boat, or land here." for a boat that lands on shores, "Shore ahead. Turn the boat." otherwise, and a line for logs, the dock and other things. The half-second check that puts a boat back stays as the last guard.
+- **Landing still works:** a boat stopped at a bank and crept in slowly ends with its bow within 1.5 to 2.5 studs of the shore, inside the 5 studs "Land here" searches (spec `BoatStop`).
+- **Turn response:** the helm's client sends a change the frame it happens and repeats a held control every 0.1 s (`Shared/BoatInput`; it used to wait for a 0.1 s tick, about 50 ms on average). The server's step runs just before physics (PreSimulation, was Heartbeat), so a new input moves the hull on the next physics step, and the rigid AlignOrientation turns it at once instead of easing in. Expected well under 200 ms on 4G; driving stays on the server unless the re-test says otherwise.
+- **Re-boarding:** "Drive" hangs from the middle of the hull and reaches 10 studs, or half the boat's length plus 6 if that is more (canoe 12, Deep-V 14), with no line of sight needed. The likely cause of the dead first E: the second seat's Ride or Paddle prompt is on the same key and nearer the bow, so the owner's screen chose it. The owner's own screen now hides that prompt (nobody else may drive the boat, so the owner never needs it). The server also puts the driver at the helm before sitting them, and checks `SeatPart` rather than `Sit` (which can lag on the server).
+- **The dinghy art's WorldPivot left alone.** The art is placed by its pivot (`PivotTo` in `BoatFeelClient.buildArt`) and draws in the right place, so the pivot is right for the geometry; resetting it to a part's CFrame would move the drawn boat. Not a safe one-line change without a Studio look.
+
+### Defaults chosen, open to Stewart (N4 playtest fixes)
+
+1. Boats keep 1.5 studs of water plus a quarter second of travel ahead of them (at the canoe's 11 studs a second, about 4 studs).
+2. The Drive prompt's reach grows with long boats (half the length plus 6), so the canoe and Deep-V can be boarded from the shore at either end.

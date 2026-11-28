@@ -9,6 +9,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Rarity = require(Shared.Rarity)
 local Remotes = require(Shared.Remotes)
+local BoatInput = require(Shared.BoatInput)
 
 local BoatClient = {}
 
@@ -27,6 +28,16 @@ local function watch(prompt: ProximityPrompt)
 	-- The landing net (N4): "Net it" sits on the angler; their own screen never shows it.
 	if prompt.Name == "NetPrompt" then
 		if prompt:GetAttribute("AnglerId") == Players.LocalPlayer.UserId then
+			keepOff(prompt)
+		end
+		return
+	end
+	-- The owner never rides in their own second seat (nobody else may drive it). Its prompt sits
+	-- on the same key as Drive and nearer the bow, so on a landed boat it took the owner's E
+	-- (the N4 playtest): keep it off on the owner's screen.
+	if prompt.Name == "RidePrompt" then
+		local model = prompt:FindFirstAncestorOfClass("Model")
+		if model and model:GetAttribute("OwnerId") == Players.LocalPlayer.UserId then
 			keepOff(prompt)
 		end
 		return
@@ -112,34 +123,31 @@ local function fishFinder()
 	end)
 end
 
--- At the helm, send the seat's controls to the server about ten times a second (the server
--- drives the boat and owns its physics, so the seat's own values don't reach it). Roblox's
--- vehicle controls fill ThrottleFloat and SteerFloat from keyboard, thumbstick and gamepad.
-local SEND_EVERY = 0.1
+-- At the helm, send the seat's controls to the server (it drives the boat and owns its physics,
+-- so the seat's own values don't reach it). Roblox's vehicle controls fill ThrottleFloat and
+-- SteerFloat from keyboard, thumbstick and gamepad. A change goes out the frame it happens and a
+-- held control repeats every 0.1 s (Shared/BoatInput); it used to wait for a 0.1 s tick, which
+-- was most of the delay before a turn on the 4G preset (the N4 playtest, 11/28/2026).
 local function sendInput()
 	local input = Remotes.event("BoatInput")
-	local timer, wasAtHelm = 0, false
-	RunService.Heartbeat:Connect(function(dt)
-		timer += dt
-		if timer < SEND_EVERY then
-			return
-		end
-		timer = 0
+	local state = BoatInput.new()
+	RunService.Heartbeat:Connect(function()
 		local char = Players.LocalPlayer.Character
 		local hum = char and char:FindFirstChildOfClass("Humanoid")
 		local seat = hum and hum.SeatPart
 		local atHelm = seat ~= nil and seat:IsA("VehicleSeat") and seat.Name == "Helm"
+		local throttle, steer = 0, 0
 		if atHelm then
 			local s = seat :: VehicleSeat
-			local throttle, steer = s.ThrottleFloat, s.SteerFloat
+			throttle, steer = s.ThrottleFloat, s.SteerFloat
 			if throttle == 0 and steer == 0 then
 				throttle, steer = s.Throttle, s.Steer
 			end
-			input:FireServer(throttle, steer)
-		elseif wasAtHelm then
-			input:FireServer(0, 0) -- let go when leaving the helm
 		end
-		wasAtHelm = atHelm
+		local send, th, st = BoatInput.decide(state, atHelm, throttle, steer, os.clock())
+		if send then
+			input:FireServer(th, st)
+		end
 	end)
 end
 

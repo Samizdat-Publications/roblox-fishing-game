@@ -14,6 +14,12 @@
 -- (Shared/Quiet, QUIET_APPROACH_ON), the second seat of a canoe or dinghy can toss chum
 -- (CHUM_ON), and the journal's "Send my boat home" calls the SendBoatHome remote.
 -- UNVERIFIED in Studio (11/27/2026) until the N4 playtest.
+--
+-- After the N4 playtest (11/28/2026): the hull is held rigidly level at its water line (it rode
+-- up logs and banks to 28 degrees), the server looks ahead and stops a boat with water to spare
+-- before a shore, a log or the dock (BoatRules.stopAhead plus a ray for anything else solid),
+-- the step runs just before physics so a new turn moves the hull on the next step, and "Drive"
+-- hangs from the hull's middle. UNVERIFIED in Studio until the re-test.
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -150,6 +156,22 @@ local function prompt(parent: BasePart, name: string, action: string, object: st
 	return p
 end
 
+-- "Drive" hangs from the middle of the hull, not the helm seat, and reaches past either end, so
+-- an owner on the shore beside a landed boat (or on the dock) can take it from the bow side.
+-- The N4 playtest: from 5.6 studs the first E did nothing, because the bow seat's own prompt
+-- (Ride or Paddle, also on E) was nearer and the owner's screen picked that one. BoatClient now
+-- hides that prompt from the owner. UNVERIFIED in Studio (11/28/2026).
+local function drivePromptOn(hull: BasePart, b: BoatData.Boat): ProximityPrompt
+	local board = Instance.new("Attachment")
+	board.Name = "Board"
+	board.Position = Vector3.new(0, hull.Size.Y / 2 + 0.5, 0)
+	board.Parent = hull
+	local p = prompt(hull, "DrivePrompt", "Drive", b.name)
+	p.MaxActivationDistance = math.max(10, b.length / 2 + 6)
+	p.Parent = board
+	return p
+end
+
 -- Where a seat goes, relative to the hull's centre. With the feel layer on (BOAT_FEEL_ON) a seat
 -- named in BoatFeel.ART[id].seats sits where its art model's seat is (given as the seat top over
 -- the waterline; the hull's centre is hullHeight / 2 - 0.4 above the water, the seat 0.4 thick).
@@ -273,24 +295,28 @@ local function makeMovers(hull: BasePart): Movers
 	lv.MaxForce = 1e6
 	lv.Parent = hull
 
-	-- One constraint holds the hull upright and on its heading; the server turns the heading
-	-- each frame (so nothing fights it, and a bump that tilts the hull rights itself).
+	-- One constraint holds the hull level and on its heading; the server turns the heading each
+	-- frame. Rigid since the N4 playtest (11/28/2026): with a soft one a log or a bank tipped the
+	-- hull up to 28 degrees and the dock leaned it 2. Only the heading ever changes.
 	local ao = Instance.new("AlignOrientation")
 	ao.Mode = Enum.OrientationAlignmentMode.OneAttachment
 	ao.AlignType = Enum.AlignType.AllAxes
 	ao.Attachment0 = center
 	ao.CFrame = CFrame.fromOrientation(0, 0, 0)
-	ao.MaxTorque = 1e6
-	ao.Responsiveness = 30
+	ao.RigidityEnabled = true
+	ao.MaxTorque = math.huge
+	ao.Responsiveness = 200
 	ao.Parent = hull
 
+	-- The water line, held hard on Y only (X and Z belong to the LinearVelocity). Was 1e6 at
+	-- responsiveness 25, which let the hull bob 0.2 studs at the dock and climb a bank.
 	local ap = Instance.new("AlignPosition")
 	ap.Mode = Enum.PositionAlignmentMode.OneAttachment
 	ap.Attachment0 = center
 	ap.ForceLimitMode = Enum.ForceLimitMode.PerAxis
-	ap.MaxAxesForce = Vector3.new(0, 1e6, 0) -- holds the water line only
+	ap.MaxAxesForce = Vector3.new(0, 1e9, 0)
 	ap.Position = hull.Position
-	ap.Responsiveness = 25
+	ap.Responsiveness = 200
 	ap.Parent = hull
 
 	return { lv = lv, ao = ao, ap = ap }
@@ -538,7 +564,7 @@ function spawnFor(player: Player)
 		hull = hull,
 		helm = helm,
 		nav = nav,
-		drivePrompt = prompt(helm, "DrivePrompt", "Drive", b.name),
+		drivePrompt = drivePromptOn(hull, b),
 		ridePrompt = if nav then prompt(nav, "RidePrompt", rideAction, player.DisplayName .. "'s " .. b.name) else nil,
 		tiePrompt = prompt(helm, "TiePrompt", "Tie up", "Boat slip " .. slip),
 		beachPrompt = prompt(helm, "BeachPrompt", "Land here", b.name),
@@ -572,7 +598,14 @@ function spawnFor(player: Player)
 			return
 		end
 		local hum = who.Character and who.Character:FindFirstChildOfClass("Humanoid")
-		if hum and hum.Health > 0 and not hum.Sit then
+		if hum and hum.Health > 0 and hum.SeatPart == nil then
+			-- Put them at the helm first, so sitting from a few studs off (a landed boat, from
+			-- the shore) never has to drag the character across.
+			local root = who.Character and who.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+			if root then
+				root.CFrame = helm.CFrame * CFrame.new(0, 2.5, 0)
+				root.AssemblyLinearVelocity = Vector3.zero
+			end
 			castOff(boat)
 			helm:Sit(hum)
 		end
@@ -583,7 +616,7 @@ function spawnFor(player: Player)
 				return
 			end
 			local hum = who.Character and who.Character:FindFirstChildOfClass("Humanoid")
-			if hum and hum.Health > 0 and not hum.Sit then
+			if hum and hum.Health > 0 and hum.SeatPart == nil then
 				nav:Sit(hum) -- a rider doesn't cast off: only the helm does
 			end
 		end)
@@ -737,8 +770,54 @@ function spawnFor(player: Player)
 	returnToSlip(boat)
 end
 
--- Every frame: input to motion to movers, then the half-second checks.
+-- Anything solid the hull would hit at these points, between its keel and a little over its top:
+-- the bed or a bank rising out of the shallows, a part such as a still boat at the mooring.
+-- Parts that don't collide (reeds) and the water are ignored; the bridge is above the hull.
+local KEEL_CLEAR = 0.15 -- studs below the hull's bottom that still count as hitting it
+-- Returns "shore" for the terrain, "thing" for a part, nil when clear.
+local function solidAhead(boat: Boat, probes: { Vector3 }, params: RaycastParams): string?
+	local bottom = BoatRules.WATER_Y - 0.4 -- the hull sits 0.4 into the water
+	local top = bottom + boat.hull.Size.Y + 0.3
+	for _, p in probes do
+		local hit = workspace:Raycast(Vector3.new(p.X, top, p.Z), Vector3.new(0, bottom - KEEL_CLEAR - top, 0), params)
+		if hit then
+			return if hit.Instance:IsA("Terrain") then "shore" else "thing"
+		end
+	end
+	return nil
+end
+
+-- The hull is never tilted or off its water line: if anything has nudged it (a bump from
+-- another boat, a character climbing in), set it straight at once.
+local LEVEL_UP = math.cos(math.rad(1)) -- more than 1 degree off upright
+local LEVEL_DY = 0.15 -- or this many studs off its water line
+local function keepLevel(boat: Boat)
+	local cf = boat.hull.CFrame
+	local waterLine = BoatRules.WATER_Y + boat.hull.Size.Y / 2 - 0.4
+	if cf.UpVector.Y >= LEVEL_UP and math.abs(cf.Position.Y - waterLine) <= LEVEL_DY then
+		return
+	end
+	local v = boat.hull.AssemblyLinearVelocity
+	boat.model:PivotTo(CFrame.new(cf.Position.X, waterLine, cf.Position.Z) * CFrame.fromOrientation(0, boat.yaw, 0))
+	boat.hull.AssemblyLinearVelocity = Vector3.new(v.X, 0, v.Z)
+	boat.hull.AssemblyAngularVelocity = Vector3.zero
+end
+
+-- Every frame, just before physics (so a new turn from the driver moves the hull on the very
+-- next step): input to motion to movers, then the half-second checks.
 local function step(dt: number)
+	-- One ray filter for the look ahead this frame: every character and each boat's own model
+	-- (added per boat below). Other boats stay in, so two boats stop nose to nose.
+	local chars: { Instance } = {}
+	for _, p in Players:GetPlayers() do
+		if p.Character then
+			table.insert(chars, p.Character)
+		end
+	end
+	local rayParams = RaycastParams.new()
+	rayParams.FilterType = Enum.RaycastFilterType.Exclude
+	rayParams.IgnoreWater = true
+	rayParams.RespectCanCollide = true
 	for player, boat in boats do
 		if boat.docked or boat.beached or not boat.hull.Parent then
 			continue
@@ -769,9 +848,32 @@ local function step(dt: number)
 		-- A paddled boat goes faster with both seats paddling (the canoe, 7 to 11).
 		local paddlers = if Config.CANOE_ON then BoatLogic.paddlers(boat.id, n) else 1
 		boat.motion = BoatLogic.step(boat.motion, boat.id, throttle, steer, dt, paddlers)
-		Quiet.step(boat.quiet, boat.id, throttle, boat.motion.speed, math.abs(boat.motion.speed) * dt, boat.hull.Position, os.clock())
+		keepLevel(boat)
 		local pos = boat.hull.Position
-		local vx, vz = BoatRules.planeVelocity(boat.hull.CFrame.LookVector, boat.motion.speed)
+		local look = CFrame.fromOrientation(0, boat.yaw, 0).LookVector
+		-- Look ahead (the N4 playtest): stop with water to spare before a shore, a log, the dock,
+		-- water this boat may not use or anything else solid. Steering still works when stopped,
+		-- and backing away is never blocked by what is ahead.
+		local blocked, why = BoatRules.stopAhead(boat.id, pos, look, boat.motion.speed)
+		if not blocked and boat.motion.speed ~= 0 then
+			local skip = table.clone(chars)
+			table.insert(skip, boat.model)
+			rayParams.FilterDescendantsInstances = skip
+			local solid = solidAhead(boat, BoatRules.probes(boat.id, pos, look, boat.motion.speed), rayParams)
+			if solid then
+				blocked, why = solid, BoatRules.stopText(boat.id, solid, nil)
+			end
+		end
+		if blocked then
+			local pushing = (boat.motion.speed > 0 and throttle > 0) or (boat.motion.speed < 0 and throttle < 0)
+			boat.motion = { speed = 0, yawRate = boat.motion.yawRate }
+			local driver = occupantPlayer(boat.helm)
+			if pushing and driver and why then
+				hint(driver, why)
+			end
+		end
+		Quiet.step(boat.quiet, boat.id, throttle, boat.motion.speed, math.abs(boat.motion.speed) * dt, pos, os.clock())
+		local vx, vz = BoatRules.planeVelocity(look, boat.motion.speed)
 		local dx, dz = BoatRules.drift(boat.id, pos, n)
 		boat.movers.lv.PlaneVelocity = Vector2.new(vx + dx, vz + dz)
 		boat.yaw += BoatRules.spinY(boat.motion.yawRate) * dt
@@ -1135,7 +1237,7 @@ function BoatService.start()
 		waitingForSlip[p] = nil
 		task.defer(fillWaiting) -- after the leaving player is gone, so their boat isn't rebuilt
 	end)
-	RunService.Heartbeat:Connect(step)
+	RunService.PreSimulation:Connect(step)
 end
 
 return BoatService
