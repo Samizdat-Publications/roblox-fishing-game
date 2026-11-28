@@ -2749,5 +2749,243 @@
       "11-gate-noon": "Clear",
       "12-pool-night": "Clear"
     }
+  },
+  {
+    "date": "2026-11-28",
+    "step": "N3 creek round 2",
+    "set": "A",
+    "rubric": "look",
+    "run": "2026-11-27-2356",
+    "commit": "ff2828d",
+    "shots": 4,
+    "median": 5.5,
+    "scores": [
+      5.5,
+      5.8,
+      5.5
+    ],
+    "points": {
+      "composition": 5,
+      "light": 6,
+      "water": 5,
+      "mood": 6,
+      "want_to_fish": 5.5,
+      "phone_readability": 5,
+      "broken_or_ugly": 6
+    },
+    "reports": [
+      "docs\\critic\\2026-11-27-N3 creek round 2-neon.md",
+      "docs\\critic\\2026-11-28-N3 creek round 2-neon.md",
+      "docs\\critic\\2026-11-28-N3 creek round 2-neon-2.md"
+    ],
+    "weather": {
+      "09-riffle-dawn": "Clear",
+      "10-pool-golden": "Clear",
+      "11-gate-noon": "Clear",
+      "12-pool-night": "Clear"
+    },
+    "session": {
+      "09-riffle-dawn": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1418,
+          787
+        ]
+      },
+      "10-pool-golden": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1418,
+          787
+        ]
+      },
+      "11-gate-noon": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1418,
+          787
+        ]
+      },
+      "12-pool-night": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1418,
+          787
+        ]
+      }
+    }
+  },
+  {
+    "date": "2026-11-28",
+    "step": "N3 creek round 2",
+    "set": "A",
+    "rubric": "identity",
+    "run": "2026-11-27-2356",
+    "commit": "ff2828d",
+    "shots": 4,
+    "median": 4,
+    "scores": [
+      4,
+      4,
+      3.5
+    ],
+    "points": {
+      "materials": 4,
+      "signature": 3,
+      "cohesion": 5,
+      "stock_free": 4,
+      "identity": 4
+    },
+    "reports": [
+      "docs\\critic\\2026-11-28-N3 creek round 2-identity-neon.md",
+      "docs\\critic\\2026-11-28-N3 creek round 2-identity-neon-2.md",
+      "docs\\critic\\2026-11-28-N3 creek round 2-identity-neon-3.md"
+    ],
+    "stock_items": [
+      {
+        "item": "Default Roblox daytime skybox and clouds (11-gate-noon.jpg, upper half)",
+        "reason": "Standard bright blue default sky with soft painted white Roblox clouds immediately dates the shot as default Studio lighting.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox night skybox and clouds (12-pool-night.jpg, top right)",
+        "reason": "Standard dark navy default night sky with matching wispy clouds.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Terrain Grass surface (11-gate-noon.jpg, foreground and midground; 09-riffle-dawn.jpg, bottom center)",
+        "reason": "Default bright yellow-green and mossy bumpy terrain grass texture with soft airbrushed brush transitions.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Terrain Sand and Ground/Mud surfaces (11-gate-noon.jpg, center path and brown patches left and right; 10-pool-golden.jpg and 12-pool-night.jpg, wide right-hand bank)",
+        "reason": "Default smooth-blended voxel terrain sand and flat brown mud/ground with no custom MaterialVariant grain, pebbles, or shoreline breakup.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Terrain Cobblestone patches (09-riffle-dawn.jpg, right-side streambed; 10-pool-golden.jpg and 12-pool-night.jpg, grey patches on the far left and far right shoreline)",
+        "reason": "Default grey cobblestone terrain dabbed directly onto mud banks, creating an unmistakable stock Roblox terrain look.",
+        "runs": 1
+      },
+      {
+        "item": "Plain rectangular wood fence and gate frame parts (11-gate-noon.jpg, left-to-right fence line and center wooden arch structure)",
+        "reason": "Simple straight Studio blocks using stock Roblox Wood material with uniform spacing and no bevels, joinery, or weathering.",
+        "runs": 1
+      },
+      {
+        "item": "Boxy lantern post and untextured lantern pane (10-pool-golden.jpg and 12-pool-night.jpg, right bank; 11-gate-noon.jpg, right of gate)",
+        "reason": "Simple rectangular timber parts holding a flat pale-yellow SmoothPlastic or Neon block instead of a detailed framed glass lantern.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox terrain Grass, Ground, and Sand (11-gate-noon.jpg, entire ground plane)",
+        "reason": "The bright yellow-green grass, flat brown mud patches, and beige sand path read immediately as default Roblox Terrain Editor painting.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox terrain Sand bank and Cobblestone/Rock patches (10-pool-golden.jpg and 12-pool-night.jpg, right bank and far shoreline)",
+        "reason": "Smooth, airbrushed stock Sand slopes abruptly into grass and small isolated stock stone patches; at night in 12-pool-night.jpg the stock Sand reads like flat grey snow.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox terrain Grass and bank Dirt/Stone (09-riffle-dawn.jpg, foreground left and creek bank right)",
+        "reason": "Unmodified stock terrain textures with soft default blending edges and pale blotches at bottom left.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox daytime Sky (11-gate-noon.jpg, upper half)",
+        "reason": "Unmistakable bright cyan sky with soft blurry white clouds from the default Roblox Skybox.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox dawn and night Sky (09-riffle-dawn.jpg upper left; 12-pool-night.jpg top right)",
+        "reason": "Default Roblox skybox gradients and low-resolution blurry night cloud streaks.",
+        "runs": 1
+      },
+      {
+        "item": "Blocky stock Wood fence and archway posts (11-gate-noon.jpg, center and spanning left to right)",
+        "reason": "Built from plain straight rectangular Parts with standard Roblox wood material and no beveling, wear, or distinct silhouette.",
+        "runs": 1
+      },
+      {
+        "item": "Simple blocky lantern posts and flat lantern panes (10-pool-golden.jpg and 12-pool-night.jpg upper right; 11-gate-noon.jpg right of gate)",
+        "reason": "Constructed from basic rectangular Parts with an untextured flat pale block representing the lantern glass.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Terrain Grass, Ground, Sand, and Cobblestone textures (11-gate-noon.jpg across foreground and path; 09-riffle-dawn.jpg lower-left and right streambank; 10-pool-golden.jpg and 12-pool-night.jpg right-hand bank and far shore patches)",
+        "reason": "Default lime-green grass base, flat brown dirt, overly smooth chalky sand path, and default cobblestone patches with blobby brush transitions immediately read as unmodified Roblox Terrain.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox skybox and stock Clouds (11-gate-noon.jpg upper half; 09-riffle-dawn.jpg upper left; 12-pool-night.jpg upper right)",
+        "reason": "The bright cyan midday sky with wispy default clouds, standard dawn horizon gradient, and dark navy night sky with stock clouds look straight out of default Roblox Lighting.",
+        "runs": 1
+      },
+      {
+        "item": "Wooden fence and timber archway frame (11-gate-noon.jpg mid-ground across left, center, and right)",
+        "reason": "Plain rectangular Parts with stock Roblox Wood material and no joinery, weathering, or ground-contact detail read as default studio blocks.",
+        "runs": 1
+      },
+      {
+        "item": "Low-poly pine trees (09-riffle-dawn.jpg foreground and mid-ground; 10-pool-golden.jpg and 12-pool-night.jpg far treeline; 11-gate-noon.jpg entire treeline)",
+        "reason": "Stacked faceted cones on straight tapered trunks using bumpy stock rock/slate-like foliage material and repeated silhouettes read like generic Roblox free-model or simulator trees.",
+        "runs": 1
+      },
+      {
+        "item": "Tilted bank lantern post (10-pool-golden.jpg and 12-pool-night.jpg upper right)",
+        "reason": "A simple tilted wooden post holding a flat untextured bright rectangular block for the lamp reads as a basic default-part prop.",
+        "runs": 1
+      },
+      {
+        "item": "Ferns and shoreline cattails (09-riffle-dawn.jpg bottom center; 11-gate-noon.jpg far left and right by fence; 10-pool-golden.jpg and 12-pool-night.jpg right water edge)",
+        "reason": "Simple smooth geometric plant clusters with flat plastic-like shading lack organic texture and read as stock low-poly Roblox foliage props.",
+        "runs": 1
+      }
+    ],
+    "weather": {
+      "09-riffle-dawn": "Clear",
+      "10-pool-golden": "Clear",
+      "11-gate-noon": "Clear",
+      "12-pool-night": "Clear"
+    },
+    "session": {
+      "09-riffle-dawn": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1418,
+          787
+        ]
+      },
+      "10-pool-golden": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1418,
+          787
+        ]
+      },
+      "11-gate-noon": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1418,
+          787
+        ]
+      },
+      "12-pool-night": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1418,
+          787
+        ]
+      }
+    }
   }
 ]
