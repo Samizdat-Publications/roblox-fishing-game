@@ -7,6 +7,13 @@
 -- Rules live in the pure modules BoatData, BoatLogic and BoatRules (tested outside Studio).
 -- Written 2026-11-26 in the cloud; the dinghy proven in Studio 11/27/2026 (L7). The Deep-V's
 -- two seats and the fish finder still wait for a two-player playtest.
+--
+-- Leg 3, N4, the fleet (Config.CANOE_ON): the Cedar Canoe (two paddlers, 7 or 11 studs a
+-- second), the dinghy's passenger seat, landing on a shore ("Land here") and re-boarding there,
+-- each boat kept to its own waters. Every boat tracks its last arrival for the quiet approach
+-- (Shared/Quiet, QUIET_APPROACH_ON), the second seat of a canoe or dinghy can toss chum
+-- (CHUM_ON), and the journal's "Send my boat home" calls the SendBoatHome remote.
+-- UNVERIFIED in Studio (11/27/2026) until the N4 playtest.
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -16,6 +23,9 @@ local Config = require(Shared.Config)
 local BoatData = require(Shared.BoatData)
 local BoatLogic = require(Shared.BoatLogic)
 local BoatRules = require(Shared.BoatRules)
+local BoatFeel = require(Shared.BoatFeel)
+local Quiet = require(Shared.Quiet)
+local Coop = require(Shared.Coop)
 local Remotes = require(Shared.Remotes)
 local PlayerData = require(script.Parent.PlayerData)
 local WeatherService = require(script.Parent.WeatherService)
@@ -25,6 +35,8 @@ local BoatService = {}
 local CHECK_EVERY = 0.5 -- seconds between the server's position checks
 local EMPTY_RETURN = 60 -- an empty boat away from its slip goes back after this long
 local HINT_GAP = 3 -- seconds between repeats of the same hint to one player
+local BEACH_KEEP = 80 -- a landed boat waits for its owner while they are within this many studs
+local SEND_HOME_GAP = 2 -- seconds between "Send my boat home" presses the server looks at
 
 type Movers = {
 	lv: LinearVelocity,
@@ -43,6 +55,8 @@ type Boat = {
 	drivePrompt: ProximityPrompt,
 	ridePrompt: ProximityPrompt?,
 	tiePrompt: ProximityPrompt,
+	beachPrompt: ProximityPrompt, -- "Land here" (the fleet): owner at the helm, slow, bow on a shore
+	chumPrompt: ProximityPrompt?, -- "Toss chum" on the second seat (CHUM_ON, canoe and dinghy)
 	movers: Movers,
 	wake: ParticleEmitter,
 	motion: BoatLogic.Motion,
@@ -51,6 +65,10 @@ type Boat = {
 	checkTimer: number,
 	emptyFor: number,
 	docked: boolean,
+	beached: boolean, -- landed on a shore (anchored where it is, not at its slip)
+	quiet: Quiet.State, -- its last arrival, for the quiet approach
+	throttle: number, -- the helm's throttle this frame
+	chumAt: number?, -- os.clock() of the last toss
 }
 
 local boats: { [Player]: Boat } = {}
@@ -132,12 +150,24 @@ local function prompt(parent: BasePart, name: string, action: string, object: st
 	return p
 end
 
+-- Where a seat goes, relative to the hull's centre. With the feel layer on (BOAT_FEEL_ON) a seat
+-- named in BoatFeel.ART[id].seats sits where its art model's seat is (given as the seat top over
+-- the waterline; the hull's centre is hullHeight / 2 - 0.4 above the water, the seat 0.4 thick).
+local function seatAt(b: BoatData.Boat, name: string, hullHeight: number, default: CFrame): CFrame
+	local art = if Config.BOAT_FEEL_ON then BoatFeel.ART[b.id] else nil
+	local top = art and art.seats and art.seats[name]
+	if not top then
+		return default
+	end
+	return CFrame.new(top.X, top.Y - 0.2 - (hullHeight / 2 - 0.4), top.Z)
+end
+
 -- A gray-box boat, bow toward -Z of the hull. The art models in art/models replace the
 -- visible pieces later (boat plan Task 2); the hull part stays as the physics body.
 local function buildModel(owner: Player, b: BoatData.Boat, at: CFrame): (Model, BasePart, VehicleSeat, Seat?)
 	local model = Instance.new("Model")
 	model.Name = owner.Name .. "_" .. b.id
-	local hullHeight = if b.id == "DeepV" then 1.6 else 1.2
+	local hullHeight = if b.id == "DeepV" then 1.6 elseif b.id == "Canoe" then 1.0 else 1.2
 	local hull = Instance.new("Part")
 	hull.Name = "Hull"
 	hull.Size = Vector3.new(b.width, hullHeight, b.length)
@@ -156,7 +186,23 @@ local function buildModel(owner: Player, b: BoatData.Boat, at: CFrame): (Model, 
 
 	local helm: VehicleSeat
 	local nav: Seat? = nil
-	if b.id == "Dinghy" then
+	local second = BoatData.secondSeat(b) -- "Bow", "Passenger" or "Navigator", or none
+	if b.id == "Canoe" then
+		-- Gray box until the canoe model is made: cedar sides, two cane thwart seats, the helm
+		-- (the stern paddler, who steers) at the back and the bow paddler up front.
+		local cane = Color3.fromRGB(196, 170, 112)
+		for _, sx in { -1, 1 } do
+			piece(model, hull, "Gunwale", Vector3.new(0.3, 0.5, b.length - 0.6), CFrame.new(sx * (b.width / 2 - 0.15), hullHeight / 2 + 0.25, 0), b.color:Lerp(Color3.new(0, 0, 0), 0.25))
+		end
+		piece(model, hull, "BowStem", Vector3.new(b.width * 0.6, hullHeight + 0.4, 1), CFrame.new(0, 0.2, -b.length / 2 - 0.3), b.color)
+		piece(model, hull, "SternStem", Vector3.new(b.width * 0.6, hullHeight + 0.4, 1), CFrame.new(0, 0.2, b.length / 2 + 0.3), b.color)
+		piece(model, hull, "SternThwart", Vector3.new(b.width - 0.4, 0.2, 1.2), CFrame.new(0, hullHeight / 2 + 0.1, b.length / 2 - 2), cane)
+		piece(model, hull, "BowThwart", Vector3.new(b.width - 0.4, 0.2, 1.2), CFrame.new(0, hullHeight / 2 + 0.1, -b.length / 2 + 2.5), cane)
+		helm = seat(model, hull, "VehicleSeat", "Helm", seatAt(b, "Helm", hullHeight, CFrame.new(0, hullHeight / 2 + 0.35, b.length / 2 - 2))) :: VehicleSeat
+		if second then
+			nav = seat(model, hull, "Seat", second, seatAt(b, second, hullHeight, CFrame.new(0, hullHeight / 2 + 0.35, -b.length / 2 + 2.5))) :: Seat
+		end
+	elseif b.id == "Dinghy" then
 		-- Round orange tubes on the sides and bow, a wooden floor, a tiny outboard at the stern.
 		local tube = math.min(1.2, b.width * 0.3)
 		local side = b.width / 2 - tube / 2
@@ -167,7 +213,11 @@ local function buildModel(owner: Player, b: BoatData.Boat, at: CFrame): (Model, 
 		piece(model, hull, "BowTube", Vector3.new(b.width, tube, tube), CFrame.new(0, hullHeight / 2, -b.length / 2 + tube / 2), b.color, Enum.PartType.Cylinder)
 		piece(model, hull, "Floor", Vector3.new(b.width - tube * 2, 0.2, b.length - tube * 1.5), CFrame.new(0, hullHeight / 2 + 0.05, 0.2), Color3.fromRGB(150, 115, 75))
 		piece(model, hull, "Outboard", Vector3.new(0.8, 2, 0.8), CFrame.new(0, hullHeight / 2 + 0.3, b.length / 2 + 0.3), Color3.fromRGB(40, 40, 45))
-		helm = seat(model, hull, "VehicleSeat", "Helm", CFrame.new(0, hullHeight / 2 + 0.35, b.length / 2 - 1.6)) :: VehicleSeat
+		helm = seat(model, hull, "VehicleSeat", "Helm", seatAt(b, "Helm", hullHeight, CFrame.new(0, hullHeight / 2 + 0.35, b.length / 2 - 1.6))) :: VehicleSeat
+		if second then
+			-- The passenger sits up by the bow tube (the fleet, CANOE_ON).
+			nav = seat(model, hull, "Seat", second, seatAt(b, second, hullHeight, CFrame.new(0, hullHeight / 2 + 0.35, -b.length / 2 + 2))) :: Seat
+		end
 	else
 		-- Deep-V: white hull, a console amidships with the helm behind it, a seat up front.
 		piece(model, hull, "Deck", Vector3.new(b.width - 0.6, 0.2, b.length - 0.6), CFrame.new(0, hullHeight / 2 + 0.05, 0), Color3.fromRGB(200, 200, 195))
@@ -177,7 +227,7 @@ local function buildModel(owner: Player, b: BoatData.Boat, at: CFrame): (Model, 
 		piece(model, hull, "Console", Vector3.new(2.4, 2.4, 1.4), CFrame.new(0, hullHeight / 2 + 1.2, 0.5), Color3.fromRGB(220, 220, 215))
 		piece(model, hull, "Outboard", Vector3.new(1.2, 3, 1.2), CFrame.new(0, hullHeight / 2 + 0.4, b.length / 2 + 0.5), Color3.fromRGB(40, 40, 45))
 		helm = seat(model, hull, "VehicleSeat", "Helm", CFrame.new(0, hullHeight / 2 + 0.35, 2.6)) :: VehicleSeat
-		nav = seat(model, hull, "Seat", "Navigator", CFrame.new(0, hullHeight / 2 + 0.35, -b.length / 2 + 3)) :: Seat
+		nav = seat(model, hull, "Seat", second or "Navigator", CFrame.new(0, hullHeight / 2 + 0.35, -b.length / 2 + 3)) :: Seat
 	end
 
 	model:SetAttribute("BoatId", b.id)
@@ -280,6 +330,7 @@ end
 
 local function stop(boat: Boat)
 	boat.motion = { speed = 0, yawRate = 0 }
+	boat.throttle = 0
 	boat.wake.Rate = 0
 	boat.movers.lv.PlaneVelocity = Vector2.zero
 	boat.hull.AssemblyLinearVelocity = Vector3.zero
@@ -341,14 +392,75 @@ local function returnToSlip(boat: Boat)
 	landRiders(boat, riders)
 	boat.lastGood = boat.hull.Position
 	boat.docked = true
+	boat.beached = false
+	boat.quiet = Quiet.new()
 	boat.emptyFor = 0
 	boat.tiePrompt.Enabled = false
+	boat.beachPrompt.Enabled = false
+end
+
+-- Where someone stands on a shore at (x, z): the ground under it (terrain or a part), never
+-- the boats or a character. Falls back to a little above the water.
+local function groundAt(x: number, z: number): number
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	local skip = {}
+	for _, b in boats do
+		table.insert(skip, b.model)
+	end
+	for _, p in Players:GetPlayers() do
+		if p.Character then
+			table.insert(skip, p.Character)
+		end
+	end
+	params.FilterDescendantsInstances = skip
+	params.IgnoreWater = true
+	local hit = workspace:Raycast(Vector3.new(x, 80, z), Vector3.new(0, -160, 0), params)
+	return if hit then hit.Position.Y else BoatRules.WATER_Y + 1
+end
+
+-- Land on a shore (the fleet): the boat stays where it is, tied to the bank (anchored), and
+-- everyone aboard steps off onto dry land ahead of the bow. Its owner re-boards with "Drive".
+local function beach(boat: Boat, ashore: Vector3)
+	local riders = ridersOf(boat)
+	unseat(boat.helm)
+	unseat(boat.nav)
+	stop(boat)
+	boat.hull.Anchored = true
+	boat.beached = true
+	boat.emptyFor = 0
+	boat.lastGood = boat.hull.Position
+	boat.tiePrompt.Enabled = false
+	boat.beachPrompt.Enabled = false
+	local side = boat.hull.CFrame.RightVector
+	for i, r in riders do
+		local root = r.Character and r.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if root then
+			local spot = ashore + side * ((i - 1) * 2.5)
+			local y = groundAt(spot.X, spot.Z) + 3.5
+			local at = CFrame.lookAt(Vector3.new(spot.X, y, spot.Z), Vector3.new(boat.hull.Position.X, y, boat.hull.Position.Z))
+			pcall(function()
+				root:SetNetworkOwner(nil)
+			end)
+			root.CFrame = at
+			root.AssemblyLinearVelocity = Vector3.zero
+			task.delay(HANDBACK - 0.1, function()
+				if root.Parent then
+					root.CFrame = at
+					root.AssemblyLinearVelocity = Vector3.zero
+				end
+			end)
+		end
+	end
+	print(string.format("[Boats] %s's %s landed at (%.0f, %.0f)", boat.owner.Name, boat.id, boat.hull.Position.X, boat.hull.Position.Z))
 end
 
 local function castOff(boat: Boat)
-	-- Leave the slip: unanchor, and keep the server as the physics owner (fully authoritative).
-	if boat.docked then
+	-- Leave the slip (or the shore it landed on): unanchor, and keep the server as the physics
+	-- owner (fully authoritative).
+	if boat.docked or boat.beached then
 		boat.docked = false
+		boat.beached = false
 		boat.hull.Anchored = false
 		pcall(function()
 			boat.hull:SetNetworkOwner(nil)
@@ -410,6 +522,14 @@ function spawnFor(player: Player)
 	waitingForSlip[player] = nil
 	local b = BoatData.byId[id]
 	local model, hull, helm, nav = buildModel(player, b, BoatRules.slipCFrame(slip, id))
+	-- The second seat's prompt: paddle in the canoe's bow, ride in the dinghy or the Deep-V.
+	local rideAction = if b.paddle then "Paddle" else "Ride"
+	local chumPrompt: ProximityPrompt? = nil
+	if nav and Config.CHUM_ON and b.chum then
+		chumPrompt = prompt(nav, "ChumPrompt", "Toss chum", b.name)
+		chumPrompt.MaxActivationDistance = 3 -- only whoever sits in that seat is close enough
+		chumPrompt.Enabled = false
+	end
 	local boat: Boat = {
 		owner = player,
 		id = id,
@@ -419,8 +539,10 @@ function spawnFor(player: Player)
 		helm = helm,
 		nav = nav,
 		drivePrompt = prompt(helm, "DrivePrompt", "Drive", b.name),
-		ridePrompt = if nav then prompt(nav, "RidePrompt", "Ride", player.DisplayName .. "'s " .. b.name) else nil,
+		ridePrompt = if nav then prompt(nav, "RidePrompt", rideAction, player.DisplayName .. "'s " .. b.name) else nil,
 		tiePrompt = prompt(helm, "TiePrompt", "Tie up", "Boat slip " .. slip),
+		beachPrompt = prompt(helm, "BeachPrompt", "Land here", b.name),
+		chumPrompt = chumPrompt,
 		movers = makeMovers(hull),
 		wake = makeWake(hull),
 		motion = { speed = 0, yawRate = 0 },
@@ -429,9 +551,14 @@ function spawnFor(player: Player)
 		checkTimer = 0,
 		emptyFor = 0,
 		docked = true,
+		beached = false,
+		quiet = Quiet.new(),
+		throttle = 0,
+		chumAt = nil,
 	}
 	-- E (gamepad X) like every other prompt: F and the gamepad's face buttons reel in a fight.
 	boat.tiePrompt.Enabled = false
+	boat.beachPrompt.Enabled = false
 	boats[player] = boat
 
 	-- Only the owner may take the helm. The client hides the prompt from everyone else too.
@@ -467,6 +594,62 @@ function spawnFor(player: Player)
 		end
 		returnToSlip(boat) -- stands everyone who was aboard on the dock beside the slip
 	end)
+	-- Land on a shore (the fleet): checked again here, on the server's own numbers.
+	boat.beachPrompt.Triggered:Connect(function(who: Player)
+		if who ~= player or occupantPlayer(helm) ~= player or boat.docked or boat.beached then
+			return
+		end
+		local ashore = BoatRules.beachAt(boat.id, boat.hull.Position, boat.hull.CFrame.LookVector, boat.motion.speed)
+		if not ashore then
+			hint(who, "Point the bow at the shore and slow right down to land.")
+			return
+		end
+		beach(boat, ashore)
+	end)
+	-- Chum from the second seat (CHUM_ON): a boil ahead of the bow, quicker bites for everyone aboard.
+	if chumPrompt and nav then
+		chumPrompt.Triggered:Connect(function(who: Player)
+			if occupantPlayer(nav) ~= who then
+				return
+			end
+			local now = os.clock()
+			if not Coop.chumReady(boat.chumAt, now) then
+				hint(who, string.format("The chum bucket needs %d more seconds.", math.ceil(Coop.chumWait(boat.chumAt, now))))
+				return
+			end
+			boat.chumAt = now
+			local look = boat.hull.CFrame.LookVector
+			local flat = Vector3.new(look.X, 0, look.Z)
+			flat = if flat.Magnitude > 1e-3 then flat.Unit else Vector3.new(0, 0, -1)
+			local at = Vector3.new(boat.hull.Position.X, BoatRules.WATER_Y, boat.hull.Position.Z) + flat * (b.length / 2 + Coop.CHUM_AHEAD)
+			local boil = Instance.new("Part")
+			boil.Name = "ChumBoil"
+			boil.Anchored = true
+			boil.CanCollide = false
+			boil.CanQuery = false
+			boil.CanTouch = false
+			boil.Transparency = 1
+			boil.Size = Vector3.new(6, 0.2, 6)
+			boil.CFrame = CFrame.new(at)
+			local fizz = Instance.new("ParticleEmitter")
+			fizz.Texture = "rbxasset://textures/particles/smoke_main.dds"
+			fizz.Color = ColorSequence.new(Color3.fromRGB(235, 240, 230))
+			fizz.Size = NumberSequence.new(0.6, 1.6)
+			fizz.Transparency = NumberSequence.new(0.4, 1)
+			fizz.Lifetime = NumberRange.new(0.6, 1.1)
+			fizz.Speed = NumberRange.new(1, 2.5)
+			fizz.SpreadAngle = Vector2.new(60, 60)
+			fizz.EmissionDirection = Enum.NormalId.Top
+			fizz.Rate = 18
+			fizz.Parent = boil
+			boil.Parent = workspace
+			game:GetService("Debris"):AddItem(boil, Coop.CHUM_LASTS)
+			print(string.format("[Boats] %s tossed chum off %s's %s", who.Name, player.Name, boat.id))
+			for _, r in ridersOf(boat) do
+				hint(r, "Chum in the water! Bites come quicker for 25 seconds.")
+			end
+		end)
+	end
 
 	local function onSeatChanged(s: BasePart, prompt: ProximityPrompt?, ownerOnly: boolean)
 		local died: RBXScriptConnection? = nil
@@ -557,7 +740,7 @@ end
 -- Every frame: input to motion to movers, then the half-second checks.
 local function step(dt: number)
 	for player, boat in boats do
-		if boat.docked or not boat.hull.Parent then
+		if boat.docked or boat.beached or not boat.hull.Parent then
 			continue
 		end
 		local n = aboard(boat)
@@ -582,7 +765,11 @@ local function step(dt: number)
 			end
 			throttle, steer = 0, 0
 		end
-		boat.motion = BoatLogic.step(boat.motion, boat.id, throttle, steer, dt)
+		boat.throttle = throttle
+		-- A paddled boat goes faster with both seats paddling (the canoe, 7 to 11).
+		local paddlers = if Config.CANOE_ON then BoatLogic.paddlers(boat.id, n) else 1
+		boat.motion = BoatLogic.step(boat.motion, boat.id, throttle, steer, dt, paddlers)
+		Quiet.step(boat.quiet, boat.id, throttle, boat.motion.speed, math.abs(boat.motion.speed) * dt, boat.hull.Position, os.clock())
 		local pos = boat.hull.Position
 		local vx, vz = BoatRules.planeVelocity(boat.hull.CFrame.LookVector, boat.motion.speed)
 		local dx, dz = BoatRules.drift(boat.id, pos, n)
@@ -590,22 +777,22 @@ local function step(dt: number)
 		boat.yaw += BoatRules.spinY(boat.motion.yawRate) * dt
 		boat.movers.ao.CFrame = CFrame.fromOrientation(0, boat.yaw, 0)
 		boat.movers.ap.Position = Vector3.new(pos.X, BoatRules.WATER_Y + boat.hull.Size.Y / 2 - 0.4, pos.Z)
-		boat.wake.Rate = 40 * math.clamp(math.abs(boat.motion.speed) / BoatData.byId[boat.id].maxSpeed, 0, 1)
+		boat.wake.Rate = 40 * math.clamp(math.abs(boat.motion.speed) / BoatLogic.fastest(boat.id), 0, 1)
 
 		boat.checkTimer += dt
 		if boat.checkTimer >= CHECK_EVERY then
-			local verdict, at = BoatRules.check(boat.id, boat.lastGood, pos, boat.checkTimer)
+			local verdict, at, why = BoatRules.check(boat.id, boat.lastGood, pos, boat.checkTimer)
 			boat.checkTimer = 0
 			if verdict == "back" and at then
 				local look = boat.hull.CFrame.LookVector
 				moveTo(boat, CFrame.lookAt(at, at + Vector3.new(look.X, 0, look.Z)))
 				local driver = occupantPlayer(boat.helm)
 				if driver then
-					hint(driver, "The boat can't go there.")
+					hint(driver, why or "The boat can't go there.")
 				end
 			elseif verdict == "turn" and at then
 				moveTo(boat, CFrame.lookAt(at, at + Vector3.new(0, 0, 1))) -- facing home, south
-				local _, msg = BoatLogic.canEnterBlueWater(boat.id)
+				local msg = why
 				local driver = occupantPlayer(boat.helm)
 				if driver and msg then
 					hint(driver, msg)
@@ -619,6 +806,10 @@ local function step(dt: number)
 		-- Tie up when close to your own slip and slow.
 		local slipPos = BoatRules.slipCFrame(boat.slip, boat.id).Position
 		boat.tiePrompt.Enabled = boat.helm.Occupant ~= nil and BoatLogic.canDock(pos, slipPos, boat.motion.speed)
+		-- Land on a shore (the fleet): slow, bow on a bank, and not right at your own slip.
+		boat.beachPrompt.Enabled = boat.helm.Occupant ~= nil
+			and not boat.tiePrompt.Enabled
+			and BoatRules.beachAt(boat.id, pos, boat.hull.CFrame.LookVector, boat.motion.speed) ~= nil
 
 		-- Empty boats away from the slip go home on their own.
 		if n == 0 then
@@ -628,6 +819,29 @@ local function step(dt: number)
 			end
 		else
 			boat.emptyFor = 0
+		end
+	end
+	-- Landed boats wait for their owner while they are near; left alone, they go home too.
+	for player, boat in boats do
+		if boat.beached and boat.hull.Parent then
+			local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+			local near = root ~= nil and (root.Position - boat.hull.Position).Magnitude <= BEACH_KEEP
+			if aboard(boat) > 0 or near then
+				boat.emptyFor = 0
+			else
+				boat.emptyFor += dt
+				if boat.emptyFor >= EMPTY_RETURN then
+					print(string.format("[Boats] %s's %s was left on the shore and went home", player.Name, boat.id))
+					returnToSlip(boat)
+				end
+			end
+		end
+	end
+	-- The chum prompt shows to the second seat while the bucket is ready.
+	local now = os.clock()
+	for _, boat in boats do
+		if boat.chumPrompt then
+			boat.chumPrompt.Enabled = boat.nav ~= nil and boat.nav.Occupant ~= nil and not boat.docked and Coop.chumReady(boat.chumAt, now)
 		end
 	end
 end
@@ -645,6 +859,47 @@ function BoatService.seatedIn(player: Player): (string?, number)
 		end
 	end
 	return nil, 0
+end
+
+-- The boat this player sits in (as driver or rider), or nil.
+local function boatOf(player: Player): Boat?
+	local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+	local part = hum and hum.SeatPart
+	if not part then
+		return nil
+	end
+	for _, boat in boats do
+		if part == boat.helm or part == boat.nav then
+			return boat
+		end
+	end
+	return nil
+end
+
+-- Quiet approach (Shared/Quiet): does a cast from this player's seat get the bonus now?
+-- Also whether they are on a boat at all (for the playtest log).
+function BoatService.quietFor(player: Player): (boolean, boolean)
+	local boat = boatOf(player)
+	if not boat then
+		return false, false
+	end
+	return Quiet.active(boat.quiet, os.clock(), boat.hull.Position), true
+end
+
+-- Chum (Coop): is a boil going for the boat this player sits in?
+function BoatService.chumFor(player: Player): boolean
+	local boat = boatOf(player)
+	return boat ~= nil and Config.CHUM_ON and Coop.chumActive(boat.chumAt, os.clock())
+end
+
+-- Buddy loan (Coop): the owner of the boat this player rides in as a passenger, or nil when
+-- they sit in their own boat or none.
+function BoatService.ownerIfPassenger(player: Player): Player?
+	local boat = boatOf(player)
+	if boat and boat.owner ~= player then
+		return boat.owner
+	end
+	return nil
 end
 
 -- For team catches: the boat this player sits in, the others aboard, how many are aboard,
@@ -723,6 +978,52 @@ function BoatService.start()
 	end
 	toastEvent = Remotes.event("Toast")
 
+	-- The feel layer (BOAT_FEEL_ON): the client draws each boat's art model, but ServerStorage
+	-- never reaches a client, so the boat models and paddles go to ReplicatedStorage.BoatArt.
+	if Config.BOAT_FEEL_ON then
+		local art = game:GetService("ServerStorage"):FindFirstChild("Art")
+		local out = ReplicatedStorage:FindFirstChild("BoatArt") or Instance.new("Folder")
+		out.Name = "BoatArt"
+		local missing = {}
+		for _, name in BoatFeel.artNames() do
+			local src = art and art:FindFirstChild(name)
+			if src and not out:FindFirstChild(name) then
+				src:Clone().Parent = out
+			elseif not src then
+				table.insert(missing, name)
+			end
+		end
+		out.Parent = ReplicatedStorage
+		if #missing > 0 then
+			warn("[Boats] not in ServerStorage.Art, drawn as the gray box: " .. table.concat(missing, ", "))
+		end
+
+		-- The horn: the driver hears their own at once (no round trip); everyone else hears it
+		-- from here, at that boat's hull.
+		local lastHorn: { [Player]: number } = {}
+		local horn = Remotes.event("BoatHorn")
+		horn.OnServerEvent:Connect(function(player: Player)
+			local now = os.clock()
+			if not BoatFeel.hornReady(lastHorn[player], now) then
+				return
+			end
+			for _, boat in boats do
+				if occupantPlayer(boat.helm) == player then
+					lastHorn[player] = now
+					for _, other in Players:GetPlayers() do
+						if other ~= player then
+							horn:FireClient(other, boat.hull)
+						end
+					end
+					return
+				end
+			end
+		end)
+		Players.PlayerRemoving:Connect(function(p)
+			lastHorn[p] = nil
+		end)
+	end
+
 	Remotes.func("BuyBoat").OnServerInvoke = function(player: Player, boatId: any)
 		local data = PlayerData.get(player)
 		if not data or type(boatId) ~= "string" then
@@ -748,6 +1049,31 @@ function BoatService.start()
 			return
 		end
 		inputs[player] = { throttle = math.clamp(throttle, -1, 1), steer = math.clamp(steer, -1, 1), at = os.clock() }
+	end)
+
+	-- "Send my boat home" from the journal: back to its slip, tied up, anyone aboard to the dock.
+	local lastSendHome: { [Player]: number } = {}
+	Remotes.event("SendBoatHome").OnServerEvent:Connect(function(player: Player)
+		local now = os.clock()
+		if lastSendHome[player] and now - lastSendHome[player] < SEND_HOME_GAP then
+			return
+		end
+		lastSendHome[player] = now
+		local boat = boats[player]
+		if not boat then
+			hint(player, "You don't have a boat yet.")
+			return
+		end
+		if boat.docked then
+			hint(player, "Your boat is already tied up at the slip.")
+			return
+		end
+		print(string.format("[Boats] %s sent their %s home", player.Name, boat.id))
+		returnToSlip(boat)
+		hint(player, "Your boat is heading home. It'll be waiting at the slip.")
+	end)
+	Players.PlayerRemoving:Connect(function(p)
+		lastSendHome[p] = nil
 	end)
 
 	Remotes.event("ChooseBoat").OnServerEvent:Connect(function(player: Player, boatId: any)

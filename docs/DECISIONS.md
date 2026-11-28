@@ -325,3 +325,49 @@ Gemini Neon reviewed round 2's creek frames (`docs/reviews/2026-11-28-gemini-n3-
   - The pin hides the cursor, retries hiding the top bar for 10 s and says which ("topbar hidden" or "topbar failed"), and hides the avatar (and its shadow) every frame unless a shot has `"avatar": true`.
   - Set P (`docs/looks/prime-shots.md`): twelve entries in `shots.json`, the four pending ones skipped unless `--include-pending`; `score` refuses set P; `primecrop` cuts the centre 16:9 from each `<id>-raw` capture and saves it Lanczos 1280 by 720 at quality 95, keeping the raw. p07 and p08 take the new 09 and 10 eyes (their lenses and looks kept; sight them again before freezing). p01, p02 and p05 eyes are in `Scatter.SHOT_CAMS` (18 cameras now), so the next BankDress run keeps clear of them.
   - `capture-studio.ps1` has `-Quality` (default 85) and `-Prime` (unscaled, quality 95).
+
+## 11/28/2026: N4 rules and server (the fleet)
+
+- **Every N4 system lands switched off,** each behind its own `Config` switch: `CANOE_ON` (the canoe, the dinghy's passenger seat, each boat's waters, landing on a shore), `NET_ON`, `ASSIST_BONUS_ON`, `QUIET_APPROACH_ON`, `BUDDY_LOAN_ON`, `DOUBLE_HOOKUP_ON`, `CHUM_ON`. With all of them off the game plays as before; "Send my boat home" (the `SendBoatHome` remote) works whenever boats are on.
+- **"Motor off" for the quiet approach means a quarter throttle or less.** A dinghy cut to nothing coasts only about 6 studs, so a true drift could never cover the plan's 25. Arriving under paddle, or the last 25 studs at idle, is a quiet arrival; the bonus lasts 60 seconds within 20 studs of where the boat stopped (`Shared/Quiet`).
+- **The net is a prompt on the angler,** not a new screen: "Net it" appears to anyone within 10 studs once the server believes the fish is at 70 percent, and its text says when the fish is up (it surfaces 1.2 s after the net comes out, then every 2.6 s for 0.8 s). The angler's own screen hides it. The server believes the angler's progress reports only as fast as the fastest possible win (`Shared/Net`).
+- **Shared-catch money with the switch off:** a netted fish still goes in the helper's journal as an assist, with no coins; only a Deep-V team catch pays, split evenly as in L7.
+- **The buddy loan never makes a passenger worse off:** they fish with the owner's rod and braided line only when the owner's line rating is higher.
+- **The Deep-V keeps to the Big Lake once the fleet is on,** as the plan says, but it still uses the dock slips until N5 builds the marina. It is not for sale, so this only matters if it is given out in a test.
+- **Lily Cove's refusal is in place before the cove:** `BoatRules.PADDLE_ONLY` is empty until N5 adds the cove's box.
+- **The Double Hookup bonus is 10 percent, not Gemini's 25** (`Coop.DOUBLE_BONUS`). In `tools/econ/sim.py --fleet` (40 careers) a smart pair with nets, assists, chum and a 25 percent Double Hookup earned 110.6 coins a minute, over the leg ceiling of 107.5 (15 percent over today's 93.5). At 10 percent the same pair earns 107.2, inside it; nets, assists and chum alone give 106.1. The toast, the banner event and the Double Haul stamp are unchanged.
+- **The dock kid's Graphite Rod moves back 12.08 minutes with the canoe** (57.04 to 69.12 minutes, median of 40 careers; the median of the per-career differences is 12.41), just over the plan's 12. Spending 350 coins at his 30.7 coins a minute costs 11.40 minutes by itself, and the rest is the shop trip. No small change was found that keeps the canoe at 350 and its speeds: he never uses the canoe, so nothing about it can earn the time back, and raising his catch payouts would move the whole economy. Left as is for a ruling. He owns the canoe at 18 minutes (the target is 20).
+
+### Defaults chosen, open to Stewart (N4)
+
+1. The quiet approach counts a motor at a quarter throttle or less as "off" (a dinghy cut to nothing coasts only about 6 studs, so a true drift can never cover 25).
+2. A boat landed on a shore waits while its owner is within 80 studs; left alone, it goes home after 60 seconds like any empty boat.
+3. The Deep-V keeps to the Big Lake once `CANOE_ON` is on, but uses the dock slips until N5 builds the marina.
+4. The net's beat: the fish first surfaces 1.2 seconds after the net comes out, then every 2.6 seconds, up for 0.8 seconds each time, with 0.25 seconds of slack for the round trip.
+5. The sim's pair is an upper bound: the partner is free to net whenever they are not fighting, half of the fish that would get away are saved by the net, and the partner's catch is a mirror of the player's own.
+
+## 11/28/2026: N4 feel layer (how a boat feels)
+
+- **Everything lands behind `Config.BOAT_FEEL_ON` (off).** The numbers and the pure maths are in `Shared/BoatFeel` (with its spec); `ClientModules/BoatFeelClient` draws them and `ClientModules/BoatTouch` adds the touch buttons. Off, boats look and work exactly as before.
+- **The art reaches the client through `ReplicatedStorage.BoatArt`.** ServerStorage never replicates, so with the switch on the server copies the boat models and paddles named in `BoatFeel.ART` there at start. Each screen draws the hero model on the desktop tier and the plain twin on the phone tier, and hides the gray box locally (`LocalTransparencyModifier`). A model missing from `ServerStorage.Art` leaves the gray box showing and is named in a warning.
+- **The art is not welded into the server's boat.** It hangs from one anchored, invisible root that each screen moves every frame to the hull's level waterline frame, so it is exactly where the hull is but can never add mass to it or push it. Trim, lean and bob turn that root only; the server's hull never tilts.
+- **One table of model names (`BoatFeel.ART`)**, so the dinghy's re-skin drops in by changing its `hero` and `plain` names (and its `lift`, `floor` and `seats` if its shape changes).
+- **The canoe floats high, so its feel is smaller:** trim peaks at 1.5 degrees (1 on the move), lean 3, a 1 degree roll each stroke, bob 0.12 studs, 0.6 degrees of pitch and 1 degree of roll. The worst combination drops its drawn floor 0.164 studs, under the 0.2 cap (the spec checks it). The bow lifts about the stern, so trim never sinks anything.
+- **No boat ever shows water through its floor:** if a pose would bring the drawn floor within 0.02 studs of the water, the hull is drawn that much higher. The dinghy's hardest lean with a full bob lifts it 0.29 studs.
+- **The canoe's seats move onto its cane seats** with the switch on (stern (0, 0.64, 3.00), bow (0, 0.64, -2.30) over the waterline), and the dinghy's helm onto its bench (0, 0.8, 2.1). The passenger and the Deep-V keep the server's seats.
+- **The horn is heard at once by the driver** and by everyone else through a new `BoatHorn` remote (the server checks the sender is at a helm and allows one every 1.5 seconds). Its sound is the `server-horn` stand-in (a slowed stinger); the paddle dip is a slowed, quiet `bobber-plop`. No uploads.
+
+### Defaults chosen, open to Stewart (N4 feel)
+
+1. Every boat carries red and green bow lights and a white stern light, the canoe included (real canoes carry only a white light).
+2. Paddlers change sides every stroke, as the plan says (a real stern paddler keeps one side).
+3. The horn is H on a keyboard and DPadUp on a gamepad (H is also the bait bench's hook key; the bench is never open at the helm).
+4. A boat sitting on a shore does not bob; one at its slip does.
+5. The dinghy's art sits with its floor 0.2 studs over the water and the Deep-V's numbers are a first guess: both need a look in Studio.
+
+## 11/28/2026 (night): N4 economy and art calls by the main session
+
+- **The Graphite Rod misses its N4 line by 5 seconds and it stands.** The plan says buying the canoe may move the dock kid's Graphite Rod back by no more than 12 minutes; the sim says 12.08 (57.04 to 69.12). Earning 350 coins at his 30.7 a minute is 11.4 minutes by itself, nothing about the canoe can earn it back for him, and the canoe still lands at 18 minutes (target 20). Logged as a known small miss rather than changing the plan's price.
+- **Double Hookup pays 10 percent, not 25** (`Coop.DOUBLE_BONUS`): at 25 the expert pair earned 110.6 a minute against the 107.5 ceiling; at 10 it is 107.2.
+- **The new dinghy carries its outboard in one model** (`Art.DinghyHero` and `Art.DinghyPlain` hold the motor as a second part at 0, 1.00, 3.38), and `BoatFeel.ART.Dinghy` points at them with the pivot on the waterline. The separate outboard models wait for a motor that tilts and steers.
+- **The look areas were never on screen.** `Config.LOOK_AREAS_ON` is still off, and the capture pin re-applied the plain preset every frame, so creek rounds 2 and 3 were scored on the plain, ungraded look (the pin is fixed in Pass 1). Creek captures turn areas on in the Play session; turning them on for good is part of closing N3, after the basin and blue water are checked with them on.

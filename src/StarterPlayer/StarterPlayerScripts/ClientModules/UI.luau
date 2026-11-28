@@ -1814,7 +1814,7 @@ function UI.buildShop()
 	boatHeader.LayoutOrder = 200
 	refs.boatRows = {}
 	boatHeader.Visible = Config.boatsOn()
-	for i, b in (if Config.boatsOn() then BoatData.list else {}) do
+	for i, b in (if Config.boatsOn() then BoatData.shown() else {}) do -- a switched-off boat (the canoe before CANOE_ON) isn't listed
 		local row = frame(scroll, "Boat_" .. b.id, UDim2.new(1, -10, 0, 84), UDim2.new(), C.panel2, 0.1)
 		row.LayoutOrder = 200 + i
 		corner(row, 10)
@@ -1830,7 +1830,7 @@ function UI.buildShop()
 			if not st then
 				return
 			end
-			if not b.forSale then
+			if not BoatData.onSale(b) then
 				return
 			end
 			if st.boats and st.boats[b.id] then
@@ -1902,7 +1902,7 @@ function UI.refreshShop()
 		local btn = refs.boatRows and refs.boatRows[b.id]
 		if btn then
 			local owned = s.boats and s.boats[b.id]
-			if not b.forSale then
+			if not BoatData.onSale(b) then
 				btn.Text = "Coming soon"
 				btn.AutoButtonColor = false
 				paint(btn, C.panel)
@@ -1994,6 +1994,14 @@ function UI.buildJournal()
 	refs.tackleBtn = button(p, "TackleBox", "Tackle Box", UDim2.fromOffset(130, 40), UDim2.new(0, 364, 1, -48), C.panel2, function()
 		UI.openTackle()
 	end)
+	-- "Send my boat home" (N4, with the feel layer, Config.BOAT_FEEL_ON): the server sends your boat
+	-- back to its slip, tied up, and says so in a toast (or that you have none, or it is home).
+	local sendHome: TextButton? = nil
+	if Config.BOAT_FEEL_ON and Config.boatsOn() then
+		sendHome = button(p, "SendBoatHome", "Send boat home", UDim2.fromOffset(128, 40), UDim2.new(0, 500, 1, -48), C.panel2, function()
+			require(Shared.Remotes).event("SendBoatHome"):FireServer()
+		end)
+	end
 	-- The summary sits in the title row, so the three switches fit along the bottom.
 	refs.journalSummary = label(p, "Summary", "", UDim2.new(1, -330, 0, 44), UDim2.fromOffset(220, 6), 13, C.dim)
 	if STYLED then
@@ -2012,6 +2020,14 @@ function UI.buildJournal()
 			b.Size = UDim2.fromOffset(w, Skin.TOUCH)
 			b.Position = UDim2.new(0, x, 1, -(Skin.TOUCH + 10))
 			x += w + 11
+		end
+		if sendHome then
+			-- The bottom row is full on a phone: at the top of the page, under the note.
+			local b = sendHome :: TextButton
+			b.Parent = scroll
+			b.LayoutOrder = -1
+			b.Text = "Send my boat home"
+			b.Size = UDim2.fromOffset(260, Skin.TOUCH)
 		end
 	end
 	refs.journal = p

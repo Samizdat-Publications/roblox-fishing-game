@@ -18,6 +18,9 @@ local EVENTS = {
 	"EquipRod", -- client: (rodId: string)
 	"ChooseBoat", -- client: (boatId: string), which owned boat waits at your slip
 	"BoatInput", -- client: (throttle: number, steer: number), the helm's controls, ~10 a second
+	"SendBoatHome", -- client: (), the journal's "Send my boat home" (N4)
+	"BoatHorn", -- client: (), the helm's horn; server to the others: (hull: BasePart) (N4, BOAT_FEEL_ON)
+	"FightProgress", -- client: (progress: number), the angler's fight progress about 4 a second while NET_ON (N4)
 	"FishingEvent", -- server: (kind: string, payload: table)
 	"State", -- server: (snapshot: table)
 	"Toast", -- server: (text: string)

@@ -7,6 +7,7 @@
 local Shared = script.Parent
 local BoatData = require(Shared.BoatData)
 local BoatLogic = require(Shared.BoatLogic)
+local Config = require(Shared.Config)
 local Shore = require(Shared.Shore)
 
 local BoatRules = {}
@@ -111,6 +112,90 @@ function BoatRules.slipCFrame(i: number, boatId: string): CFrame
 	return CFrame.lookAt(p, p + Vector3.new(1, 0, 0))
 end
 
+-- The fleet's waters (leg 3, N4, behind Config.CANOE_ON). Each boat lists the waters it may be
+-- on (BoatData.waters). Paddle-only places refuse a motor. Lily Cove, a paddle-only cove on the
+-- Big Lake's west shore, comes with the bigger lake in N5: it is added to PADDLE_ONLY then, and
+-- the refusal below already applies to it.
+BoatRules.PADDLE_ONLY = {} :: { Zone }
+BoatRules.LILY_TEXT = "Too shallow and weedy for a motor. Paddle in."
+
+function BoatRules.paddleOnlyAt(pos: Vector3): Zone?
+	for _, z in BoatRules.PADDLE_ONLY do
+		if inBox(pos, z) then
+			return z
+		end
+	end
+	return nil
+end
+
+-- The named water at a point: "LilyCove" (any paddle-only cove), "BlueWater", "Basin" (the
+-- rest of the Big Lake), "Channel" or "Lake"; nil off the water.
+function BoatRules.waterAt(pos: Vector3): string?
+	if not BoatRules.isBoatWater(pos) then
+		return nil
+	end
+	if BoatRules.paddleOnlyAt(pos) then
+		return "LilyCove"
+	end
+	if BoatRules.inBlueWater(pos) then
+		return "BlueWater"
+	end
+	if inBox(pos, BoatRules.BIG_LAKE) then
+		return "Basin"
+	end
+	if inBox(pos, BoatRules.CHANNEL) then
+		return "Channel"
+	end
+	return "Lake"
+end
+
+-- May this boat be here? Off the water, never. With the fleet switch off every boat may go
+-- anywhere on the water as in L7 (blue water is still turned back by check below).
+function BoatRules.mayBeAt(boatId: string, pos: Vector3): (boolean, string?)
+	local b = assert(BoatData.byId[boatId], "unknown boat")
+	local w = BoatRules.waterAt(pos)
+	if not w then
+		return false, nil
+	end
+	if not Config.CANOE_ON then
+		return true, nil
+	end
+	if w == "LilyCove" and not b.paddle then
+		return false, BoatRules.LILY_TEXT
+	end
+	if w == "BlueWater" then
+		return true, nil -- check() turns small boats back at the buoy line with its own words
+	end
+	if not b.waters[w] then
+		return false, "The " .. b.name .. " can't go there."
+	end
+	return true, nil
+end
+
+-- Landing on a shore (the fleet, CANOE_ON): a boat that lands on shores, slow enough, with dry
+-- land within a few studs of its bow. Returns where its riders step off, or nil.
+BoatRules.BEACH_SPEED = 4
+BoatRules.BEACH_REACH = 5 -- studs past the bow that are searched for dry land
+
+function BoatRules.beachAt(boatId: string, pos: Vector3, look: Vector3, speed: number): Vector3?
+	local b = assert(BoatData.byId[boatId], "unknown boat")
+	if not Config.CANOE_ON or b.lands ~= "shore" or math.abs(speed) > BoatRules.BEACH_SPEED then
+		return nil
+	end
+	local flat = Vector3.new(look.X, 0, look.Z)
+	if flat.Magnitude < 1e-6 then
+		return nil
+	end
+	flat = flat.Unit
+	for k = 1, BoatRules.BEACH_REACH do
+		local probe = Vector3.new(pos.X, BoatRules.WATER_Y, pos.Z) + flat * (b.length / 2 + k)
+		if not BoatRules.isBoatWater(probe) then
+			return probe + flat * 2 -- two studs up the bank
+		end
+	end
+	return nil
+end
+
 -- The first free slip, or nil when every slip is taken.
 function BoatRules.nextFreeSlip(taken: { [number]: boolean }): number?
 	for i = 1, #BoatRules.SLIP_ZS do
@@ -123,16 +208,22 @@ end
 
 -- The server's check on a boat every half second.
 -- "ok": fine, remember this spot. "back": off the water or moved too far (a cheat, a glitch
--- or a crash onto land): put it back at its last good spot. "turn": a small boat crossed
--- the buoy line: push it back to just south of the line, facing home.
-function BoatRules.check(boatId: string, lastGood: Vector3, pos: Vector3, dt: number): (string, Vector3?)
+-- or a crash onto land), or into water this boat may not use (the fleet): put it back at its
+-- last good spot. "turn": a small boat crossed the buoy line: push it back to just south of
+-- the line, facing home. The third value is what to tell the driver, when there is a reason.
+function BoatRules.check(boatId: string, lastGood: Vector3, pos: Vector3, dt: number): (string, Vector3?, string?)
 	if not BoatRules.isBoatWater(pos) or not BoatLogic.moveOk(lastGood, pos, dt, boatId) then
-		return "back", lastGood
+		return "back", lastGood, nil
 	end
 	if BoatRules.inBlueWater(pos) and not BoatLogic.canEnterBlueWater(boatId) then
-		return "turn", Vector3.new(pos.X, pos.Y, BoatRules.BUOY_Z + 8)
+		local _, msg = BoatLogic.canEnterBlueWater(boatId)
+		return "turn", Vector3.new(pos.X, pos.Y, BoatRules.BUOY_Z + 8), msg
 	end
-	return "ok", nil
+	local ok, msg = BoatRules.mayBeAt(boatId, pos)
+	if not ok then
+		return "back", lastGood, msg
+	end
+	return "ok", nil, nil
 end
 
 -- Extra casting rules on the water. boatId is the boat the caster sits in (nil if on foot),
