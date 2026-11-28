@@ -707,6 +707,57 @@
    ]
   },
   {
+   "id": "n2-ui-style",
+   "tag": "N2",
+   "date": "2026-11-27",
+   "time": "17:08",
+   "commit": "b7dec8d",
+   "title": "A field-guide look for the screens",
+   "summary": "The game's screens are getting their own look, like a fisherman's field guide and tackle box: paper catch cards with a weight tag on a string, a ruler under the fish, a rarity ribbon, brass buttons and leather panels. 21 pieces of art were drawn and uploaded, and the code that dresses every screen in them is written. It is built behind a switch that is still off, so the game looks the same until the look pass is finished and the switch is flipped. These are the mockups it is aiming for.",
+   "pairs": [],
+   "stills": [
+    {
+     "src": "stills/2026-11-27-n2-mock-catch.jpg",
+     "caption": "Mockup: the new catch card"
+    },
+    {
+     "src": "stills/2026-11-27-n2-mock-hud.jpg",
+     "caption": "Mockup: the new screen bar"
+    }
+   ]
+  },
+  {
+   "id": "plant-kit",
+   "tag": "Art",
+   "date": "2026-11-27",
+   "time": "17:44",
+   "commit": "f797777",
+   "title": "A plant kit for Cedar Creek and the first island",
+   "summary": "Twelve new plant models for two places that come later in this leg. For Cedar Creek: a western red cedar whose crown follows the shape measured from a real cedar model, a mossy log, creek roots, two ferns and a moss mat. For the first island in the Big Lake: a lone wind-bent pine as its landmark, two junipers, heather and lichen. Each is split into bark and leaf parts so they take the game's own materials, about 8,000 triangles in all. They are not in the game yet.",
+   "pairs": [],
+   "stills": [
+    {
+     "src": "stills/2026-11-27-plant-kit-creek.jpg",
+     "caption": "The Cedar Creek plants, with a player for scale"
+    },
+    {
+     "src": "stills/2026-11-27-plant-kit-island.jpg",
+     "caption": "The island plants: the lone pine, junipers, heather and lichen"
+    }
+   ]
+  },
+  {
+   "id": "sounds-2",
+   "tag": "Sound",
+   "date": "2026-11-27",
+   "time": "18:42",
+   "commit": "8815662",
+   "title": "Real sounds for the boat, frenzies, goals and storms",
+   "summary": "With the account's age verification done, Roblox's monthly cap on sound uploads lifted, and the sounds that had been waiting went in: two motor loops for the dinghy (the pitch follows the boat's speed), the boil of a feeding frenzy and the music that bursts in when it starts, a chime for a finished goal, storm rain, and new sheets of water and button sounds. They were made with ElevenLabs and the best of each was picked by the Gemini Hydrogen critic. All of them load in a playtest with no errors; nobody has listened to them in the game yet.",
+   "pairs": [],
+   "stills": []
+  },
+  {
    "id": "n1-home-lake",
    "tag": "N1",
    "date": "2026-11-27",
