@@ -3285,5 +3285,623 @@
         ]
       }
     }
+  },
+  {
+    "date": "2026-11-28",
+    "step": "N3 Pass 1 creek",
+    "set": "A",
+    "rubric": "look",
+    "run": "2026-11-28-0154",
+    "commit": "c486cce",
+    "shots": 4,
+    "median": 5.5,
+    "scores": [
+      6,
+      5.5,
+      5.5
+    ],
+    "points": {
+      "composition": 7,
+      "light": 5,
+      "water": 4,
+      "mood": 7,
+      "want_to_fish": 6,
+      "phone_readability": 5,
+      "broken_or_ugly": 4
+    },
+    "reports": [
+      "docs\\critic\\2026-11-28-N3 Pass 1 creek-neon.md",
+      "docs\\critic\\2026-11-28-N3 Pass 1 creek-neon-2.md",
+      "docs\\critic\\2026-11-28-N3 Pass 1 creek-neon-3.md"
+    ],
+    "audit": {
+      "floatingLabels": 0,
+      "wind": 4,
+      "terrainRemappedStockSlots": [
+        2,
+        6,
+        12,
+        14,
+        19
+      ],
+      "stockMaterial": 79,
+      "heroSets": 1,
+      "materialVariants": 25,
+      "stockTerrain_bigLakeBasin": 0,
+      "stockGround": 3,
+      "alwaysOnTopLabels": 0,
+      "parts": 2971,
+      "alwaysOnTopLabelsNotPrompt": 0,
+      "lightingStyle": "Realistic",
+      "plastic": 375,
+      "surfaceAppearances": 1,
+      "stockTerrain_homeLake": 0,
+      "terrainCustomSlots": 10,
+      "plasticTop": "Reeds_Node 101, PineShort_Node 53, LeafyTree_Node 51, PineTall_Node 50, LilyPads_Node 27, FishShadows 22, BigLake 20, MyPondFish 12, RockMedium_Node 10, ProBabyTurtle_Dinghy 7"
+    },
+    "weather": {
+      "09-riffle-dawn": "Clear",
+      "10-pool-golden": "Clear",
+      "11-gate-noon": "Clear",
+      "12-pool-night": "Clear"
+    },
+    "session": {
+      "09-riffle-dawn": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1701,
+          787
+        ]
+      },
+      "10-pool-golden": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1701,
+          787
+        ]
+      },
+      "11-gate-noon": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1701,
+          787
+        ]
+      },
+      "12-pool-night": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1701,
+          787
+        ]
+      }
+    }
+  },
+  {
+    "date": "2026-11-28",
+    "step": "N3 Pass 1 creek",
+    "set": "A",
+    "rubric": "identity",
+    "run": "2026-11-28-0154",
+    "commit": "c486cce",
+    "shots": 4,
+    "median": 4,
+    "scores": [
+      4,
+      4,
+      3.5
+    ],
+    "points": {
+      "materials": 4,
+      "signature": 3,
+      "cohesion": 4,
+      "stock_free": 4,
+      "identity": 4
+    },
+    "reports": [
+      "docs\\critic\\2026-11-28-N3 Pass 1 creek-identity-neon.md",
+      "docs\\critic\\2026-11-28-N3 Pass 1 creek-identity-neon-2.md",
+      "docs\\critic\\2026-11-28-N3 Pass 1 creek-identity-neon-3.md"
+    ],
+    "stock_items": [
+      {
+        "item": "Stock terrain Grass and Ground/Mud (11-gate-noon.jpg, entire lower foreground and dirt path mid-ground right-to-left).",
+        "reason": "Blurry default Roblox lime-green grass and smooth brown dirt with soft smeared transitions.",
+        "runs": 1
+      },
+      {
+        "item": "Stock terrain Sand (10-pool-golden.jpg and 12-pool-night.jpg, right-hand bank path).",
+        "reason": "Smooth, featureless default Roblox sand texture that reads as flat beige at golden hour and chalky white under the lamp at night.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox sky and Clouds (10-pool-golden.jpg, 11-gate-noon.jpg, and 12-pool-night.jpg, upper frame).",
+        "reason": "Standard bright cyan Roblox skybox and default puffy Clouds layer with no bespoke atmospheric styling.",
+        "runs": 1
+      },
+      {
+        "item": "Primitive block-and-Neon lamp posts (10-pool-golden.jpg right bank, 11-gate-noon.jpg just right of the gate posts, 12-pool-night.jpg right bank).",
+        "reason": "Two plain rectangular wooden parts holding a single untextured SmoothPlastic/Neon glowing cube.",
+        "runs": 1
+      },
+      {
+        "item": "Faceted plastic bushes and bank ferns (11-gate-noon.jpg foreground center-left and right; 10-pool-golden.jpg and 12-pool-night.jpg bottom-right bank).",
+        "reason": "Angular low-poly green meshes that read as flat untextured Plastic/SmoothPlastic rather than real foliage.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Wood material on cylindrical trunks (12-pool-night.jpg, far-right trees illuminated by the lamp).",
+        "reason": "Standard Roblox Wood grain wrapped evenly around plain tapered cylinders.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Terrain Grass and Mud/Ground surfaces (11-gate-noon.jpg lower half; 09-riffle-dawn.jpg left bank)",
+        "reason": "Classic bright green and airbrushed brown default Roblox terrain textures with blurry transitions and very little natural grit or surface detail.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Terrain Sand on the right bank (10-pool-golden.jpg and 12-pool-night.jpg bottom-right to mid-right)",
+        "reason": "Smooth, featureless default terrain Sand that blends softly into Grass and blows out into a flat white snow-like surface under the night lamp.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox Sky and volumetric Clouds (11-gate-noon.jpg upper frame; 10-pool-golden.jpg upper frame; 12-pool-night.jpg upper frame)",
+        "reason": "Immediately recognizable saturated blue default Roblox sky and soft procedural Clouds rather than a bespoke sky palette.",
+        "runs": 1
+      },
+      {
+        "item": "Bare glowing Neon/SmoothPlastic block lanterns (10-pool-golden.jpg mid-right post; 11-gate-noon.jpg right of the gate; 12-pool-night.jpg mid-right post)",
+        "reason": "Plain untextured rectangular cube hanging from a post with no metal frame, cap, or glass detail, reading as a default Roblox Neon part.",
+        "runs": 1
+      },
+      {
+        "item": "Faceted low-poly Plastic/SmoothPlastic bushes and ferns (11-gate-noon.jpg center-left large bush and path-edge tufts; 10-pool-golden.jpg and 12-pool-night.jpg bottom-right foreground)",
+        "reason": "Flat-shaded, untextured geometric green meshes that read as generic Roblox low-poly plastic props instead of real-ish plants.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox Terrain Grass and Ground/Mud (11-gate-noon.jpg, entire foreground; 09-riffle-dawn.jpg, left bank)",
+        "reason": "Bright yellow-green smooth grass airbrushed into flat brown mud reads immediately as uncustomized Roblox Smooth Terrain.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox Terrain Sand (10-pool-golden.jpg and 12-pool-night.jpg, bottom-right shoreline)",
+        "reason": "Smooth pale stock beach sand blending softly into green grass, blowing out to flat white under the night lantern.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox Skybox and dynamic Clouds (11-gate-noon.jpg, 10-pool-golden.jpg, 12-pool-night.jpg, upper frame)",
+        "reason": "Unmistakable default saturated blue noon sky, standard sun flare, dark blue night sky, and wispy stock Roblox clouds.",
+        "runs": 1
+      },
+      {
+        "item": "Bare Neon/SmoothPlastic block lanterns (11-gate-noon.jpg, right of gate; 10-pool-golden.jpg and 12-pool-night.jpg, right bank)",
+        "reason": "Constructed from plain rectangular post parts and an unframed solid glowing yellow cube with no glass housing or metalwork.",
+        "runs": 1
+      },
+      {
+        "item": "Untextured triangulated low-poly bushes and leaf clumps (11-gate-noon.jpg, foreground center-left and right; 10-pool-golden.jpg and 12-pool-night.jpg, bottom-right bank)",
+        "reason": "Sharp flat-shaded green facets that read as default Plastic/SmoothPlastic rather than real matte foliage.",
+        "runs": 1
+      },
+      {
+        "item": "Basic block-and-rail fence and gate timber with stock Wood material (11-gate-noon.jpg, midground left to right)",
+        "reason": "Sharp-edged rectangular Studio parts wrapped in default Roblox Wood grain with no bevels, joints, or weathering.",
+        "runs": 1
+      }
+    ],
+    "audit": {
+      "floatingLabels": 0,
+      "wind": 4,
+      "terrainRemappedStockSlots": [
+        2,
+        6,
+        12,
+        14,
+        19
+      ],
+      "stockMaterial": 79,
+      "heroSets": 1,
+      "materialVariants": 25,
+      "stockTerrain_bigLakeBasin": 0,
+      "stockGround": 3,
+      "alwaysOnTopLabels": 0,
+      "parts": 2971,
+      "alwaysOnTopLabelsNotPrompt": 0,
+      "lightingStyle": "Realistic",
+      "plastic": 375,
+      "surfaceAppearances": 1,
+      "stockTerrain_homeLake": 0,
+      "terrainCustomSlots": 10,
+      "plasticTop": "Reeds_Node 101, PineShort_Node 53, LeafyTree_Node 51, PineTall_Node 50, LilyPads_Node 27, FishShadows 22, BigLake 20, MyPondFish 12, RockMedium_Node 10, ProBabyTurtle_Dinghy 7"
+    },
+    "weather": {
+      "09-riffle-dawn": "Clear",
+      "10-pool-golden": "Clear",
+      "11-gate-noon": "Clear",
+      "12-pool-night": "Clear"
+    },
+    "session": {
+      "09-riffle-dawn": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1701,
+          787
+        ]
+      },
+      "10-pool-golden": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1701,
+          787
+        ]
+      },
+      "11-gate-noon": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1701,
+          787
+        ]
+      },
+      "12-pool-night": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1701,
+          787
+        ]
+      }
+    }
+  },
+  {
+    "date": "2026-11-28",
+    "step": "Lake rebaseline pin 2",
+    "set": "A",
+    "rubric": "look",
+    "run": "2026-11-28-0154",
+    "commit": "c486cce",
+    "shots": 8,
+    "median": 7,
+    "scores": [
+      7,
+      6.5,
+      7
+    ],
+    "points": {
+      "composition": 7,
+      "light": 7,
+      "water": 7,
+      "mood": 7,
+      "want_to_fish": 8,
+      "phone_readability": 6,
+      "broken_or_ugly": 6
+    },
+    "reports": [
+      "docs\\critic\\2026-11-28-Lake rebaseline pin 2-neon.md",
+      "docs\\critic\\2026-11-28-Lake rebaseline pin 2-neon-2.md",
+      "docs\\critic\\2026-11-28-Lake rebaseline pin 2-neon-3.md"
+    ],
+    "audit": {
+      "floatingLabels": 0,
+      "wind": 4,
+      "terrainRemappedStockSlots": [
+        2,
+        6,
+        12,
+        14,
+        19
+      ],
+      "stockMaterial": 79,
+      "heroSets": 1,
+      "materialVariants": 25,
+      "stockTerrain_bigLakeBasin": 0,
+      "stockGround": 3,
+      "alwaysOnTopLabels": 0,
+      "parts": 2971,
+      "alwaysOnTopLabelsNotPrompt": 0,
+      "lightingStyle": "Realistic",
+      "plastic": 375,
+      "surfaceAppearances": 1,
+      "stockTerrain_homeLake": 0,
+      "terrainCustomSlots": 10,
+      "plasticTop": "Reeds_Node 101, PineShort_Node 53, LeafyTree_Node 51, PineTall_Node 50, LilyPads_Node 27, FishShadows 22, BigLake 20, MyPondFish 12, RockMedium_Node 10, ProBabyTurtle_Dinghy 7"
+    },
+    "weather": {
+      "01-dock-dawn": "Clear",
+      "02-dock-golden": "Clear",
+      "03-dockend-noon": "Clear",
+      "04-dockend-night": "Clear",
+      "05-weedbed-golden": "Clear",
+      "06-logs-dawn": "Clear",
+      "07-overview-golden": "Clear",
+      "08-stands-noon": "Clear"
+    },
+    "session": {
+      "01-dock-dawn": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1701,
+          787
+        ]
+      },
+      "02-dock-golden": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1701,
+          787
+        ]
+      },
+      "03-dockend-noon": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1701,
+          787
+        ]
+      },
+      "04-dockend-night": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1701,
+          787
+        ]
+      },
+      "05-weedbed-golden": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1701,
+          787
+        ]
+      },
+      "06-logs-dawn": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1701,
+          787
+        ]
+      },
+      "07-overview-golden": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1701,
+          787
+        ]
+      },
+      "08-stands-noon": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1701,
+          787
+        ]
+      }
+    }
+  },
+  {
+    "date": "2026-11-28",
+    "step": "Lake rebaseline pin 2",
+    "set": "A",
+    "rubric": "identity",
+    "run": "2026-11-28-0154",
+    "commit": "c486cce",
+    "shots": 8,
+    "median": 5,
+    "scores": [
+      5,
+      5,
+      5
+    ],
+    "points": {
+      "materials": 6,
+      "signature": 4.5,
+      "cohesion": 6,
+      "stock_free": 4,
+      "identity": 5
+    },
+    "reports": [
+      "docs\\critic\\2026-11-28-Lake rebaseline pin 2-identity-neon.md",
+      "docs\\critic\\2026-11-28-Lake rebaseline pin 2-identity-neon-2.md",
+      "docs\\critic\\2026-11-28-Lake rebaseline pin 2-identity-neon-3.md"
+    ],
+    "stock_items": [
+      {
+        "item": "Default Roblox Sky, Clouds, and oversized Sun disc (01-dock-dawn.jpg through 08-stands-noon.jpg, most prominent in the upper half of 03-dockend-noon.jpg, 08-stands-noon.jpg, 04-dockend-night.jpg, and top-left/horizon of 07-overview-golden.jpg)",
+        "reason": "The standard bright blue noon sky, wispy procedural Clouds layer, pale blue-grey night clouds, giant flat sun disc, and sharp orange horizon band are immediately recognizable as default Roblox lighting.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox terrain Grass texture (foreground left and right of 01-dock-dawn.jpg and 02-dock-golden.jpg; bright green blobs on the beach in 08-stands-noon.jpg; bottom right of 05-weedbed-golden.jpg; hills in 07-overview-golden.jpg)",
+        "reason": "Smooth, uniform green terrain paint with jagged voxel transition edges reads unmistakably as default Roblox terrain.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox terrain Sand and Ground/Gravel path (wavy sand at bottom-center water edge of 05-weedbed-golden.jpg; flat tan beach strip behind the dock in 08-stands-noon.jpg; mottled grey center path in 01-dock-dawn.jpg and 02-dock-golden.jpg)",
+        "reason": "The signature wavy Roblox Sand ripple pattern and blobby-edged grey Ground path clash sharply with the realistic weathered wood dock.",
+        "runs": 1
+      },
+      {
+        "item": "Bare smooth terrain-sculpted hills (background horizon left, center, and right in 07-overview-golden.jpg)",
+        "reason": "Uniformly smooth green mounds with sparse trees read immediately as default Roblox Terrain Editor sculpts.",
+        "runs": 1
+      },
+      {
+        "item": "Lumpy low-poly broadleaf trees (far left shoreline in 08-stands-noon.jpg and along the opposite shore in 03-dockend-noon.jpg)",
+        "reason": "Stacked, puffy cushion-like canopy shapes look like generic low-poly Roblox asset-pack trees and clash with the more grounded pine trees and weathered wood dock.",
+        "runs": 1
+      },
+      {
+        "item": "Flat-shaded cattails and bright orange boat hull (cattails in foreground left/right of 05-weedbed-golden.jpg and mid-ground of 06-logs-dawn.jpg; orange boat beside the right side of the dock in 02-dock-golden.jpg and 07-overview-golden.jpg)",
+        "reason": "The cattails read as simple untextured green wedges and smooth brown cylinders up close, and the boat hull reads as glossy flat orange SmoothPlastic against the muted natural wood.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox Skybox, clouds, and sun orb (01-dock-dawn.jpg, 02-dock-golden.jpg, 03-dockend-noon.jpg, 04-dockend-night.jpg, 05-weedbed-golden.jpg, 06-logs-dawn.jpg, 07-overview-golden.jpg, 08-stands-noon.jpg \u2014 upper half of every frame)",
+        "reason": "Uses the unmistakable default Roblox cloud map across day and night shots, plus the oversized default glowing sun disc and flat orange horizon strip in 07-overview-golden.jpg.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Smooth Terrain Grass, Sand, and Ground/Mud textures (01-dock-dawn.jpg and 02-dock-golden.jpg foreground lawn and center path; 05-weedbed-golden.jpg lower shoreline sand and bottom-right grass patch; 08-stands-noon.jpg beach sand and green grass patches; 03-dockend-noon.jpg far shoreline)",
+        "reason": "Displays default Roblox wind-rippled sand, bright stock terrain grass, and jagged blobby voxel material transitions along paths and shorelines.",
+        "runs": 1
+      },
+      {
+        "item": "Bare smooth-terrain background hills (07-overview-golden.jpg \u2014 upper background behind the far lake)",
+        "reason": "Smooth, lumpy default Roblox terrain mounds with sparse trees that immediately read as sculpted stock terrain.",
+        "runs": 1
+      },
+      {
+        "item": "Orange boat moored beside the dock (01-dock-dawn.jpg and 02-dock-golden.jpg center-right at the pier; 07-overview-golden.jpg center-left at the pier)",
+        "reason": "Reads as bright, untextured SmoothPlastic or Plastic orange sitting right next to realistic weathered timber.",
+        "runs": 1
+      },
+      {
+        "item": "Striped awnings on both shoreline stands (08-stands-noon.jpg center-left and center-right; also visible from behind in 01-dock-dawn.jpg and 02-dock-golden.jpg)",
+        "reason": "Flat, untextured SmoothPlastic-looking alternating stripes that contrast sharply with the detailed weathered wood planks directly beneath them.",
+        "runs": 1
+      },
+      {
+        "item": "Red-and-white channel buoy (03-dockend-noon.jpg and 04-dockend-night.jpg \u2014 dead center in the water below the bridge)",
+        "reason": "Reads as a plain untextured SmoothPlastic cylinder rather than weathered marine metal or painted wood.",
+        "runs": 1
+      },
+      {
+        "item": "Default Roblox Skybox, stock clouds, and oversized blurry sun (upper half of 01-dock-dawn.jpg, 02-dock-golden.jpg, 03-dockend-noon.jpg, 04-dockend-night.jpg, 07-overview-golden.jpg, and 08-stands-noon.jpg)",
+        "reason": "The exact default Roblox skybox cloud pattern, default noon cyan and night cloud gradients, giant blurry sun disc, and flat orange horizon band in 07-overview-golden.jpg are immediately recognizable as stock Roblox.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Terrain Grass surface (foreground left and right of 01-dock-dawn.jpg and 02-dock-golden.jpg, grassy patches behind the dock in 08-stands-noon.jpg, and open fields/hills in 07-overview-golden.jpg)",
+        "reason": "Uses the default green Roblox Grass terrain material texture with recognizable jagged voxel-blend edges where it meets the path and shore.",
+        "runs": 1
+      },
+      {
+        "item": "Stock Roblox Terrain Sand and Ground/path surfaces (center path in 01-dock-dawn.jpg and 02-dock-golden.jpg, bottom-center rippled shoreline in 05-weedbed-golden.jpg, shoreline path in 06-logs-dawn.jpg, and pale beige shore behind the dock in 08-stands-noon.jpg)",
+        "reason": "Shows the stock Roblox Ground tiling and the unmistakable diagonal wavy ripples of default Roblox Sand terrain right beside the water.",
+        "runs": 1
+      },
+      {
+        "item": "Bare smooth-brushed terrain hills along the horizon (upper-middle and upper-right of 07-overview-golden.jpg and center background of 03-dockend-noon.jpg)",
+        "reason": "Rounded green terrain mounds with sparse trees and no rock strata or surface breakup read strongly as default Roblox terrain-editor hills.",
+        "runs": 1
+      },
+      {
+        "item": "Flat-shaded untextured cattail leaf blades (foreground left and right of 05-weedbed-golden.jpg and water edge of 06-logs-dawn.jpg)",
+        "reason": "The sharp triangular reed leaves read as plain untextured SmoothPlastic or Plastic colored parts rather than textured plant blades.",
+        "runs": 1
+      }
+    ],
+    "audit": {
+      "floatingLabels": 0,
+      "wind": 4,
+      "terrainRemappedStockSlots": [
+        2,
+        6,
+        12,
+        14,
+        19
+      ],
+      "stockMaterial": 79,
+      "heroSets": 1,
+      "materialVariants": 25,
+      "stockTerrain_bigLakeBasin": 0,
+      "stockGround": 3,
+      "alwaysOnTopLabels": 0,
+      "parts": 2971,
+      "alwaysOnTopLabelsNotPrompt": 0,
+      "lightingStyle": "Realistic",
+      "plastic": 375,
+      "surfaceAppearances": 1,
+      "stockTerrain_homeLake": 0,
+      "terrainCustomSlots": 10,
+      "plasticTop": "Reeds_Node 101, PineShort_Node 53, LeafyTree_Node 51, PineTall_Node 50, LilyPads_Node 27, FishShadows 22, BigLake 20, MyPondFish 12, RockMedium_Node 10, ProBabyTurtle_Dinghy 7"
+    },
+    "weather": {
+      "01-dock-dawn": "Clear",
+      "02-dock-golden": "Clear",
+      "03-dockend-noon": "Clear",
+      "04-dockend-night": "Clear",
+      "05-weedbed-golden": "Clear",
+      "06-logs-dawn": "Clear",
+      "07-overview-golden": "Clear",
+      "08-stands-noon": "Clear"
+    },
+    "session": {
+      "01-dock-dawn": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1701,
+          787
+        ]
+      },
+      "02-dock-golden": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1701,
+          787
+        ]
+      },
+      "03-dockend-noon": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1701,
+          787
+        ]
+      },
+      "04-dockend-night": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1701,
+          787
+        ]
+      },
+      "05-weedbed-golden": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1701,
+          787
+        ]
+      },
+      "06-logs-dawn": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1701,
+          787
+        ]
+      },
+      "07-overview-golden": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1701,
+          787
+        ]
+      },
+      "08-stands-noon": {
+        "tier": "desktop",
+        "touch": false,
+        "viewport": [
+          1701,
+          787
+        ]
+      }
+    }
   }
 ]
