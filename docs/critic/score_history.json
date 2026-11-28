@@ -2457,5 +2457,94 @@
       ]
     },
     "left_out": []
+  },
+  {
+    "date": "2026-11-27",
+    "step": "n2-ui-3",
+    "set": "U",
+    "rubric": "ui",
+    "run": "2026-11-27-2141-U",
+    "commit": "5fb7524",
+    "shots": 12,
+    "median": 7,
+    "scores": [
+      7,
+      7,
+      7.5
+    ],
+    "points": {
+      "readability": 8,
+      "hierarchy": 7,
+      "consistency": 7,
+      "handmade_feel": 8,
+      "contrast": 7,
+      "touch_targets": 7,
+      "phone_readability": 6,
+      "broken_or_ugly": 5
+    },
+    "reports": [
+      "docs\\critic\\2026-11-27-n2-ui-3-ui-neon.md",
+      "docs\\critic\\2026-11-27-n2-ui-3-ui-neon-2.md",
+      "docs\\critic\\2026-11-27-n2-ui-3-ui-neon-3.md"
+    ],
+    "weather": {
+      "u01-hud": "Clear",
+      "u02-shop": "Clear",
+      "u03-journal": "Clear",
+      "u04-card-rare": "Clear",
+      "u05-fight": "Clear",
+      "u06-bench": "Clear"
+    },
+    "viewport": {
+      "u01-hud-1280": [
+        1519,
+        787
+      ],
+      "u01-hud-667": [
+        667,
+        375
+      ],
+      "u02-shop-1280": [
+        1519,
+        787
+      ],
+      "u02-shop-667": [
+        667,
+        375
+      ],
+      "u03-journal-1280": [
+        1519,
+        787
+      ],
+      "u03-journal-667": [
+        667,
+        375
+      ],
+      "u04-card-rare-1280": [
+        1519,
+        787
+      ],
+      "u04-card-rare-667": [
+        667,
+        375
+      ],
+      "u05-fight-1280": [
+        1519,
+        787
+      ],
+      "u05-fight-667": [
+        667,
+        375
+      ],
+      "u06-bench-1280": [
+        1519,
+        787
+      ],
+      "u06-bench-667": [
+        667,
+        375
+      ]
+    },
+    "left_out": []
   }
 ]

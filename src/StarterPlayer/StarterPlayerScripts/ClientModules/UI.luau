@@ -926,8 +926,7 @@ local function fitWeightTag()
 	if not tag or not label then
 		return
 	end
-	local text = (string.gsub(label.Text, "
-", " "))
+	local text = (string.gsub(label.Text, "\n", " "))
 	local cam = workspace.CurrentCamera
 	local scale = if cam then UIStyle.uiScale(cam.ViewportSize.X, cam.ViewportSize.Y) else Skin.scale()
 	local a = UIStyle.IMAGES.weightTag.textArea :: { number }

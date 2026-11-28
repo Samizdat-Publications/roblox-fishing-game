@@ -13,7 +13,10 @@ local function walk(dir: string)
 			walk(path)
 		elseif name:match("%.luau$") then
 			count += 1
-			local ok, err = pcall(luau.compile, fs.readFile(path))
+			-- Studio reads scripts with LF line ends; a raw CR LF inside a string compiles here but
+			-- not in Studio ("Malformed string", 11/27/2026), so compile the LF form.
+			local source = string.gsub(fs.readFile(path), string.char(13, 10), string.char(10))
+			local ok, err = pcall(luau.compile, source)
 			if not ok then
 				bad += 1
 				print("SYNTAX " .. path .. ": " .. tostring(err))
