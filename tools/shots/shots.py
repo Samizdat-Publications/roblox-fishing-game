@@ -230,7 +230,9 @@ local TS = game:GetService("TextService")
 local PG = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 local vp = workspace.CurrentCamera.ViewportSize
 local function r(x: number): number return math.round(x * 10) / 10 end
-local out = { viewport = { math.round(vp.X), math.round(vp.Y) }, guis = {}, outside = {}, small_text = {}, small_buttons = {} }
+local UIS = game:GetService("UserInputService")
+local out = { viewport = { math.round(vp.X), math.round(vp.Y) }, touch = UIS.TouchEnabled, keyboard = UIS.KeyboardEnabled,
+\tguis = {}, outside = {}, small_text = {}, small_buttons = {} }
 local function name(o: Instance): string return (o:GetFullName():gsub("^.-PlayerGui%.", "")) end
 local function shown(o: Instance, sg: Instance): boolean
 \tlocal x = o
@@ -502,6 +504,9 @@ def cmd_uicheck(a):
     data = load_json_arg(a.result)
     for k in ("outside", "small_text", "small_buttons"):
         data[k] = data.get(k) or []  # JSONEncode turns an empty table into {} or []
+    if stem.endswith("-667") and data.get("touch") is not True:
+        sys.exit(f"{stem}: the uicheck says touch is {data.get('touch')!r}. Phone screens must be real touch "
+                 "sessions (Device Simulator on a phone, TouchEnabled true); not recorded.")
     meta.setdefault("uicheck", {})[stem] = data
     if data.get("viewport"):
         meta.setdefault("viewport", {})[stem] = data["viewport"]

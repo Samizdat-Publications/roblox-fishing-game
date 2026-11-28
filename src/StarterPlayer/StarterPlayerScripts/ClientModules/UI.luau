@@ -269,6 +269,14 @@ function UI.init(cbs: { [string]: (...any) -> () })
 				end
 			end
 		end
+		-- The plate on a touch phone moves left so the Fish button (right edge) does not land on
+		-- its seal and stamp; at 0.72 scale it spans about x 200..620 of 926, clear of the side
+		-- tabs (178) and the button (666..776).
+		if STYLED and refs.card then
+			refs.card.Position = if refs.phone and UserInputService.TouchEnabled
+				then UDim2.new(0.5, -263, 0.5, -130)
+				else UDim2.new(0.5, 30, 0.5, -130)
+		end
 		if refs.boardCard then
 			BoardCard.fit(h)
 		end
@@ -1401,8 +1409,15 @@ function UI.dressScreen()
 	end
 	refs.zoneStroke.Color = K.paper
 	local mark = refs.fishMark :: Frame
+	-- A paper halo under the dark fish so it reads on the water track (it was 1.5:1, N2 review 2).
+	local halo = Skin.image(mark, "fishMarker", UDim2.new(1, 14, 1, 18), UDim2.fromOffset(-7, -9), K.paper)
+	if halo then
+		halo.Name = "FishHalo"
+		halo.ZIndex = 0
+	end
 	local fishImg = Skin.image(mark, "fishMarker", UDim2.new(1, 8, 1, 12), UDim2.fromOffset(-4, -6), K.fish)
 	if fishImg then
+		fishImg.ZIndex = 1
 		mark.BackgroundTransparency = 1
 	else
 		-- No art yet: a dark body with a paper outline and a tail.
@@ -1438,7 +1453,8 @@ function UI.dressScreen()
 	cue.TextWrapped = false
 	Skin.surface(cue, "paper", "tag", 1)
 	local cuePad = Skin.pad(cue, 0)
-	cuePad.PaddingLeft = UDim.new(0, 10)
+	cue.TextXAlignment = Enum.TextXAlignment.Center
+	cuePad.PaddingLeft = UDim.new(0, 8)
 	cuePad.PaddingRight = UDim.new(0, 8)
 	-- The reel prompt: a paper slip with a brass edge.
 	Skin.surface(refs.reelPrompt, "paper", "card", 2)
@@ -1619,7 +1635,7 @@ end
 -- on the right, and what you own under the blurb (N2 review 1: rows as short as the button
 -- allows, so about three show on a phone).
 local SHOP_ROW_MIN = Skin.TOUCH + 16
-local SHOP_FOOT = 32
+local SHOP_FOOT = 46
 local function layoutRow(row: Frame, minH: number)
 	if not STYLED then
 		return
@@ -1827,8 +1843,8 @@ function UI.buildShop()
 	if STYLED then
 		-- The shop has no buttons along its foot, only this line: a short foot (N2 review 1).
 		scroll.Size = UDim2.new(1, -24, 1, -(PANEL_HEAD + 14 + SHOP_FOOT))
-		refs.shopHint.Size = UDim2.new(1, -40, 0, SHOP_FOOT - 4)
-		refs.shopHint.Position = UDim2.new(0, 20, 1, -(SHOP_FOOT - 2))
+		refs.shopHint.Size = UDim2.new(1, -96, 0, 28)
+		refs.shopHint.Position = UDim2.new(0, 48, 1, -40)
 		refs.shopHint.TextXAlignment = Enum.TextXAlignment.Left
 		refs.shopHint.TextWrapped = false
 		refs.shopHint.TextTruncate = Enum.TextTruncate.AtEnd
@@ -1987,10 +2003,10 @@ function UI.buildJournal()
 		Skin.text(sum, "hand", "note", K.ink)
 		local x = 12
 		for _, b in { refs.assistBtn, refs.quickBtn, refs.tackleBtn } do
-			local w = if b == refs.tackleBtn then 160 else 190
+			local w = 198
 			b.Size = UDim2.fromOffset(w, Skin.TOUCH)
 			b.Position = UDim2.new(0, x, 1, -(Skin.TOUCH + 10))
-			x += w + 10
+			x += w + 11
 		end
 	end
 	refs.journal = p
