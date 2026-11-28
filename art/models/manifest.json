@@ -1619,6 +1619,96 @@
     "replaces": "FishShadows blobs and the catch held on the line (FishingService.showCatch)",
     "notes": "Built at the species' average length, 17.5 cm = 1.46 studs (1 stud = 12 cm). Scale by caught cm / average cm. Head along +X."
   },
+  "CreekFenceSection1_wood": {
+    "name": "CreekFenceSection1_wood",
+    "studs": [
+      11.04,
+      4.01,
+      0.86
+    ],
+    "triangles": 212,
+    "replaces": "Scenery's Post and Rail parts in Lake.Scenery.CreekFence (mix the two variants along the run)",
+    "notes": "Layer B, wood family: MaterialVariant WeatheredPlank with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit, V along the grain. Upload art/models/roblox/CreekFenceSection1_wood.glb. Pivot at the base centre, front along -Z; the ground line is 0.4 above the pivot, so place the pivot at ground height minus 0.4. Every mesh of the set goes at the same CFrame. The file also holds two specks (2 triangles) that pin the set's box. The set is 212 triangles in all.",
+    "family": "wood",
+    "variant": "weathered_plank",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.4,
+    "set": "CreekFenceSection1",
+    "set_triangles": 212,
+    "true_min": [
+      -5.52,
+      -0.431,
+      -0.0
+    ],
+    "true_max": [
+      5.511,
+      0.403,
+      4.012
+    ],
+    "placing": {
+      "bury": 0.4,
+      "ground_line": "0.4 above the pivot: place the pivot at ground height minus 0.4",
+      "height_above_ground": 3.6,
+      "module": 10.0,
+      "posts_at_x": [
+        5.0,
+        0.0
+      ],
+      "open_end_x": -5.0,
+      "rail_heights_above_ground": [
+        0.95,
+        1.95,
+        2.95
+      ],
+      "note": "one section is 10 studs of fence: posts at Roblox x = +5 and 0, and rails that run on to x = -5.5, into the next section's post (or the arch post). Chain them every 10 studs along X, the same way round, mixing the two variants; a half turn (180 degrees about Y) gives two more looks but swaps the open end. The end of a run needs one more post: a section sunk or cut works."
+    }
+  },
+  "CreekFenceSection2_wood": {
+    "name": "CreekFenceSection2_wood",
+    "studs": [
+      11.05,
+      4.06,
+      0.87
+    ],
+    "triangles": 212,
+    "replaces": "Scenery's Post and Rail parts in Lake.Scenery.CreekFence (mix the two variants along the run)",
+    "notes": "Layer B, wood family: MaterialVariant WeatheredPlank with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit, V along the grain. Upload art/models/roblox/CreekFenceSection2_wood.glb. Pivot at the base centre, front along -Z; the ground line is 0.4 above the pivot, so place the pivot at ground height minus 0.4. Every mesh of the set goes at the same CFrame. The file also holds two specks (2 triangles) that pin the set's box. The set is 212 triangles in all.",
+    "family": "wood",
+    "variant": "weathered_plank",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.4,
+    "set": "CreekFenceSection2",
+    "set_triangles": 212,
+    "true_min": [
+      -5.523,
+      -0.436,
+      -0.0
+    ],
+    "true_max": [
+      5.509,
+      0.392,
+      4.061
+    ],
+    "placing": {
+      "bury": 0.4,
+      "ground_line": "0.4 above the pivot: place the pivot at ground height minus 0.4",
+      "height_above_ground": 3.6,
+      "module": 10.0,
+      "posts_at_x": [
+        5.0,
+        0.0
+      ],
+      "open_end_x": -5.0,
+      "rail_heights_above_ground": [
+        0.95,
+        1.95,
+        2.95
+      ],
+      "note": "one section is 10 studs of fence: posts at Roblox x = +5 and 0, and rails that run on to x = -5.5, into the next section's post (or the arch post). Chain them every 10 studs along X, the same way round, mixing the two variants; a half turn (180 degrees about Y) gives two more looks but swaps the open end. The end of a run needs one more post: a section sunk or cut works."
+    }
+  },
   "CreekFern1_leaf": {
     "name": "CreekFern1_leaf",
     "studs": [
@@ -1705,6 +1795,737 @@
         78,
         40
       ]
+    }
+  },
+  "CreekGateArch_bark": {
+    "name": "CreekGateArch_bark",
+    "studs": [
+      14.13,
+      12.22,
+      3.22
+    ],
+    "triangles": 224,
+    "replaces": "Scenery's gray-box arch in Lake.Scenery.CreekFence (two ArchPost parts and the ArchBeam) and the flat CreekSign board WorldBuilder.paintSigns hangs under it; the CreekGate leaf, the GatePost prompt part and the unseen fence walls stay",
+    "notes": "Layer B, bark family: MaterialVariant CedarBark with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit, V along the grain. Upload art/models/roblox/CreekGateArch_bark.glb. Pivot at the base centre, front along -Z; the ground line is 0.4 above the pivot, so place the pivot at ground height minus 0.4. Every mesh of the set goes at the same CFrame. The file also holds two specks (2 triangles) that pin the set's box. The set is 1100 triangles in all.",
+    "family": "bark",
+    "variant": "cedar_bark",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.4,
+    "set": "CreekGateArch",
+    "set_triangles": 1100,
+    "true_min": [
+      -7.063,
+      -1.586,
+      -0.0
+    ],
+    "true_max": [
+      7.064,
+      1.609,
+      12.22
+    ],
+    "placing": {
+      "bury": 0.4,
+      "ground_line": "0.4 above the pivot: place the pivot at ground height minus 0.4",
+      "height_above_ground": 11.82,
+      "posts": {
+        "centres_x": [
+          -5.3,
+          5.3
+        ],
+        "radius_at_ground": 1.0342857142857143,
+        "radius_at_top": 0.72
+      },
+      "opening": {
+        "clear_between_posts": 8.56,
+        "clear_between_posts_at_leaf_top": 9.04,
+        "clear_between_footing_stones": 8.1,
+        "clear_height_under_sign": 6.82,
+        "clear_height_under_beam": 9.8,
+        "note": "heights here are above the GROUND. The 8 x 8 x 1 gate leaf fits on the centre plane (z = 0), and the knee braces pass above its top corners."
+      },
+      "gate_leaf": {
+        "centre": [
+          0,
+          4.4,
+          0
+        ],
+        "size": [
+          8.0,
+          8.0,
+          1.0
+        ],
+        "hinge_points": {
+          "post_at_minus_x": [
+            [
+              -4.347,
+              1.9,
+              0.0
+            ],
+            [
+              -4.486,
+              6.9,
+              0.0
+            ]
+          ],
+          "post_at_plus_x": [
+            [
+              4.347,
+              1.9,
+              0.0
+            ],
+            [
+              4.486,
+              6.9,
+              0.0
+            ]
+          ],
+          "note": "on the posts' inner faces, 1.5 and 6.5 above the ground, on the centre plane; hang the leaf from either post (the other takes the latch)"
+        }
+      },
+      "faces": {
+        "sign_front": {
+          "centre": [
+            0,
+            8.17,
+            -1.18
+          ],
+          "size": [
+            6.97,
+            1.24
+          ],
+          "normal": [
+            0,
+            0,
+            -1
+          ],
+          "note": "flat, faces the front (-Z, the lake); a SurfaceGui part of this size goes 0.02 in front of it"
+        },
+        "sign_back": {
+          "centre": [
+            0,
+            8.17,
+            -0.86
+          ],
+          "size": [
+            6.97,
+            1.24
+          ],
+          "normal": [
+            0,
+            0,
+            1
+          ],
+          "note": "the same flat face on the creek side"
+        }
+      },
+      "sign_slab": {
+        "plane_z": -1.02,
+        "thickness": 0.32,
+        "width": 8.5,
+        "bottom": 7.22,
+        "top": 9.11,
+        "note": "hangs 1 stud in front of the leaf's plane so it clears the leaf and the braces on it"
+      },
+      "crossbeam": {
+        "underside": 10.2,
+        "top": 11.51,
+        "half_length": 7.0,
+        "half_depth": 0.8
+      },
+      "roof": {
+        "ridge_top": 12.22,
+        "slope_degrees": 35.0,
+        "half_depth": 1.61
+      },
+      "fence_join": {
+        "first_section_pivot_x": [
+          -10.7,
+          10.7
+        ],
+        "note": "a fence section's open end (its rails, no post) goes into the arch post: put the first section's pivot 10.7 from the arch's centre line, open end toward the arch"
+      }
+    }
+  },
+  "CreekGateArch_stone": {
+    "name": "CreekGateArch_stone",
+    "studs": [
+      14.13,
+      12.22,
+      3.22
+    ],
+    "triangles": 208,
+    "replaces": "Scenery's gray-box arch in Lake.Scenery.CreekFence (two ArchPost parts and the ArchBeam) and the flat CreekSign board WorldBuilder.paintSigns hangs under it; the CreekGate leaf, the GatePost prompt part and the unseen fence walls stay",
+    "notes": "Layer B, stone family: MaterialVariant ShoreStone with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit, V along the grain. The two iron sign hangers ride in this mesh as near-black vertex colour. Upload art/models/roblox/CreekGateArch_stone.glb. Pivot at the base centre, front along -Z; the ground line is 0.4 above the pivot, so place the pivot at ground height minus 0.4. Every mesh of the set goes at the same CFrame. The file also holds two specks (2 triangles) that pin the set's box. The set is 1100 triangles in all.",
+    "family": "stone",
+    "variant": "shore_stone",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.4,
+    "set": "CreekGateArch",
+    "set_triangles": 1100,
+    "true_min": [
+      -7.063,
+      -1.586,
+      -0.0
+    ],
+    "true_max": [
+      7.064,
+      1.609,
+      12.22
+    ],
+    "placing": {
+      "bury": 0.4,
+      "ground_line": "0.4 above the pivot: place the pivot at ground height minus 0.4",
+      "height_above_ground": 11.82,
+      "posts": {
+        "centres_x": [
+          -5.3,
+          5.3
+        ],
+        "radius_at_ground": 1.0342857142857143,
+        "radius_at_top": 0.72
+      },
+      "opening": {
+        "clear_between_posts": 8.56,
+        "clear_between_posts_at_leaf_top": 9.04,
+        "clear_between_footing_stones": 8.1,
+        "clear_height_under_sign": 6.82,
+        "clear_height_under_beam": 9.8,
+        "note": "heights here are above the GROUND. The 8 x 8 x 1 gate leaf fits on the centre plane (z = 0), and the knee braces pass above its top corners."
+      },
+      "gate_leaf": {
+        "centre": [
+          0,
+          4.4,
+          0
+        ],
+        "size": [
+          8.0,
+          8.0,
+          1.0
+        ],
+        "hinge_points": {
+          "post_at_minus_x": [
+            [
+              -4.347,
+              1.9,
+              0.0
+            ],
+            [
+              -4.486,
+              6.9,
+              0.0
+            ]
+          ],
+          "post_at_plus_x": [
+            [
+              4.347,
+              1.9,
+              0.0
+            ],
+            [
+              4.486,
+              6.9,
+              0.0
+            ]
+          ],
+          "note": "on the posts' inner faces, 1.5 and 6.5 above the ground, on the centre plane; hang the leaf from either post (the other takes the latch)"
+        }
+      },
+      "faces": {
+        "sign_front": {
+          "centre": [
+            0,
+            8.17,
+            -1.18
+          ],
+          "size": [
+            6.97,
+            1.24
+          ],
+          "normal": [
+            0,
+            0,
+            -1
+          ],
+          "note": "flat, faces the front (-Z, the lake); a SurfaceGui part of this size goes 0.02 in front of it"
+        },
+        "sign_back": {
+          "centre": [
+            0,
+            8.17,
+            -0.86
+          ],
+          "size": [
+            6.97,
+            1.24
+          ],
+          "normal": [
+            0,
+            0,
+            1
+          ],
+          "note": "the same flat face on the creek side"
+        }
+      },
+      "sign_slab": {
+        "plane_z": -1.02,
+        "thickness": 0.32,
+        "width": 8.5,
+        "bottom": 7.22,
+        "top": 9.11,
+        "note": "hangs 1 stud in front of the leaf's plane so it clears the leaf and the braces on it"
+      },
+      "crossbeam": {
+        "underside": 10.2,
+        "top": 11.51,
+        "half_length": 7.0,
+        "half_depth": 0.8
+      },
+      "roof": {
+        "ridge_top": 12.22,
+        "slope_degrees": 35.0,
+        "half_depth": 1.61
+      },
+      "fence_join": {
+        "first_section_pivot_x": [
+          -10.7,
+          10.7
+        ],
+        "note": "a fence section's open end (its rails, no post) goes into the arch post: put the first section's pivot 10.7 from the arch's centre line, open end toward the arch"
+      }
+    }
+  },
+  "CreekGateArch_wood": {
+    "name": "CreekGateArch_wood",
+    "studs": [
+      14.13,
+      12.22,
+      3.22
+    ],
+    "triangles": 668,
+    "replaces": "Scenery's gray-box arch in Lake.Scenery.CreekFence (two ArchPost parts and the ArchBeam) and the flat CreekSign board WorldBuilder.paintSigns hangs under it; the CreekGate leaf, the GatePost prompt part and the unseen fence walls stay",
+    "notes": "Layer B, wood family: MaterialVariant WeatheredPlank with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted. UVs at 1 stud per UV unit, V along the grain. Upload art/models/roblox/CreekGateArch_wood.glb. Pivot at the base centre, front along -Z; the ground line is 0.4 above the pivot, so place the pivot at ground height minus 0.4. Every mesh of the set goes at the same CFrame. The file also holds two specks (2 triangles) that pin the set's box. The set is 1100 triangles in all.",
+    "family": "wood",
+    "variant": "weathered_plank",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "bury": 0.4,
+    "set": "CreekGateArch",
+    "set_triangles": 1100,
+    "true_min": [
+      -7.063,
+      -1.586,
+      -0.0
+    ],
+    "true_max": [
+      7.064,
+      1.609,
+      12.22
+    ],
+    "placing": {
+      "bury": 0.4,
+      "ground_line": "0.4 above the pivot: place the pivot at ground height minus 0.4",
+      "height_above_ground": 11.82,
+      "posts": {
+        "centres_x": [
+          -5.3,
+          5.3
+        ],
+        "radius_at_ground": 1.0342857142857143,
+        "radius_at_top": 0.72
+      },
+      "opening": {
+        "clear_between_posts": 8.56,
+        "clear_between_posts_at_leaf_top": 9.04,
+        "clear_between_footing_stones": 8.1,
+        "clear_height_under_sign": 6.82,
+        "clear_height_under_beam": 9.8,
+        "note": "heights here are above the GROUND. The 8 x 8 x 1 gate leaf fits on the centre plane (z = 0), and the knee braces pass above its top corners."
+      },
+      "gate_leaf": {
+        "centre": [
+          0,
+          4.4,
+          0
+        ],
+        "size": [
+          8.0,
+          8.0,
+          1.0
+        ],
+        "hinge_points": {
+          "post_at_minus_x": [
+            [
+              -4.347,
+              1.9,
+              0.0
+            ],
+            [
+              -4.486,
+              6.9,
+              0.0
+            ]
+          ],
+          "post_at_plus_x": [
+            [
+              4.347,
+              1.9,
+              0.0
+            ],
+            [
+              4.486,
+              6.9,
+              0.0
+            ]
+          ],
+          "note": "on the posts' inner faces, 1.5 and 6.5 above the ground, on the centre plane; hang the leaf from either post (the other takes the latch)"
+        }
+      },
+      "faces": {
+        "sign_front": {
+          "centre": [
+            0,
+            8.17,
+            -1.18
+          ],
+          "size": [
+            6.97,
+            1.24
+          ],
+          "normal": [
+            0,
+            0,
+            -1
+          ],
+          "note": "flat, faces the front (-Z, the lake); a SurfaceGui part of this size goes 0.02 in front of it"
+        },
+        "sign_back": {
+          "centre": [
+            0,
+            8.17,
+            -0.86
+          ],
+          "size": [
+            6.97,
+            1.24
+          ],
+          "normal": [
+            0,
+            0,
+            1
+          ],
+          "note": "the same flat face on the creek side"
+        }
+      },
+      "sign_slab": {
+        "plane_z": -1.02,
+        "thickness": 0.32,
+        "width": 8.5,
+        "bottom": 7.22,
+        "top": 9.11,
+        "note": "hangs 1 stud in front of the leaf's plane so it clears the leaf and the braces on it"
+      },
+      "crossbeam": {
+        "underside": 10.2,
+        "top": 11.51,
+        "half_length": 7.0,
+        "half_depth": 0.8
+      },
+      "roof": {
+        "ridge_top": 12.22,
+        "slope_degrees": 35.0,
+        "half_depth": 1.61
+      },
+      "fence_join": {
+        "first_section_pivot_x": [
+          -10.7,
+          10.7
+        ],
+        "note": "a fence section's open end (its rails, no post) goes into the arch post: put the first section's pivot 10.7 from the arch's centre line, open end toward the arch"
+      }
+    }
+  },
+  "CreekLanternPost_bark": {
+    "name": "CreekLanternPost_bark",
+    "studs": [
+      1.4,
+      7.5,
+      3.4
+    ],
+    "triangles": 205,
+    "parts": 11,
+    "replaces": "The creek's gray-box lantern posts (CreekSwap.buildLantern: the pool lantern and the gate lamp)",
+    "notes": "Layer B, bark: MaterialVariant CedarBark (or WeatheredPlank: the same mesh takes either) with its NEUTRAL colour map, normal and roughness. Vertex colours stored 1.25 times the colour wanted; part colour white. UVs at 1 stud per UV unit. Upload art/models/roblox/CreekLanternPost_bark.glb. Goes at the same CFrame as the other boxed mesh: pivot at the foot of the post, the arm along -Z. The set is 351 triangles in all.",
+    "family": "bark",
+    "variant": "cedar_bark",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "set": "CreekLanternPost",
+    "set_triangles": 351,
+    "palette_seen_rgb": {
+      "post": [
+        114,
+        94,
+        76
+      ],
+      "post_top": [
+        134,
+        116,
+        98
+      ],
+      "post_foot": [
+        74,
+        66,
+        54
+      ],
+      "post_moss": [
+        76,
+        92,
+        54
+      ],
+      "arm": [
+        122,
+        100,
+        80
+      ],
+      "arm_end": [
+        92,
+        76,
+        62
+      ],
+      "brace": [
+        104,
+        86,
+        70
+      ],
+      "peg": [
+        150,
+        124,
+        92
+      ],
+      "stone_a": [
+        118,
+        114,
+        106
+      ],
+      "stone_b": [
+        98,
+        100,
+        100
+      ],
+      "stone_c": [
+        132,
+        124,
+        112
+      ],
+      "stone_wet": [
+        72,
+        72,
+        70
+      ],
+      "moss": [
+        78,
+        104,
+        52
+      ],
+      "moss_dark": [
+        58,
+        82,
+        44
+      ]
+    },
+    "placing": {
+      "pivot": "the foot of the post at the ground line: the base centre of the bark and metal meshes' shared box",
+      "box_studs": [
+        1.4,
+        7.5,
+        3.4
+      ],
+      "true_extent_studs": [
+        1.4,
+        7.5,
+        2.4
+      ],
+      "true_extent_note": "the shape itself reaches 1.7 toward -Z (the arm and the lantern roof) and 0.7 toward +Z (the stone collar); the shared box is even about the pivot, so it reads 3.4 deep",
+      "arm": "reaches along Roblox -Z; turn the model about Y to aim it at the path or the water",
+      "bury": 0.1,
+      "bury_note": "sink the pivot 0.1 below the ground so the stones bite in; they stand 0.45 to 0.95 tall",
+      "glass_core": {
+        "centre": [
+          0.0,
+          5.59,
+          -1.2
+        ],
+        "size": [
+          0.6,
+          0.88,
+          0.6
+        ],
+        "note": "the glass mesh has no corner specks, so its own box is the core: place it at pivot * CFrame.new(centre) and parent the PointLight to it. It tapers from 0.6 square at the top to 0.4 at the bottom"
+      },
+      "lantern": {
+        "hangs_at": [
+          0.0,
+          6.78,
+          -1.2
+        ],
+        "roof_peak": 6.6,
+        "underside": 4.93,
+        "roof_half_width": 0.5
+      },
+      "post_top": 7.5,
+      "arm_top": 7.14
+    }
+  },
+  "CreekLanternPost_glass": {
+    "name": "CreekLanternPost_glass",
+    "studs": [
+      0.6,
+      0.88,
+      0.6
+    ],
+    "triangles": 12,
+    "parts": 1,
+    "replaces": "The creek's gray-box lantern posts (CreekSwap.buildLantern: the pool lantern and the gate lamp)",
+    "notes": "Layer B, glass: no family: the game's lantern glass. Material Glass by day, Neon while lit (ClientModules/Lanterns), part colour 255,190,120. Vertex colours are white so the part colour shows as it is. UVs at 1 stud per UV unit. Upload art/models/roblox/CreekLanternPost_glass.glb. Has no corner specks: its box is the core itself. Place it at pivot * CFrame.new([0.0, 5.59, -1.2]) and parent the lantern's PointLight to it. The set is 351 triangles in all.",
+    "family": "glass",
+    "variant": null,
+    "uv_studs": 1.0,
+    "lift": 1.0,
+    "set": "CreekLanternPost",
+    "set_triangles": 351,
+    "palette_seen_rgb": {
+      "glass": [
+        255,
+        255,
+        255
+      ]
+    },
+    "placing": {
+      "pivot": "the foot of the post at the ground line: the base centre of the bark and metal meshes' shared box",
+      "box_studs": [
+        1.4,
+        7.5,
+        3.4
+      ],
+      "true_extent_studs": [
+        1.4,
+        7.5,
+        2.4
+      ],
+      "true_extent_note": "the shape itself reaches 1.7 toward -Z (the arm and the lantern roof) and 0.7 toward +Z (the stone collar); the shared box is even about the pivot, so it reads 3.4 deep",
+      "arm": "reaches along Roblox -Z; turn the model about Y to aim it at the path or the water",
+      "bury": 0.1,
+      "bury_note": "sink the pivot 0.1 below the ground so the stones bite in; they stand 0.45 to 0.95 tall",
+      "glass_core": {
+        "centre": [
+          0.0,
+          5.59,
+          -1.2
+        ],
+        "size": [
+          0.6,
+          0.88,
+          0.6
+        ],
+        "note": "the glass mesh has no corner specks, so its own box is the core: place it at pivot * CFrame.new(centre) and parent the PointLight to it. It tapers from 0.6 square at the top to 0.4 at the bottom"
+      },
+      "lantern": {
+        "hangs_at": [
+          0.0,
+          6.78,
+          -1.2
+        ],
+        "roof_peak": 6.6,
+        "underside": 4.93,
+        "roof_half_width": 0.5
+      },
+      "post_top": 7.5,
+      "arm_top": 7.14
+    }
+  },
+  "CreekLanternPost_metal": {
+    "name": "CreekLanternPost_metal",
+    "studs": [
+      1.4,
+      7.5,
+      3.4
+    ],
+    "triangles": 134,
+    "parts": 14,
+    "replaces": "The creek's gray-box lantern posts (CreekSwap.buildLantern: the pool lantern and the gate lamp)",
+    "notes": "Layer B, metal: MaterialVariant Aluminium with its NEUTRAL colour map. The dark iron (42, 44, 48) is in the vertex colours, stored 1.25 times lighter, so the part colour stays white: do not tint the part as well. UVs at 1 stud per UV unit. Upload art/models/roblox/CreekLanternPost_metal.glb. Goes at the same CFrame as the other boxed mesh: pivot at the foot of the post, the arm along -Z. The set is 351 triangles in all.",
+    "family": "metal",
+    "variant": "aluminium",
+    "uv_studs": 1.0,
+    "lift": 1.25,
+    "set": "CreekLanternPost",
+    "set_triangles": 351,
+    "palette_seen_rgb": {
+      "iron": [
+        42,
+        44,
+        48
+      ],
+      "iron_roof": [
+        54,
+        53,
+        54
+      ],
+      "iron_rust": [
+        72,
+        56,
+        46
+      ],
+      "iron_in": [
+        30,
+        31,
+        34
+      ]
+    },
+    "placing": {
+      "pivot": "the foot of the post at the ground line: the base centre of the bark and metal meshes' shared box",
+      "box_studs": [
+        1.4,
+        7.5,
+        3.4
+      ],
+      "true_extent_studs": [
+        1.4,
+        7.5,
+        2.4
+      ],
+      "true_extent_note": "the shape itself reaches 1.7 toward -Z (the arm and the lantern roof) and 0.7 toward +Z (the stone collar); the shared box is even about the pivot, so it reads 3.4 deep",
+      "arm": "reaches along Roblox -Z; turn the model about Y to aim it at the path or the water",
+      "bury": 0.1,
+      "bury_note": "sink the pivot 0.1 below the ground so the stones bite in; they stand 0.45 to 0.95 tall",
+      "glass_core": {
+        "centre": [
+          0.0,
+          5.59,
+          -1.2
+        ],
+        "size": [
+          0.6,
+          0.88,
+          0.6
+        ],
+        "note": "the glass mesh has no corner specks, so its own box is the core: place it at pivot * CFrame.new(centre) and parent the PointLight to it. It tapers from 0.6 square at the top to 0.4 at the bottom"
+      },
+      "lantern": {
+        "hangs_at": [
+          0.0,
+          6.78,
+          -1.2
+        ],
+        "roof_peak": 6.6,
+        "underside": 4.93,
+        "roof_half_width": 0.5
+      },
+      "post_top": 7.5,
+      "arm_top": 7.14
     }
   },
   "CreekRoots_bark": {
