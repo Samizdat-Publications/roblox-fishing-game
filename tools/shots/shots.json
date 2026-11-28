@@ -779,6 +779,83 @@
       "lens_mm": 35,
       "what": "Across the pond to the lit trophy case",
       "why": "Glass, brass and lantern glow in the pond. Needs the twelve-fish test save loaded."
+    },
+    {
+      "id": "c01-canoe-golden",
+      "set": "C",
+      "group": "boats",
+      "place": "lake",
+      "clock": 17.4,
+      "eye": [
+        26,
+        3.2,
+        38
+      ],
+      "look": [
+        12,
+        0.8,
+        47
+      ],
+      "fov": 39.8,
+      "what": "The Cedar Canoe at its slip east of the dock, seen from the water at golden hour"
+    },
+    {
+      "id": "c02-slips-boathouse-noon",
+      "set": "C",
+      "group": "boats",
+      "place": "lake",
+      "clock": 12.0,
+      "eye": [
+        4,
+        7,
+        35
+      ],
+      "look": [
+        38,
+        1.5,
+        4
+      ],
+      "fov": 45,
+      "what": "From the dock end across the water to the boathouse moorings (canoe, dinghy, Deep-V) at noon, the slips at the dock side"
+    },
+    {
+      "id": "c03-dinghy-wake-dawn",
+      "set": "C",
+      "group": "boats",
+      "place": "lake",
+      "clock": 6.6,
+      "eye": [
+        60,
+        2.5,
+        58
+      ],
+      "look": [
+        50,
+        0.5,
+        47
+      ],
+      "fov": 39.8,
+      "what": "The dinghy under way at dawn, wake behind it, past a fixed eye. Timing: boat tied at its slip (x 9) with the player seated, full throttle held straight east (about 12 studs a second); capture started about 5 s after the throttle, when it is at x 55 to 65"
+    },
+    {
+      "id": "c04-deepv-dusk",
+      "set": "C",
+      "group": "boats",
+      "place": "biglake",
+      "clock": 18.3,
+      "eye": [
+        60,
+        3,
+        -200
+      ],
+      "look": [
+        40,
+        0.5,
+        -185
+      ],
+      "fov": 39.8,
+      "pending": "N5",
+      "what": "The Deep-V at the marina at dusk with its running lights on (waits for N5's marina and the lights)"
     }
   ],
   "screen_sizes": [

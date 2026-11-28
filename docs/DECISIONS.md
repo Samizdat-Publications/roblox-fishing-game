@@ -462,3 +462,7 @@ F:Invoke("clear")                      -- removes every dummy
 
 1. Land here searches the real ground up to 12 studs past the bow (the stop keeps about 2 to 4.25 studs of water, so this is generous).
 2. The Deep-V's water line sits 0.5 under its deck top (its keel 0.70 down).
+
+## 11/28/2026 (early morning): a test run touched Stewart's own save
+
+- Studio's test player is Stewart's own Roblox account, and Studio saves to the live data store. An N4 test run set the coins with the Studio-only `DebugCoins` hook and the save went through; the main session set the coins back to 213 (the figure before the run) and checked it on the HUD. The run also left the canoe owned, `data.boat` set to the dinghy, and a few catches and a goal in the journal; those are kept (they are the boats and fish a playtest earns). From now on test runs that change coins put them back before stopping Play, and nothing deletes saved data.
