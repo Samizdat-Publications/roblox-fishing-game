@@ -4,6 +4,27 @@ A Roblox fishing game where real fishing knowledge matters: the right bait, spot
 
 Newest first. The live page with before and after sliders is `docs/making-of/index.html` (published as a Claude artifact).
 
+## N4: A canoe, a new dinghy and a boathouse
+
+2026-11-28 09:30 · commit `41016e7`
+
+The lake has a fleet now. A cedar-strip canoe with cane seats costs 350 coins at a new boathouse on the point east of the dock, paddles at 7 studs a second alone and 11 with a friend in the bow, and can be landed on any sandy shore. The dinghy was rebuilt with orange tubes, a slatted floor and a small outboard, and made bigger after the first pictures showed a player filling it from side to side. Boats now feel like boats: the bow lifts with speed, they lean into turns and bob at rest, a soft wake trails behind and fades when you stop, and running lights come on at dusk. The boat itself never tilts or climbs a bank; it stops with a message and still steers. Two players can help each other: one can net the other's fish and earns a small share for it. Getting the wake right took four tries, from a straight white bar, to a fence of little ticks, to invisible, to a soft V that clears when the boat stops.
+
+**The dinghy and its wake at dawn**
+
+| Before | After |
+|---|---|
+| ![before](stills/2026-11-28-n4-wake-before.jpg) | ![after](stills/2026-11-28-n4-wake-after.jpg) |
+
+![The Cedar Canoe in its slip at golden hour](stills/2026-11-28-n4-canoe-golden.jpg)
+*The Cedar Canoe in its slip at golden hour*
+
+![The slips and the boathouse at noon](stills/2026-11-28-n4-slips-boathouse.jpg)
+*The slips and the boathouse at noon*
+
+![Prime shot p09: the slips and the boathouse (35 mm)](stills/2026-11-28-prime-p09-boathouse-canoe-golden.jpg)
+*Prime shot p09: the slips and the boathouse (35 mm)*
+
 ## N3: Cedar Creek becomes a stream in the woods
 
 2026-11-28 04:30
